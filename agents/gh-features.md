@@ -106,7 +106,40 @@ When creating a new epic:
 
 When creating a new item issue:
 1. `gh issue create --repo $REPO --milestone "$MILESTONE" --label "$PR_LABEL,$KIND,$AREA,$PRIORITY,$SIZE"`
-2. Add to board and set: Status=Todo, Team, Priority, Size, Target date
+2. Add to board using the **robust add-or-update pattern** (never assume item is already on board):
+```bash
+# Step 1: get issue node ID
+NODE_ID=$(gh issue view $ISSUE_NUM --repo $REPO --json id --jq '.id')
+
+# Step 2: check if already on board
+BOARD_ITEM_ID=$(gh api graphql -f query="
+{
+  repository(owner: \"<owner>\", name: \"<repo>\") {
+    issue(number: $ISSUE_NUM) {
+      projectItems(first: 5) { nodes { id project { id } } }
+    }
+  }
+}" --jq ".data.repository.issue.projectItems.nodes[] | select(.project.id == \"$BOARD_PROJECT_ID\") | .id" 2>/dev/null)
+
+# Step 3: add if not already on board
+if [ -z "$BOARD_ITEM_ID" ]; then
+  BOARD_ITEM_ID=$(gh api graphql -f query="
+  mutation {
+    addProjectV2ItemById(input: {
+      projectId: \"$BOARD_PROJECT_ID\"
+      contentId: \"$NODE_ID\"
+    }) { item { id } }
+  }" --jq '.data.addProjectV2ItemById.item.id' 2>/dev/null)
+fi
+
+# Step 4: set Status, Priority, Size fields
+gh project item-edit --id "$BOARD_ITEM_ID" --project-id "$BOARD_PROJECT_ID" \
+  --field-id "$STATUS_FIELD" --single-select-option-id "$OPT_TODO"
+# ... set Priority and Size similarly
+```
+**IMPORTANT**: Only add issues (not PRs) to the board. Always check
+`__typename == "Issue"` before calling `addProjectV2ItemById`.
+
 3. Link as sub-issue of the milestone epic: `addSubIssue` mutation
 4. The board Backlog view, Roadmap view, and milestone page all update automatically
 

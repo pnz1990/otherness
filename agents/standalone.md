@@ -87,13 +87,25 @@ if [ -f "$BOARD_CFG" ]; then
   echo "Board config loaded: project=$BOARD_PROJECT_ID"
 fi
 
-# Helper: move a board card by item issue number and target status option ID
+# Helper: ensure item is on board, then set its status
 # Usage: move_board_card <item-issue-number> <option-id>
+# Handles both cases: item already on board (update) and not yet on board (add then set)
 move_board_card() {
   local ISSUE_NUM=$1
   local OPTION_ID=$2
   [ -z "$BOARD_PROJECT_ID" ] && return 0
-  # Get the project item ID for this issue
+
+  # Verify this is an issue, not a PR — only add issues to the board
+  local CONTENT_TYPE
+  CONTENT_TYPE=$(gh api graphql -f query="
+  {
+    repository(owner: \"$(echo $REPO | cut -d/ -f1)\", name: \"$(echo $REPO | cut -d/ -f2)\") {
+      issueOrPullRequest(number: $ISSUE_NUM) { __typename }
+    }
+  }" --jq '.data.repository.issueOrPullRequest.__typename' 2>/dev/null)
+  [ "$CONTENT_TYPE" != "Issue" ] && return 0
+
+  # Get existing board item ID for this issue
   local ITEM_ID
   ITEM_ID=$(gh api graphql -f query="
   {
@@ -105,14 +117,31 @@ move_board_card() {
       }
     }
   }" --jq ".data.repository.issue.projectItems.nodes[] | select(.project.id == \"$BOARD_PROJECT_ID\") | .id" 2>/dev/null)
-  [ -z "$ITEM_ID" ] && return 0
+
+  # If not on board yet: add it first
+  if [ -z "$ITEM_ID" ]; then
+    local NODE_ID
+    NODE_ID=$(gh issue view $ISSUE_NUM --repo $REPO --json id --jq '.id' 2>/dev/null)
+    [ -z "$NODE_ID" ] && return 0
+    ITEM_ID=$(gh api graphql -f query="
+    mutation {
+      addProjectV2ItemById(input: {
+        projectId: \"$BOARD_PROJECT_ID\"
+        contentId: \"$NODE_ID\"
+      }) { item { id } }
+    }" --jq '.data.addProjectV2ItemById.item.id' 2>/dev/null)
+    echo "Board: added item #$ISSUE_NUM to project"
+  fi
+
+  [ -z "$ITEM_ID" ] && echo "Board: could not add #$ISSUE_NUM (non-fatal)" && return 0
+
   gh project item-edit \
     --id "$ITEM_ID" \
     --project-id "$BOARD_PROJECT_ID" \
     --field-id "$BOARD_FIELD_ID" \
     --single-select-option-id "$OPTION_ID" 2>/dev/null && \
-    echo "Board: moved item $ISSUE_NUM to option $OPTION_ID" || \
-    echo "Board: failed to move item $ISSUE_NUM (non-fatal)"
+    echo "Board: #$ISSUE_NUM → status $OPTION_ID" || \
+    echo "Board: failed to move #$ISSUE_NUM (non-fatal)"
 }
 ```
 
@@ -148,7 +177,8 @@ PHASE 1 — [🎯 COORDINATOR] ASSIGN
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1a. Heartbeat (re-read state.json first — never cache between phases)
-    BOARD SYNC — reconcile every item in state.json against the board:
+    BOARD SYNC — for every item in state.json, ensure it's on the board
+    AND has the correct status. move_board_card handles add-if-missing:
     python3 -c "
     import json
     s=json.load(open('.maqa/state.json'))

@@ -200,7 +200,13 @@ LOOP:
       COORDINATOR_CYCLE=<current-cycle>
       EOF
    e. MOVE BOARD CARD FIRST (before writing state.json): Todo → In Progress
-      Set Team field on card to the engineer slot name:
+      Set Team field on card to the engineer slot name.
+      Use the robust board-add-or-update pattern (add item if not yet on board,
+      then set Status and Team fields). See standalone.md move_board_card() for
+      the reference implementation — coordinator should use the same logic:
+      1. Check if issue is in the project via projectItems GraphQL query
+      2. If not found: addProjectV2ItemById first (issues only, not PRs)
+      3. Then set Status, Team, Priority, Size fields via gh project item-edit
       ```bash
       TEAM_FIELD_ID=$(python3 -c "import re; [print(m.group(1)) for line in open('maqa-github-projects/github-projects-config.yml') for m in [re.match(r'^team_field_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
       # Map slot name to option ID from github-projects-config.yml
