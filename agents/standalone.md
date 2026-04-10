@@ -73,6 +73,47 @@ for line in open('maqa-config.yml'):
     if m: print(os.path.expanduser(m.group(1).strip())); break
 " 2>/dev/null)
 echo "REPO=$REPO | REPORT_ISSUE=$REPORT_ISSUE"
+
+# Read board config (if available)
+BOARD_CFG="maqa-github-projects/github-projects-config.yml"
+if [ -f "$BOARD_CFG" ]; then
+  BOARD_PROJECT_ID=$(python3 -c "import re; [print(m.group(1)) for line in open('$BOARD_CFG') for m in [re.match(r'^project_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
+  BOARD_FIELD_ID=$(python3 -c "import re; [print(m.group(1)) for line in open('$BOARD_CFG') for m in [re.match(r'^status_field_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
+  OPT_TODO=$(python3 -c "import re; [print(m.group(1)) for line in open('$BOARD_CFG') for m in [re.match(r'^todo_option_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
+  OPT_IN_PROGRESS=$(python3 -c "import re; [print(m.group(1)) for line in open('$BOARD_CFG') for m in [re.match(r'^in_progress_option_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
+  OPT_IN_REVIEW=$(python3 -c "import re; [print(m.group(1)) for line in open('$BOARD_CFG') for m in [re.match(r'^in_review_option_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
+  OPT_DONE=$(python3 -c "import re; [print(m.group(1)) for line in open('$BOARD_CFG') for m in [re.match(r'^done_option_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
+  OPT_BLOCKED=$(python3 -c "import re; [print(m.group(1)) for line in open('$BOARD_CFG') for m in [re.match(r'^blocked_option_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
+  echo "Board config loaded: project=$BOARD_PROJECT_ID"
+fi
+
+# Helper: move a board card by item issue number and target status option ID
+# Usage: move_board_card <item-issue-number> <option-id>
+move_board_card() {
+  local ISSUE_NUM=$1
+  local OPTION_ID=$2
+  [ -z "$BOARD_PROJECT_ID" ] && return 0
+  # Get the project item ID for this issue
+  local ITEM_ID
+  ITEM_ID=$(gh api graphql -f query="
+  {
+    repository(owner: \"$(echo $REPO | cut -d/ -f1)\", name: \"$(echo $REPO | cut -d/ -f2)\") {
+      issue(number: $ISSUE_NUM) {
+        projectItems(first: 5) {
+          nodes { id project { id } }
+        }
+      }
+    }
+  }" --jq ".data.repository.issue.projectItems.nodes[] | select(.project.id == \"$BOARD_PROJECT_ID\") | .id" 2>/dev/null)
+  [ -z "$ITEM_ID" ] && return 0
+  gh project item-edit \
+    --id "$ITEM_ID" \
+    --project-id "$BOARD_PROJECT_ID" \
+    --field-id "$BOARD_FIELD_ID" \
+    --single-select-option-id "$OPTION_ID" 2>/dev/null && \
+    echo "Board: moved item $ISSUE_NUM to option $OPTION_ID" || \
+    echo "Board: failed to move item $ISSUE_NUM (non-fatal)"
+}
 ```
 
 Check `mode` in state.json. If `mode == "team"`: STOP and post on report issue.
@@ -106,6 +147,23 @@ PHASE 1 — [🎯 COORDINATOR] ASSIGN
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1a. Heartbeat (re-read state.json first — never cache between phases)
+    BOARD SYNC — reconcile every item in state.json against the board:
+    python3 -c "
+    import json
+    s=json.load(open('.maqa/state.json'))
+    state_to_opt = {
+      'todo': '$OPT_TODO', 'assigned': '$OPT_IN_PROGRESS',
+      'in_progress': '$OPT_IN_PROGRESS', 'in_review': '$OPT_IN_REVIEW',
+      'done': '$OPT_DONE', 'blocked': '$OPT_BLOCKED'
+    }
+    for id,f in s.get('features',{}).items():
+        opt = state_to_opt.get(f['state'])
+        if opt:
+            print(f\"{id}|{opt}\")
+    " | while IFS='|' read ITEM_ID OPT; do
+      ISSUE_NUM=$(gh issue list --repo $REPO --search "$ITEM_ID" --json number -q '.[0].number' 2>/dev/null)
+      [ -n "$ISSUE_NUM" ] && move_board_card $ISSUE_NUM $OPT
+    done
 1b. If queue null: run PHASE 6 SPEC GATE inline, then create-queue + create-items + populate board
 1c. Pick next assignable item (dependency check)
     If none: go to PHASE 4 (batch audit)
@@ -114,6 +172,8 @@ PHASE 1 — [🎯 COORDINATOR] ASSIGN
     - cp docs/aide/items/<id>.md <worktree>/ITEM.md
     - Write CLAIM file (AGENT_ID=STANDALONE-ENG, ITEM_ID, MODE=standalone)
     - Move board card: Todo → In Progress
+      ITEM_ISSUE_NUM=$(gh issue list --repo $REPO --search "$ITEM_ID" --json number -q '.[0].number')
+      move_board_card $ITEM_ISSUE_NUM $OPT_IN_PROGRESS
     - Write state.json: state=assigned, assigned_to=STANDALONE-ENG
     - Post on item Issue
 
@@ -133,8 +193,10 @@ Work in worktree. Every bash command must cd into worktree explicitly.
 2e. Self-validate: eval "$BUILD_COMMAND", eval "$TEST_COMMAND", eval "$LINT_COMMAND"
     Run journey steps, capture output
 2f. Open PR: git push, gh pr create --repo $REPO --label "$PR_LABEL"
-    state=in_review, Move board: In Progress → In Review
-2g. CI: poll every 3 min. All checks green before proceeding.
+    state=in_review
+    Move board card: In Progress → In Review
+      move_board_card $ITEM_ISSUE_NUM $OPT_IN_REVIEW
+    2g. CI: poll every 3 min. All checks green before proceeding.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PHASE 3 — [🔍 STANDALONE-QA] REVIEW
@@ -172,7 +234,8 @@ PHASE 2g — [🔨 STANDALONE-ENG] MERGE
     /speckit.worktree.clean
     state=done, pr_merged=true, engineer_slots={STANDALONE: null}
     gh issue close <item-issue> --repo $REPO
-    Move board: In Review → Done
+    Move board card: In Review → Done
+      move_board_card $ITEM_ISSUE_NUM $OPT_DONE
     git checkout main && git pull
     eval "$BUILD_COMMAND" || (gh issue create --repo $REPO --label needs-human && STOP)
     → PHASE 1
