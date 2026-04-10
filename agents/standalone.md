@@ -137,6 +137,7 @@ EOF
 ## Reading order (once at startup)
 
 1–8: vision, roadmap, progress, definition-of-done, constitution, sdlc, team.yml, AGENTS.md
+9. `~/.otherness/agents/gh-features.md` — GitHub field IDs, label taxonomy, sub-issue protocol
 (AGENTS.md: read code standards, banned filenames, anti-patterns thoroughly)
 
 ## THE LOOP
@@ -189,16 +190,12 @@ PHASE 1 — [🎯 COORDINATOR] ASSIGN
     - /speckit.worktree.create
     - cp docs/aide/items/<id>.md <worktree>/ITEM.md
     - Write CLAIM file (AGENT_ID=STANDALONE-ENG, ITEM_ID, MODE=standalone)
+    - Create GitHub Issue if it doesn't exist, with labels: $PR_LABEL, kind/*, area/*, priority/*, size/*
+      Attach to current milestone. Link as sub-issue of the milestone epic (see gh-features.md).
     - Move board card: Todo → In Progress
       ITEM_ISSUE_NUM=$(gh issue list --repo $REPO --search "$ITEM_ID" --json number -q '.[0].number')
       move_board_card $ITEM_ISSUE_NUM $OPT_IN_PROGRESS
-    - Set Team field on board card to STANDALONE-ENG:
-      ```bash
-      BOARD_ITEM_ID=$(gh api graphql -f query="{repository(owner:\"$(echo $REPO|cut -d/ -f1)\",name:\"$(echo $REPO|cut -d/ -f2)\"){issue(number:$ITEM_ISSUE_NUM){projectItems(first:5){nodes{id project{id}}}}}}" --jq ".data.repository.issue.projectItems.nodes[]|select(.project.id==\"$BOARD_PROJECT_ID\")|.id" 2>/dev/null)
-      TEAM_FIELD_ID=$(python3 -c "import re; [print(m.group(1)) for line in open('maqa-github-projects/github-projects-config.yml') for m in [re.match(r'^team_field_id:\s*[\"\'']?([^\"\'#\n]+)',line.strip())] if m]" 2>/dev/null)
-      STANDALONE_TEAM_OPT=$(python3 -c "import re; [print(m.group(1)) for line in open('maqa-github-projects/github-projects-config.yml') for m in [re.match(r'^team_engineer1_option_id:\s*[\"\'']?([^\"\'#\n]+)',line.strip())] if m]" 2>/dev/null)
-      [ -n "$BOARD_ITEM_ID" ] && [ -n "$TEAM_FIELD_ID" ] && gh project item-edit --id "$BOARD_ITEM_ID" --project-id "$BOARD_PROJECT_ID" --field-id "$TEAM_FIELD_ID" --single-select-option-id "$STANDALONE_TEAM_OPT" 2>/dev/null || true
-      ```
+    - Set Team=STANDALONE-ENG, Priority, Size fields on board card (see gh-features.md)
     - Write state.json: state=assigned, assigned_to=STANDALONE-ENG
     - Post on item Issue
 

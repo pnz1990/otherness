@@ -81,20 +81,28 @@ All items for the CURRENT milestone must exist as open GitHub issues assigned to
 Future milestones get epic issues only (labeled `epic`, no full spec).
 
 ```bash
-# Get current milestone number
-CURRENT_MILESTONE=$(gh api repos/$REPO/milestones \
-  --jq '[.[] | select(.state=="open")] | sort_by(.due_on) | .[0].number')
+# Get current milestone title
+CURRENT_MILESTONE_TITLE=$(gh api repos/$REPO/milestones \
+  --jq '[.[] | select(.state=="open")] | sort_by(.due_on) | .[0].title')
+
+# Get the epic issue for the current milestone (to link sub-issues)
+EPIC_ID=$(gh issue list --repo $REPO --milestone "$CURRENT_MILESTONE_TITLE" \
+  --label "epic" --json id,number --jq '.[0].id')
 
 # For each item in docs/aide/items/ that belongs to current milestone stages:
-# 1. Check if a GitHub Issue already exists for it
-EXISTING=$(gh issue list --repo $REPO --milestone "$CURRENT_MILESTONE" \
-  --json number,title --jq '.[].title')
-# 2. If not, create it:
-gh issue create --repo $REPO \
-  --milestone "$CURRENT_MILESTONE" \
-  --label "kardinal" \
+# 1. Check if issue exists
+EXISTS=$(gh issue list --repo $REPO --search "$ITEM_ID" --json number -q '.[0].number')
+# 2. If not, create with full label set (see gh-features.md for label taxonomy):
+ISSUE_NUM=$(gh issue create --repo $REPO \
+  --milestone "$CURRENT_MILESTONE_TITLE" \
+  --label "$PR_LABEL" --label "kind/enhancement" --label "area/<area>" \
+  --label "priority/high" --label "size/l" \
   --title "feat(<scope>): <item title> [<item-id>]" \
-  --body "$(cat docs/aide/items/<item-id>.md)"
+  --body "$(cat docs/aide/items/<item-id>.md)" 2>&1 | grep -oE '[0-9]+$')
+# 3. Link as sub-issue of the milestone epic:
+ITEM_NODE_ID=$(gh issue view $ISSUE_NUM --repo $REPO --json id --jq '.id')
+gh api graphql -f query="mutation { addSubIssue(input: { issueId: \"$EPIC_ID\" subIssueId: \"$ITEM_NODE_ID\" }) { issue { number } } }"
+# 4. Add to board and set Priority, Size, Target date fields (see gh-features.md)
 ```
 
 ### C. Epic issues for future milestones
@@ -188,6 +196,7 @@ fi
 gh issue view $REPORT_ISSUE --repo $REPO --json comments --jq '.comments[-10:][].body'
 ```
 Then read: `docs/aide/vision.md`, `roadmap.md`, `progress.md`, `definition-of-done.md`, `AGENTS.md`.
+Read: `~/.otherness/agents/gh-features.md` — full GitHub fields, label taxonomy, sub-issue protocol.
 
 ### Step 2 — Milestone setup (first run only)
 Check if milestones exist: `gh api repos/$REPO/milestones --jq '.[].title'`
