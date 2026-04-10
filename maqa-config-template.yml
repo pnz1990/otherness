@@ -1,0 +1,27 @@
+# MAQA configuration — copy this to your project root as maqa-config.yml
+
+# ── Execution mode ────────────────────────────────────────────────────────────
+# "team":       multiple concurrent sessions (coordinator + engineers + QA + SM + PM)
+# "standalone": single session plays all roles sequentially, one item at a time
+mode: "standalone"
+
+# ── Agent files ───────────────────────────────────────────────────────────────
+# Path to agent instruction files. These live outside the repo so all worktrees
+# always read the latest version. Auto-updated from GitHub on every agent startup.
+agents_path: "~/.otherness/agents"
+
+# ── Build & test commands ─────────────────────────────────────────────────────
+# Also set BUILD_COMMAND, TEST_COMMAND, LINT_COMMAND, VULN_COMMAND in AGENTS.md
+test_command: ""         # e.g. "go test ./... -race -count=1 -timeout 120s"
+test_file_command: ""    # e.g. "go test {file} -race -v -count=1"
+
+# ── TDD ───────────────────────────────────────────────────────────────────────
+tdd: true
+
+# ── QA checks ─────────────────────────────────────────────────────────────────
+qa_checks:
+  links: false
+  accessibility: false
+  responsive: false
+  security: true
+  empty_states: false
