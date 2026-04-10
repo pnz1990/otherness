@@ -56,23 +56,24 @@ This protocol runs on your FIRST batch review and whenever milestones need updat
 ### A. Milestone structure (do once, on first run)
 
 Milestones = planned versions. Read `docs/aide/roadmap.md` to derive them.
-Each stage group maps to a milestone version. Example pattern:
-- `v0.1.0` — core foundation (Stages 0-3)
-- `v0.2.0` — policy + promotion engine (Stages 4-8)
-- `v0.3.0` — multi-cluster + health (Stages 9-14)
-- `v1.0.0` — GA: all journeys passing
+Read `docs/aide/vision.md` versioning philosophy section for guidance on how to
+group stages into milestones and how many epics per milestone.
 
-Derive the version names and stage mappings from the actual roadmap, not this template.
+Each stage group maps to a milestone version. Derive version names, stage mappings,
+scope, and due dates entirely from the roadmap — do not use hardcoded examples here.
 
 ```bash
 # Check existing milestones
 gh api repos/$REPO/milestones --jq '.[] | [.number, .title, .state, .open_issues, .closed_issues] | @tsv'
 
 # Create a milestone (if it doesn't exist):
+# - title: derive from roadmap (e.g. v0.N.0 per versioning philosophy)
+# - description: stages covered, user-facing capability, journeys unblocked
+# - due_on: estimate based on current velocity; can be updated as velocity becomes known
 gh api repos/$REPO/milestones -X POST \
-  -f title="v0.1.0" \
-  -f description="Core foundation — Stages 0-3. CRDs, controller, Graph integration." \
-  -f due_on="2026-06-01T00:00:00Z"
+  -f title="<version from roadmap>" \
+  -f description="<stages covered>. Delivers: <capability>. Unlocks: <journeys>." \
+  -f due_on="<ISO-8601 estimate, e.g. 2026-07-01T00:00:00Z>"
 ```
 
 ### B. Backlog population (every batch, for current milestone)

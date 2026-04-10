@@ -6,8 +6,8 @@
 
 ### Required on all item issues
 - `kind/*` — one of: `kind/enhancement`, `kind/bug`, `kind/chore`, `kind/docs`, `kind/security`
-- `area/*` — one of: `area/controller`, `area/graph`, `area/policygate`, `area/cli`, `area/ui`,
-  `area/scm`, `area/health`, `area/api`, `area/test`, `area/docs`
+- `area/*` — read the area labels from the `AGENTS.md` label taxonomy section of your project.
+  Each project defines its own area labels (e.g. area/controller, area/cli, area/api, etc.)
 - `priority/*` — one of: `priority/critical`, `priority/high`, `priority/medium`, `priority/low`
 - `size/*` — one of: `size/xs`, `size/s`, `size/m`, `size/l`, `size/xl`
 
@@ -43,8 +43,13 @@ gh project item-edit --id $BOARD_ITEM_ID --project-id $BOARD_PROJECT_ID \
 ### Set Target date on a board item (epics get milestone due date)
 ```bash
 TARGET_DATE_FIELD=$(python3 -c "import re; [print(m.group(1)) for line in open('maqa-github-projects/github-projects-config.yml') for m in [re.match(r'^target_date_field_id:\s*\"?([^\"#\n]+)\"?',line)] if m]")
+# Derive TARGET_DATE from the milestone due date:
+TARGET_DATE=$(gh api repos/$REPO/milestones --jq \
+  '[.[] | select(.title == "'"$CURRENT_MILESTONE_TITLE"'")] | .[0].due_on // empty' \
+  2>/dev/null | cut -c1-10)
+[ -z "$TARGET_DATE" ] && TARGET_DATE=$(date -u -d '+90 days' +%Y-%m-%d 2>/dev/null || date -u -v+90d +%Y-%m-%d)
 gh project item-edit --id $BOARD_ITEM_ID --project-id $BOARD_PROJECT_ID \
-  --field-id $TARGET_DATE_FIELD --date "2026-07-01"
+  --field-id $TARGET_DATE_FIELD --date "$TARGET_DATE"
 ```
 
 ### Set Team field (STANDALONE-ENG)
@@ -60,10 +65,15 @@ gh project item-edit --id $BOARD_ITEM_ID --project-id $BOARD_PROJECT_ID \
 Every item issue must be linked as a sub-issue of its milestone epic.
 
 ```bash
-# Get epic issue node ID (issue number from the epic issue for current milestone)
+# Get epic issue node ID for the current milestone.
+# Find the epic whose title best matches the item's capability area.
+# List all epics for the milestone and pick the most relevant one:
+EPICS=$(gh issue list --repo $REPO --milestone "$CURRENT_MILESTONE_TITLE" \
+  --label "epic" --json id,number,title --jq '.[]')
+# Select the epic whose title matches the item's area/stage.
+# If only one epic exists for the milestone, use it directly:
 EPIC_ID=$(gh issue list --repo $REPO --milestone "$CURRENT_MILESTONE_TITLE" \
-  --label "epic" --search "Foundation\|Full promotion\|Observability\|Advanced" \
-  --json id,number --jq '.[0].id')
+  --label "epic" --json id,number --jq '.[0].id')
 
 # Get item issue node ID  
 ITEM_ID=$(gh issue view $ITEM_ISSUE_NUM --repo $REPO --json id --jq '.id')
@@ -104,10 +114,12 @@ When creating a new item issue:
 
 | View | Layout | Purpose | What to check |
 |------|---------|---------|---------------|
-| Board | Kanban | Day-to-day task status | Nothing should sit in "In Progress" for > 2 days |
-| Monthly roadmap | Roadmap | Current sprint timeline | Are items on track for milestone? |
-| Quarterly roadmap | Roadmap | Release planning | Are epics grouped by correct milestone dates? |
-| Backlog | Table | Full issue list grouped by milestone | Overall project health |
+| 📋 Backlog | Table, grouped by Milestone | Full backlog — all items across all milestones | Overall project health, milestone progress |
+| 🗺️ Roadmap (Epics) | Table, filtered label:epic, grouped by Milestone | Product plan — epics with sub-issue progress bars | Are epics progressing? Which milestone is next? |
+| 🏃 Sprint | Board, filtered to current milestone, no epics | Day-to-day task status | Nothing should sit in "In Progress" for > 2 days |
+
+Note: view names and filters are configured in the GitHub Projects UI (not via API).
+The above names are a recommended convention — configure them once in the UI.
 
 ## Project status updates (PM responsibility, each batch)
 
