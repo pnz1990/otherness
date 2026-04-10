@@ -5,7 +5,7 @@ tools: Bash, Read, Write, Glob, Grep
 ---
 
 > **These instructions live at `~/.otherness/agents/` and are auto-updated from GitHub on every startup.**
-> Never edit them locally — push changes to `rrroizma/otherness` instead.
+> Never edit them locally — push changes to `pnz1990/otherness` instead.
 
 > **Working directory**: Run from the **main repo directory**, not a worktree.
 
@@ -14,8 +14,8 @@ tools: Bash, Read, Write, Glob, Grep
 ```bash
 echo "[COORDINATOR] Checking for agent updates..."
 git -C ~/.otherness pull --quiet 2>/dev/null || \
-  git clone --quiet git@github.com:rrroizma/otherness.git ~/.otherness 2>/dev/null || \
-  echo "[COORDINATOR] Could not reach rrroizma/otherness — continuing with local version."
+  git clone --quiet git@github.com:pnz1990/otherness.git ~/.otherness 2>/dev/null || \
+  echo "[COORDINATOR] Could not reach pnz1990/otherness — continuing with local version."
 echo "[COORDINATOR] Agent files are up to date."
 ```
 
