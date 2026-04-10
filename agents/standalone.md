@@ -166,24 +166,20 @@ PHASE 1 — [🎯 COORDINATOR] ASSIGN
       [ -n "$ISSUE_NUM" ] && move_board_card $ISSUE_NUM $OPT
     done
 1b. If queue null: run PHASE 6 SPEC GATE inline, then:
-    - create-queue + create-items
-    - MILESTONE + BACKLOG: for each new item, create or attach GitHub Issue to current milestone:
-      ```bash
-      CURRENT_MILESTONE=$(gh api repos/$REPO/milestones \
-        --jq '[.[] | select(.state=="open")] | sort_by(.due_on) | .[0].number' 2>/dev/null)
-      for ITEM_FILE in docs/aide/items/NNN-*.md; do
-        ITEM_ID=$(basename $ITEM_FILE .md)
-        EXISTS=$(gh issue list --repo $REPO --search "$ITEM_ID" --json number -q '.[0].number' 2>/dev/null)
-        if [ -z "$EXISTS" ]; then
-          gh issue create --repo $REPO \
-            --label "$PR_LABEL" \
-            --milestone "$CURRENT_MILESTONE" \
-            --title "feat: $(head -1 $ITEM_FILE | sed 's/^# Item [0-9]*: //') [$ITEM_ID]" \
-            --body "$(cat $ITEM_FILE)"
-        fi
-      done
-      ```
-    - populate board
+    - /speckit.aide.create-queue → docs/aide/queue/queue-NNN.md
+    - For each item in the queue, run the FULL SPEC PIPELINE:
+      a. /speckit.aide.create-item  → docs/aide/items/NNN-*.md
+      b. /speckit.specify           → .specify/specs/NNN-name/spec.md
+         (use item file as input for the NLP→spec pipeline)
+      c. /speckit.plan              → research.md, data-model.md, contracts/
+      d. /speckit.tasks             → .specify/specs/NNN-name/tasks.md
+         (TDD task list, T00N IDs, phases: Setup→Tests→Implementation→Validation)
+      e. /speckit.analyze           → fix any CRITICAL findings before proceeding
+      f. /speckit.taskstoissues     → one GitHub Issue per task in tasks.md
+         then add milestone + labels to created issues
+    - MILESTONE + BACKLOG: one item-level GitHub Issue per docs/aide/items/ file,
+      attached to current milestone, linked as sub-issue of milestone epic
+    - /speckit.maqa-github-projects.populate to add cards to board
 1c. Pick next assignable item (dependency check)
     If none: go to PHASE 4 (batch audit)
 1d. Assign:

@@ -140,28 +140,45 @@ LOOP:
    - Wait up to 30 min for "[📋 PM] SPEC GATE CLEAR"
      If BLOCKED: create fix items first. If timeout: proceed and log it.
    - Run /speckit.aide.create-queue → docs/aide/queue/queue-NNN.md
-   - Run /speckit.aide.create-item  → docs/aide/items/NNN-*.md per item
+   - For each item in the queue, run the FULL SPEC PIPELINE:
+     a. /speckit.aide.create-item  → docs/aide/items/NNN-*.md
+        This produces the implementation-ready item spec with acceptance criteria,
+        test prerequisites, validation checklist, and expected outcomes.
+     b. /speckit.specify           → .specify/specs/NNN-name/spec.md
+        Use the item file as input. Produces: feature spec with user scenarios,
+        FR-NNN requirements, success criteria, and Go package structure.
+        Run with: /speckit.specify "$(cat docs/aide/items/NNN-name.md | head -5)"
+     c. /speckit.plan              → .specify/specs/NNN-name/{research.md,data-model.md,contracts/}
+        Architecture phase. Produces: technical research, data model, API contracts.
+     d. /speckit.tasks             → .specify/specs/NNN-name/tasks.md
+        Break spec+plan into TDD task list with T00N IDs, [P] parallel markers,
+        phase structure (Setup → Tests First → Implementation → Validation).
+        Final task must be /speckit.verify-tasks.run.
+     e. /speckit.analyze           → pre-implementation consistency check.
+        Fix any CRITICAL severity findings before assigning to engineer.
+     f. /speckit.taskstoissues     → create one GitHub Issue per task in tasks.md.
+        Post-step: add milestone and labels to created issues:
+        gh issue list --repo $REPO --search "$ITEM_ID" --json number,title \
+          | ... | xargs -I{} gh issue edit {} --repo $REPO --milestone "$CURRENT_MILESTONE_TITLE" \
+                                               --label "$PR_LABEL,kind/enhancement,priority/high"
+        Link all task issues as sub-issues of the item's epic issue.
 
-   MILESTONE + BACKLOG: for each new item, ensure a GitHub Issue exists and is
-   attached to the current milestone:
+   MILESTONE + BACKLOG: item-level GitHub Issue (one per item, not per task)
+   also created for board tracking and milestone attachment:
    ```bash
-   CURRENT_MILESTONE=$(gh api repos/$REPO/milestones \
-     --jq '[.[] | select(.state=="open")] | sort_by(.due_on) | .[0].number' 2>/dev/null)
-   for ITEM_FILE in docs/aide/items/NNN-*.md; do
-     ITEM_ID=$(basename $ITEM_FILE .md)
-     # Check if issue already exists
-     EXISTS=$(gh issue list --repo $REPO --search "$ITEM_ID" --json number -q '.[0].number' 2>/dev/null)
-     if [ -z "$EXISTS" ]; then
-       gh issue create --repo $REPO \
-         --label "$PR_LABEL" \
-         --milestone "$CURRENT_MILESTONE" \
-         --title "feat: $(head -1 $ITEM_FILE | sed 's/^# Item [0-9]*: //') [$ITEM_ID]" \
-         --body "$(cat $ITEM_FILE)"
-     else
-       # Attach to milestone if not already
-       gh issue edit $EXISTS --repo $REPO --milestone "$CURRENT_MILESTONE" 2>/dev/null || true
-     fi
-   done
+   CURRENT_MILESTONE_TITLE=$(gh api repos/$REPO/milestones \
+     --jq '[.[] | select(.state=="open")] | sort_by(.due_on) | .[0].title')
+   # One item-level issue per docs/aide/items/ file
+   EXISTS=$(gh issue list --repo $REPO --search "$ITEM_ID" --json number -q '.[0].number')
+   if [ -z "$EXISTS" ]; then
+     gh issue create --repo $REPO \
+       --label "$PR_LABEL" \
+       --milestone "$CURRENT_MILESTONE_TITLE" \
+       --title "feat: $(head -1 $ITEM_FILE | sed 's/^# Item [0-9]*: //') [$ITEM_ID]" \
+       --body "$(cat $ITEM_FILE)"
+   else
+     gh issue edit $EXISTS --repo $REPO --milestone "$CURRENT_MILESTONE_TITLE" 2>/dev/null || true
+   fi
    ```
    - Run /speckit.maqa-github-projects.populate to add cards to board
 
