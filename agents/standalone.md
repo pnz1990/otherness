@@ -164,7 +164,25 @@ PHASE 1 — [🎯 COORDINATOR] ASSIGN
       ISSUE_NUM=$(gh issue list --repo $REPO --search "$ITEM_ID" --json number -q '.[0].number' 2>/dev/null)
       [ -n "$ISSUE_NUM" ] && move_board_card $ISSUE_NUM $OPT
     done
-1b. If queue null: run PHASE 6 SPEC GATE inline, then create-queue + create-items + populate board
+1b. If queue null: run PHASE 6 SPEC GATE inline, then:
+    - create-queue + create-items
+    - MILESTONE + BACKLOG: for each new item, create or attach GitHub Issue to current milestone:
+      ```bash
+      CURRENT_MILESTONE=$(gh api repos/$REPO/milestones \
+        --jq '[.[] | select(.state=="open")] | sort_by(.due_on) | .[0].number' 2>/dev/null)
+      for ITEM_FILE in docs/aide/items/NNN-*.md; do
+        ITEM_ID=$(basename $ITEM_FILE .md)
+        EXISTS=$(gh issue list --repo $REPO --search "$ITEM_ID" --json number -q '.[0].number' 2>/dev/null)
+        if [ -z "$EXISTS" ]; then
+          gh issue create --repo $REPO \
+            --label "$PR_LABEL" \
+            --milestone "$CURRENT_MILESTONE" \
+            --title "feat: $(head -1 $ITEM_FILE | sed 's/^# Item [0-9]*: //') [$ITEM_ID]" \
+            --body "$(cat $ITEM_FILE)"
+        fi
+      done
+      ```
+    - populate board
 1c. Pick next assignable item (dependency check)
     If none: go to PHASE 4 (batch audit)
 1d. Assign:
@@ -174,6 +192,13 @@ PHASE 1 — [🎯 COORDINATOR] ASSIGN
     - Move board card: Todo → In Progress
       ITEM_ISSUE_NUM=$(gh issue list --repo $REPO --search "$ITEM_ID" --json number -q '.[0].number')
       move_board_card $ITEM_ISSUE_NUM $OPT_IN_PROGRESS
+    - Set Team field on board card to STANDALONE-ENG:
+      ```bash
+      BOARD_ITEM_ID=$(gh api graphql -f query="{repository(owner:\"$(echo $REPO|cut -d/ -f1)\",name:\"$(echo $REPO|cut -d/ -f2)\"){issue(number:$ITEM_ISSUE_NUM){projectItems(first:5){nodes{id project{id}}}}}}" --jq ".data.repository.issue.projectItems.nodes[]|select(.project.id==\"$BOARD_PROJECT_ID\")|.id" 2>/dev/null)
+      TEAM_FIELD_ID=$(python3 -c "import re; [print(m.group(1)) for line in open('maqa-github-projects/github-projects-config.yml') for m in [re.match(r'^team_field_id:\s*[\"\'']?([^\"\'#\n]+)',line.strip())] if m]" 2>/dev/null)
+      STANDALONE_TEAM_OPT=$(python3 -c "import re; [print(m.group(1)) for line in open('maqa-github-projects/github-projects-config.yml') for m in [re.match(r'^team_engineer1_option_id:\s*[\"\'']?([^\"\'#\n]+)',line.strip())] if m]" 2>/dev/null)
+      [ -n "$BOARD_ITEM_ID" ] && [ -n "$TEAM_FIELD_ID" ] && gh project item-edit --id "$BOARD_ITEM_ID" --project-id "$BOARD_PROJECT_ID" --field-id "$TEAM_FIELD_ID" --single-select-option-id "$STANDALONE_TEAM_OPT" 2>/dev/null || true
+      ```
     - Write state.json: state=assigned, assigned_to=STANDALONE-ENG
     - Post on item Issue
 
@@ -267,6 +292,20 @@ PHASE 6 — [📋 PM] PRODUCT + SPEC GATE
     - Vision alignment, journey coverage
     - Doc freshness (fix stale docs, commit to main)
     - Competitive analysis if batches_since >= 3 (URLs from AGENTS.md PM section)
+
+    MILESTONE SETUP (if no milestones exist yet):
+    Check: gh api repos/$REPO/milestones --jq '.[].title'
+    If none: read roadmap.md and create milestones using the PM milestone protocol
+    in ~/.otherness/agents/product-manager.md Section A.
+    Create epics for future milestones using Section C.
+
+    BACKLOG SYNC: ensure all current-milestone items have GitHub Issues.
+    For any item in docs/aide/items/ without an issue: create one and attach to milestone.
+
+    RELEASE CHECK: check if current milestone has open_issues == 0 AND all
+    milestone journeys pass in definition-of-done.md. If yes: cut release using
+    the protocol in ~/.otherness/agents/product-manager.md Section E.
+
     SPEC GATE: read design docs for next stage
     Errors → fix doc PR + author fix items + [SPEC GATE BLOCKED] + merge doc PR + [SPEC GATE CLEAR]
     No errors → [SPEC GATE CLEAR]

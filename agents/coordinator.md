@@ -121,6 +121,28 @@ LOOP:
      If BLOCKED: create fix items first. If timeout: proceed and log it.
    - Run /speckit.aide.create-queue → docs/aide/queue/queue-NNN.md
    - Run /speckit.aide.create-item  → docs/aide/items/NNN-*.md per item
+
+   MILESTONE + BACKLOG: for each new item, ensure a GitHub Issue exists and is
+   attached to the current milestone:
+   ```bash
+   CURRENT_MILESTONE=$(gh api repos/$REPO/milestones \
+     --jq '[.[] | select(.state=="open")] | sort_by(.due_on) | .[0].number' 2>/dev/null)
+   for ITEM_FILE in docs/aide/items/NNN-*.md; do
+     ITEM_ID=$(basename $ITEM_FILE .md)
+     # Check if issue already exists
+     EXISTS=$(gh issue list --repo $REPO --search "$ITEM_ID" --json number -q '.[0].number' 2>/dev/null)
+     if [ -z "$EXISTS" ]; then
+       gh issue create --repo $REPO \
+         --label "$PR_LABEL" \
+         --milestone "$CURRENT_MILESTONE" \
+         --title "feat: $(head -1 $ITEM_FILE | sed 's/^# Item [0-9]*: //') [$ITEM_ID]" \
+         --body "$(cat $ITEM_FILE)"
+     else
+       # Attach to milestone if not already
+       gh issue edit $EXISTS --repo $REPO --milestone "$CURRENT_MILESTONE" 2>/dev/null || true
+     fi
+   done
+   ```
    - Run /speckit.maqa-github-projects.populate to add cards to board
 
 3. Validate dependencies:
@@ -141,7 +163,12 @@ LOOP:
       COORDINATOR_CYCLE=<current-cycle>
       EOF
    e. MOVE BOARD CARD FIRST (before writing state.json): Todo → In Progress
-      Set Team field on card to the engineer slot name
+      Set Team field on card to the engineer slot name:
+      ```bash
+      TEAM_FIELD_ID=$(python3 -c "import re; [print(m.group(1)) for line in open('maqa-github-projects/github-projects-config.yml') for m in [re.match(r'^team_field_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
+      # Map slot name to option ID from github-projects-config.yml
+      # ENGINEER-1 → team_engineer1_option_id, etc.
+      ```
    f. Write state.json atomically
    g. Post on item Issue and Issue #$REPORT_ISSUE
 
