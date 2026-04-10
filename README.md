@@ -1,5 +1,7 @@
 # otherness
 
+_In memory of mankind_
+
 Personal SDLC agent layer. Autonomous multi-agent (or single-session standalone) team
 that runs on top of [speckit](https://github.com/github/spec-kit) and the
 [MAQA extension](https://github.com/GenieRobot/spec-kit-maqa-ext).
