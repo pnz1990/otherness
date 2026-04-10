@@ -1,4 +1,6 @@
-# MAQA configuration — copy this to your project root as maqa-config.yml
+# maqa-config.yml — otherness configuration
+# Copy this to your project root. Only contains settings that otherness owns.
+# Build/test/lint/vuln commands belong in AGENTS.md, not here.
 
 # ── Execution mode ────────────────────────────────────────────────────────────
 # "team":       multiple concurrent sessions (coordinator + engineers + QA + SM + PM)
@@ -6,22 +8,11 @@
 mode: "standalone"
 
 # ── Agent files ───────────────────────────────────────────────────────────────
-# Path to agent instruction files. These live outside the repo so all worktrees
-# always read the latest version. Auto-updated from GitHub on every agent startup.
+# Absolute path to otherness agent files on this machine.
+# Agents self-update from GitHub on every startup — changes propagate automatically.
 agents_path: "~/.otherness/agents"
 
-# ── Build & test commands ─────────────────────────────────────────────────────
-# Also set BUILD_COMMAND, TEST_COMMAND, LINT_COMMAND, VULN_COMMAND in AGENTS.md
-test_command: ""         # e.g. "go test ./... -race -count=1 -timeout 120s"
-test_file_command: ""    # e.g. "go test {file} -race -v -count=1"
-
-# ── TDD ───────────────────────────────────────────────────────────────────────
-tdd: true
-
-# ── QA checks ─────────────────────────────────────────────────────────────────
-qa_checks:
-  links: false
-  accessibility: false
-  responsive: false
-  security: true
-  empty_states: false
+# ── Parallelism (team mode only) ──────────────────────────────────────────────
+# Maximum number of engineer slots to assign concurrently.
+# Ignored in standalone mode (always 1).
+max_parallel: 3

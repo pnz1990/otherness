@@ -58,8 +58,8 @@ for line in open('AGENTS.md'):
 " 2>/dev/null)
 TEST_COMMAND=$(python3 -c "
 import re
-for line in open('maqa-config.yml'):
-    m = re.match(r'^test_command:\s*[\"\']?([^\"\'#\n]+)[\"\']?', line.strip())
+for line in open('AGENTS.md'):
+    m = re.match(r'^TEST_COMMAND:\s*[\"\']?([^\"\'#\n]+)[\"\']?', line.strip())
     if m: print(m.group(1).strip()); break
 " 2>/dev/null)
 VULN_COMMAND=$(python3 -c "
