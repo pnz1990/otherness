@@ -192,12 +192,45 @@ fi
 
 ## YOUR ONE-SHOT CYCLE
 
-### Step 1 — Read batch report
+### Step 1 — Read batch report and GitHub state
+
 ```bash
+# Report issue comments
 gh issue view $REPORT_ISSUE --repo $REPO --json comments --jq '.comments[-10:][].body'
 ```
 Then read: `docs/aide/vision.md`, `roadmap.md`, `progress.md`, `definition-of-done.md`, `AGENTS.md`.
 Read: `~/.otherness/agents/gh-features.md` — full GitHub fields, label taxonomy, sub-issue protocol.
+
+```bash
+# GitHub reality — PM reads these directly for product decisions:
+
+# 1. Milestone health — source of truth for release progress
+gh api repos/$REPO/milestones \
+  --jq '.[] | {title:.title, state:.state, open:.open_issues, closed:.closed_issues, pct: (.closed_issues * 100 / ((.open_issues + .closed_issues) | if . == 0 then 1 else . end)), due:.due_on[:10]}' 2>/dev/null
+
+# 2. Epic sub-issue progress (how far through each capability area?)
+gh issue list --repo $REPO --label "epic" --state open \
+  --json number,title,milestone,body \
+  --jq '.[] | [.number, (.milestone.title // "—"), .title[:60]] | @tsv'
+
+# 3. Open product-gap issues (competitor gaps not yet addressed)
+gh issue list --repo $REPO --label "product-gap" --state open \
+  --json number,title,createdAt --jq '.[] | [.number, .title[:60]] | @tsv'
+
+# 4. Open product-proposal issues (proposed features not yet prioritized)
+gh issue list --repo $REPO --label "product-proposal" --state open \
+  --json number,title --jq '.[] | [.number, .title[:60]] | @tsv'
+
+# 5. Open needs-human issues that are product decisions (not SDLC)
+gh issue list --repo $REPO --label "needs-human" --state open \
+  --json number,title,labels \
+  --jq '.[] | select([.labels[].name] | any(. == "area/api" or . == "kind/enhancement" or . == "product-proposal")) | [.number, .title[:60]] | @tsv'
+
+# 6. Recently merged PRs — what actually shipped this batch?
+gh pr list --repo $REPO --state merged --label "$PR_LABEL" \
+  --json number,title,mergedAt \
+  --jq '[.[] | select(.mergedAt > "'$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-7d +%Y-%m-%dT%H:%M:%SZ)'")] | .[] | [.number, .title[:60]] | @tsv'
+```
 
 ### Step 2 — Milestone setup (first run only)
 Check if milestones exist: `gh api repos/$REPO/milestones --jq '.[].title'`
@@ -210,8 +243,13 @@ Items done this batch should already be closed by the engineer — verify.
 New items in the current milestone queue that don't have issues yet: create them now.
 
 ### Step 4 — Vision alignment
-- Shipped features match vision? Misaligned → raise for human review.
-- Roadmap still in right order?
+
+Use GitHub data from Step 1 to verify:
+- Recently merged PRs match roadmap stages — no scope creep
+- Open `product-gap` issues: are any now covered by shipped features? → close them
+- Open `product-proposal` issues: should any be prioritized into the current milestone? → add to backlog
+- Epic sub-issue progress: are epics advancing as expected, or is a capability area stalling?
+- Roadmap still in right order given what's been learned from implementation?
 
 ### Step 5 — Spec review (completed items this batch)
 - User doc exists and is accurate?
@@ -245,14 +283,24 @@ EOF
 
 ### Step 10 — Post [PRODUCT REVIEW]
 ```bash
-CURRENT_MILESTONE_TITLE=$(gh api repos/$REPO/milestones/$CURRENT_MILESTONE --jq '.title' 2>/dev/null || echo "none")
-OPEN_ISSUES=$(gh api repos/$REPO/milestones/$CURRENT_MILESTONE --jq '.open_issues' 2>/dev/null || echo "?")
-CLOSED_ISSUES=$(gh api repos/$REPO/milestones/$CURRENT_MILESTONE --jq '.closed_issues' 2>/dev/null || echo "?")
+# Read milestone data directly from GitHub — authoritative
+CURRENT_MILESTONE_DATA=$(gh api repos/$REPO/milestones \
+  --jq '[.[] | select(.state=="open")] | sort_by(.due_on) | .[0] | {num:.number, title:.title, open:.open_issues, closed:.closed_issues}')
+CURRENT_MILESTONE_NUM=$(echo $CURRENT_MILESTONE_DATA | python3 -c "import json,sys; print(json.load(sys.stdin)['num'])")
+CURRENT_MILESTONE_TITLE=$(echo $CURRENT_MILESTONE_DATA | python3 -c "import json,sys; print(json.load(sys.stdin)['title'])")
+OPEN_ISSUES=$(echo $CURRENT_MILESTONE_DATA | python3 -c "import json,sys; print(json.load(sys.stdin)['open'])")
+CLOSED_ISSUES=$(echo $CURRENT_MILESTONE_DATA | python3 -c "import json,sys; print(json.load(sys.stdin)['closed'])")
+TOTAL=$((OPEN_ISSUES + CLOSED_ISSUES))
+PCT=$((CLOSED_ISSUES * 100 / (TOTAL > 0 ? TOTAL : 1)))
+
+OPEN_GAPS=$(gh issue list --repo $REPO --label "product-gap" --state open --json number --jq 'length' 2>/dev/null || echo "0")
+OPEN_PROPOSALS=$(gh issue list --repo $REPO --label "product-proposal" --state open --json number --jq 'length' 2>/dev/null || echo "0")
 JOURNEYS=$(grep "^| J" docs/aide/definition-of-done.md | awk -F'|' '{print "- "$2": "$NF}')
 
 gh issue comment $REPORT_ISSUE --repo $REPO --body "[📋 PM] ## [PRODUCT REVIEW] batch #N
 
-**Current milestone**: $CURRENT_MILESTONE_TITLE ($CLOSED_ISSUES closed / $((OPEN_ISSUES + CLOSED_ISSUES)) total)
+**Current milestone**: [$CURRENT_MILESTONE_TITLE](https://github.com/$REPO/milestone/$CURRENT_MILESTONE_NUM) — $PCT% complete ($CLOSED_ISSUES/$TOTAL issues closed)
+**Open product gaps**: $OPEN_GAPS | **Open proposals**: $OPEN_PROPOSALS
 **Vision alignment:** ALIGNED / MISALIGNED
 **Journey coverage:**
 $JOURNEYS

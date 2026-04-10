@@ -113,6 +113,26 @@ LOOP:
      todo → Todo | assigned/in_progress → In Progress | in_review → In Review
      done → Done | blocked → Blocked
 
+   GITHUB REALITY CHECK — cross-verify state.json against GitHub every cycle:
+   ```bash
+   # 1. Find PRs that merged but state.json not updated (engineer session may have died)
+   gh pr list --repo $REPO --state merged --label "$PR_LABEL" \
+     --json number,headRefName,mergedAt --jq '.[] | select(.mergedAt > "'$(date -u -d '30 minutes ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-30M +%Y-%m-%dT%H:%M:%SZ)'")'
+   # For any recently merged PR whose branch matches an in_review item: set state=done
+
+   # 2. Find open PRs with CI failures — alert engineer
+   gh pr list --repo $REPO --label "$PR_LABEL" --state open \
+     --json number,headRefName,statusCheckRollup \
+     --jq '.[] | select(.statusCheckRollup != null) | select([.statusCheckRollup[] | select(.conclusion == "FAILURE")] | length > 0) | .number'
+
+   # 3. Find issues labeled needs-human not yet reflected in state.json
+   gh issue list --repo $REPO --label "needs-human" --state open \
+     --json number,title --jq '.[] | [.number, .title[:60]] | @tsv'
+
+   # 4. Detect board drift: items whose board status doesn't match state.json
+   # (covered by BOARD SYNC above — running it here ensures it always runs)
+   ```
+
 1. Read progress.md + roadmap.md → determine what to build next
 
 2. If queue is null:
