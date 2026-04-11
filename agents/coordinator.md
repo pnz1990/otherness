@@ -108,10 +108,26 @@ LOOP:
 0. HEARTBEAT + BOARD SYNC (every cycle):
    - Update session_heartbeats.COORDINATOR.last_seen and cycle in state.json
    - Check QA heartbeat: if >15 min old AND item in_review → post dead-session alert
-   - BOARD SYNC: for every item in state.json, compare state to board card status.
+   - BOARD SYNC PART 1: for every item in state.json, compare state to board card status.
      Move card to match state.json if they differ. state.json is always authoritative.
      todo → Todo | assigned/in_progress → In Progress | in_review → In Review
      done → Done | blocked → Blocked
+   - BOARD SYNC PART 2: for every non-Done item on the board, check GitHub issue state.
+     If the GitHub issue is CLOSED, set board status to Done regardless of state.json.
+     This catches epics, tech-debt issues, product-gap issues that aren't in state.json.
+     ```bash
+     gh project item-list 1 --owner $(echo $REPO | cut -d/ -f1) --format json --limit 200 \
+       --jq '.items[] | select(.status != null and .status != "Done") | .content.number' \
+       2>/dev/null | while read ISSUE_NUM; do
+       [ -z "$ISSUE_NUM" ] && continue
+       STATE=$(gh issue view $ISSUE_NUM --repo $REPO --json state --jq '.state' 2>/dev/null)
+       if [ "$STATE" = "CLOSED" ]; then
+         # Get board item ID and set to Done
+         ITEM=$(gh api graphql -f query="{repository(owner:\"$(echo $REPO|cut -d/ -f1)\",name:\"$(echo $REPO|cut -d/ -f2)\"){issue(number:$ISSUE_NUM){projectItems(first:5){nodes{id project{id}}}}}}" --jq ".data.repository.issue.projectItems.nodes[]|select(.project.id==\"$BOARD_PROJECT_ID\")|.id" 2>/dev/null)
+         [ -n "$ITEM" ] && gh project item-edit --id "$ITEM" --project-id "$BOARD_PROJECT_ID" --field-id "$BOARD_FIELD_ID" --single-select-option-id "$OPT_DONE" 2>/dev/null
+       fi
+     done
+     ```
 
    GITHUB REALITY CHECK — cross-verify state.json against GitHub every cycle:
    ```bash

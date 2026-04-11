@@ -158,6 +158,30 @@ A milestone is complete when:
 1. All issues in the milestone are closed (`open_issues == 0`)
 2. All journeys assigned to that milestone pass in `definition-of-done.md`
 
+Before checking completion, close any epics in the milestone whose sub-issues
+are all closed — and set them to Done on the board:
+```bash
+# Close completed epics and sync board
+BOARD_PROJECT_ID=$(python3 -c "import re; [print(m.group(1)) for line in open('maqa-github-projects/github-projects-config.yml') for m in [re.match(r'^project_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
+BOARD_FIELD_ID=$(python3 -c "import re; [print(m.group(1)) for line in open('maqa-github-projects/github-projects-config.yml') for m in [re.match(r'^status_field_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
+OPT_DONE=$(python3 -c "import re; [print(m.group(1)) for line in open('maqa-github-projects/github-projects-config.yml') for m in [re.match(r'^done_option_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
+
+gh issue list --repo $REPO --milestone "$CURRENT_MILESTONE_TITLE" \
+  --label "epic" --state open --json number --jq '.[].number' | \
+while read EPIC_NUM; do
+  # Check if all sub-issues are closed
+  OPEN_SUBS=$(gh issue view $EPIC_NUM --repo $REPO --json trackedIssues \
+    --jq '[.trackedIssues[] | select(.state == "OPEN")] | length' 2>/dev/null || echo "0")
+  if [ "$OPEN_SUBS" = "0" ]; then
+    gh issue close $EPIC_NUM --repo $REPO 2>/dev/null
+    # Set board card to Done
+    ITEM=$(gh api graphql -f query="{repository(owner:\"$(echo $REPO|cut -d/ -f1)\",name:\"$(echo $REPO|cut -d/ -f2)\"){issue(number:$EPIC_NUM){projectItems(first:5){nodes{id project{id}}}}}}" --jq ".data.repository.issue.projectItems.nodes[]|select(.project.id==\"$BOARD_PROJECT_ID\")|.id" 2>/dev/null)
+    [ -n "$ITEM" ] && gh project item-edit --id "$ITEM" --project-id "$BOARD_PROJECT_ID" --field-id "$BOARD_FIELD_ID" --single-select-option-id "$OPT_DONE" 2>/dev/null
+    echo "Closed epic #$EPIC_NUM and set Done on board"
+  fi
+done
+```
+
 ```bash
 # Check if milestone is complete
 MILESTONE_DATA=$(gh api repos/$REPO/milestones/$CURRENT_MILESTONE \

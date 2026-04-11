@@ -177,8 +177,10 @@ PHASE 1 — [🎯 COORDINATOR] ASSIGN
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1a. Heartbeat (re-read state.json first — never cache between phases)
-    BOARD SYNC — for every item in state.json, ensure it's on the board
-    AND has the correct status. move_board_card handles add-if-missing:
+
+    BOARD SYNC PART 1 — state.json items → board:
+    For every item in state.json, ensure it's on the board with correct status.
+    move_board_card handles add-if-missing automatically.
     python3 -c "
     import json
     s=json.load(open('.maqa/state.json'))
@@ -190,11 +192,27 @@ PHASE 1 — [🎯 COORDINATOR] ASSIGN
     for id,f in s.get('features',{}).items():
         opt = state_to_opt.get(f['state'])
         if opt:
-            print(f\"{id}|{opt}\")
+            print(f"{id}|{opt}")
     " | while IFS='|' read ITEM_ID OPT; do
       ISSUE_NUM=$(gh issue list --repo $REPO --search "$ITEM_ID" --json number -q '.[0].number' 2>/dev/null)
       [ -n "$ISSUE_NUM" ] && move_board_card $ISSUE_NUM $OPT
     done
+
+    BOARD SYNC PART 2 — GitHub issue state → board (catches epics, tech-debt, product-gap):
+    Any issue on the project board that is CLOSED in GitHub must be Done on the board.
+    Any issue that is OPEN and labeled epic/todo remains as-is.
+    ```bash
+    gh project item-list 1 --owner $(echo $REPO | cut -d/ -f1) --format json --limit 200 \
+      --jq '.items[] | select(.status != null and .status != "Done") | .content.number' \
+      2>/dev/null | while read ISSUE_NUM; do
+      [ -z "$ISSUE_NUM" ] && continue
+      STATE=$(gh issue view $ISSUE_NUM --repo $REPO --json state --jq '.state' 2>/dev/null)
+      if [ "$STATE" = "CLOSED" ]; then
+        move_board_card $ISSUE_NUM $OPT_DONE
+        echo "Board sync: closed issue #$ISSUE_NUM → Done"
+      fi
+    done
+    ```
 1b. If queue null: run PHASE 6 SPEC GATE inline, then:
     - /speckit.aide.create-queue → docs/aide/queue/queue-NNN.md
     - For each item in the queue, run the FULL SPEC PIPELINE:
