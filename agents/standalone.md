@@ -233,6 +233,10 @@ Work in worktree. Every bash command must cd into worktree explicitly.
 
 2a. state=in_progress. Post: "[🔨 STANDALONE-ENG] Starting $ITEM_ID."
 2b. Read ITEM.md. Follow any blocking alerts from PM/coordinator.
+    GRAPH-FIRST CHECK (if docs/design/10-graph-first-architecture.md exists):
+    Before writing any code, verify the feature does not introduce logic outside
+    a Graph node or CRD-status-writing reconciler. If it does: STOP, post
+    [NEEDS HUMAN] on Issue #$REPORT_ISSUE with the conflict, do not proceed.
 2c. Determine QA complexity:
     Simple: ≤ 3 acceptance criteria AND ≤ 5 files → lighter QA
     Complex: > 3 criteria OR > 5 files OR spec mentions security/concurrent/reconciler → adversarial

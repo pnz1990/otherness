@@ -108,6 +108,9 @@ If check fails: post conflict on Issue #$REPORT_ISSUE and STOP.
 4. `docs/aide/definition-of-done.md` 5. `.specify/memory/constitution.md`
 6. `.specify/memory/sdlc.md` 7. `docs/aide/team.yml`
 8. `AGENTS.md` — read code standards, banned filenames, anti-patterns carefully
+9. `docs/design/10-graph-first-architecture.md` — if it exists: read completely.
+   This document governs all implementation decisions. If a feature violates
+   Graph-first principles, STOP before writing any code.
 
 ## THE LOOP
 
@@ -118,6 +121,22 @@ If check fails: post conflict on Issue #$REPORT_ISSUE and STOP.
    - cd into worktree
    - git pull origin main
    - Read ITEM.md (frozen spec). Follow any blocking alerts from PM/coordinator.
+
+   GRAPH-FIRST CHECK (if docs/design/10-graph-first-architecture.md exists):
+   Before writing a single line of code, read the item spec and answer:
+   1. Does this feature introduce logic OUTSIDE a Graph node or a reconciler
+      that writes to its own CRD status?
+   2. Does this feature require evaluating conditions in a context that is NOT
+      a Kubernetes resource observable by the Graph?
+   3. Does this feature add new usage of pkg/cel or a standalone evaluator
+      outside the explicitly permitted package?
+   If YES to any of these: STOP. Do NOT implement. Post on the item issue:
+   "[🔨 $AGENT_ID] GRAPH-FIRST VIOLATION DETECTED: <description of the conflict>
+   This feature cannot be implemented as specified without violating the
+   Graph-first architectural constraint. See docs/design/10-graph-first-architecture.md.
+   Human decision required before proceeding."
+   Then add label needs-human and wait. Do not implement a workaround.
+
    - Write state=in_progress. Post: "[$AGENT_ID] Confirmed pickup of $ITEM_ID."
 
 2. IMPLEMENT (TDD):

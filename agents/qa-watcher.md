@@ -79,6 +79,8 @@ EOF
 3. `.specify/memory/constitution.md` 4. `.specify/memory/sdlc.md`
 5. `docs/aide/team.yml`
 6. `AGENTS.md` — read code standards, banned filenames, anti-patterns carefully
+7. `docs/design/10-graph-first-architecture.md` — if it exists: read the full Graph-first
+   architecture decision, anti-patterns table, and known exceptions list
 
 ## THE LOOP — runs continuously, never exits until project complete
 
@@ -124,6 +126,22 @@ LOOP:
       □ docs/ consistent with implementation (if user-facing)
       □ examples/ YAML applies cleanly (if relevant)
       □ Feature advances at least one user journey
+
+      GRAPH-FIRST CHECKS (if docs/design/10-graph-first-architecture.md exists):
+      Read the full anti-patterns table in that doc and check each one.
+      The following patterns are HARD BLOCKS — request changes immediately:
+      □ Business logic evaluated outside a Graph node or a reconciler that writes
+        to its own CRD status (e.g. decision-making inside a controller that does
+        NOT produce a status field that Graph can read)
+      □ New usage of pkg/cel (or equivalent standalone evaluator) outside the
+        explicitly permitted package (check AGENTS.md for the allowed location)
+      □ CEL FunctionBinding that makes HTTP calls or any external I/O
+      □ Reconciler whose decisions depend on fields it does not write to its own CRD
+      □ In-memory dependency between components that should be expressed as CRD fields
+      □ Bypassing Graph for "simple" promotion cases
+      If any of these are found: post [NEEDS HUMAN] on the report issue AND
+      request changes on the PR. Do NOT approve. The engineer must escalate to
+      human before implementing an alternative.
    f. POST REVIEW:
       PASS: gh pr review <N> --repo $REPO --approve
             --body "[🔍 QA] LGTM. All criteria satisfied. Engineer: merge NOW."
