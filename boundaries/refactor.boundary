@@ -1,0 +1,10 @@
+# Boundary: Graph Purity Refactor
+# Focus: Eliminate logic leaks from the catalog in docs/design/11-graph-purity-tech-debt.md
+# Scope: pkg/reconciler/, pkg/steps/, pkg/health/, pkg/scm/ — no new features, refactor only
+
+AGENT_ID=STANDALONE-REFACTOR
+SCOPE=Graph purity refactor — eliminate logic leaks from docs/design/11-graph-purity-tech-debt.md (v0.2.1 milestone, krocodile-independent items only)
+ALLOWED_AREAS=area/controller,area/health,area/scm,area/graph,area/policygate
+ALLOWED_MILESTONES=v0.2.1
+ALLOWED_PACKAGES=pkg/reconciler,pkg/health,pkg/scm,pkg/steps,pkg/graph,pkg/translator,api/v1alpha1
+DENY_PACKAGES=cmd/kardinal,web/src

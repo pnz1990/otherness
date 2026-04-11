@@ -1,0 +1,10 @@
+# Boundary: Extension Points (SCM providers, health adapters, update strategies)
+# Focus: Pluggable architecture — new SCM providers, health adapters, update strategies
+# Scope: pkg/scm/, pkg/health/, pkg/update/ — plugin implementations only
+
+AGENT_ID=STANDALONE-EXTENSIONS
+SCOPE=Extension points — SCM providers (GitLab, Forgejo), health adapters (argoRollouts), update strategies (Helm, config-only)
+ALLOWED_AREAS=area/scm,area/health
+ALLOWED_MILESTONES=v0.4.0
+ALLOWED_PACKAGES=pkg/scm,pkg/health,pkg/update,pkg/steps
+DENY_PACKAGES=pkg/reconciler/promotionstep,pkg/reconciler/policygate,pkg/graph,api/v1alpha1,cmd/kardinal

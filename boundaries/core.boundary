@@ -1,0 +1,10 @@
+# Boundary: Core Features
+# Focus: Core promotion engine — new CRDs, reconcilers, Graph integration
+# Scope: pkg/reconciler/, pkg/graph/, api/v1alpha1/, pkg/translator/
+
+AGENT_ID=STANDALONE-CORE
+SCOPE=Core features — promotion engine, new CRDs (PRStatus, RollbackPolicy, SoakTimer), Graph integration
+ALLOWED_AREAS=area/controller,area/graph,area/policygate,area/api
+ALLOWED_MILESTONES=v0.2.1,v0.4.0
+ALLOWED_PACKAGES=pkg/reconciler,pkg/graph,pkg/translator,api/v1alpha1,config/crd,config/rbac
+DENY_PACKAGES=cmd/kardinal,web/src,pkg/scm
