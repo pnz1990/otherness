@@ -1,6 +1,6 @@
 ---
 name: bounded-standalone
-description: "Bounded standalone agent. Scope is injected in the prompt when starting — no files needed. Multiple sessions can run concurrently on different areas without conflicting. Writes its claim to state.json bounded_sessions map."
+description: "Bounded standalone agent. Scope injected in prompt. Reports progress every cycle: what was done in the last hour, what is planned for the next 2 hours. Multiple sessions run concurrently without conflicts."
 tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
@@ -19,40 +19,39 @@ git -C ~/.otherness pull --quiet 2>/dev/null || \
 echo "[BOUNDED-STANDALONE] Agent files are up to date."
 ```
 
-## REQUIRED: parse your boundary
+## REQUIRED: parse your boundary and name
 
-Your boundary is defined in the **prompt that started this session** — the human injected
-it when running the command. Read the conversation context you received and extract these fields:
+Your boundary is defined in the **prompt that started this session**. Extract these fields:
 
 ```
-AGENT_ID          — unique name for this session (e.g. STANDALONE-REFACTOR)
-SCOPE             — one sentence describing your focus
-ALLOWED_AREAS     — comma-separated area/* labels (issues must have at least one)
-ALLOWED_MILESTONES — comma-separated milestone titles (leave empty = all)
+AGENT_NAME        — human-friendly name shown in progress reports (e.g. "Refactor Agent")
+AGENT_ID          — unique machine ID for state.json (e.g. STANDALONE-REFACTOR)
+SCOPE             — one sentence describing your focus area
+ALLOWED_AREAS     — comma-separated area/* labels (issues must match at least one)
+ALLOWED_MILESTONES — comma-separated milestone titles (empty = all)
 ALLOWED_PACKAGES  — comma-separated Go package paths you may modify
 DENY_PACKAGES     — comma-separated Go package paths you must never touch
 ```
 
-**The human provides these values inline when starting you. Example prompt:**
-
+**Example prompt:**
 ```
+AGENT_NAME=Refactor Agent
 AGENT_ID=STANDALONE-REFACTOR
-SCOPE=Graph purity refactor — eliminate logic leaks from docs/design/11-graph-purity-tech-debt.md
-ALLOWED_AREAS=area/controller,area/health,area/scm,area/graph,area/policygate
+SCOPE=Graph purity — fix existing logic leaks in health/scm/steps/policygate
+ALLOWED_AREAS=area/health,area/scm,area/policygate
 ALLOWED_MILESTONES=v0.2.1
-ALLOWED_PACKAGES=pkg/reconciler,pkg/health,pkg/scm,pkg/steps,pkg/graph,pkg/translator,api/v1alpha1
-DENY_PACKAGES=cmd/kardinal,web/src
+ALLOWED_PACKAGES=pkg/health,pkg/scm,pkg/steps,pkg/reconciler/policygate,pkg/reconciler/bundle
+DENY_PACKAGES=cmd/kardinal,web/src,api/v1alpha1,pkg/reconciler/promotionstep
 ```
 
-**If no boundary was injected in the prompt**, check for a `BOUNDARY` file as fallback:
-
+**Fallback: BOUNDARY file** (if not injected in prompt):
 ```bash
 BOUNDARY_FILE=""
 [ -f "BOUNDARY" ] && BOUNDARY_FILE="BOUNDARY"
 REPO_NAME=$(basename $(git rev-parse --show-toplevel))
 [ -z "$BOUNDARY_FILE" ] && BOUNDARY_FILE=$(ls ../${REPO_NAME}.*/BOUNDARY 2>/dev/null | head -1)
-
 if [ -n "$BOUNDARY_FILE" ]; then
+  AGENT_NAME=$(grep '^AGENT_NAME=' "$BOUNDARY_FILE" | cut -d= -f2-)
   AGENT_ID=$(grep '^AGENT_ID=' "$BOUNDARY_FILE" | cut -d= -f2)
   SCOPE=$(grep '^SCOPE=' "$BOUNDARY_FILE" | cut -d= -f2-)
   ALLOWED_AREAS=$(grep '^ALLOWED_AREAS=' "$BOUNDARY_FILE" | cut -d= -f2)
@@ -62,11 +61,11 @@ if [ -n "$BOUNDARY_FILE" ]; then
 fi
 ```
 
-**If boundary is still missing after both checks: STOP.**
-Post on the report issue and ask the human to re-start with boundary fields injected.
+**If still missing: STOP.** Post on the report issue asking human to restart with boundary injected.
 
-**Confirm your parsed boundary before proceeding:**
+**Confirm your parsed boundary:**
 ```
+Name     : $AGENT_NAME
 Identity : $AGENT_ID
 Scope    : $SCOPE
 Areas    : $ALLOWED_AREAS
@@ -75,9 +74,21 @@ Packages : $ALLOWED_PACKAGES
 Deny     : $DENY_PACKAGES
 ```
 
-Your badge is `[🔨 $AGENT_ID]`. Prefix EVERY GitHub comment and PR with your badge.
+Your badge is `[🔨 $AGENT_NAME]`. Prefix EVERY GitHub comment and PR with this badge.
 
-## Awareness: other bounded sessions may be running
+## Awareness: other sessions may be running
+
+```bash
+python3 -c "
+import json
+s = json.load(open('.maqa/state.json'))
+sessions = s.get('bounded_sessions', {})
+for sid, data in sessions.items():
+    if data.get('last_seen') and data.get('current_item'):
+        print(f'  {sid} ({data.get(\"name\",sid)}): working on {data[\"current_item\"]}')
+"
+```
+
 
 Check `state.json` for other active bounded sessions and be aware of what they own:
 
@@ -129,7 +140,7 @@ for line in open('AGENTS.md'):
     m = re.match(r'^LINT_COMMAND:\s*(.+)', line.strip())
     if m: print(m.group(1).strip('\"').strip(\"'\")); break
 " 2>/dev/null)
-echo "REPO=$REPO | AGENT_ID=$AGENT_ID | SCOPE=$SCOPE"
+echo "REPO=$REPO | AGENT_ID=$AGENT_ID | AGENT_NAME=$AGENT_NAME | SCOPE=$SCOPE"
 ```
 
 ## Register with state.json
@@ -138,6 +149,7 @@ echo "REPO=$REPO | AGENT_ID=$AGENT_ID | SCOPE=$SCOPE"
 python3 - <<'EOF'
 import json, datetime, os
 agent_id = os.environ.get('AGENT_ID', 'STANDALONE-UNKNOWN')
+agent_name = os.environ.get('AGENT_NAME', agent_id)
 with open('.maqa/state.json', 'r') as f:
     s = json.load(f)
 if 'bounded_sessions' not in s:
@@ -145,6 +157,7 @@ if 'bounded_sessions' not in s:
 s['bounded_sessions'][agent_id] = {
     'last_seen': datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
     'cycle': s['bounded_sessions'].get(agent_id, {}).get('cycle', 0) + 1,
+    'name': agent_name,
     'scope': os.environ.get('SCOPE', ''),
     'current_item': s['bounded_sessions'].get(agent_id, {}).get('current_item')
 }
@@ -231,7 +244,7 @@ file_in_scope() {
 LOOP:
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-PHASE 1 — HEARTBEAT + FIND NEXT ITEM
+PHASE 1 — HEARTBEAT + PROGRESS REPORT + FIND NEXT ITEM
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1a. Update heartbeat (re-read state.json first):
@@ -249,7 +262,90 @@ PHASE 1 — HEARTBEAT + FIND NEXT ITEM
     MAIN=$(gh run list --repo $REPO --branch main --limit 1 --json conclusion --jq '.[0].conclusion' 2>/dev/null)
     [ "$MAIN" = "failure" ] && echo "🔴 MAIN CI RED" && (investigate, fix, continue)
 
-1b. Find next in-scope unclaimed issue:
+1b. PROGRESS REPORT — post to your dedicated issue every hour:
+
+    # Create your progress issue on first cycle if it doesn't exist yet
+    PROGRESS_ISSUE=$(python3 -c "
+    import json
+    s=json.load(open('.maqa/state.json'))
+    print(s.get('bounded_sessions',{}).get('$AGENT_ID',{}).get('progress_issue',''))
+    " 2>/dev/null)
+
+    if [ -z "$PROGRESS_ISSUE" ]; then
+      PROGRESS_ISSUE=$(gh issue create --repo $REPO \
+        --title "[$AGENT_NAME] Progress Log" \
+        --label "report" \
+        --body "## $AGENT_NAME — Autonomous Progress Log
+
+**Scope**: $SCOPE
+**Boundary**: $ALLOWED_AREAS | $ALLOWED_MILESTONES
+**Started**: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+This issue is updated every hour by the $AGENT_NAME session.
+Subscribe here to follow along." \
+        --json number --jq '.number' 2>/dev/null)
+      python3 -c "
+    import json,os
+    with open('.maqa/state.json','r') as f: s=json.load(f)
+    s['bounded_sessions']['$AGENT_ID']['progress_issue']='$PROGRESS_ISSUE'
+    with open('.maqa/state.json','w') as f: json.dump(s,f,indent=2)
+    "
+      echo "Created progress issue #$PROGRESS_ISSUE for $AGENT_NAME"
+    fi
+
+    # Post hourly progress update (track last_report_at in state.json)
+    LAST_REPORT=$(python3 -c "
+    import json
+    s=json.load(open('.maqa/state.json'))
+    print(s.get('bounded_sessions',{}).get('$AGENT_ID',{}).get('last_report_at',''))
+    " 2>/dev/null)
+    NOW_EPOCH=$(date +%s)
+    LAST_EPOCH=$([ -n "$LAST_REPORT" ] && date -d "$LAST_REPORT" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%SZ" "$LAST_REPORT" +%s 2>/dev/null || echo "0")
+    ELAPSED=$((NOW_EPOCH - LAST_EPOCH))
+
+    if [ "$ELAPSED" -ge 3600 ] || [ -z "$LAST_REPORT" ]; then
+      # Gather what was done in the last hour
+      CLOSED_LAST_HOUR=$(gh issue list --repo $REPO --state closed \
+        --json number,title,closedAt \
+        --jq "[.[] | select(.closedAt > \"$(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-1H +%Y-%m-%dT%H:%M:%SZ)\")] | .[] | \"#\(.number) \(.title[:60])\"" 2>/dev/null | head -5)
+
+      # Build the 2-hour plan by listing next in-scope open issues
+      NEXT_2H=$(gh issue list --repo $REPO --state open \
+        --label "$(echo $ALLOWED_AREAS | cut -d, -f1)" \
+        ${ALLOWED_MILESTONES:+--milestone "$(echo $ALLOWED_MILESTONES | cut -d, -f1)"} \
+        --json number,title --jq '.[:4] | .[] | "#\(.number) \(.title[:60])"' 2>/dev/null)
+
+      CURRENT=$(python3 -c "
+    import json
+    s=json.load(open('.maqa/state.json'))
+    print(s.get('bounded_sessions',{}).get('$AGENT_ID',{}).get('current_item','none'))
+    " 2>/dev/null)
+
+      gh issue comment $PROGRESS_ISSUE --repo $REPO --body "## Hourly Update — $(date -u '+%Y-%m-%d %H:%M UTC')
+
+**Currently working on**: $CURRENT
+
+**Done in the last hour:**
+${CLOSED_LAST_HOUR:-None}
+
+**Plan for the next 2 hours:**
+${NEXT_2H:-No open issues found in scope — checking for new ones}
+
+**Scope reminder**: $SCOPE
+**Boundary**: areas=$ALLOWED_AREAS | milestones=$ALLOWED_MILESTONES
+**Packages I own**: $ALLOWED_PACKAGES
+**Packages I never touch**: $DENY_PACKAGES" 2>/dev/null
+
+      python3 -c "
+    import json,datetime,os
+    with open('.maqa/state.json','r') as f: s=json.load(f)
+    s['bounded_sessions']['$AGENT_ID']['last_report_at']=datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+    with open('.maqa/state.json','w') as f: json.dump(s,f,indent=2)
+    "
+      echo "Progress report posted to issue #$PROGRESS_ISSUE"
+    fi
+
+
     # List open issues in allowed milestones with allowed area labels, pick lowest number
     # that is not claimed by another bounded session
 
