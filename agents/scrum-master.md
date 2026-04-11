@@ -133,7 +133,17 @@ for spec in sorted(specs):
     # Read spec for user-facing surfaces
     content = open(spec).read()
     # Check if CLI commands in spec have a doc entry
-    cli_cmds = re.findall(r'`kardinal \w+`', content)
+    # Read CLI binary name from AGENTS.md PROJECT_NAME or CLI_BINARY field
+    import subprocess
+    cli_binary = 'unknown'
+    try:
+        for line in open('AGENTS.md'):
+            import re as re2
+            m = re2.match(r'^CLI_BINARY:\s*(\S+)', line.strip())
+            if not m: m = re2.match(r'^PROJECT_NAME:\s*(\S+)', line.strip())
+            if m: cli_binary = m.group(1); break
+    except: pass
+    cli_cmds = re.findall(rf'`{cli_binary} \w+`', content)
     for cmd in cli_cmds:
         cmd_name = cmd.strip('`').split()[1]
         if not any(cmd_name in d for d in docs):
@@ -148,8 +158,16 @@ for YAML in examples/*/*.yaml examples/*/*/*.yaml 2>/dev/null; do
 done
 
 # 3. Verify definition-of-done.md journey steps reference commands that exist in docs/:
-grep -E 'kardinal \w+' docs/aide/definition-of-done.md | while read CMD; do
-  CMD_NAME=$(echo "$CMD" | grep -oE 'kardinal \w+' | head -1 | awk '{print $2}')
+# Read CLI binary name from AGENTS.md
+CLI_BINARY=$(python3 -c "
+import re
+for line in open('AGENTS.md'):
+    m = re.match(r'^CLI_BINARY:\s*(\S+)', line.strip())
+    if not m: m = re.match(r'^PROJECT_NAME:\s*(\S+)', line.strip())
+    if m: print(m.group(1)); break
+" 2>/dev/null || echo 'app')
+grep -E "$CLI_BINARY \w+" docs/aide/definition-of-done.md | while read CMD; do
+  CMD_NAME=$(echo "$CMD" | grep -oE "$CLI_BINARY \w+" | head -1 | awk '{print $2}')
   grep -r "$CMD_NAME" docs/ --include="*.md" -l | grep -v "definition-of-done" | \
     grep -q . || echo "UNDOCUMENTED CMD in DoD: kardinal $CMD_NAME"
 done
@@ -172,13 +190,15 @@ If no issues: update counter and note "Cross-doc audit: clean" in [SDLC REVIEW].
 ### Step 3c — Code pattern/style scan (every batch)
 
 ```bash
-# 1. Detect inconsistent error handling patterns:
-# Expected: fmt.Errorf("context: %w", err) — find any bare errors or non-wrapping
+# 1. Detect inconsistent error handling / logging patterns.
+# Read expected patterns from AGENTS.md code standards section.
+# The patterns below are Go-specific examples — adapt to your project's language.
+# Generic approach: read CODE_STANDARDS from AGENTS.md and check for deviations.
 grep -rn "errors\.New\|fmt\.Errorf.*[^%w]\")" --include="*.go" . 2>/dev/null | \
   grep -v "_test.go\|vendor\|\.git" | grep -v "^Binary" | head -10 && \
   echo "Review above for non-wrapping errors"
 
-# 2. Detect logging inconsistencies — any fmt.Println or log.Printf in non-test code:
+# 2. Detect logging inconsistencies (Go-specific example — adapt for your project):
 grep -rn "fmt\.Println\|log\.Printf\|log\.Println\|fmt\.Printf" \
   --include="*.go" . 2>/dev/null | \
   grep -v "_test.go\|vendor\|\.git" | grep -v "^Binary" | head -10
@@ -202,9 +222,18 @@ Check `batches_since_dead_scan` in state.json. If >= 3, run:
 
 ```bash
 # 1. Find unused Go exports (functions/types exported but never referenced):
-# Use staticcheck or go vet unused analysis if available:
-staticcheck -checks=U1000 ./... 2>/dev/null | head -20 || \
-  go vet ./... 2>/dev/null | grep -i "unused\|dead" | head -20 || true
+# Use LINT_COMMAND from AGENTS.md, fall back to generic approaches:
+LINT_COMMAND=$(python3 -c "
+import re
+for line in open('AGENTS.md'):
+    m = re.match(r'^LINT_COMMAND:\s*(.+)', line.strip())
+    if m: print(m.group(1).strip('\"').strip(\"'\")); break
+" 2>/dev/null)
+if echo "$LINT_COMMAND" | grep -q 'vet\|lint'; then
+  eval "$LINT_COMMAND" 2>/dev/null | grep -iE 'unused|dead|U1000' | head -20 || true
+fi
+# Also try staticcheck if available:
+staticcheck -checks=U1000 ./... 2>/dev/null | head -20 || true
 
 # 2. Find Go files that are never imported:
 # List all packages, check if any have zero imports from the rest of the codebase:

@@ -145,7 +145,8 @@ If check fails: post conflict on Issue #$REPORT_ISSUE and STOP.
    # UI features). For each one, check that a doc page exists in docs/:
    #
    # Examples:
-   #   New CLI command "kardinal pause" → docs/cli-reference.md must document it
+   #   New CLI command "my-tool pause" → docs/cli-reference.md must document it
+   #   (read CLI_BINARY or PROJECT_NAME from AGENTS.md to know the binary name)
    #   New CRD type "PolicyGate" → docs/policy-gates.md must describe it
    #   New API endpoint POST /bundles → docs/api-reference.md must describe it
    #
@@ -190,12 +191,12 @@ If check fails: post conflict on Issue #$REPORT_ISSUE and STOP.
    #
    # For examples/:
    # 5. If your feature has an example YAML, apply it dry-run:
-   #    kubectl apply --dry-run=client -f examples/<feature>/
+   #    apply the example using the project's deployment tool (kubectl dry-run, helm template, etc.)
    #    If it fails: fix the example.
    #
    # The PR body MUST include:
    #    "Docs updated: <list of doc files changed, or 'N/A — no user-facing changes'>"
-   #    "Examples verified: <kubectl apply --dry-run output, or 'N/A'>"
+   #    "Examples verified: <deployment tool dry-run output, or 'N/A'>"
    echo "Doc consistency check complete."
    ```
 

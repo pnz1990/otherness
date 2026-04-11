@@ -126,8 +126,9 @@ LOOP:
         If docs/ page doesn't exist and the feature is user-facing: BLOCK. The doc
         must be written before or with the code, never after.
       □ PR body contains "Examples verified:" line — if missing: request changes
-      □ If examples/ YAML was added or modified: verify it applies cleanly:
-        kubectl apply --dry-run=client -f examples/<feature>/ (or equivalent for non-k8s)
+      □ If examples/ YAML was added or modified: verify it applies cleanly using
+        the project's deployment tool (read DEPLOY_TOOL or infer from examples/
+        file type — kubectl for Kubernetes, helm for Helm charts, terraform for TF, etc.)
         If it fails: BLOCK.
       □ If a journey in definition-of-done.md references this feature: the journey
         steps in the PR body must show the exact commands from definition-of-done.md
@@ -143,14 +144,15 @@ LOOP:
       □ All code standards from AGENTS.md satisfied (copyright, error wrapping, logging)
       □ No banned filenames from AGENTS.md in diff
       □ No forbidden patterns/imports from AGENTS.md anti-patterns
-      □ CODE PATTERN CONSISTENCY: scan the diff for style inconsistencies vs the existing
-        codebase. Specifically check:
-          - Error handling: uses same pattern as existing code (e.g. fmt.Errorf wrapping)
-          - Logging: uses same library and call pattern (e.g. zerolog.Ctx(ctx))
+      □ CODE PATTERN CONSISTENCY: scan the diff for style inconsistencies vs the
+        existing codebase. Read code standards from AGENTS.md to know the expected
+        patterns. Common things to check (project-specific — derive from AGENTS.md):
+          - Error handling: uses same wrapping pattern as existing code
+          - Logging: uses same library and call pattern as existing code
           - Struct/interface naming: follows existing conventions in the package
-          - Test structure: table-driven, same assertion library, same helper patterns
+          - Test structure: same assertion library, same helper patterns as existing tests
           - If new patterns are introduced without a clear reason: request changes with
-            a reference to the existing pattern that should be followed instead.
+            a reference to the existing pattern in AGENTS.md or the codebase.
 
    h. GRAPH-FIRST CHECKS (if docs/design/10-graph-first-architecture.md exists):
       Read the full anti-patterns table in that doc and check each one.
