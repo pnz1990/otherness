@@ -257,31 +257,39 @@ PHASE 1 — HEARTBEAT + FIND NEXT ITEM
     CLAIMED=$(python3 -c "
     import json
     s=json.load(open('.maqa/state.json'))
-    items=[v.get('current_item') for v in s.get('bounded_sessions',{}).values() if v.get('current_item')]
-    print(','.join(items))
-    ")
+     items=[v.get('current_item') for v in s.get('bounded_sessions',{}).values() if v.get('current_item')]
+     print(','.join(items))
+     ")
 
-    # Find first milestone filter
-    FIRST_MS=$(echo "$ALLOWED_MILESTONES" | cut -d, -f1)
-    FIRST_AREA=$(echo "$ALLOWED_AREAS" | cut -d, -f1)
+    # Find next unclaimed in-scope issue — search ALL allowed areas × ALL allowed milestones
+    # This ensures the session doesn't stop early because one area/milestone combo is empty
+    NEXT_ISSUE=""
+    IFS=',' read -ra AREA_LIST <<< "$ALLOWED_AREAS"
+    IFS=',' read -ra MS_LIST <<< "${ALLOWED_MILESTONES:-}"
 
-    NEXT_ISSUE=$(gh issue list --repo $REPO --state open \
-      ${FIRST_MS:+--milestone "$FIRST_MS"} \
-      ${FIRST_AREA:+--label "$FIRST_AREA"} \
-      --json number,title,labels,milestone \
-      --jq 'sort_by(.number) | .[0].number' 2>/dev/null)
-
-    # Skip if claimed by another session
-    echo "$CLAIMED" | grep -q "^$NEXT_ISSUE$\|,$NEXT_ISSUE$\|^$NEXT_ISSUE,\|,$NEXT_ISSUE," && \
-      echo "Issue #$NEXT_ISSUE claimed by another session, finding next..." && \
-      # (find next unclaimed issue)
-
-    # Verify in_scope
-    in_scope "$NEXT_ISSUE" || { echo "Issue #$NEXT_ISSUE out of scope, finding next..."; }
+    for AREA in "${AREA_LIST[@]}"; do
+      for MS in "${MS_LIST[@]:-""}"; do
+        CANDIDATE=$(gh issue list --repo $REPO --state open \
+          ${MS:+--milestone "$MS"} \
+          --label "$AREA" \
+          --json number,labels,milestone \
+          --jq 'sort_by(.number) | .[].number' 2>/dev/null | \
+          while read N; do
+            # Skip if claimed by another session
+            echo "$CLAIMED" | grep -qE "(^|,)${N}(,|$)" && continue
+            # Verify full in_scope (all areas + milestones check)
+            in_scope "$N" && echo "$N" && break
+          done | head -1)
+        [ -n "$CANDIDATE" ] && NEXT_ISSUE="$CANDIDATE" && break 2
+      done
+    done
 
     if [ -z "$NEXT_ISSUE" ]; then
-      echo "No in-scope issues remain. My work is done."
-      # → PHASE 4 (SM/PM review), then exit
+      echo "No unclaimed in-scope issues remain across all areas ($ALLOWED_AREAS) and milestones ($ALLOWED_MILESTONES)."
+      echo "Sleeping 5 minutes then rechecking — new issues may have been created, or other sessions may release claims."
+      sleep 300
+      continue  # go back to top of LOOP — do not exit
+      # Only exit when scope remains empty after 3 consecutive rechecks (handled below)
     fi
 
     # Claim the issue atomically
@@ -362,26 +370,35 @@ PHASE 3 — QA (ADVERSARIAL) + MERGE
     → PHASE 1
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-PHASE 4 — SCOPE COMPLETE
+PHASE 4 — SCOPE REVIEW (after each item, or when scope temporarily empty)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Run inline SM/PM review scoped to your area:
-- SM: cycle time for issues you closed. Any anti-patterns? Post on report issue.
-- PM: docs fresh for your scope? Board cards correct? Post [SCOPE COMPLETE: $SCOPE].
+Run inline SM/PM review scoped to your area — brief, not a full SM/PM cycle:
+- Check: are issues you closed showing Done on the board? Fix if not.
+- Check: are docs fresh for anything you changed?
+- Post "[SCOPE UPDATE: $AGENT_ID]" on report issue summarising what you closed.
 
-Clear your session from state.json:
-    python3 -c "
-    import json,os
-    with open('.maqa/state.json','r') as f: s=json.load(f)
-    aid=os.environ.get('AGENT_ID','')
-    if aid in s.get('bounded_sessions',{}):
-        s['bounded_sessions'][aid]['current_item']=None
-        s['bounded_sessions'][aid]['last_seen']=None
-    with open('.maqa/state.json','w') as f: json.dump(s,f,indent=2)
-    "
+Then **go back to PHASE 1 immediately** — do not exit.
+The only legitimate exit is when scope has been empty for 3+ consecutive 5-minute rechecks
+AND you have posted a scope-complete notice:
 
-Post on report issue: "[$AGENT_ID] Scope complete: $SCOPE. All in-scope issues resolved."
-Exit.
+    # Track consecutive empty checks
+    EMPTY_CHECKS=$((${EMPTY_CHECKS:-0} + 1))
+    if [ "$EMPTY_CHECKS" -ge 3 ]; then
+      python3 -c "
+      import json,os
+      with open('.maqa/state.json','r') as f: s=json.load(f)
+      aid=os.environ.get('AGENT_ID','')
+      if aid in s.get('bounded_sessions',{}):
+          s['bounded_sessions'][aid]['current_item']=None
+          s['bounded_sessions'][aid]['last_seen']=None
+      with open('.maqa/state.json','w') as f: json.dump(s,f,indent=2)
+      "
+      gh issue comment $REPORT_ISSUE --repo $REPO \
+        --body "[$AGENT_ID] Scope complete: $SCOPE. All in-scope issues resolved after 3 rechecks."
+      exit 0
+    fi
+    → PHASE 1
 ```
 
 ## Hard rules
