@@ -215,70 +215,53 @@ PHASE 1 — [🎯 COORDINATOR] ASSIGN
     ```
 1b. If queue null: run PHASE 6 SPEC GATE inline, then:
     - /speckit.aide.create-queue → docs/aide/queue/queue-NNN.md
-    - For each item in the queue, run the FULL SPEC PIPELINE:
+    - For each item in the queue:
       a. /speckit.aide.create-item $ITEM_ID
          → docs/aide/items/NNN-name.md
-      b. /speckit.specify
-         When prompted for feature name, provide the item ID and description from ITEM.md.
-         → .specify/specs/NNN-name/spec.md (user scenarios, FR-NNN requirements)
-      c. /speckit.plan
-         → .specify/specs/NNN-name/{research.md, data-model.md, contracts/}
-      d. /speckit.tasks
-         → .specify/specs/NNN-name/tasks.md (T00N TDD task list)
-      e. /speckit.analyze
-         Fix any CRITICAL severity findings before proceeding.
-      f. TASK EXPLOSION — create one GitHub Issue per task in tasks.md using gh CLI
-         (DO NOT use /speckit.taskstoissues — it requires GitHub MCP which may not be available)
+      b. WRITE SPEC directly (do NOT call /speckit.specify — it requires interactive sub-session):
+         Read docs/aide/items/NNN-name.md and write .specify/specs/NNN-name/spec.md yourself.
+         The spec must contain: feature branch, user scenarios (Given/When/Then), FR-NNN
+         requirements (MUST language), Go package structure, success criteria (SC-NNN).
+         Use .specify/specs/001-graph-integration/spec.md as the format template.
+      c. WRITE TASKS directly (do NOT call /speckit.tasks — same reason):
+         Read the spec and write .specify/specs/NNN-name/tasks.md yourself.
+         Format: phased TDD task list — Phase 1 (Setup), Phase 2 (Tests First),
+         Phase 3 (Implementation), Phase 4 (Validation).
+         Each task: "- [ ] T00N <description> — file: <path>"
+         Parallel tasks marked [P]. Final task always: /speckit.verify-tasks.run.
+         Aim for 8-15 tasks per item based on complexity.
+      d. TASK EXPLOSION — create one GitHub Issue per task line:
          ```bash
-         SPEC_DIR=".specify/specs/$ITEM_ID"
-         TASKS_FILE="$SPEC_DIR/tasks.md"
+         TASKS_FILE=".specify/specs/$ITEM_ID/tasks.md"
          CURRENT_MILESTONE_TITLE=$(gh api repos/$REPO/milestones \
            --jq '[.[] | select(.state=="open")] | sort_by(.due_on) | .[0].title')
-         EPIC_ID=$(gh issue list --repo $REPO --milestone "$CURRENT_MILESTONE_TITLE" \
-           --label "epic" --json id,number --jq '.[0].id')
+         EPIC_ID=$(gh issue list --repo $REPO \
+           --milestone "$CURRENT_MILESTONE_TITLE" --label "epic" \
+           --json id --jq '.[0].id')
 
-         # Parse each task line: "- [ ] T00N <description> — file: <file>"
-         python3 - <<'PYEOF'
-         import re, subprocess, os
-         tasks_file = os.environ.get('TASKS_FILE', '')
-         repo = os.environ.get('REPO', '')
-         milestone = os.environ.get('CURRENT_MILESTONE_TITLE', '')
-         item_id = os.environ.get('ITEM_ID', '')
-         pr_label = os.environ.get('PR_LABEL', '')
-
-         with open(tasks_file) as f:
-             content = f.read()
-
-         tasks = re.findall(r'- \[ \] (T\d+[^\n]+)', content)
-         for task in tasks:
-             title = f"task({item_id}): {task[:80]}"
-             body = f"Part of item `{item_id}`.\n\nSpec: `.specify/specs/{item_id}/spec.md`\nTasks: `.specify/specs/{item_id}/tasks.md`"
-             cmd = [
-                 'gh', 'issue', 'create', '--repo', repo,
-                 '--milestone', milestone,
-                 '--label', pr_label,
-                 '--label', 'kind/chore',
-                 '--label', 'size/s',
-                 '--title', title,
-                 '--body', body
-             ]
-             result = subprocess.run(cmd, capture_output=True, text=True)
-             issue_num = result.stdout.strip().split('/')[-1]
-             print(f"Created task issue #{issue_num}: {title[:60]}")
-
-             # Link as sub-issue of epic
-             if issue_num and os.environ.get('EPIC_ID'):
-                 item_node = subprocess.run(
-                     ['gh', 'issue', 'view', issue_num, '--repo', repo, '--json', 'id', '--jq', '.id'],
-                     capture_output=True, text=True
-                 ).stdout.strip()
-                 subprocess.run([
-                     'gh', 'api', 'graphql', '-f', f'query=mutation{{addSubIssue(input:{{issueId:"{os.environ["EPIC_ID"]}" subIssueId:"{item_node}"}}){{issue{{number}}}}}}'
-                 ], capture_output=True)
-         PYEOF
+         grep -E '^\- \[ \] T[0-9]+' "$TASKS_FILE" | while IFS= read -r TASK; do
+           TASK_TITLE="task($ITEM_ID): ${TASK:6:80}"
+           ISSUE_URL=$(gh issue create --repo $REPO \
+             --milestone "$CURRENT_MILESTONE_TITLE" \
+             --label "$PR_LABEL" --label "kind/chore" --label "size/s" \
+             --title "$TASK_TITLE" \
+             --body "Part of item \`$ITEM_ID\`.\nSpec: \`.specify/specs/$ITEM_ID/spec.md\`\nTasks: \`.specify/specs/$ITEM_ID/tasks.md\`")
+           ISSUE_NUM="${ISSUE_URL##*/}"
+           ITEM_NODE=$(gh issue view $ISSUE_NUM --repo $REPO --json id --jq '.id' 2>/dev/null)
+           [ -n "$ITEM_NODE" ] && [ -n "$EPIC_ID" ] && \
+             gh api graphql -f query="mutation{addSubIssue(input:{issueId:\"$EPIC_ID\" subIssueId:\"$ITEM_NODE\"}){issue{number}}}" 2>/dev/null
+           echo "Task issue #$ISSUE_NUM: $TASK_TITLE"
+         done
          ```
-    - ITEM-LEVEL ISSUE: one GitHub Issue per docs/aide/items/ file,
-      attached to current milestone, linked as sub-issue of milestone epic
+      e. ITEM-LEVEL ISSUE: create one GitHub Issue for the item itself (board tracking):
+         ```bash
+         gh issue create --repo $REPO \
+           --milestone "$CURRENT_MILESTONE_TITLE" \
+           --label "$PR_LABEL" --label "kind/enhancement" \
+           --label "priority/high" --label "size/l" \
+           --title "feat(<scope>): <item title> [$ITEM_ID]" \
+           --body "$(cat docs/aide/items/$ITEM_ID.md)"
+         ```
     - /speckit.maqa-github-projects.populate to add cards to board
 1c. Pick next assignable item (dependency check)
     If none: go to PHASE 4 (batch audit)

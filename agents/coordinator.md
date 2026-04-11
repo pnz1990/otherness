@@ -156,20 +156,17 @@ LOOP:
    - Wait up to 30 min for "[📋 PM] SPEC GATE CLEAR"
      If BLOCKED: create fix items first. If timeout: proceed and log it.
     - Run /speckit.aide.create-queue → docs/aide/queue/queue-NNN.md
-    - For each item in the queue, run the FULL SPEC PIPELINE:
-      a. /speckit.aide.create-item $ITEM_ID
-         → docs/aide/items/NNN-*.md (implementation-ready spec)
-      b. /speckit.specify
-         Provide item ID and description as input.
-         → .specify/specs/NNN-name/spec.md
-      c. /speckit.plan
-         → research.md, data-model.md, contracts/
-      d. /speckit.tasks
-         → .specify/specs/NNN-name/tasks.md (T00N TDD task list)
-         Final task must be /speckit.verify-tasks.run.
-      e. /speckit.analyze → fix CRITICAL findings before assigning.
-      f. TASK EXPLOSION — create one GitHub Issue per task using gh CLI
-         (NOT /speckit.taskstoissues — requires GitHub MCP, use gh directly):
+    - For each item in the queue:
+      a. /speckit.aide.create-item $ITEM_ID → docs/aide/items/NNN-*.md
+      b. WRITE SPEC directly — do NOT call /speckit.specify (requires interactive sub-session).
+         Read the item file and write .specify/specs/NNN-name/spec.md directly.
+         Include: user scenarios (Given/When/Then), FR-NNN requirements, Go package structure.
+         Use .specify/specs/001-graph-integration/spec.md as the format template.
+      c. WRITE TASKS directly — do NOT call /speckit.tasks (same reason).
+         Read the spec and write .specify/specs/NNN-name/tasks.md directly.
+         Format: "- [ ] T00N <description> — file: <path>" with phase headers.
+         Aim for 8-15 tasks. Final task: /speckit.verify-tasks.run.
+      d. TASK EXPLOSION — create one GitHub Issue per task line via gh CLI:
          ```bash
          TASKS_FILE=".specify/specs/$ITEM_ID/tasks.md"
          CURRENT_MILESTONE_TITLE=$(gh api repos/$REPO/milestones \
@@ -178,19 +175,17 @@ LOOP:
            --milestone "$CURRENT_MILESTONE_TITLE" --label "epic" \
            --json id --jq '.[0].id')
 
-         # For each "- [ ] T00N ..." line in tasks.md:
          grep -E '^\- \[ \] T[0-9]+' "$TASKS_FILE" | while IFS= read -r TASK; do
            TASK_TITLE="task($ITEM_ID): ${TASK:6:80}"
            ISSUE_URL=$(gh issue create --repo $REPO \
              --milestone "$CURRENT_MILESTONE_TITLE" \
              --label "$PR_LABEL" --label "kind/chore" --label "size/s" \
              --title "$TASK_TITLE" \
-             --body "Part of item \`$ITEM_ID\`.\nSpec: \`.specify/specs/$ITEM_ID/spec.md\`")
+             --body "Part of \`$ITEM_ID\`. Spec: \`.specify/specs/$ITEM_ID/spec.md\`")
            ISSUE_NUM="${ISSUE_URL##*/}"
-           # Link as sub-issue of epic
-           ITEM_NODE=$(gh issue view $ISSUE_NUM --repo $REPO --json id --jq '.id')
-           gh api graphql -f query="mutation{addSubIssue(input:{issueId:\"$EPIC_ID\" subIssueId:\"$ITEM_NODE\"}){issue{number}}}" 2>/dev/null
-           echo "Task issue #$ISSUE_NUM: $TASK_TITLE"
+           ITEM_NODE=$(gh issue view $ISSUE_NUM --repo $REPO --json id --jq '.id' 2>/dev/null)
+           [ -n "$ITEM_NODE" ] && [ -n "$EPIC_ID" ] && \
+             gh api graphql -f query="mutation{addSubIssue(input:{issueId:\"$EPIC_ID\" subIssueId:\"$ITEM_NODE\"}){issue{number}}}" 2>/dev/null
          done
          ```
 
