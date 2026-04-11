@@ -198,16 +198,68 @@ PHASE 1 — [🎯 COORDINATOR] ASSIGN
 1b. If queue null: run PHASE 6 SPEC GATE inline, then:
     - /speckit.aide.create-queue → docs/aide/queue/queue-NNN.md
     - For each item in the queue, run the FULL SPEC PIPELINE:
-      a. /speckit.aide.create-item  → docs/aide/items/NNN-*.md
-      b. /speckit.specify           → .specify/specs/NNN-name/spec.md
-         (use item file as input for the NLP→spec pipeline)
-      c. /speckit.plan              → research.md, data-model.md, contracts/
-      d. /speckit.tasks             → .specify/specs/NNN-name/tasks.md
-         (TDD task list, T00N IDs, phases: Setup→Tests→Implementation→Validation)
-      e. /speckit.analyze           → fix any CRITICAL findings before proceeding
-      f. /speckit.taskstoissues     → one GitHub Issue per task in tasks.md
-         then add milestone + labels to created issues
-    - MILESTONE + BACKLOG: one item-level GitHub Issue per docs/aide/items/ file,
+      a. /speckit.aide.create-item $ITEM_ID
+         → docs/aide/items/NNN-name.md
+      b. /speckit.specify
+         When prompted for feature name, provide the item ID and description from ITEM.md.
+         → .specify/specs/NNN-name/spec.md (user scenarios, FR-NNN requirements)
+      c. /speckit.plan
+         → .specify/specs/NNN-name/{research.md, data-model.md, contracts/}
+      d. /speckit.tasks
+         → .specify/specs/NNN-name/tasks.md (T00N TDD task list)
+      e. /speckit.analyze
+         Fix any CRITICAL severity findings before proceeding.
+      f. TASK EXPLOSION — create one GitHub Issue per task in tasks.md using gh CLI
+         (DO NOT use /speckit.taskstoissues — it requires GitHub MCP which may not be available)
+         ```bash
+         SPEC_DIR=".specify/specs/$ITEM_ID"
+         TASKS_FILE="$SPEC_DIR/tasks.md"
+         CURRENT_MILESTONE_TITLE=$(gh api repos/$REPO/milestones \
+           --jq '[.[] | select(.state=="open")] | sort_by(.due_on) | .[0].title')
+         EPIC_ID=$(gh issue list --repo $REPO --milestone "$CURRENT_MILESTONE_TITLE" \
+           --label "epic" --json id,number --jq '.[0].id')
+
+         # Parse each task line: "- [ ] T00N <description> — file: <file>"
+         python3 - <<'PYEOF'
+         import re, subprocess, os
+         tasks_file = os.environ.get('TASKS_FILE', '')
+         repo = os.environ.get('REPO', '')
+         milestone = os.environ.get('CURRENT_MILESTONE_TITLE', '')
+         item_id = os.environ.get('ITEM_ID', '')
+         pr_label = os.environ.get('PR_LABEL', '')
+
+         with open(tasks_file) as f:
+             content = f.read()
+
+         tasks = re.findall(r'- \[ \] (T\d+[^\n]+)', content)
+         for task in tasks:
+             title = f"task({item_id}): {task[:80]}"
+             body = f"Part of item `{item_id}`.\n\nSpec: `.specify/specs/{item_id}/spec.md`\nTasks: `.specify/specs/{item_id}/tasks.md`"
+             cmd = [
+                 'gh', 'issue', 'create', '--repo', repo,
+                 '--milestone', milestone,
+                 '--label', pr_label,
+                 '--label', 'kind/chore',
+                 '--label', 'size/s',
+                 '--title', title,
+                 '--body', body
+             ]
+             result = subprocess.run(cmd, capture_output=True, text=True)
+             issue_num = result.stdout.strip().split('/')[-1]
+             print(f"Created task issue #{issue_num}: {title[:60]}")
+
+             # Link as sub-issue of epic
+             if issue_num and os.environ.get('EPIC_ID'):
+                 item_node = subprocess.run(
+                     ['gh', 'issue', 'view', issue_num, '--repo', repo, '--json', 'id', '--jq', '.id'],
+                     capture_output=True, text=True
+                 ).stdout.strip()
+                 subprocess.run([
+                     'gh', 'api', 'graphql', '-f', f'query=mutation{{addSubIssue(input:{{issueId:"{os.environ["EPIC_ID"]}" subIssueId:"{item_node}"}}){{issue{{number}}}}}}'
+                 ], capture_output=True)
+         PYEOF
+         ```
+    - ITEM-LEVEL ISSUE: one GitHub Issue per docs/aide/items/ file,
       attached to current milestone, linked as sub-issue of milestone epic
     - /speckit.maqa-github-projects.populate to add cards to board
 1c. Pick next assignable item (dependency check)
