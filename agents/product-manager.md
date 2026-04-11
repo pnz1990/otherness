@@ -124,8 +124,14 @@ gh issue create --repo $REPO \
 **Delivers**: <what users can do after this milestone>
 **Journeys unblocked**: <which J1-JN this enables>
 
-Items will be created when this milestone becomes active."
+Sub-issues will be added by the coordinator as items are specced via
+/speckit.specify → /speckit.plan → /speckit.tasks → /speckit.taskstoissues.
+Each task becomes a GitHub Issue linked here automatically."
 ```
+
+Future milestones beyond the next one get epics only (no sub-issues yet).
+The NEXT milestone's epics will be populated when the coordinator generates
+the first queue for that milestone and runs the full spec pipeline.
 
 ### D. Team field on all issues
 
