@@ -169,9 +169,16 @@ OPT_DONE=$(python3 -c "import re; [print(m.group(1)) for line in open('maqa-gith
 gh issue list --repo $REPO --milestone "$CURRENT_MILESTONE_TITLE" \
   --label "epic" --state open --json number --jq '.[].number' | \
 while read EPIC_NUM; do
-  # Check if all sub-issues are closed
-  OPEN_SUBS=$(gh issue view $EPIC_NUM --repo $REPO --json trackedIssues \
-    --jq '[.trackedIssues[] | select(.state == "OPEN")] | length' 2>/dev/null || echo "0")
+  # Check if all sub-issues are closed using GraphQL subIssues field
+  # (gh CLI trackedIssues field is not supported — use GraphQL instead)
+  OPEN_SUBS=$(gh api graphql -f query="
+  {
+    repository(owner:\"$(echo $REPO|cut -d/ -f1)\", name:\"$(echo $REPO|cut -d/ -f2)\") {
+      issue(number:$EPIC_NUM) {
+        subIssues(first:50) { nodes { state } }
+      }
+    }
+  }" --jq '[.data.repository.issue.subIssues.nodes[] | select(.state == "OPEN")] | length' 2>/dev/null || echo "skip")
   if [ "$OPEN_SUBS" = "0" ]; then
     gh issue close $EPIC_NUM --repo $REPO 2>/dev/null
     # Set board card to Done
