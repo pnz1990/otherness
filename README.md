@@ -83,36 +83,34 @@ Agent files live outside any git repo (`~/.otherness/`) so all worktrees on all 
 
 ## New project setup
 
+See **[onboarding-new-project.md](./onboarding-new-project.md)** for the full guide including:
+- All required project files and their expected content
+- GitHub board setup with field IDs
+- Label taxonomy to create
+- Minimum viable file set
+
+**Quick start:**
+
 ```bash
 # 1. Clone otherness once per machine
 git clone git@github.com:pnz1990/otherness.git ~/.otherness
 
-# 2. In your project repo — copy and configure
+# 2. In your project repo
 cp ~/.otherness/maqa-config-template.yml maqa-config.yml
-
-# Edit maqa-config.yml:
-#   agents_path: ~/.otherness/agents
-#   mode: standalone   # or: team
-#   test_command: "your test command"
-
-# Edit AGENTS.md — set these fields:
-#   PROJECT_NAME:    your-project
-#   PR_LABEL:        your-label
-#   REPORT_ISSUE:    1
-#   BUILD_COMMAND:   your build command
-#   TEST_COMMAND:    your test command
-#   LINT_COMMAND:    your lint command
-#   VULN_COMMAND:    your vuln scan command (optional)
-
-# Create GitHub Projects board and populate maqa-github-projects/github-projects-config.yml
-# with your board's field IDs (Status, Team, Priority, Size, Target date)
+# Edit AGENTS.md, docs/aide/, .specify/memory/, maqa-github-projects/
+# (see onboarding-new-project.md for required content)
 
 # 3. Run
-# Standalone (one session, all roles): /speckit.maqa.standalone
-# Team (concurrent sessions):          /speckit.maqa.coordinator
-#                                       /speckit.maqa.feature  (one per engineer)
-#                                       /speckit.maqa.qa
+/speckit.maqa.standalone
 ```
+
+## Existing project setup
+
+See **[onboarding-existing-project.md](./onboarding-existing-project.md)** for the full guide including:
+- How to describe what already exists so agents don't re-implement it
+- Seeding state.json with completed items
+- Mapping existing issues/milestones to otherness taxonomy
+- Common mistakes and how to avoid them
 
 ## Updating the process
 
