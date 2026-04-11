@@ -105,6 +105,22 @@ LOOP:
    gh issue view $REPORT_ISSUE --repo $REPO --json comments \
      --jq '.comments[-5:][].body' | grep -q "PROJECT COMPLETE" && exit 0
 
+   MAIN CI CHECK — check main branch health before reviewing any PR:
+   ```bash
+   MAIN=$(gh run list --repo $REPO --branch main --limit 1 --json conclusion,databaseId \
+     --jq '.[0]' 2>/dev/null)
+   MAIN_STATUS=$(echo $MAIN | python3 -c "import json,sys; print(json.load(sys.stdin).get('conclusion','unknown'))" 2>/dev/null)
+   if [ "$MAIN_STATUS" = "failure" ]; then
+     RUN_ID=$(echo $MAIN | python3 -c "import json,sys; print(json.load(sys.stdin).get('databaseId',''))" 2>/dev/null)
+     echo "🔴 MAIN CI RED (run $RUN_ID) — posting alert before reviewing PRs"
+     gh issue comment $REPORT_ISSUE --repo $REPO \
+       --body "[🔍 QA] 🔴 MAIN BRANCH CI IS RED. Run: https://github.com/$REPO/actions/runs/$RUN_ID
+Will not approve PRs until main is green. Coordinator: please investigate."
+   fi
+   # Note: QA still reviews PRs when main is red — some failures may be pre-existing.
+   # But include a warning in the review if main is currently red.
+   ```
+
 3. POLL:
    gh pr list --repo $REPO --label "$PR_LABEL" --state open \
      --json number,title,headRefName,updatedAt

@@ -131,6 +131,27 @@ LOOP:
 
    GITHUB REALITY CHECK — cross-verify state.json against GitHub every cycle:
    ```bash
+   # 0. CHECK MAIN BRANCH CI — if main is red, everything stops.
+   #    Engineers cannot merge; the whole pipeline is blocked.
+   MAIN_CI=$(gh run list --repo $REPO --branch main --limit 3 \
+     --json status,conclusion,name,databaseId \
+     --jq '[.[] | select(.status == "completed")] | .[0] | {conclusion:.conclusion, name:.name, id:.databaseId}')
+   MAIN_CONCLUSION=$(echo $MAIN_CI | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('conclusion','unknown'))" 2>/dev/null)
+   if [ "$MAIN_CONCLUSION" = "failure" ]; then
+     RUN_ID=$(echo $MAIN_CI | python3 -c "import json,sys; print(json.load(sys.stdin).get('id',''))" 2>/dev/null)
+     FAILED_STEPS=$(gh run view $RUN_ID --repo $REPO --json jobs \
+       --jq '[.jobs[] | select(.conclusion == "failure") | .name] | join(", ")' 2>/dev/null)
+     gh issue comment $REPORT_ISSUE --repo $REPO \
+       --body "[🎯 COORDINATOR] 🔴 MAIN BRANCH CI RED — all work paused.
+Run: https://github.com/$REPO/actions/runs/$RUN_ID
+Failed jobs: $FAILED_STEPS
+Engineers: do not merge PRs. Fix main CI before proceeding."
+     # Apply needs-human only if it has been red for > 30 min (check last 3 runs)
+     RED_COUNT=$(gh run list --repo $REPO --branch main --limit 3 \
+       --json conclusion --jq '[.[] | select(.conclusion == "failure")] | length' 2>/dev/null || echo "0")
+     [ "$RED_COUNT" -ge "2" ] && gh issue edit $REPORT_ISSUE --repo $REPO --add-label "needs-human" 2>/dev/null || true
+   fi
+
    # 1. Find PRs that merged but state.json not updated (engineer session may have died)
    gh pr list --repo $REPO --state merged --label "$PR_LABEL" \
      --json number,headRefName,mergedAt --jq '.[] | select(.mergedAt > "'$(date -u -d '30 minutes ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-30M +%Y-%m-%dT%H:%M:%SZ)'")'

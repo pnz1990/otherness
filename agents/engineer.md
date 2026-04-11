@@ -214,7 +214,19 @@ If check fails: post conflict on Issue #$REPORT_ISSUE and STOP.
 
 5. MONITOR CI — poll every 3 min:
    gh pr checks <N> --repo $REPO
-   If red: fix, push. Do NOT proceed until ALL checks green.
+   If red: read the failure, fix, push. Do NOT proceed until ALL checks green.
+
+   ALSO monitor main branch CI on every cycle:
+   ```bash
+   MAIN=$(gh run list --repo $REPO --branch main --limit 1 --json conclusion --jq '.[0].conclusion' 2>/dev/null)
+   if [ "$MAIN" = "failure" ]; then
+     echo "🔴 MAIN CI RED — your work or a concurrent merge may have broken main."
+     gh run list --repo $REPO --branch main --limit 1 --json databaseId --jq '.[0].databaseId' | \
+       xargs -I{} gh run view {} --repo $REPO --json jobs \
+       --jq '[.jobs[] | select(.conclusion == "failure") | .name] | join(", ")'
+     # Investigate, open hotfix PR, fix, merge. Do not open new feature PRs until main is green.
+   fi
+   ```
 
 6. RESPOND TO QA — poll every 5 min:
    gh pr view <N> --repo $REPO --json reviews,comments

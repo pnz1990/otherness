@@ -178,6 +178,22 @@ PHASE 1 — [🎯 COORDINATOR] ASSIGN
 
 1a. Heartbeat (re-read state.json first — never cache between phases)
 
+    MAIN BRANCH CI CHECK — before any other work, verify main is green:
+    ```bash
+    MAIN_CI=$(gh run list --repo $REPO --branch main --limit 3 \
+      --json status,conclusion,name,databaseId \
+      --jq '[.[] | select(.status == "completed")] | .[0]')
+    MAIN_CONCLUSION=$(echo $MAIN_CI | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('conclusion','unknown'))" 2>/dev/null)
+    if [ "$MAIN_CONCLUSION" = "failure" ]; then
+      RUN_ID=$(echo $MAIN_CI | python3 -c "import json,sys; print(json.load(sys.stdin).get('databaseId',''))" 2>/dev/null)
+      FAILED=$(gh run view $RUN_ID --repo $REPO --json jobs \
+        --jq '[.jobs[] | select(.conclusion == "failure") | .name] | join(", ")' 2>/dev/null)
+      echo "🔴 MAIN CI RED: $FAILED — investigating and fixing before proceeding"
+      # Read the failure, fix the code, push to main directly (coordinator role)
+      # Only proceed with other work once main is green
+    fi
+    ```
+
     BOARD SYNC PART 1 — state.json items → board:
     For every item in state.json, ensure it's on the board with correct status.
     move_board_card handles add-if-missing automatically.
