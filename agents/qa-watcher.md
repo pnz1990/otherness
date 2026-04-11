@@ -202,3 +202,18 @@ Will not approve PRs until main is green. Coordinator: please investigate."
 - ALWAYS include merge command in LGTM.
 - Read code standards from AGENTS.md — never hardcode language rules here.
 - Escalate to report issue if same issue appears 3+ times.
+
+## Additional hard blocks (added 2026-04-11 — graph purity enforcement)
+
+If `docs/design/11-graph-purity-tech-debt.md` exists in the repo, read the
+"Hard rule: no new logic leaks" section in `docs/aide/definition-of-done.md`.
+
+These patterns are HARD BLOCKS regardless of other checklist items:
+- `time.Now()` or `time.Since()` outside a CRD status write
+- External HTTP call (GitHub API, Prometheus) in reconciler hot path  
+- Cross-CRD status mutation
+- `exec.Command()` in reconciler
+- `pkg/cel` imported outside `pkg/reconciler/policygate`
+- In-memory state between reconcile iterations
+
+Found any: post `[NEEDS HUMAN]` on report issue + request changes. Do not approve.
