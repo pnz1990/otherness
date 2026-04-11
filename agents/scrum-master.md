@@ -104,14 +104,163 @@ Use GitHub as the source of truth for PR and issue data. Use state.json for timi
 ### Step 3 — SDLC health checks
 
 From state.json + GitHub data:
-- Does `sdlc.md` reflect what the team actually did? (compare report issue comments to sdlc.md steps)
-- QA rejection rate > 30%? → engineers not self-validating before opening PRs
-- Any open `needs-human` issues older than 48h without coordinator response? → coordinator dead-session risk
-- Any open `sdlc-improvement` issues from previous SM runs? → close resolved ones, action unresolved
-- Board items with NO_STATUS → agents aren't setting board fields correctly
-- PRs open > 24h with no QA activity AND CI green → QA may be stuck
-- Are agent files in `$AGENTS_PATH` still accurate given what the team actually did?
-- Is `constitution.md` still accurate?
+- Does `sdlc.md` reflect what the team actually did?
+- QA rejection rate > 30%? → engineers not self-validating
+- Any open `needs-human` issues older than 48h? → coordinator dead-session risk
+- Board items with NO_STATUS → agents aren't updating board
+- PRs open > 24h with CI green and no QA activity → QA may be stuck
+- Are agent files in `$AGENTS_PATH` still accurate?
+
+### Step 3b — Cross-doc/spec consistency audit (every 2 batches)
+
+Check `batches_since_doc_audit` in state.json. If >= 2, run:
+
+```bash
+# 1. Verify every spec in .specify/specs/*/spec.md has a corresponding
+#    user-facing doc page in docs/. List specs with no doc match:
+python3 - <<'EOF'
+import os, re, glob
+
+specs = glob.glob('.specify/specs/*/spec.md')
+docs = set()
+for root, dirs, files in os.walk('docs'):
+    for f in files:
+        if f.endswith('.md'):
+            docs.add(os.path.join(root, f).lower())
+
+for spec in sorted(specs):
+    feature = os.path.basename(os.path.dirname(spec))
+    # Read spec for user-facing surfaces
+    content = open(spec).read()
+    # Check if CLI commands in spec have a doc entry
+    cli_cmds = re.findall(r'`kardinal \w+`', content)
+    for cmd in cli_cmds:
+        cmd_name = cmd.strip('`').split()[1]
+        if not any(cmd_name in d for d in docs):
+            print(f"MISSING DOC: {feature} — {cmd} not found in docs/")
+EOF
+
+# 2. Verify every example in examples/ applies cleanly (dry-run):
+for YAML in examples/*/*.yaml examples/*/*/*.yaml 2>/dev/null; do
+  [ -f "$YAML" ] || continue
+  kubectl apply --dry-run=client -f "$YAML" 2>&1 | grep -E "error|Error" && \
+    echo "STALE EXAMPLE: $YAML" || true
+done
+
+# 3. Verify definition-of-done.md journey steps reference commands that exist in docs/:
+grep -E 'kardinal \w+' docs/aide/definition-of-done.md | while read CMD; do
+  CMD_NAME=$(echo "$CMD" | grep -oE 'kardinal \w+' | head -1 | awk '{print $2}')
+  grep -r "$CMD_NAME" docs/ --include="*.md" -l | grep -v "definition-of-done" | \
+    grep -q . || echo "UNDOCUMENTED CMD in DoD: kardinal $CMD_NAME"
+done
+
+# 4. Check spec FR-NNN references have test coverage:
+for SPEC in .specify/specs/*/spec.md; do
+  FEATURE=$(basename $(dirname $SPEC))
+  FRS=$(grep -oE 'FR-[0-9]+' "$SPEC" | sort -u)
+  for FR in $FRS; do
+    grep -r "$FR" --include="*.go" -l . 2>/dev/null | grep -q "_test.go" || \
+      echo "NO TEST for $FR in $FEATURE"
+  done
+done
+```
+
+If issues found: open a GitHub Issue labeled `doc-debt` for each gap.
+Update state.json: `batches_since_doc_audit = 0`.
+If no issues: update counter and note "Cross-doc audit: clean" in [SDLC REVIEW].
+
+### Step 3c — Code pattern/style scan (every batch)
+
+```bash
+# 1. Detect inconsistent error handling patterns:
+# Expected: fmt.Errorf("context: %w", err) — find any bare errors or non-wrapping
+grep -rn "errors\.New\|fmt\.Errorf.*[^%w]\")" --include="*.go" . 2>/dev/null | \
+  grep -v "_test.go\|vendor\|\.git" | grep -v "^Binary" | head -10 && \
+  echo "Review above for non-wrapping errors"
+
+# 2. Detect logging inconsistencies — any fmt.Println or log.Printf in non-test code:
+grep -rn "fmt\.Println\|log\.Printf\|log\.Println\|fmt\.Printf" \
+  --include="*.go" . 2>/dev/null | \
+  grep -v "_test.go\|vendor\|\.git" | grep -v "^Binary" | head -10
+
+# 3. Detect missing copyright headers:
+for F in $(find . -name "*.go" -not -path "*/vendor/*" -not -path "*/.git/*" 2>/dev/null); do
+  head -1 "$F" | grep -q "Copyright" || echo "MISSING HEADER: $F"
+done | head -10
+
+# 4. Detect struct naming inconsistency — reconcilers should all follow *Reconciler pattern:
+grep -rn "type.*Reconcile[^r]" --include="*.go" . 2>/dev/null | \
+  grep -v "_test.go\|vendor\|\.git" | head -5
+```
+
+If any pattern violations found: open a GitHub Issue labeled `code-health` per category.
+Minor fixes (< 5 files): apply directly and commit to main. Large refactors: open issue.
+
+### Step 3d — Dead code and dead file scan (every 3 batches)
+
+Check `batches_since_dead_scan` in state.json. If >= 3, run:
+
+```bash
+# 1. Find unused Go exports (functions/types exported but never referenced):
+# Use staticcheck or go vet unused analysis if available:
+staticcheck -checks=U1000 ./... 2>/dev/null | head -20 || \
+  go vet ./... 2>/dev/null | grep -i "unused\|dead" | head -20 || true
+
+# 2. Find Go files that are never imported:
+# List all packages, check if any have zero imports from the rest of the codebase:
+python3 - <<'EOF'
+import os, re, glob, subprocess
+
+# Get all .go files (non-test)
+go_files = [f for f in glob.glob('**/*.go', recursive=True)
+            if not f.endswith('_test.go') and 'vendor' not in f]
+
+# Get all package paths
+packages = set()
+for f in go_files:
+    pkg = os.path.dirname(f)
+    if pkg: packages.add(pkg)
+
+# Check each package for imports from the rest of the codebase
+module = open('go.mod').read().split('\n')[0].replace('module ', '').strip()
+for pkg in sorted(packages):
+    pkg_import = f"{module}/{pkg}"
+    # Search for any import of this package
+    result = subprocess.run(['grep', '-r', pkg_import, '--include=*.go', '-l', '.'],
+                            capture_output=True, text=True)
+    if not result.stdout.strip():
+        print(f"POTENTIALLY UNUSED PACKAGE: {pkg}")
+EOF
+
+# 3. Find example files or doc files that reference features no longer in the codebase:
+grep -roh 'kardinal \w\+' examples/ docs/ 2>/dev/null | sort -u | while read CMD; do
+  CMD_NAME=$(echo "$CMD" | awk '{print $2}')
+  grep -r "\"$CMD_NAME\"" cmd/ --include="*.go" -l 2>/dev/null | grep -q . || \
+    echo "DEAD REFERENCE in docs/examples: kardinal $CMD_NAME"
+done
+
+# 4. Find .md files in docs/ that are not linked from any other doc or example:
+# (orphaned docs)
+python3 - <<'EOF'
+import os, glob, re
+
+all_docs = set(glob.glob('docs/**/*.md', recursive=True))
+referenced = set()
+for doc in all_docs:
+    content = open(doc).read()
+    for ref in re.findall(r'\[.*?\]\((docs/[^)]+)\)', content):
+        referenced.add(ref)
+
+orphaned = all_docs - referenced - {'docs/aide/vision.md', 'docs/aide/roadmap.md',
+                                     'docs/aide/definition-of-done.md'}
+for doc in sorted(orphaned):
+    print(f"ORPHANED DOC (not linked from anywhere): {doc}")
+EOF
+```
+
+If dead code/files found: open GitHub Issues labeled `cleanup` per item.
+Update state.json: `batches_since_dead_scan = 0`.
+If clean: note "Dead code scan: clean" in [SDLC REVIEW].
 
 ### Step 4 — Apply improvements
 Minor changes (< 30 lines, non-structural): edit file, commit, push to main.
@@ -119,32 +268,41 @@ Large changes: open GitHub Issue labeled `sdlc-improvement`.
 
 **ATOMIC SCHEMA RULE**: state machine name changes must update the Engineer PICK UP polling condition in the same commit.
 
-### Step 5 — Update last_sm_review
+### Step 5 — Update last_sm_review and audit counters
 ```bash
 python3 - <<'EOF'
 import json, datetime, subprocess
 with open('.maqa/state.json', 'r') as f: s = json.load(f)
 s['last_sm_review'] = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+# Increment batch counters for periodic audits
+s['batches_since_doc_audit'] = s.get('batches_since_doc_audit', 0) + 1
+s['batches_since_dead_scan'] = s.get('batches_since_dead_scan', 0) + 1
+# Reset counters if audits ran this batch
+# (SM sets these to 0 in steps 3b/3d when audits run)
 with open('.maqa/state.json', 'w') as f: json.dump(s, f, indent=2)
-subprocess.run("git add .maqa/state.json && git commit -m 'chore: update last_sm_review' && git push origin main", shell=True)
+subprocess.run("git add .maqa/state.json && git commit -m 'chore: update last_sm_review and audit counters' && git push origin main", shell=True)
 EOF
 ```
 
 ### Step 6 — Post [SDLC REVIEW]
 ```bash
-# Compute metrics from GitHub directly for accuracy
 OPEN_NEEDS_HUMAN=$(gh issue list --repo $REPO --label "needs-human" --state open --json number --jq 'length' 2>/dev/null || echo "?")
 OPEN_PRS=$(gh pr list --repo $REPO --state open --label "$PR_LABEL" --json number --jq 'length' 2>/dev/null || echo "?")
 SDLC_ISSUES=$(gh issue list --repo $REPO --label "sdlc-improvement" --state open --json number --jq 'length' 2>/dev/null || echo "?")
+DOC_DEBT=$(gh issue list --repo $REPO --label "doc-debt" --state open --json number --jq 'length' 2>/dev/null || echo "0")
+CODE_HEALTH=$(gh issue list --repo $REPO --label "code-health" --state open --json number --jq 'length' 2>/dev/null || echo "0")
+CLEANUP=$(gh issue list --repo $REPO --label "cleanup" --state open --json number --jq 'length' 2>/dev/null || echo "0")
 
 gh issue comment $REPORT_ISSUE --repo $REPO --body "[🔄 SCRUM-MASTER] ## [SDLC REVIEW] batch #N
 
 **Flow metrics:** Avg: Xh | QA rejection: X% | NEEDS HUMAN open: $OPEN_NEEDS_HUMAN | Open PRs: $OPEN_PRS
-**SDLC improvement issues open:** $SDLC_ISSUES
-**Board accuracy:** <N items with no status / total>
+**SDLC improvement issues:** $SDLC_ISSUES
+**Doc debt issues:** $DOC_DEBT | **Code health issues:** $CODE_HEALTH | **Cleanup issues:** $CLEANUP
+**Cross-doc audit:** <ran/skipped — result>
+**Code pattern scan:** <findings or 'clean'>
+**Dead code scan:** <ran/skipped — result>
 **Issues found:** <list or None>
-**Improvements applied:** <list or None>
-**SDLC needs-human:** <list or None>"
+**Improvements applied:** <list or None>"
 ```
 
 Then exit.

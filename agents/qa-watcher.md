@@ -114,39 +114,64 @@ LOOP:
    b. Already reviewed since last commit? Skip if yes.
    c. Read all PR comments (PM/coordinator flags are blocking)
    d. Read: docs/aide/items/<item>.md, spec.md, full diff (gh pr diff <N> --repo $REPO)
-   e. Checklist (read project-specific rules from AGENTS.md):
-      □ Every Given/When/Then acceptance scenario implemented (not stub)
-      □ Every FR-NNN has real code
-      □ PR body includes journey validation output
-      □ PR body includes /speckit.verify-tasks.run output
-      □ CI green
-      □ All code standards from AGENTS.md satisfied
+
+   e. DOCUMENTATION CHECKS (hard blocks — same weight as code correctness):
+      □ PR body contains "Docs updated:" line — if missing: request changes immediately
+      □ For every user-facing surface in the diff (CLI command, CRD field, API endpoint,
+        UI feature, config option): open the corresponding docs/ page and verify it
+        accurately describes what was implemented. Specifically check:
+          - CLI commands: flags match code, output format matches code, examples run
+          - CRD fields: field names/types/defaults match Go struct in diff
+          - Behaviour: described behaviour matches implementation, not old behaviour
+        If docs/ page doesn't exist and the feature is user-facing: BLOCK. The doc
+        must be written before or with the code, never after.
+      □ PR body contains "Examples verified:" line — if missing: request changes
+      □ If examples/ YAML was added or modified: verify it applies cleanly:
+        kubectl apply --dry-run=client -f examples/<feature>/ (or equivalent for non-k8s)
+        If it fails: BLOCK.
+      □ If a journey in definition-of-done.md references this feature: the journey
+        steps in the PR body must show the exact commands from definition-of-done.md
+        producing the expected output.
+
+   f. SPEC CONSISTENCY CHECKS:
+      □ Every Given/When/Then acceptance scenario from spec.md is implemented (not stub)
+      □ Every FR-NNN has real code — search diff for the FR reference in a test or comment
+      □ PR body includes /speckit.verify-tasks.run output (zero phantom completions)
+      □ CI green (checked in step a)
+
+   g. CODE STANDARDS CHECKS (read project-specific rules from AGENTS.md):
+      □ All code standards from AGENTS.md satisfied (copyright, error wrapping, logging)
       □ No banned filenames from AGENTS.md in diff
       □ No forbidden patterns/imports from AGENTS.md anti-patterns
-      □ docs/ consistent with implementation (if user-facing)
-      □ examples/ YAML applies cleanly (if relevant)
-      □ Feature advances at least one user journey
+      □ CODE PATTERN CONSISTENCY: scan the diff for style inconsistencies vs the existing
+        codebase. Specifically check:
+          - Error handling: uses same pattern as existing code (e.g. fmt.Errorf wrapping)
+          - Logging: uses same library and call pattern (e.g. zerolog.Ctx(ctx))
+          - Struct/interface naming: follows existing conventions in the package
+          - Test structure: table-driven, same assertion library, same helper patterns
+          - If new patterns are introduced without a clear reason: request changes with
+            a reference to the existing pattern that should be followed instead.
 
-      GRAPH-FIRST CHECKS (if docs/design/10-graph-first-architecture.md exists):
+   h. GRAPH-FIRST CHECKS (if docs/design/10-graph-first-architecture.md exists):
       Read the full anti-patterns table in that doc and check each one.
       The following patterns are HARD BLOCKS — request changes immediately:
       □ Business logic evaluated outside a Graph node or a reconciler that writes
-        to its own CRD status (e.g. decision-making inside a controller that does
-        NOT produce a status field that Graph can read)
-      □ New usage of pkg/cel (or equivalent standalone evaluator) outside the
-        explicitly permitted package (check AGENTS.md for the allowed location)
+        to its own CRD status
+      □ New usage of pkg/cel outside the explicitly permitted package
       □ CEL FunctionBinding that makes HTTP calls or any external I/O
       □ Reconciler whose decisions depend on fields it does not write to its own CRD
       □ In-memory dependency between components that should be expressed as CRD fields
       □ Bypassing Graph for "simple" promotion cases
       If any of these are found: post [NEEDS HUMAN] on the report issue AND
-      request changes on the PR. Do NOT approve. The engineer must escalate to
-      human before implementing an alternative.
-   f. POST REVIEW:
+      request changes. Do NOT approve.
+
+   i. POST REVIEW:
       PASS: gh pr review <N> --repo $REPO --approve
             --body "[🔍 QA] LGTM. All criteria satisfied. Engineer: merge NOW."
       FAIL: gh pr review <N> --repo $REPO --request-changes
-            --body "[🔍 QA] Changes Required: <file:line — description>"
+            --body "[🔍 QA] Changes Required:
+      <for each issue: file:line — description. Be specific about which doc page
+       is missing/stale, which example fails, which pattern is inconsistent.>"
 
 5. sleep 120 → go to step 1
 ```

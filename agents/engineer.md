@@ -139,6 +139,30 @@ If check fails: post conflict on Issue #$REPORT_ISSUE and STOP.
 
    - Write state=in_progress. Post: "[$AGENT_ID] Confirmed pickup of $ITEM_ID."
 
+   DOC-FIRST CHECK — before writing any code, verify user-facing documentation exists:
+   ```bash
+   # Read ITEM.md to identify user-facing surfaces (CLI commands, CRDs, API endpoints,
+   # UI features). For each one, check that a doc page exists in docs/:
+   #
+   # Examples:
+   #   New CLI command "kardinal pause" → docs/cli-reference.md must document it
+   #   New CRD type "PolicyGate" → docs/policy-gates.md must describe it
+   #   New API endpoint POST /bundles → docs/api-reference.md must describe it
+   #
+   # Check: ls docs/ and read the relevant page(s).
+   # If the doc page does NOT exist or does not describe this feature:
+   #   WRITE THE DOC FIRST, before any implementation code.
+   #   The doc is the spec. Code serves the doc.
+   #
+   # If the feature requires an example:
+   #   Check examples/ — the relevant example YAML must exist.
+   #   If it doesn't: write it before implementation.
+   #
+   # This is Constitution Article IX: "If a feature is not described in docs/,
+   # examples/, or .specify/specs/, it does not exist."
+   echo "Doc-first check complete — all user-facing surfaces have documentation."
+   ```
+
 2. IMPLEMENT (TDD):
    - Write failing test FIRST
    - eval "$TEST_COMMAND" must pass
@@ -151,10 +175,40 @@ If check fails: post conflict on Issue #$REPORT_ISSUE and STOP.
    - eval "$LINT_COMMAND"
    - Run journey steps from definition-of-done.md. Capture output for PR body.
 
+   DOC CONSISTENCY CHECK — before opening the PR, verify docs match implementation:
+   ```bash
+   # For every user-facing surface introduced or modified in this PR:
+   # 1. Open the relevant doc page in docs/
+   # 2. Read the section describing this feature
+   # 3. Verify it accurately describes what you implemented:
+   #    - CLI commands: exact flags, output format, examples match code
+   #    - CRD fields: field names, types, defaults match the Go struct
+   #    - API endpoints: request/response format matches handler
+   #    - Behaviour: described behaviour matches implementation
+   # 4. If the doc is stale or incomplete: UPDATE IT NOW, before opening the PR.
+   #    A PR that changes behaviour without updating docs MUST be blocked by QA.
+   #
+   # For examples/:
+   # 5. If your feature has an example YAML, apply it dry-run:
+   #    kubectl apply --dry-run=client -f examples/<feature>/
+   #    If it fails: fix the example.
+   #
+   # The PR body MUST include:
+   #    "Docs updated: <list of doc files changed, or 'N/A — no user-facing changes'>"
+   #    "Examples verified: <kubectl apply --dry-run output, or 'N/A'>"
+   echo "Doc consistency check complete."
+   ```
+
 4. PUSH PR:
    - git push -u origin <branch>
    - gh pr create --repo $REPO --label "$PR_LABEL" (use pr-template.md for body)
-   - Body MUST include: item ID, spec ref, acceptance criteria, test output, journey output
+   - Body MUST include:
+     - Item ID and spec reference
+     - Acceptance criteria checked (each FR-NNN: ✅/❌)
+     - Test output (`go test` or equivalent)
+     - Journey validation output
+     - **"Docs updated: <list of doc files changed, or 'N/A — no user-facing changes'>"**
+     - **"Examples verified: <output of kubectl apply --dry-run, or 'N/A'>"**
    - Write state=in_review, pr_number=<N>
 
 5. MONITOR CI — poll every 3 min:
