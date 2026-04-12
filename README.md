@@ -113,7 +113,7 @@ Each session creates its own `[AGENT_NAME] Progress Log` GitHub issue with hourl
 | Full backlog | Projects → Backlog |
 | Next release progress | GitHub Milestones |
 | What shipped | GitHub Releases |
-| Team health | Issue #REPORT_ISSUE |
+| Agent reports | Issue #REPORT_ISSUE |
 | Per-agent progress | Each agent's Progress Log issue |
 | Blocking decisions | Issues labeled `needs-human` |
 

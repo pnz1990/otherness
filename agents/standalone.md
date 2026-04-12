@@ -126,8 +126,8 @@ EOF
 6. `.specify/memory/sdlc.md`
 7. `docs/aide/team.yml`
 8. `AGENTS.md`
-9. `docs/design/10-graph-first-architecture.md` (if exists)
-10. `docs/design/11-graph-purity-tech-debt.md` (if exists)
+9. Any architecture constraint docs listed in AGENTS.md (if they exist)
+# (project-specific design docs are read based on AGENTS.md references)
 11. `~/.otherness/agents/gh-features.md`
 
 ## MODE CHECK

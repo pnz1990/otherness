@@ -130,7 +130,7 @@ Agents expect kind/*, area/*, priority/*, size/* labels.>
 - <any files that are human-owned and must not be auto-edited>
 ```
 
-**Critical for existing projects**: if your codebase uses different patterns than what otherness defaults assume (e.g. you use `zerolog` but otherness agents might write `log.Printf`), spell it out explicitly in Code Standards. Agents read this and adapt their checklist.
+**Critical for existing projects**: if your codebase uses different patterns than what otherness defaults assume (e.g. you use a custom logger but agents might default to `log.Printf`), spell it out explicitly in Code Standards. Agents read this and adapt their checklist.
 
 ---
 
@@ -189,9 +189,9 @@ If `specify init` was already run, you have a `constitution.md`. Read it and ver
 
 Copy `constitution.md` from `~/.otherness` (ask the agent to generate it from your AGENTS.md using `/speckit.constitution`).
 
-### Critical article to add: Graph-first or equivalent
+### Critical article to add: your core architectural constraint
 
-Every project has some architectural constraint that must never be violated. Add it as a numbered article. Example from kardinal-promoter:
+Every project has some architectural constraint that must never be violated. Add it as a numbered article. Example pattern (adapt to your project's constraint):
 
 ```
 ## XII. <Constraint Name>
@@ -242,16 +242,9 @@ The state file must exist before agents start. Create it with the correct curren
   "batches_since_doc_audit": 0,
   "batches_since_dead_scan": 0,
   "session_heartbeats": {
-    "COORDINATOR": {"last_seen": null, "cycle": 0},
-    "QA":          {"last_seen": null, "cycle": 0},
     "STANDALONE":  {"last_seen": null, "cycle": 0}
   },
-  "engineer_slots": {
-    "ENGINEER-1": null,
-    "ENGINEER-2": null,
-    "ENGINEER-3": null
-  },
-  "features": {
+    "features": {
     "<already-completed-item-id>": {
       "state": "done",
       "assigned_to": null,
@@ -316,7 +309,7 @@ Fix any issues before starting the agent. A misconfigured `BUILD_COMMAND` will c
 ```
 
 The agent will:
-1. Self-update from pnz1990/otherness
+1. Self-update from the otherness repo
 2. Read `docs/aide/` and `AGENTS.md`
 3. Check `state.json` — recognize already-done items and skip them
 4. Run PM spec gate

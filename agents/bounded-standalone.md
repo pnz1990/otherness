@@ -159,8 +159,8 @@ EOF
 2. `docs/aide/definition-of-done.md`
 3. `.specify/memory/constitution.md`
 4. `AGENTS.md` — code standards and anti-patterns
-5. `docs/design/10-graph-first-architecture.md` (if exists)
-6. `docs/design/11-graph-purity-tech-debt.md` (if exists)
+5. Any architecture constraint docs referenced in AGENTS.md (if they exist)
+# (project-specific tech debt docs are read based on AGENTS.md references)
 
 ## Awareness: other sessions running
 

@@ -1,0 +1,23 @@
+# Boundary file example — copy and customise for your project
+# Place as BOUNDARY in the repo root, or inject fields directly in the prompt.
+#
+# Fields:
+#   AGENT_NAME        — human-readable name shown in progress reports and PRs
+#   AGENT_ID          — unique machine ID for state.json (no spaces, CAPS)
+#   SCOPE             — one sentence describing what this agent focuses on
+#   ALLOWED_AREAS     — comma-separated area/* labels from AGENTS.md
+#                       (issues must match at least one to be picked up)
+#   ALLOWED_MILESTONES — comma-separated milestone titles
+#                        (empty = all milestones)
+#   ALLOWED_PACKAGES  — comma-separated source paths this agent may modify
+#                       (e.g. src/api, pkg/health, lib/scm)
+#   DENY_PACKAGES     — source paths this agent must NEVER touch, even if
+#                       another field would permit it
+
+AGENT_NAME=Example Agent
+AGENT_ID=STANDALONE-EXAMPLE
+SCOPE=<one sentence describing this agent's focus area>
+ALLOWED_AREAS=area/<component1>,area/<component2>
+ALLOWED_MILESTONES=v0.1.0,v0.2.0
+ALLOWED_PACKAGES=<source-path-1>,<source-path-2>
+DENY_PACKAGES=<source-path-never-touch-1>,<source-path-never-touch-2>
