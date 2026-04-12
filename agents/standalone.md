@@ -257,11 +257,20 @@ PHASE 1 — [🎯 COORD] HEARTBEAT + BOARD SYNC + ASSIGN
     BOARD SYNC (Part 2 — GitHub → board):
     For every non-Done board item: if GitHub issue is CLOSED, set board to Done.
 
-1c. If queue null: run SPEC GATE (PM phase inline), then:
-    - /speckit.aide.create-queue
-    - For each item: write spec.md and tasks.md directly, create task GitHub Issues,
-      create item-level issue, link sub-issues to milestone epic
-    - /speckit.maqa-github-projects.populate
+1c. If queue null:
+    Read vision.md priority order first.
+    Run SPEC GATE (PM phase inline), then generate next queue.
+
+    IF no more planned items exist in the roadmap AND all milestones are closed:
+    Do NOT exit. Instead run PROACTIVE WORK phase:
+    - Code health scan: look for obvious refactor opportunities, inconsistencies,
+      dead code, missing tests in the codebase. Open issues for any found.
+    - Competitive analysis: read competitor releases (from AGENTS.md PM section).
+      Open product-gap or product-proposal issues for any findings.
+    - Product validation: run the product against its own user journeys
+      (see PHASE 5b below). Open bug issues for any failures.
+    - Wait for one of the above to produce an open issue, then assign it.
+    Never exit while the product can be improved.
 
 1d. Assign next item:
     - Dependency check, write CLAIM file, move board: Todo → In Progress
@@ -310,20 +319,90 @@ Spec gate for next stage. Competitive analysis every 3 batches.
 Post [PRODUCT REVIEW] on Issue #$REPORT_ISSUE.
 Update Issue #$REPORT_ISSUE body with current status table.
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PHASE 5b — [📋 PM] PRODUCT VALIDATION (every N cycles)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Read `product_validation_cycles` from maqa-config.yml. Default 3. Run this phase
+every N cycles. This is not a code review — it is using the actual product.
+
+```bash
+VALIDATION_CYCLES=$(python3 -c "
+import re
+for line in open('maqa-config.yml'):
+    m = re.match(r'^product_validation_cycles:\s*(\d+)', line.strip())
+    if m: print(m.group(1)); break
+" 2>/dev/null || echo "3")
+
+CURRENT_CYCLE=$(python3 -c "
+import json
+s=json.load(open('.maqa/state.json'))
+print(s['session_heartbeats']['STANDALONE'].get('cycle',0))
+" 2>/dev/null || echo "0")
+```
+
+If `$VALIDATION_CYCLES > 0` AND `($CURRENT_CYCLE % $VALIDATION_CYCLES) == 0`:
+
+**Run every user journey in docs/aide/definition-of-done.md:**
+
+For each journey:
+1. Read the exact steps listed in the journey
+2. Execute them for real — not unit tests, not mocks. Use the actual CLI,
+   apply the actual YAML, check the actual output.
+3. Compare actual output to the documented expected output.
+4. If a step produces wrong output, fails, or the doc doesn't match reality:
+   - Open a GitHub Issue labeled `kind/bug` or `kind/docs` with:
+     - The exact command run
+     - The expected output (from definition-of-done.md)
+     - The actual output
+     - Whether this is a code bug or a doc mismatch
+5. If a journey passes fully: update its status in definition-of-done.md to ✅
+
+Also run any additional validation scenarios defined in AGENTS.md under
+a `PRODUCT_VALIDATION` section if it exists. This is where the project
+can define custom validation scenarios beyond the standard journeys.
+
+After validation, post on Issue #$REPORT_ISSUE:
+```
+[📋 PM] ## [PRODUCT VALIDATION] cycle $CURRENT_CYCLE
+
+| Journey | Result | Notes |
+|---|---|---|
+| J1 Quickstart | ✅ Pass / ❌ Fail: <step> | <actual output> |
+...
+
+Bugs opened: <list or None>
+Doc fixes: <list or None>
+```
+
+**The PM must actually run the product, not just read the tests.**
+If the infrastructure isn't available (no cluster, no credentials):
+document the blocker as a `needs-human` issue, not silently skip.
+
 → LOOP
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 STOP CONDITION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-All journeys in definition-of-done.md are ✅.
-Post [PROJECT COMPLETE] on Issue #$REPORT_ISSUE. Exit.
+There is no stop condition based on backlog being empty.
+The only exit is when ALL journeys in definition-of-done.md are ✅
+AND have been validated by product validation (not just unit tests)
+AND the human has confirmed the project is complete.
+
+If journeys pass validation → Post [PROJECT COMPLETE] on Issue #$REPORT_ISSUE,
+update GitHub Projects board status to COMPLETE, then await human confirmation
+before exiting. Never exit autonomously on backlog depletion alone.
 ```
 
 ## Hard rules
 
+- **Never exit because the backlog is empty.** Empty backlog = run product validation,
+  code health scans, competitive analysis. Find work. The product can always be improved.
 - Never wait for human input.
 - Adversarial QA: looking for reasons to reject, not validate.
+- **Product validation runs the actual product** — not tests, not mocks. Real commands,
+  real output, compared against definition-of-done.md. Discrepancies → bugs or doc fixes.
 - Max 3 QA cycles per item.
 - TDD always. Merge mandatory.
 - Read code standards from AGENTS.md — never hardcode language rules here.

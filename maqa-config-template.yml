@@ -20,3 +20,11 @@ max_parallel: 3
 # Only the unbounded standalone posts these — bounded agents never do.
 # Set to 0 to disable.
 status_update_cycles: 5
+
+# ── Product validation ────────────────────────────────────────────────────────
+# How often the PM phase runs the actual product against user journeys in
+# docs/aide/definition-of-done.md. Runs the real product — not unit tests —
+# and opens bug/doc issues for any failures or discrepancies found.
+# Set in cycles. Set to 0 to disable.
+# Only the unbounded standalone runs product validation.
+product_validation_cycles: 3
