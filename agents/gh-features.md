@@ -153,18 +153,45 @@ gh project item-edit --id "$BOARD_ITEM_ID" --project-id "$BOARD_PROJECT_ID" \
 Note: view names and filters are configured in the GitHub Projects UI (not via API).
 The above names are a recommended convention — configure them once in the UI.
 
-## Project status updates (PM responsibility, each batch)
+## Project status updates (unbounded standalone only, every N cycles)
 
-Post a project-level status update after each batch review:
+The unbounded standalone posts executive status updates to the GitHub Projects board.
+These are visible to stakeholders at the top of the board as a health indicator.
+
+Frequency is controlled by `status_update_cycles` in `maqa-config.yml` (default: 5).
+Bounded agents NEVER post project status updates — they see only their scope.
+
+Status values: `ON_TRACK` 🟢 | `AT_RISK` 🟡 | `OFF_TRACK` 🔴 | `COMPLETE` ✅
+
 ```bash
-# Mark project status (On track / At risk / Off track)
+# Post an executive status update
 gh api graphql -f query='
 mutation {
-  updateProjectV2(input: {
+  createProjectV2StatusUpdate(input: {
     projectId: "'"$BOARD_PROJECT_ID"'"
-    shortDescription: "<current milestone title> — <N>/<total> items done"
+    status: ON_TRACK
+    body: "## 🟢 Project Status — May 1, 2026\n\n**Overall**: ON_TRACK\n\n### Milestone Progress\nv0.2.1: 80% (6 open)\n\n### Recently Shipped\n- feat: PRStatus CRD\n\n### Next focus\nWorking towards **v0.4.0**\n\n### Attention needed\nNone"
   }) {
-    projectV2 { title shortDescription }
+    statusUpdate { id status createdAt }
   }
 }'
 ```
+
+**Status derivation rules** (generic — adapt to project context):
+- `OFF_TRACK`: main CI red for 2+ consecutive runs AND needs-human > 2
+- `AT_RISK`: needs-human > 0 OR CI recently red OR blocked items > 0
+- `ON_TRACK`: CI green, needs-human = 0, milestone progressing
+- `COMPLETE`: all milestones closed, all journeys in definition-of-done.md pass
+
+The body should be executive-level: milestone %, recently shipped, what's next, any blockers.
+No technical details. No issue numbers. No package names. Write for a stakeholder audience.
+
+## Board views — what each shows the manager
+
+| View | Layout | Purpose | What to check |
+|------|---------|---------|---------------|
+| 📋 Backlog | Table, grouped by Milestone | Full backlog — all items across all milestones | Overall project health, milestone progress |
+| 🏃 Sprint | Board, filtered to current milestone, no epics | Day-to-day task status | Nothing should sit in "In Progress" for > 2 days |
+
+Note: view names and filters are configured in the GitHub Projects UI (not via API).
+The above names are a recommended convention — configure them once in the UI.

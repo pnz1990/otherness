@@ -12,3 +12,11 @@ agents_path: "~/.otherness/agents"
 # ── Parallelism ───────────────────────────────────────────────────────────────
 # For bounded sessions: max concurrent engineer slots (informational only)
 max_parallel: 3
+
+# ── Project status updates ────────────────────────────────────────────────────
+# How often the unbounded standalone posts an executive status update to the
+# GitHub Projects board (visible to stakeholders at the top of the board).
+# Set in cycles (one cycle = one issue worked on).
+# Only the unbounded standalone posts these — bounded agents never do.
+# Set to 0 to disable.
+status_update_cycles: 5

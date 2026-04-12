@@ -116,6 +116,99 @@ with open('.maqa/state.json', 'w') as f: json.dump(s, f, indent=2)
 EOF
 ```
 
+## Project status update (every N cycles)
+
+Read `status_update_cycles` from `maqa-config.yml`. Default 5. Post a status update
+to the GitHub Projects board every N cycles. Only the unbounded standalone does this —
+bounded agents never post project status updates.
+
+```bash
+STATUS_UPDATE_CYCLES=$(python3 -c "
+import re
+for line in open('maqa-config.yml'):
+    m = re.match(r'^status_update_cycles:\s*(\d+)', line.strip())
+    if m: print(m.group(1)); break
+" 2>/dev/null || echo "5")
+
+CURRENT_CYCLE=$(python3 -c "
+import json
+s=json.load(open('.maqa/state.json'))
+print(s['session_heartbeats']['STANDALONE'].get('cycle',0))
+" 2>/dev/null || echo "0")
+
+# Post status update every N cycles (and always on cycle 1 = startup)
+if [ "$STATUS_UPDATE_CYCLES" -gt 0 ] && \
+   { [ "$CURRENT_CYCLE" -eq 1 ] || [ $(($CURRENT_CYCLE % $STATUS_UPDATE_CYCLES)) -eq 0 ]; }; then
+
+  # Gather inputs — all read from GitHub, not from state.json, for objectivity
+  MILESTONE_SUMMARY=$(gh api "repos/$REPO/milestones?state=open" \
+    --jq '[.[] | {t:.title, pct: (.closed_issues * 100 / ((.open_issues+.closed_issues)|if . == 0 then 1 else . end)|floor), open:.open_issues}] | .[] | "\(.t): \(.pct)% (\(.open) open)"' 2>/dev/null | head -4)
+
+  NEEDS_HUMAN=$(gh issue list --repo $REPO --label "needs-human" --state open --json number --jq 'length' 2>/dev/null || echo "0")
+  BLOCKED_COUNT=$(gh issue list --repo $REPO --label "blocked" --state open --json number --jq 'length' 2>/dev/null || echo "0")
+
+  CI_STATUS=$(gh run list --repo $REPO --branch main --limit 3 \
+    --json conclusion --jq '[.[].conclusion] | if all(. == "success") then "green" elif any(. == "failure") then "red" else "mixed" end' 2>/dev/null || echo "unknown")
+
+  RECENT_SHIPPED=$(gh pr list --repo $REPO --state merged --label "$PR_LABEL" --limit 5 \
+    --json title --jq '[.[].title[:60]] | join("\n- ")' 2>/dev/null)
+
+  NEXT_MILESTONE=$(gh api "repos/$REPO/milestones?state=open" \
+    --jq 'sort_by(.due_on) | .[0].title' 2>/dev/null || echo "")
+
+  OPEN_NEEDS=$(gh issue list --repo $REPO --label "needs-human" --state open \
+    --json number,title --jq '.[:3] | .[] | "#\(.number) \(.title[:50])"' 2>/dev/null)
+
+  # Derive status
+  if [ "$CI_STATUS" = "red" ] && [ "$NEEDS_HUMAN" -gt 2 ]; then
+    PROJECT_STATUS="OFF_TRACK"
+    STATUS_EMOJI="🔴"
+  elif [ "$CI_STATUS" = "red" ] || [ "$NEEDS_HUMAN" -gt 0 ] || [ "$BLOCKED_COUNT" -gt 0 ]; then
+    PROJECT_STATUS="AT_RISK"
+    STATUS_EMOJI="🟡"
+  else
+    PROJECT_STATUS="ON_TRACK"
+    STATUS_EMOJI="🟢"
+  fi
+
+  # Build executive body — high level, no technical detail
+  UPDATE_BODY="## $STATUS_EMOJI Project Status — $(date -u '+%B %d, %Y')
+
+**Overall**: $PROJECT_STATUS
+
+### Milestone Progress
+$MILESTONE_SUMMARY
+
+### Recently Shipped
+- $RECENT_SHIPPED
+
+### Next focus
+${NEXT_MILESTONE:+Working towards **$NEXT_MILESTONE**}
+
+### Attention needed
+${NEEDS_HUMAN:+${OPEN_NEEDS:-None}}
+${BLOCKED_COUNT:+Blocked items: $BLOCKED_COUNT}
+${CI_STATUS:+CI: $CI_STATUS}"
+
+  # Post to GitHub Projects board
+  if [ -n "$BOARD_PROJECT_ID" ]; then
+    gh api graphql -f query="
+    mutation {
+      createProjectV2StatusUpdate(input: {
+        projectId: \"$BOARD_PROJECT_ID\"
+        status: $PROJECT_STATUS
+        body: $(echo "$UPDATE_BODY" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')
+      }) {
+        statusUpdate { id status createdAt }
+      }
+    }" --jq '.data.createProjectV2StatusUpdate.statusUpdate | "Status update posted: \(.status) at \(.createdAt)"' 2>/dev/null || \
+    echo "Status update: $PROJECT_STATUS (board API unavailable — check BOARD_PROJECT_ID)"
+  fi
+
+  echo "[$PROJECT_STATUS] Project status update posted (cycle $CURRENT_CYCLE)"
+fi
+```
+
 ## Reading order (once at startup)
 
 1. `docs/aide/vision.md`
