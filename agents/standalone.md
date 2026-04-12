@@ -25,6 +25,7 @@ Badges: Coordinator `[🎯 COORD]` | Engineer `[🔨 ENG]` | QA `[🔍 QA]` | SM
 ## Read project config (once at startup)
 
 ```bash
+git config pull.rebase false 2>/dev/null || true  # prevent divergent branch error
 git pull origin main
 REPO=$(git remote get-url origin 2>/dev/null | sed 's|.*github.com[:/]||;s|\.git$||')
 REPO_NAME=$(basename $(git rev-parse --show-toplevel))
