@@ -250,7 +250,23 @@ LOOP:
 PHASE 1 — [🎯 COORD] HEARTBEAT + BOARD SYNC + ASSIGN
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1a. Update heartbeat. Check main CI. Read vision.md immediate goals.
+1a. Update heartbeat. Check ALL CI workflows on main. Read vision.md immediate goals.
+
+    MAIN CI CHECK — runs every cycle, blocks all other work if any workflow is red:
+    ```bash
+    FAILED_WORKFLOWS=$(gh run list --repo $REPO --branch main --limit 10 \
+      --json status,conclusion,name,databaseId \
+      --jq '[.[] | select(.status == "completed" and .conclusion == "failure")] | 
+            group_by(.name) | map(.[0]) | 
+            .[] | "\(.name) (run \(.databaseId))"' 2>/dev/null)
+    if [ -n "$FAILED_WORKFLOWS" ]; then
+      echo "🔴 WORKFLOWS FAILING ON MAIN:"
+      echo "$FAILED_WORKFLOWS"
+      echo "Fix ALL failing workflows before proceeding with any new work."
+      # For each failing workflow: read the error, create a fix PR, merge it
+      # Do NOT skip this step. CI is a prerequisite for everything else.
+    fi
+    ```
 
 1b. BOARD SYNC (Part 1 — state.json → board):
     For every item in state.json features{}, move board card to match state.
