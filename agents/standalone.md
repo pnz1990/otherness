@@ -347,8 +347,12 @@ If `$VALIDATION_CYCLES > 0` AND `($CURRENT_CYCLE % $VALIDATION_CYCLES) == 0`:
 
 ```bash
 # Step 1: Start validation environment
-# Look for a setup script in hack/ or Makefile
-if grep -q "setup-e2e-env" Makefile 2>/dev/null; then
+# Check which setup scripts are available — prefer the most comprehensive
+if grep -q "setup-multi-cluster-env" Makefile 2>/dev/null && \
+   [ -n "${KUBECONFIG:-}" ] || kubectl config get-contexts 2>/dev/null | grep -q "eks\|EKS"; then
+  # Multi-cluster available — use it for richer validation
+  make setup-multi-cluster-env 2>/dev/null || make setup-e2e-env
+elif grep -q "setup-e2e-env" Makefile 2>/dev/null; then
   make setup-e2e-env
 elif [ -f "hack/setup-e2e-env.sh" ]; then
   bash hack/setup-e2e-env.sh
@@ -358,6 +362,8 @@ fi
 
 # Step 2: Get real test image (project-specific — read from AGENTS.md PRODUCT_VALIDATION section)
 # The AGENTS.md file documents which test app repo and image to use.
+# For projects with a test app CI: get the latest SHA and use the sha-tagged image.
+# Example (kardinal): gh api repos/pnz1990/kardinal-test-app/commits/main --jq '.sha[:7]'
 # Example: get latest SHA from a test app CI
 # TEST_IMAGE=$(gh api repos/<owner>/<test-app>/commits/main --jq '.sha[:7]' | xargs -I{} echo "ghcr.io/<owner>/<test-app>:sha-{}")
 
