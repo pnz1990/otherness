@@ -1,18 +1,14 @@
 # maqa-config.yml — otherness configuration
-# Copy this to your project root. Only contains settings that otherness owns.
-# Build/test/lint/vuln commands belong in AGENTS.md, not here.
+# Copy this to your project root.
 
 # ── Execution mode ────────────────────────────────────────────────────────────
-# "team":       multiple concurrent sessions (coordinator + engineers + QA + SM + PM)
-# "standalone": single session plays all roles sequentially, one item at a time
+# "standalone":         one session, plays all roles (unbounded)
+# "bounded-standalone": one or more scoped sessions (boundary injected in prompt)
 mode: "standalone"
 
 # ── Agent files ───────────────────────────────────────────────────────────────
-# Absolute path to otherness agent files on this machine.
-# Agents self-update from GitHub on every startup — changes propagate automatically.
 agents_path: "~/.otherness/agents"
 
-# ── Parallelism (team mode only) ──────────────────────────────────────────────
-# Maximum number of engineer slots to assign concurrently.
-# Ignored in standalone mode (always 1).
+# ── Parallelism ───────────────────────────────────────────────────────────────
+# For bounded sessions: max concurrent engineer slots (informational only)
 max_parallel: 3
