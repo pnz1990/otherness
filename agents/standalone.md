@@ -343,41 +343,78 @@ print(s['session_heartbeats']['STANDALONE'].get('cycle',0))
 
 If `$VALIDATION_CYCLES > 0` AND `($CURRENT_CYCLE % $VALIDATION_CYCLES) == 0`:
 
-**Run every user journey in docs/aide/definition-of-done.md:**
+**PDCA Validation — use the actual product as a customer would:**
 
-For each journey:
-1. Read the exact steps listed in the journey
-2. Execute them for real — not unit tests, not mocks. Use the actual CLI,
-   apply the actual YAML, check the actual output.
-3. Compare actual output to the documented expected output.
-4. If a step produces wrong output, fails, or the doc doesn't match reality:
-   - Open a GitHub Issue labeled `kind/bug` or `kind/docs` with:
-     - The exact command run
-     - The expected output (from definition-of-done.md)
-     - The actual output
-     - Whether this is a code bug or a doc mismatch
-5. If a journey passes fully: update its status in definition-of-done.md to ✅
+```bash
+# Step 1: Start validation environment
+# Look for a setup script in hack/ or Makefile
+if grep -q "setup-e2e-env" Makefile 2>/dev/null; then
+  make setup-e2e-env
+elif [ -f "hack/setup-e2e-env.sh" ]; then
+  bash hack/setup-e2e-env.sh
+else
+  echo "No E2E setup script found — skipping cluster setup"
+fi
 
-Also run any additional validation scenarios defined in AGENTS.md under
-a `PRODUCT_VALIDATION` section if it exists. This is where the project
-can define custom validation scenarios beyond the standard journeys.
+# Step 2: Get real test image (project-specific — read from AGENTS.md PRODUCT_VALIDATION section)
+# The AGENTS.md file documents which test app repo and image to use.
+# Example: get latest SHA from a test app CI
+# TEST_IMAGE=$(gh api repos/<owner>/<test-app>/commits/main --jq '.sha[:7]' | xargs -I{} echo "ghcr.io/<owner>/<test-app>:sha-{}")
 
-After validation, post on Issue #$REPORT_ISSUE:
+# Step 3: Run validation scenarios from AGENTS.md §Product Validation Scenarios
+# Read that section carefully — it documents the exact commands, expected output,
+# and pass criteria for this project.
+
+# Step 4: For each scenario that FAILS:
+gh issue create --repo $REPO \
+  --label "kind/bug" --label "priority/high" \
+  --title "[PDCA] <scenario name>: <what failed>" \
+  --body "## Product Validation Failure
+
+**Scenario**: <name>
+**Cycle**: $CURRENT_CYCLE
+
+**Command run**:
+\`\`\`bash
+<exact command>
+\`\`\`
+
+**Expected output**:
+\`\`\`
+<from definition-of-done.md>
+\`\`\`
+
+**Actual output**:
+\`\`\`
+<what actually happened>
+\`\`\`
+
+**Impact**: <which journey this blocks>"
+
+# Step 5: For each OUTPUT that doesn't match docs:
+gh issue create --repo $REPO \
+  --label "kind/docs" --label "priority/medium" \
+  --title "[PDCA] Doc mismatch: <command> output doesn't match <doc file>" \
+  --body "..."
+
+# Step 6: Tear down cluster (if it was started here)
+# make kind-down
+
+# Step 7: Update definition-of-done.md journey status table
+# For each journey: ✅ (verified live) or ❌ (fail: <scenario>)
 ```
-[📋 PM] ## [PRODUCT VALIDATION] cycle $CURRENT_CYCLE
 
-| Journey | Result | Notes |
-|---|---|---|
-| J1 Quickstart | ✅ Pass / ❌ Fail: <step> | <actual output> |
-...
-
-Bugs opened: <list or None>
-Doc fixes: <list or None>
+**If infrastructure not available** (no Docker, no kind, no cluster):
+```bash
+gh issue create --repo $REPO \
+  --label "needs-human" --label "area/test" \
+  --title "[PDCA] Product validation blocked: E2E infrastructure unavailable" \
+  --body "Product validation requires a kind cluster with krocodile + ArgoCD.
+Run 'make setup-e2e-env' or provide KUBECONFIG pointing to an existing cluster."
 ```
 
-**The PM must actually run the product, not just read the tests.**
-If the infrastructure isn't available (no cluster, no credentials):
-document the blocker as a `needs-human` issue, not silently skip.
+**The PM must actually run the product, not just read the tests or CI results.**
+Unit tests passing ≠ product working. Run the real commands. Check the real output.
 
 → LOOP
 
