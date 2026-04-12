@@ -141,14 +141,13 @@ gh project item-edit --id "$BOARD_ITEM_ID" --project-id "$BOARD_PROJECT_ID" \
 `__typename == "Issue"` before calling `addProjectV2ItemById`.
 
 3. Link as sub-issue of the milestone epic: `addSubIssue` mutation
-4. The board Backlog view, Roadmap view, and milestone page all update automatically
+4. The board Backlog view and milestone page all update automatically
 
 ## Board views — what each shows the manager
 
 | View | Layout | Purpose | What to check |
 |------|---------|---------|---------------|
 | 📋 Backlog | Table, grouped by Milestone | Full backlog — all items across all milestones | Overall project health, milestone progress |
-| 🗺️ Roadmap (Epics) | Table, filtered label:epic, grouped by Milestone | Product plan — epics with sub-issue progress bars | Are epics progressing? Which milestone is next? |
 | 🏃 Sprint | Board, filtered to current milestone, no epics | Day-to-day task status | Nothing should sit in "In Progress" for > 2 days |
 
 Note: view names and filters are configured in the GitHub Projects UI (not via API).

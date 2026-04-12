@@ -181,8 +181,7 @@ Each session creates its own `[AGENT_NAME] Progress Log` GitHub issue with hourl
 | What you want | Where |
 |---|---|
 | What's being worked on | Projects → Sprint board |
-| Product roadmap | Projects → Roadmap (Epics) |
-| Full backlog | Projects → Backlog |
+| Full backlog by milestone | Projects → Backlog |
 | Next release progress | GitHub Milestones |
 | What shipped | GitHub Releases |
 | Agent reports | Issue #REPORT_ISSUE |
