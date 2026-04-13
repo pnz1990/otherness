@@ -67,10 +67,14 @@ for line in open('AGENTS.md'):
 " 2>/dev/null)
 AGENTS_PATH=$(python3 -c "
 import re, os
-for line in open('maqa-config.yml'):
-    m = re.match(r'^agents_path:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?', line.strip())
-    if m: print(os.path.expanduser(m.group(1).strip())); break
-" 2>/dev/null)
+section = None
+for line in open('otherness-config.yaml'):
+    s = re.match(r'^(\w[\w_]*):', line)
+    if s: section = s.group(1)
+    if section == 'maqa':
+        m = re.match(r'^\s+agents_path:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?', line)
+        if m: print(os.path.expanduser(m.group(1).strip())); break
+" 2>/dev/null || echo "$HOME/.otherness/agents")
 export REPO REPO_NAME REPORT_ISSUE PR_LABEL BUILD_COMMAND TEST_COMMAND LINT_COMMAND VULN_COMMAND AGENTS_PATH
 echo "[STANDALONE] REPO=$REPO | REPORT_ISSUE=$REPORT_ISSUE"
 ```
@@ -78,15 +82,25 @@ echo "[STANDALONE] REPO=$REPO | REPORT_ISSUE=$REPORT_ISSUE"
 ## Read board config (once at startup)
 
 ```bash
-BOARD_CFG="maqa-github-projects/github-projects-config.yml"
+BOARD_CFG="otherness-config.yaml"
 if [ -f "$BOARD_CFG" ]; then
-  BOARD_PROJECT_ID=$(python3 -c "import re; [print(m.group(1)) for line in open('$BOARD_CFG') for m in [re.match(r'^project_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
-  BOARD_FIELD_ID=$(python3 -c "import re; [print(m.group(1)) for line in open('$BOARD_CFG') for m in [re.match(r'^status_field_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
-  OPT_TODO=$(python3 -c "import re; [print(m.group(1)) for line in open('$BOARD_CFG') for m in [re.match(r'^todo_option_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
-  OPT_IN_PROGRESS=$(python3 -c "import re; [print(m.group(1)) for line in open('$BOARD_CFG') for m in [re.match(r'^in_progress_option_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
-  OPT_IN_REVIEW=$(python3 -c "import re; [print(m.group(1)) for line in open('$BOARD_CFG') for m in [re.match(r'^in_review_option_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
-  OPT_DONE=$(python3 -c "import re; [print(m.group(1)) for line in open('$BOARD_CFG') for m in [re.match(r'^done_option_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
-  OPT_BLOCKED=$(python3 -c "import re; [print(m.group(1)) for line in open('$BOARD_CFG') for m in [re.match(r'^blocked_option_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
+  _read_gp() { python3 -c "
+import re
+section=None
+for line in open('$BOARD_CFG'):
+    s=re.match(r'^(\w[\w_]*):', line)
+    if s: section=s.group(1)
+    if section=='github_projects':
+        m=re.match(r'^\s+${1}:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?', line)
+        if m: print(m.group(1).strip()); break
+" 2>/dev/null; }
+  BOARD_PROJECT_ID=$(_read_gp project_id)
+  BOARD_FIELD_ID=$(_read_gp status_field_id)
+  OPT_TODO=$(_read_gp todo_option_id)
+  OPT_IN_PROGRESS=$(_read_gp in_progress_option_id)
+  OPT_IN_REVIEW=$(_read_gp in_review_option_id)
+  OPT_DONE=$(_read_gp done_option_id)
+  OPT_BLOCKED=$(_read_gp blocked_option_id)
   export BOARD_PROJECT_ID BOARD_FIELD_ID OPT_TODO OPT_IN_PROGRESS OPT_IN_REVIEW OPT_DONE OPT_BLOCKED
 fi
 
@@ -125,9 +139,13 @@ bounded agents never post project status updates.
 ```bash
 STATUS_UPDATE_CYCLES=$(python3 -c "
 import re
-for line in open('maqa-config.yml'):
-    m = re.match(r'^status_update_cycles:\s*(\d+)', line.strip())
-    if m: print(m.group(1)); break
+section = None
+for line in open('otherness-config.yaml'):
+    s = re.match(r'^(\w[\w_]*):', line)
+    if s: section = s.group(1)
+    if section == 'maqa':
+        m = re.match(r'^\s+status_update_cycles:\s*(\d+)', line)
+        if m: print(m.group(1)); break
 " 2>/dev/null || echo "5")
 
 CURRENT_CYCLE=$(python3 -c "
@@ -339,15 +357,19 @@ Update Issue #$REPORT_ISSUE body with current status table.
 PHASE 5b — [📋 PM] PRODUCT VALIDATION (every N cycles)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Read `product_validation_cycles` from maqa-config.yml. Default 3. Run this phase
+Read `product_validation_cycles` from `otherness-config.yaml` (`maqa.product_validation_cycles`). Default 3. Run this phase
 every N cycles. This is not a code review — it is using the actual product.
 
 ```bash
 VALIDATION_CYCLES=$(python3 -c "
 import re
-for line in open('maqa-config.yml'):
-    m = re.match(r'^product_validation_cycles:\s*(\d+)', line.strip())
-    if m: print(m.group(1)); break
+section = None
+for line in open('otherness-config.yaml'):
+    s = re.match(r'^(\w[\w_]*):', line)
+    if s: section = s.group(1)
+    if section == 'maqa':
+        m = re.match(r'^\s+product_validation_cycles:\s*(\d+)', line)
+        if m: print(m.group(1)); break
 " 2>/dev/null || echo "3")
 
 CURRENT_CYCLE=$(python3 -c "

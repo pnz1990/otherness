@@ -1,6 +1,19 @@
 # GitHub Project Management — Full Feature Reference
 # Read this file when creating issues, epics, or managing the board.
-# Field IDs are in maqa-github-projects/github-projects-config.yml
+# All field IDs are read from otherness-config.yaml (github_projects section).
+
+# Shared helper — call as: _gp_field <key>
+# Reads a field from the github_projects section of otherness-config.yaml
+_gp_field() { python3 -c "
+import re, sys
+key=sys.argv[1]; section=None
+for line in open('otherness-config.yaml'):
+    s=re.match(r'^(\w[\w_]*):', line)
+    if s: section=s.group(1)
+    if section=='github_projects':
+        m=re.match(r'^\s+' + re.escape(key) + r':\s*[\"\'']?([^\"\'#\n]+)[\"\'']?', line)
+        if m: print(m.group(1).strip()); break
+" "$1" 2>/dev/null; }
 
 ## Label taxonomy (set on every issue at creation)
 
@@ -22,27 +35,27 @@
 
 ## Board field updates (after creating/updating issues)
 
-Read all field IDs from `maqa-github-projects/github-projects-config.yml`.
+Read all field IDs from `otherness-config.yaml` (`github_projects` section).
 
 ### Set Priority on a board item
 ```bash
-PRIORITY_FIELD=$(python3 -c "import re; [print(m.group(1)) for line in open('maqa-github-projects/github-projects-config.yml') for m in [re.match(r'^priority_field_id:\s*\"?([^\"#\n]+)\"?',line)] if m]")
-PRIORITY_HIGH=$(python3 -c "import re; [print(m.group(1)) for line in open('maqa-github-projects/github-projects-config.yml') for m in [re.match(r'^priority_high_option_id:\s*\"?([^\"#\n]+)\"?',line)] if m]")
+PRIORITY_FIELD=$(_gp_field priority_field_id)
+PRIORITY_HIGH=$(_gp_field priority_high_option_id)
 gh project item-edit --id $BOARD_ITEM_ID --project-id $BOARD_PROJECT_ID \
   --field-id $PRIORITY_FIELD --single-select-option-id $PRIORITY_HIGH
 ```
 
 ### Set Size on a board item
 ```bash
-SIZE_FIELD=$(python3 -c "import re; [print(m.group(1)) for line in open('maqa-github-projects/github-projects-config.yml') for m in [re.match(r'^size_field_id:\s*\"?([^\"#\n]+)\"?',line)] if m]")
-SIZE_M=$(python3 -c "import re; [print(m.group(1)) for line in open('maqa-github-projects/github-projects-config.yml') for m in [re.match(r'^size_m_option_id:\s*\"?([^\"#\n]+)\"?',line)] if m]")
+SIZE_FIELD=$(_gp_field size_field_id)
+SIZE_M=$(_gp_field size_m_option_id)
 gh project item-edit --id $BOARD_ITEM_ID --project-id $BOARD_PROJECT_ID \
   --field-id $SIZE_FIELD --single-select-option-id $SIZE_M
 ```
 
 ### Set Target date on a board item (epics get milestone due date)
 ```bash
-TARGET_DATE_FIELD=$(python3 -c "import re; [print(m.group(1)) for line in open('maqa-github-projects/github-projects-config.yml') for m in [re.match(r'^target_date_field_id:\s*\"?([^\"#\n]+)\"?',line)] if m]")
+TARGET_DATE_FIELD=$(_gp_field target_date_field_id)
 # Derive TARGET_DATE from the milestone due date:
 TARGET_DATE=$(gh api repos/$REPO/milestones --jq \
   '[.[] | select(.title == "'"$CURRENT_MILESTONE_TITLE"'")] | .[0].due_on // empty' \
@@ -54,8 +67,8 @@ gh project item-edit --id $BOARD_ITEM_ID --project-id $BOARD_PROJECT_ID \
 
 ### Set Team field (STANDALONE-ENG)
 ```bash
-TEAM_FIELD=$(python3 -c "import re; [print(m.group(1)) for line in open('maqa-github-projects/github-projects-config.yml') for m in [re.match(r'^team_field_id:\s*\"?([^\"#\n]+)\"?',line)] if m]")
-STANDALONE_TEAM=$(python3 -c "import re; [print(m.group(1)) for line in open('maqa-github-projects/github-projects-config.yml') for m in [re.match(r'^team_standalone_option_id:\s*\"?([^\"#\n]+)\"?',line)] if m]")
+TEAM_FIELD=$(_gp_field team_field_id)
+STANDALONE_TEAM=$(_gp_field team_standalone_option_id)
 gh project item-edit --id $BOARD_ITEM_ID --project-id $BOARD_PROJECT_ID \
   --field-id $TEAM_FIELD --single-select-option-id $STANDALONE_TEAM
 ```
@@ -158,7 +171,7 @@ The above names are a recommended convention — configure them once in the UI.
 The unbounded standalone posts executive status updates to the GitHub Projects board.
 These are visible to stakeholders at the top of the board as a health indicator.
 
-Frequency is controlled by `status_update_cycles` in `maqa-config.yml` (default: 5).
+Frequency is controlled by `maqa.status_update_cycles` in `otherness-config.yaml` (default: 5).
 Bounded agents NEVER post project status updates — they see only their scope.
 
 Status values: `ON_TRACK` 🟢 | `AT_RISK` 🟡 | `OFF_TRACK` 🔴 | `COMPLETE` ✅

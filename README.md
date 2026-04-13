@@ -10,8 +10,8 @@ Autonomous software development. One session is an entire team.
 
 | Mode | Command | When to use |
 |---|---|---|
-| **Standalone** | `/speckit.maqa.standalone` | Full autonomous team — coordinates, implements, reviews, releases |
-| **Bounded** | `/speckit.maqa.bounded-standalone` | Focused agent with a declared scope — multiple can run concurrently |
+| **Standalone** | `/otherness.run` | Full autonomous team — coordinates, implements, reviews, releases |
+| **Bounded** | `/otherness.run.bounded` | Focused agent with a declared scope — multiple can run concurrently |
 
 No coordinator. No engineer. No QA. No separate sessions. Each standalone *is* the team.
 
@@ -31,9 +31,9 @@ The goal: **100% autonomous project management and execution**, observable throu
 
 #### [OpenCode](https://opencode.ai)
 
-**What it provides:** The AI coding agent runtime. OpenCode discovers `.opencode/command/*.md` files in your project and exposes them as slash commands. When you type `/speckit.maqa.standalone`, OpenCode loads that file and sends its body as the LLM prompt. It also provides the Bash, Read, Write, Edit, Glob, Grep tools the agent uses to interact with your filesystem and run commands.
+**What it provides:** The AI coding agent runtime. OpenCode discovers `.opencode/command/*.md` files in your project and exposes them as slash commands. When you type `/otherness.run`, OpenCode loads that file and sends its body as the LLM prompt. It also provides the Bash, Read, Write, Edit, Glob, Grep tools the agent uses to interact with your filesystem and run commands.
 
-**Why it's required:** OpenCode is the runtime that executes the agents. Without it there is no `/speckit.*` dispatch. The agents are markdown files — OpenCode is what runs them.
+**Why it's required:** OpenCode is the runtime that executes the agents. Without it there is no command dispatch. The agents are markdown files — OpenCode is what runs them.
 
 **Tested with:** OpenCode only. Claude Code support is planned but not yet implemented.
 
@@ -60,9 +60,9 @@ brew install gh && gh auth login
 
 #### [python3](https://python.org)
 
-**What it provides:** Inline YAML parsing and JSON read/write. Agents use it exclusively to parse config files (`AGENTS.md`, `maqa-config.yml`, `github-projects-config.yml`) and read/write `.maqa/state.json`. Only standard library modules are used (`re`, `json`, `os`, `datetime`). No pip packages required.
+**What it provides:** Inline YAML parsing and JSON read/write. Agents use it exclusively to parse `otherness-config.yaml` and read/write `.maqa/state.json`. Only standard library modules are used (`re`, `json`, `os`, `datetime`). No pip packages required.
 
-**Why it's required:** Config parsing and state management. Failures are wrapped in `2>/dev/null` fallbacks so the agent degrades gracefully (empty config values) rather than crashing — but core functionality will be missing without it.
+**Why it's required:** Config parsing and state management. Failures are wrapped in `2>/dev/null` fallbacks so the agent degrades gracefully rather than crashing.
 
 ```bash
 python3 --version  # 3.8+ required; usually pre-installed
@@ -72,11 +72,13 @@ python3 --version  # 3.8+ required; usually pre-installed
 
 ### Soft Required (deploy-time only)
 
+These are **otherness's internal dependencies** — customers never install or interact with them directly. otherness owns their versioning and upgrade cycle.
+
 #### [speckit](https://github.com/github/spec-kit)
 
-**What it provides:** The command infrastructure. speckit deploys the `.opencode/command/*.md` files (the entry-point commands) and the `.specify/` directory structure into your project. It also provides optional spec-lifecycle commands (`/speckit.aide.create-queue`, `/speckit.aide.create-item`, `/speckit.verify-tasks.run`, `/speckit.analyze`, `/speckit.worktree.*`) that agents call for queue generation and spec analysis.
+**What it provides:** The command infrastructure. speckit deploys the `.opencode/command/*.md` files into your project. otherness wraps speckit completely — customers only see `otherness.*` commands.
 
-**Why soft required:** The speckit CLI binary is not called at runtime — what matters are the files it deployed. If those files already exist in your project (they will after `specify extension add maqa`), speckit itself does not need to be installed on the machine where agents run. It is required once per project to bootstrap the command files.
+**Why soft required:** The speckit CLI binary is not called at runtime. It is required once per project to bootstrap the internal command files. otherness manages this via `/otherness.setup`.
 
 ```bash
 uv tool install specify-cli    # or: pip install specify-cli
@@ -84,34 +86,30 @@ uv tool install specify-cli    # or: pip install specify-cli
 
 #### [MAQA extension](https://github.com/GenieRobot/spec-kit-maqa-ext)
 
-**What it provides:** The entry-point command files for otherness — specifically `speckit.maqa.standalone` and `speckit.maqa.bounded-standalone`. These are thin shells that read `agents_path` from `maqa-config.yml` and redirect to the actual agent files in `~/.otherness/agents/`. MAQA also defines the `maqa-config.yml` schema and the `.maqa/state.json` conventions that otherness reads and writes.
-
-**Why soft required:** MAQA is the deploy vehicle for the command files. Once deployed (via `specify extension add maqa`), the files are static and MAQA does not need to be present at runtime. otherness is built *on top of* MAQA — it adds the actual agent behavior (loops, roles, GitHub PM) that MAQA's shells redirect to.
-
-```bash
-specify extension add maqa
-```
+**What it provides:** Entry-point shells and `.maqa/state.json` conventions that otherness reads and writes. otherness is built *on top of* MAQA — it adds the actual agent behavior (loops, roles, GitHub PM) that MAQA's shells redirect to.
 
 #### [aide extension](https://github.com/mnriem/spec-kit-extensions)
 
-**What it provides:** Queue and work item generation. When `current_queue` is null (new project or after all items are done), the standalone agent calls `/speckit.aide.create-queue` and `/speckit.aide.create-item` to bootstrap the next batch of work from the roadmap. aide reads `docs/aide/vision.md`, `docs/aide/roadmap.md`, and `docs/aide/progress.md` to determine what to build next.
-
-**Why conditionally required:** Only needed when generating a new queue. For projects that already have populated queue files, aide is not called. For new projects, it is the mechanism that translates the roadmap into implementable items.
-
-```bash
-specify extension add aide   # if not already installed
-```
+**What it provides:** Queue and work item generation from the roadmap. otherness calls aide internally when `current_queue` is null. Customers never call aide directly.
 
 ---
 
 ## How it fits the stack
 
 ```
-OpenCode         — agent runtime (executes .md files as LLM prompts, provides tools)
-  └── speckit    — deploys command files, spec lifecycle commands
-        └── MAQA — entry-point commands (speckit.maqa.*) + maqa-config.yml schema
-              └── otherness — actual agent loops, GitHub PM, release protocol
-                    └── project — AGENTS.md, maqa-config.yml, vision, roadmap
+Customer project
+  └── otherness-config.yaml       ← only file the customer edits
+  └── .opencode/command/
+        otherness.run.md          ← /otherness.run  (entry point)
+        otherness.run.bounded.md  ← /otherness.run.bounded
+        otherness.setup.md        ← /otherness.setup (one-time init)
+        otherness.status.md       ← /otherness.status
+        otherness.upgrade.md      ← /otherness.upgrade (dev: check dep updates)
+
+~/.otherness/ (private, auto-updated on every agent startup)
+  └── agents/standalone.md        ← internally uses speckit, maqa, aide
+  └── agents/bounded-standalone.md
+  └── agents/gh-features.md
 ```
 
 ---
@@ -137,12 +135,11 @@ gh auth login
 git clone git@github.com:<your-username>/otherness.git ~/.otherness
 
 # 2. Once per project
-cp ~/.otherness/maqa-config-template.yml maqa-config.yml
-# Edit AGENTS.md and docs/aide/ — see onboarding-new-project.md
+/otherness.setup                  # creates otherness-config.yaml, deploys commands
 
 # 3. Run
-/speckit.maqa.standalone          # unbounded: one session, full team
-/speckit.maqa.bounded-standalone  # bounded: inject scope in prompt
+/otherness.run                    # unbounded: one session, full team
+/otherness.run.bounded            # bounded: inject scope in prompt
 ```
 
 See **[onboarding-new-project.md](./onboarding-new-project.md)** for full setup.
@@ -153,7 +150,7 @@ See **[onboarding-existing-project.md](./onboarding-existing-project.md)** for a
 ## Running bounded sessions concurrently
 
 ```
-Session 1: /speckit.maqa.bounded-standalone
+Session 1: /otherness.run.bounded
            AGENT_NAME=Refactor Agent
            AGENT_ID=STANDALONE-REFACTOR
            SCOPE=Fix logic leaks in health and scm packages
@@ -162,7 +159,7 @@ Session 1: /speckit.maqa.bounded-standalone
            ALLOWED_PACKAGES=pkg/health,pkg/scm
            DENY_PACKAGES=cmd/myapp,api/v1
 
-Session 2: /speckit.maqa.bounded-standalone
+Session 2: /otherness.run.bounded
            AGENT_NAME=CLI Agent
            AGENT_ID=STANDALONE-CLI
            SCOPE=CLI commands and output formatting
@@ -190,12 +187,15 @@ Each session creates its own `[AGENT_NAME] Progress Log` GitHub issue with hourl
 
 ---
 
-## Future
+## Upgrading dependencies
 
-**Claude Code support** — currently tested with OpenCode only. Adding Claude Code support (`.claude/commands/`) is planned for a future session.
+otherness owns the version pins for speckit, maqa, and aide. To check for updates and apply them:
 
-**GitHub native agent sessions** — GitHub now shows live agent session status in project boards via `agentAssignment` API. Currently requires GitHub Copilot's native model — otherness sessions are external. When GitHub exposes this for external agents, otherness will integrate automatically.
-Tracked: https://github.com/orgs/community/discussions/190731
+```bash
+/otherness.upgrade
+```
+
+This checks the community catalog for new speckit/extension versions, shows a changelog diff, and applies updates with your confirmation. Customers never run this — it's a dev/maintainer command.
 
 ---
 

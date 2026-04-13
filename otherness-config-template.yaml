@@ -1,0 +1,86 @@
+# otherness-config.yaml — copy this to your project root and edit.
+# This is the only file otherness needs from your project.
+
+# ── Project identity ──────────────────────────────────────────────────────────
+project:
+  name: my-project                    # human-readable name
+  repo: owner/repo                    # GitHub owner/repo
+  report_issue: 1                     # issue number for agent reports
+  board_url: ""                       # https://github.com/users/<owner>/projects/<N>
+  pr_label: ""                        # label applied to all feature PRs (e.g. "myproject")
+
+# ── Execution mode ────────────────────────────────────────────────────────────
+maqa:
+  mode: standalone                    # standalone | bounded-standalone
+  agents_path: ~/.otherness/agents    # path to agent instruction files
+
+  # How often the unbounded standalone posts an executive status update to the
+  # GitHub Projects board. Set in cycles (1 cycle = 1 item worked on). 0 = off.
+  status_update_cycles: 5
+
+  # How often the PM phase runs the actual product against user journeys.
+  # Opens bug/doc issues for failures. Set in cycles. 0 = off.
+  product_validation_cycles: 3
+
+# ── CI gate ───────────────────────────────────────────────────────────────────
+ci:
+  provider: github-actions            # github-actions | circleci | gitlab | bitbucket
+
+  github_actions:
+    workflow: ci.yml
+
+  circleci:
+    org_slug: ""
+    project_slug: ""
+
+  gitlab:
+    base_url: https://gitlab.com
+    project_id: ""
+
+  bitbucket:
+    workspace: ""
+    repo_slug: ""
+
+  wait_timeout_seconds: 1200          # how long to poll CI before giving up
+  block_on_red: true                  # block merge if CI is red
+
+# ── GitHub Projects board ─────────────────────────────────────────────────────
+# Leave project_id blank to disable board sync entirely.
+github_projects:
+  project_id: ""                      # PVT_kwHO... from GraphQL
+  project_number: ""                  # numeric project number
+  linked_repo: owner/repo             # same as project.repo
+
+  # Status column field + options — from /speckit.maqa-github-projects.setup
+  status_field_id: ""
+  todo_option_id: ""
+  in_progress_option_id: ""
+  in_review_option_id: ""
+  done_option_id: ""
+  blocked_option_id: ""
+
+  # Team field
+  team_field_id: ""
+  team_engineer1_option_id: ""
+  team_engineer2_option_id: ""
+  team_engineer3_option_id: ""
+  team_standalone_option_id: ""
+
+  # Priority field
+  priority_field_id: ""
+  priority_critical_option_id: ""
+  priority_high_option_id: ""
+  priority_medium_option_id: ""
+  priority_low_option_id: ""
+
+  # Size field
+  size_field_id: ""
+  size_xs_option_id: ""
+  size_s_option_id: ""
+  size_m_option_id: ""
+  size_l_option_id: ""
+  size_xl_option_id: ""
+
+  # Date fields
+  start_date_field_id: ""
+  target_date_field_id: ""

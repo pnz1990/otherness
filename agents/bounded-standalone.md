@@ -101,15 +101,25 @@ echo "[$AGENT_NAME] REPO=$REPO SCOPE=$SCOPE"
 ## Read board config (once at startup)
 
 ```bash
-BOARD_CFG="maqa-github-projects/github-projects-config.yml"
+BOARD_CFG="otherness-config.yaml"
 if [ -f "$BOARD_CFG" ]; then
-  BOARD_PROJECT_ID=$(python3 -c "import re; [print(m.group(1)) for line in open('$BOARD_CFG') for m in [re.match(r'^project_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
-  BOARD_FIELD_ID=$(python3 -c "import re; [print(m.group(1)) for line in open('$BOARD_CFG') for m in [re.match(r'^status_field_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
-  OPT_TODO=$(python3 -c "import re; [print(m.group(1)) for line in open('$BOARD_CFG') for m in [re.match(r'^todo_option_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
-  OPT_IN_PROGRESS=$(python3 -c "import re; [print(m.group(1)) for line in open('$BOARD_CFG') for m in [re.match(r'^in_progress_option_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
-  OPT_IN_REVIEW=$(python3 -c "import re; [print(m.group(1)) for line in open('$BOARD_CFG') for m in [re.match(r'^in_review_option_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
-  OPT_DONE=$(python3 -c "import re; [print(m.group(1)) for line in open('$BOARD_CFG') for m in [re.match(r'^done_option_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
-  OPT_BLOCKED=$(python3 -c "import re; [print(m.group(1)) for line in open('$BOARD_CFG') for m in [re.match(r'^blocked_option_id:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?',line.strip())] if m]" 2>/dev/null)
+  _read_gp() { python3 -c "
+import re
+section=None
+for line in open('$BOARD_CFG'):
+    s=re.match(r'^(\w[\w_]*):', line)
+    if s: section=s.group(1)
+    if section=='github_projects':
+        m=re.match(r'^\s+${1}:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?', line)
+        if m: print(m.group(1).strip()); break
+" 2>/dev/null; }
+  BOARD_PROJECT_ID=$(_read_gp project_id)
+  BOARD_FIELD_ID=$(_read_gp status_field_id)
+  OPT_TODO=$(_read_gp todo_option_id)
+  OPT_IN_PROGRESS=$(_read_gp in_progress_option_id)
+  OPT_IN_REVIEW=$(_read_gp in_review_option_id)
+  OPT_DONE=$(_read_gp done_option_id)
+  OPT_BLOCKED=$(_read_gp blocked_option_id)
   export BOARD_PROJECT_ID BOARD_FIELD_ID OPT_TODO OPT_IN_PROGRESS OPT_IN_REVIEW OPT_DONE OPT_BLOCKED
   echo "[$AGENT_NAME] Board config loaded"
 fi
