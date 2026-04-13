@@ -270,6 +270,38 @@ PHASE 1 — [🎯 COORD] HEARTBEAT + BOARD SYNC + ASSIGN
 
 1a. Update heartbeat. Check ALL CI workflows on main. Read vision.md immediate goals.
 
+    STOP SENTINEL CHECK — runs at the top of every cycle, only after current item is done:
+    ```bash
+    if [ -f ".maqa/stop-after-current" ]; then
+      IN_FLIGHT=$(python3 -c "
+import json
+s=json.load(open('.maqa/state.json'))
+items=[id for id,d in s.get('features',{}).items() if d.get('state') in ('assigned','in_progress','in_review')]
+print(','.join(items))
+" 2>/dev/null)
+      if [ -z "$IN_FLIGHT" ]; then
+        REASON=$(python3 -c "import json; print(json.load(open('.maqa/stop-after-current')).get('reason',''))" 2>/dev/null)
+        python3 - <<'PYEOF'
+import json, datetime
+with open('.maqa/state.json','r') as f: s=json.load(f)
+s['handoff'] = {
+    "stopped_at": datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+    "reason": "Graceful stop — sentinel .maqa/stop-after-current present, no in-flight items",
+    "resume_with": "/otherness.run"
+}
+with open('.maqa/state.json','w') as f: json.dump(s,f,indent=2)
+PYEOF
+        import os; os.remove('.maqa/stop-after-current') 2>/dev/null || true
+        REPORT_MSG="[🎯 COORD] Graceful stop. All in-flight work complete. State saved. Resume with /otherness.run."
+        gh issue comment $REPORT_ISSUE --repo $REPO --body "$REPORT_MSG" 2>/dev/null
+        echo "$REPORT_MSG"
+        exit 0
+      else
+        echo "[🎯 COORD] Stop sentinel present but items still in-flight: $IN_FLIGHT — finishing before stopping."
+      fi
+    fi
+    ```
+
     MAIN CI CHECK — runs every cycle, blocks all other work if any workflow is red:
     ```bash
     FAILED_WORKFLOWS=$(gh run list --repo $REPO --branch main --limit 10 \

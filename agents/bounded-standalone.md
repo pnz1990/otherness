@@ -232,6 +232,36 @@ LOOP:
 PHASE 1a — HEARTBEAT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+STOP SENTINEL CHECK — only triggers when no item is currently claimed by this session:
+if [ -f ".maqa/stop-after-current" ]; then
+  MY_ITEM=$(python3 -c "
+import json,os
+s=json.load(open('.maqa/state.json'))
+print(s.get('bounded_sessions',{}).get(os.environ['AGENT_ID'],{}).get('current_item') or '')
+" 2>/dev/null)
+  if [ -z "$MY_ITEM" ]; then
+    python3 - <<'PYEOF'
+import json, datetime, os
+with open('.maqa/state.json','r') as f: s=json.load(f)
+aid=os.environ['AGENT_ID']
+s.setdefault('bounded_sessions',{}).setdefault(aid,{})['current_item'] = None
+s['handoff'] = {
+    "stopped_at": datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+    "agent": aid,
+    "reason": "Graceful stop — sentinel .maqa/stop-after-current present, no in-flight item",
+    "resume_with": "/otherness.run.bounded"
+}
+with open('.maqa/state.json','w') as f: json.dump(s,f,indent=2)
+PYEOF
+    gh issue comment $PROGRESS_ISSUE --repo $REPO \
+      --body "[$AGENT_NAME] Graceful stop. Current item complete. State saved. Resume with /otherness.run.bounded." 2>/dev/null
+    echo "[$AGENT_NAME] Stop sentinel found, no in-flight item — exiting cleanly."
+    exit 0
+  else
+    echo "[$AGENT_NAME] Stop sentinel present but item $MY_ITEM still in-flight — finishing before stopping."
+  fi
+fi
+
 Re-read state.json, update heartbeat:
 python3 -c "
 import json,datetime,os
