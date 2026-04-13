@@ -122,10 +122,12 @@ move_board_card() {
 
 ```bash
 python3 - <<'EOF'
-import json, datetime
+import json, datetime, os
+MY_ID = os.environ.get('MY_SESSION_ID', 'STANDALONE-A')
 with open('.otherness/state.json', 'r') as f: s = json.load(f)
-s['session_heartbeats']['STANDALONE']['last_seen'] = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-s['session_heartbeats']['STANDALONE']['cycle'] = s['session_heartbeats']['STANDALONE'].get('cycle', 0) + 1
+s['session_heartbeats'].setdefault(MY_ID, {'last_seen': None, 'cycle': 0})
+s['session_heartbeats'][MY_ID]['last_seen'] = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+s['session_heartbeats'][MY_ID]['cycle'] = s['session_heartbeats'][MY_ID].get('cycle', 0) + 1
 with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
 EOF
 ```
@@ -149,12 +151,15 @@ for line in open('otherness-config.yaml'):
 " 2>/dev/null || echo "5")
 
 CURRENT_CYCLE=$(python3 -c "
-import json
+import json, os
+MY_ID = os.environ.get('MY_SESSION_ID', 'STANDALONE-A')
 s=json.load(open('.otherness/state.json'))
-print(s['session_heartbeats']['STANDALONE'].get('cycle',0))
+print(s['session_heartbeats'].get(MY_ID,{}).get('cycle',0))
 " 2>/dev/null || echo "0")
 
 # Post status update every N cycles (and always on cycle 1 = startup)
+# Only STANDALONE-A posts project status — avoid duplicate posts from parallel sessions
+[ "$MY_SESSION_ID" != "STANDALONE-A" ] && CURRENT_CYCLE=0
 if [ "$STATUS_UPDATE_CYCLES" -gt 0 ] && \
    { [ "$CURRENT_CYCLE" -eq 1 ] || [ $(($CURRENT_CYCLE % $STATUS_UPDATE_CYCLES)) -eq 0 ]; }; then
 
@@ -275,21 +280,86 @@ gh issue list --repo $REPO --state open --label "needs-human" \
   --json number,title --jq '.[] | "NEEDS-HUMAN #\(.number) \(.title)"' 2>/dev/null
 ```
 
+## SESSION IDENTITY — MUST RUN BEFORE ANYTHING ELSE
+
+Multiple unbounded sessions can run concurrently. Each MUST claim a unique ID
+or they will collide on state.json, worktrees, and branches.
+
+```bash
+# Claim a unique session ID atomically.
+# Tries STANDALONE-A, STANDALONE-B, STANDALONE-C in order.
+# Fails loudly if all slots are taken by active sessions (seen < 10 min ago).
+MY_SESSION_ID=$(python3 - << 'EOF'
+import json, datetime, sys, os
+
+SLOTS = ['STANDALONE-A', 'STANDALONE-B', 'STANDALONE-C',
+         'STANDALONE-D', 'STANDALONE-E']
+
+with open('.otherness/state.json', 'r') as f:
+    s = json.load(f)
+
+now = datetime.datetime.utcnow()
+hb = s.setdefault('session_heartbeats', {})
+
+# Find first slot that is either unclaimed or stale (>10 min)
+claimed = None
+for slot in SLOTS:
+    entry = hb.get(slot, {})
+    last = entry.get('last_seen')
+    if last:
+        age = (now - datetime.datetime.strptime(last, '%Y-%m-%dT%H:%M:%SZ')).total_seconds()
+        if age < 600:
+            continue  # slot is active — skip
+    # Slot is free or stale — claim it
+    hb[slot] = {
+        'last_seen': now.strftime('%Y-%m-%dT%H:%M:%SZ'),
+        'cycle': hb.get(slot, {}).get('cycle', 0)
+    }
+    s['session_heartbeats'] = hb
+    with open('.otherness/state.json', 'w') as f:
+        json.dump(s, f, indent=2)
+    print(slot)
+    claimed = slot
+    break
+
+if not claimed:
+    print('ERROR: all session slots active', file=sys.stderr)
+    sys.exit(1)
+EOF
+)
+
+if [ -z "$MY_SESSION_ID" ]; then
+  echo "ERROR: could not claim a session slot. Another session may have just claimed all slots."
+  echo "Wait 2 minutes and retry, or check state.json session_heartbeats manually."
+  exit 1
+fi
+
+echo "[STANDALONE] Session identity: $MY_SESSION_ID"
+export MY_SESSION_ID
+
+# Push the claimed slot immediately so other sessions see it
+git add .otherness/state.json && \
+git commit -m "state: claim session slot $MY_SESSION_ID" && \
+git push origin main || true  # non-fatal if push fails — we retry on heartbeat
+```
+
 ## MODE CHECK
 
 ```bash
 MODE=$(python3 -c "import json; print(json.load(open('.otherness/state.json')).get('mode','standalone'))" 2>/dev/null)
-[ "$MODE" = "team" ] && echo "[STANDALONE] state.json mode=team. Change to standalone first." && exit 1
+[ "$MODE" = "team" ] && echo "[$MY_SESSION_ID] state.json mode=team. Change to standalone first." && exit 1
 python3 -c "
 import json
 s=json.load(open('.otherness/state.json'))
 s['mode']='standalone'
-s['session_heartbeats'].setdefault('STANDALONE',{'last_seen':None,'cycle':0})
 json.dump(s,open('.otherness/state.json','w'),indent=2)
 "
 ```
 
-**RESUME PROTOCOL**: if any item in `state.json features{}` has state `assigned`, `in_progress`, or `in_review` — resume from that phase immediately.
+**RESUME PROTOCOL**: check if any item in `state.json features{}` has
+`assigned_to == MY_SESSION_ID` and state `assigned`, `in_progress`, or
+`in_review`. If yes — resume that item immediately.
+Items assigned to OTHER session IDs are not yours — do not touch them.
 
 ## THE LOOP — runs until all journeys pass
 
@@ -308,30 +378,34 @@ PHASE 1 — [🎯 COORD] HEARTBEAT + BOARD SYNC + ASSIGN
     ```bash
     if [ -f ".otherness/stop-after-current" ]; then
       IN_FLIGHT=$(python3 -c "
-import json
+import json, os
+MY_ID = os.environ.get('MY_SESSION_ID','')
 s=json.load(open('.otherness/state.json'))
-items=[id for id,d in s.get('features',{}).items() if d.get('state') in ('assigned','in_progress','in_review')]
+items=[id for id,d in s.get('features',{}).items()
+       if d.get('state') in ('assigned','in_progress','in_review')
+       and d.get('assigned_to') == MY_ID]
 print(','.join(items))
 " 2>/dev/null)
       if [ -z "$IN_FLIGHT" ]; then
-        REASON=$(python3 -c "import json; print(json.load(open('.otherness/stop-after-current')).get('reason',''))" 2>/dev/null)
         python3 - <<'PYEOF'
-import json, datetime
+import json, datetime, os
+MY_ID = os.environ.get('MY_SESSION_ID', 'STANDALONE-A')
 with open('.otherness/state.json','r') as f: s=json.load(f)
 s['handoff'] = {
     "stopped_at": datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
-    "reason": "Graceful stop — sentinel .otherness/stop-after-current present, no in-flight items",
+    "agent": MY_ID,
+    "reason": "Graceful stop — sentinel present, no in-flight items",
     "resume_with": "/otherness.run"
 }
 with open('.otherness/state.json','w') as f: json.dump(s,f,indent=2)
 PYEOF
-        import os; os.remove('.otherness/stop-after-current') 2>/dev/null || true
-        REPORT_MSG="[🎯 COORD] Graceful stop. All in-flight work complete. State saved. Resume with /otherness.run."
+        rm -f ".otherness/stop-after-current"
+        REPORT_MSG="[$MY_SESSION_ID] Graceful stop. All in-flight work complete. Resume with /otherness.run."
         gh issue comment $REPORT_ISSUE --repo $REPO --body "$REPORT_MSG" 2>/dev/null
         echo "$REPORT_MSG"
         exit 0
       else
-        echo "[🎯 COORD] Stop sentinel present but items still in-flight: $IN_FLIGHT — finishing before stopping."
+        echo "[$MY_SESSION_ID] Stop sentinel present but items still in-flight: $IN_FLIGHT"
       fi
     fi
     ```
@@ -372,9 +446,59 @@ PYEOF
     - Wait for one of the above to produce an open issue, then assign it.
     Never exit while the product can be improved.
 
-1d. Assign next item:
-    - Dependency check, write CLAIM file, move board: Todo → In Progress
-    - Write state.json: state=assigned
+1d. Assign next item (COLLISION-SAFE — follow exactly):
+
+    STEP 1: Pull latest main FIRST (another session may have just claimed something)
+    ```bash
+    git pull origin main --quiet
+    ```
+
+    STEP 2: Find a TODO item not assigned to any session
+    ```bash
+    python3 -c "
+import json
+s=json.load(open('.otherness/state.json'))
+for id,d in s.get('features',{}).items():
+    if d.get('state')=='todo' and not d.get('assigned_to'):
+        print(id); break
+    "
+    ```
+
+    STEP 3: Atomically claim it — check-then-set in one python3 call, then push immediately
+    ```bash
+    ITEM_ID=<item from step 2>
+    python3 - <<EOF
+import json, datetime, os, sys
+MY_ID = os.environ['MY_SESSION_ID']
+ITEM = '$ITEM_ID'
+with open('.otherness/state.json','r') as f: s=json.load(f)
+item = s.get('features',{}).get(ITEM,{})
+if item.get('state') != 'todo' or item.get('assigned_to'):
+    print(f'CONFLICT: {ITEM} already taken by {item.get(\"assigned_to\")}. Re-pull and try again.', file=sys.stderr)
+    sys.exit(1)
+s['features'][ITEM]['state'] = 'assigned'
+s['features'][ITEM]['assigned_to'] = MY_ID
+s['features'][ITEM]['assigned_at'] = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+with open('.otherness/state.json','w') as f: json.dump(s,f,indent=2)
+print(f'Claimed {ITEM} as {MY_ID}')
+EOF
+    # Push immediately — if rejected, another session beat you. Pull, pick a different item.
+    git add .otherness/state.json && \
+    git commit -m "state: [$MY_SESSION_ID] claim $ITEM_ID" && \
+    git push origin main || {
+      echo "Push rejected — another session claimed something. Pulling and retrying."
+      git pull origin main --rebase
+    }
+    ```
+
+    STEP 4: Create worktree with a UNIQUE name that includes session ID
+    ```bash
+    BRANCH="feat/${ITEM_ID}-${MY_SESSION_ID}"
+    WORKTREE="../kardinal-promoter.${ITEM_ID}-${MY_SESSION_ID}"
+    git worktree add "$WORKTREE" -b "$BRANCH"
+    ```
+    NEVER use a generic branch name like `feat/<item>` — it must include `$MY_SESSION_ID`
+    to avoid collisions with other sessions working concurrently.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PHASE 2 — [🔨 ENG] SPEC + IMPLEMENT
@@ -542,9 +666,10 @@ for line in open('otherness-config.yaml'):
 " 2>/dev/null || echo "3")
 
 CURRENT_CYCLE=$(python3 -c "
-import json
+import json, os
+MY_ID = os.environ.get('MY_SESSION_ID', 'STANDALONE-A')
 s=json.load(open('.otherness/state.json'))
-print(s['session_heartbeats']['STANDALONE'].get('cycle',0))
+print(s['session_heartbeats'].get(MY_ID,{}).get('cycle',0))
 " 2>/dev/null || echo "0")
 ```
 
