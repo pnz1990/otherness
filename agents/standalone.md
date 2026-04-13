@@ -343,17 +343,75 @@ PYEOF
     - Write state.json: state=assigned
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-PHASE 2 — [🔨 ENG] IMPLEMENT
+PHASE 2 — [🔨 ENG] SPEC + IMPLEMENT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-2a. DOC-FIRST check: verify user-facing doc pages exist before writing any code.
-2b. GRAPH-FIRST check: no new logic leaks (see AGENTS.md anti-patterns).
-2c. Implement TDD: test first, eval "$TEST_COMMAND", eval "$LINT_COMMAND"
-    Read code standards from AGENTS.md.
-2d. Self-validate: eval "$BUILD_COMMAND" && eval "$TEST_COMMAND" && eval "$LINT_COMMAND"
+2a. SPEC-FIRST — before writing any code:
+
+    Check if `.specify/specs/<feature>/spec.md` exists. If not, generate it:
+
+    ```bash
+    FEATURE_BRANCH=$(python3 -c "
+    import json
+    s=json.load(open('.otherness/state.json'))
+    in_flight=[id for id,d in s.get('features',{}).items() if d.get('state')=='in_progress']
+    print(in_flight[0] if in_flight else '')
+    " 2>/dev/null)
+
+    mkdir -p ".specify/specs/$FEATURE_BRANCH"
+
+    # Generate spec.md from the GitHub issue + existing design docs
+    # Structure: Background, User Stories, Functional Requirements (FR-NNN),
+    #            Non-functional requirements, Acceptance Criteria (Given/When/Then),
+    #            Out of scope, Design notes (link to docs/design/ if relevant)
+    # Every FR-NNN must have at least one Given/When/Then acceptance scenario.
+    # spec.md is the source of truth for QA — write it before any code.
+    ```
+
+    Check if `.specify/specs/<feature>/tasks.md` exists. If not, generate it:
+
+    ```bash
+    # Generate tasks.md from spec.md
+    # Each task maps to: one function, one reconciler state, one CRD field, or one test.
+    # Tasks must be granular enough that each can be checked independently.
+    # Format per .specify/templates/overrides/tasks-template.md
+    # Mark tasks [X] ONLY after the corresponding code exists — no phantom completions.
+    ```
+
+    Create GitHub sub-issues for each task group (FR clusters):
+    ```bash
+    # For each major FR group in spec.md, create a tracking sub-issue if >3 tasks:
+    # gh issue create --repo $REPO --title "impl(<feature>): FR-NNN <description>" \
+    #   --body "Sub-issue for spec: .specify/specs/$FEATURE_BRANCH/spec.md\n\nTasks:\n- [ ] ..."
+    # Link sub-issues to the parent issue via body reference.
+    ```
+
+    **SPEC REFACTORING**: Before implementing, check the spec for staleness:
+    - References to old phase labels (Phase 1/2/3) → replace with current status
+    - Old CRD field names that have since changed → update
+    - Architecture patterns that now violate Graph-first → flag with a [NEEDS HUMAN] comment
+    - References to deleted commands (`speckit.*`) → update to `otherness.*`
+    Commit spec fixes directly before starting implementation.
+
+2b. DOC-FIRST check: verify user-facing doc page for this feature exists in `docs/`.
+    If missing: create a stub with the feature description and planned API before writing Go.
+    If exists but stale: update it now. Docs are not an afterthought.
+
+2c. GRAPH-FIRST check: no new logic leaks (see AGENTS.md anti-patterns).
+    Read `docs/design/11-graph-purity-tech-debt.md` before implementing any reconciler.
+
+2d. Implement TDD: test first, eval "$TEST_COMMAND", eval "$LINT_COMMAND"
+    Read code standards from AGENTS.md. Tick tasks.md only after code exists.
+
+2e. Self-validate: eval "$BUILD_COMMAND" && eval "$TEST_COMMAND" && eval "$LINT_COMMAND"
     Run journey steps. Capture output for PR body.
-2e. PR: git push, gh pr create --label "$PR_LABEL"
-    Body must include: "Docs updated:", "Examples verified:"
+
+2f. PR: git push, gh pr create --label "$PR_LABEL"
+    Body MUST include:
+    - "Spec: .specify/specs/<feature>/spec.md"
+    - "Tasks: all [X] with real code (no phantom completions)"
+    - "Docs updated: docs/<page>.md"
+    - "Journey validation: <captured output>"
     State=in_review, move board: In Progress → In Review
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
