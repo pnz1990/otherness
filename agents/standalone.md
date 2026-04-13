@@ -229,17 +229,51 @@ fi
 
 ## Reading order (once at startup)
 
-1. `docs/aide/vision.md`
-2. `docs/aide/roadmap.md`
-3. `docs/aide/progress.md`
-4. `docs/aide/definition-of-done.md`
-5. `.specify/memory/constitution.md`
-6. `.specify/memory/sdlc.md`
-7. `docs/aide/team.yml`
-8. `AGENTS.md`
-9. Any architecture constraint docs listed in AGENTS.md (if they exist)
-# (project-specific design docs are read based on AGENTS.md references)
-11. `~/.otherness/agents/gh-features.md`
+Read ALL of the following in order before taking any action. Do not skip any.
+
+1. `docs/aide/vision.md` — product intent and differentiators
+2. `docs/aide/roadmap.md` — what is implemented vs planned
+3. `docs/aide/progress.md` — what has shipped
+4. `docs/aide/definition-of-done.md` — journey acceptance criteria
+5. `.specify/memory/constitution.md` — behavioral rules (read every Article)
+6. `.specify/memory/sdlc.md` — full process (read all loops)
+7. `docs/aide/team.yml` — roles and state machine
+8. `AGENTS.md` — project identity, commands, architecture constraints, anti-patterns, label taxonomy
+9. **Architecture docs** (read all of these — they govern every implementation decision):
+   - `docs/design/10-graph-first-architecture.md`
+   - `docs/design/11-graph-purity-tech-debt.md`
+   - `docs/design/design-v2.1.md` (if exists)
+   - All other `docs/design/*.md` files
+10. **User-facing docs** (understand what users see today):
+    - `docs/concepts.md`
+    - `docs/policy-gates.md`
+    - `docs/pipeline-reference.md`
+    - `docs/health-adapters.md`
+    - `docs/quickstart.md`
+    - `docs/comparison.md`
+    - `docs/roadmap.md`
+11. `.otherness/state.json` — current queue, in-flight items, handoff note
+12. `~/.otherness/agents/gh-features.md`
+
+**After reading, before touching anything:**
+```bash
+# Read the handoff note from the previous session
+python3 -c "
+import json
+s=json.load(open('.otherness/state.json'))
+h=s.get('handoff',{})
+if h:
+    print('=== HANDOFF FROM PREVIOUS SESSION ===')
+    for k,v in h.items(): print(f'{k}: {v}')
+"
+
+# Scan open issues to understand current state
+gh issue list --repo $REPO --state open --label "priority/critical" \
+  --json number,title,labels --jq '.[] | "#\(.number) \(.title)"' 2>/dev/null | head -20
+
+gh issue list --repo $REPO --state open --label "needs-human" \
+  --json number,title --jq '.[] | "NEEDS-HUMAN #\(.number) \(.title)"' 2>/dev/null
+```
 
 ## MODE CHECK
 
@@ -351,15 +385,7 @@ PHASE 2 — [🔨 ENG] SPEC + IMPLEMENT
     Check if `.specify/specs/<feature>/spec.md` exists. If not, generate it:
 
     ```bash
-    FEATURE_BRANCH=$(python3 -c "
-    import json
-    s=json.load(open('.otherness/state.json'))
-    in_flight=[id for id,d in s.get('features',{}).items() if d.get('state')=='in_progress']
-    print(in_flight[0] if in_flight else '')
-    " 2>/dev/null)
-
     mkdir -p ".specify/specs/$FEATURE_BRANCH"
-
     # Generate spec.md from the GitHub issue + existing design docs
     # Structure: Background, User Stories, Functional Requirements (FR-NNN),
     #            Non-functional requirements, Acceptance Criteria (Given/When/Then),
@@ -368,30 +394,37 @@ PHASE 2 — [🔨 ENG] SPEC + IMPLEMENT
     # spec.md is the source of truth for QA — write it before any code.
     ```
 
-    Check if `.specify/specs/<feature>/tasks.md` exists. If not, generate it:
+    **CONCEPT CONSISTENCY CHECK** — before writing the spec, answer these questions
+    and document the answers in spec.md §Design Notes:
 
-    ```bash
-    # Generate tasks.md from spec.md
-    # Each task maps to: one function, one reconciler state, one CRD field, or one test.
-    # Tasks must be granular enough that each can be checked independently.
-    # Format per .specify/templates/overrides/tasks-template.md
-    # Mark tasks [X] ONLY after the corresponding code exists — no phantom completions.
-    ```
+    1. Does this feature extend an existing CRD or concept, or introduce a new one?
+       - If extending: what existing fields/types does it build on? Use them.
+       - If new CRD: does a simpler field addition on an existing CRD achieve the same result?
+         Only introduce a new CRD if there is a clear ownership or lifecycle reason.
+    2. Does any similar feature already exist in the codebase that sets a pattern?
+       - Search: `grep -r "similar concept" pkg/ api/ docs/`
+       - New features MUST follow the same pattern as existing ones. No parallel mechanisms.
+    3. Does this feature have a CEL expression component?
+       - If yes: use the existing `bundle.*`, `environment.*`, `schedule.*`, `upstream.*`,
+         `metrics.*` namespaces. Do not invent new top-level CEL variables.
+       - New CEL functions MUST be registered via `pkg/cel/NewCELEnvironment()` only.
+    4. Does this feature require a new reconciler?
+       - Answer the three Graph-first questions from AGENTS.md in order:
+         (1) Can it be a Watch node? (2) Can it be an Owned node? (3) CEL extension?
+         If none: STOP and post [NEEDS HUMAN].
+    5. Does the user-facing API (CRD field names, CLI flags, CEL function names) match
+       the existing naming conventions? Check docs/pipeline-reference.md and docs/policy-gates.md.
+       Inconsistent naming = doc debt = user confusion.
+
+    Check if `.specify/specs/<feature>/tasks.md` exists. If not, generate it from spec.md.
 
     Create GitHub sub-issues for each task group (FR clusters):
     ```bash
-    # For each major FR group in spec.md, create a tracking sub-issue if >3 tasks:
-    # gh issue create --repo $REPO --title "impl(<feature>): FR-NNN <description>" \
-    #   --body "Sub-issue for spec: .specify/specs/$FEATURE_BRANCH/spec.md\n\nTasks:\n- [ ] ..."
-    # Link sub-issues to the parent issue via body reference.
+    # For each major FR group, create a tracking sub-issue if >3 tasks
     ```
 
-    **SPEC REFACTORING**: Before implementing, check the spec for staleness:
-    - References to old phase labels (Phase 1/2/3) → replace with current status
-    - Old CRD field names that have since changed → update
-    - Architecture patterns that now violate Graph-first → flag with a [NEEDS HUMAN] comment
-    - References to deleted commands (`speckit.*`) → update to `otherness.*`
-    Commit spec fixes directly before starting implementation.
+    **SPEC REFACTORING**: Before implementing, check the spec for staleness.
+    Commit spec fixes before starting implementation.
 
 2b. DOC-FIRST check: verify user-facing doc page for this feature exists in `docs/`.
     If missing: create a stub with the feature description and planned API before writing Go.
