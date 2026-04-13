@@ -363,14 +363,10 @@ fi
 PHASE 1c — FIND NEXT ITEM
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-# Get all claimed items from other sessions
-CLAIMED=$(python3 -c "
-import json,os
-s=json.load(open('.otherness/state.json'))
-me=os.environ['AGENT_ID']
-items=[v.get('current_item') for k,v in s.get('bounded_sessions',{}).items() if k!=me and v.get('current_item')]
-print(','.join(filter(None,items)))
-" 2>/dev/null)
+# Get all claimed issues by checking which branches exist on remote
+# A branch named <issue-number>-* means that issue is claimed by someone.
+CLAIMED=$(git ls-remote --heads origin 2>/dev/null | \
+  grep -oE 'refs/heads/[0-9]+-' | grep -oE '[0-9]+' | sort -u | tr '\n' ',')
 
 # Search ALL areas × ALL milestones for next unclaimed in-scope issue
 NEXT_ISSUE=""
@@ -410,16 +406,28 @@ with open('.otherness/state.json','w') as f: json.dump(s,f,indent=2)
 fi
 EMPTY_CHECKS=0  # reset on success
 
-# Claim atomically
-python3 -c "
+# Claim via branch push — this is the distributed lock.
+# Only one session can push a given branch name. If push fails, pick another issue.
+BRANCH="${NEXT_ISSUE}-${AGENT_ID,,}"
+FULL_BRANCH="refs/heads/$BRANCH"
+
+if git push origin "HEAD:$FULL_BRANCH" 2>/dev/null; then
+  echo "[$AGENT_NAME] ✅ Claimed #$NEXT_ISSUE (branch $BRANCH)"
+  python3 -c "
 import json,os
 with open('.otherness/state.json','r') as f: s=json.load(f)
 s['bounded_sessions'][os.environ['AGENT_ID']]['current_item']='$NEXT_ISSUE'
+s['bounded_sessions'][os.environ['AGENT_ID']]['branch']='$BRANCH'
 with open('.otherness/state.json','w') as f: json.dump(s,f,indent=2)
 "
-# Move board card to In Progress
-move_board_card $NEXT_ISSUE $OPT_IN_PROGRESS
-echo "[$AGENT_NAME] Claimed #$NEXT_ISSUE"
+  git add .otherness/state.json
+  git commit -m "state: [$AGENT_NAME] claimed #$NEXT_ISSUE"
+  git push origin main
+  move_board_card $NEXT_ISSUE $OPT_IN_PROGRESS
+else
+  echo "[$AGENT_NAME] ⚡ Branch $BRANCH already exists — another session claimed #$NEXT_ISSUE. Trying next."
+  continue  # LOOP — find another issue
+fi
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PHASE 2 — IMPLEMENT (TDD)
