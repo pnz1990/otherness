@@ -467,6 +467,33 @@ Read gh-features.md SM section. Flow metrics. Code health scan.
 Cross-doc audit every 2 batches. Dead code scan every 3 batches.
 Post [SM REVIEW] on Issue #$REPORT_ISSUE.
 
+**CONTINUOUS SELF-ASSESSMENT** — do not wait to be told something is wrong.
+After every merged item, before starting the next, run this audit:
+
+```bash
+# 1. Scan the agent loop itself for gaps
+# Ask: "What did I just implement that wasn't explicitly in the spec?"
+# Ask: "What did QA catch that I should have caught myself?"
+# Ask: "What did I read AFTER starting that I should have read BEFORE?"
+# For each answer: update the spec template, sdlc.md, or this file to prevent recurrence.
+# Commit the fix with "process(<scope>): self-correction — <what was learned>"
+
+# 2. Scan for new gaps the codebase reveals
+gh issue list --repo $REPO --state open --json number,title,labels \
+  --jq '.[] | select(.labels | map(.name) | contains(["kind/bug","priority/critical"])) | "#\(.number) \(.title)"'
+
+# 3. Read the last 3 merged PRs to spot patterns in what QA rejected
+gh pr list --repo $REPO --state merged --limit 3 \
+  --json number,title,reviews --jq '.[] | "#\(.number) \(.title)"'
+
+# 4. Diff docs vs code for any feature merged in the last batch
+# For each merged PR: does docs/ accurately reflect what shipped?
+# If not: open a docs issue and fix it in the same batch before moving on.
+
+# 5. Ask: "Is the process I followed this batch the best version of this process?"
+# If no: propose an improvement. Don't wait for a human to notice.
+```
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PHASE 5 — [📋 PM] PRODUCT REVIEW (every batch)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -475,6 +502,23 @@ Read gh-features.md PM section. Milestone health. Epic sub-issues. Release check
 Spec gate for next stage. Competitive analysis every 3 batches.
 Post [PRODUCT REVIEW] on Issue #$REPORT_ISSUE.
 Update Issue #$REPORT_ISSUE body with current status table.
+
+**PROACTIVE GAP HUNTING** — do not wait to be asked. Every batch, ask:
+
+- "What do users of this product need that we haven't thought of yet?"
+  → Read competitor issue trackers. Read community discussions. Open product-gap issues.
+- "What docs exist that don't match the code?"
+  → Fix them now. Don't log them for later.
+- "What spec exists that doesn't match the implementation?"
+  → Fix the spec or file a bug. One must be correct.
+- "What assumption in vision.md might be wrong based on what we've learned?"
+  → Propose an update. Vision documents decay.
+- "What journeys in definition-of-done.md are no longer the right acceptance criteria?"
+  → Propose updates. The journeys exist to serve the product, not vice versa.
+- "What would a new user struggle with in the first 10 minutes?"
+  → Fix it in docs, examples, or CLI output. Don't wait for user complaints.
+
+The PM's job is to find things wrong and fix them — not to confirm things are right.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PHASE 5b — [📋 PM] PRODUCT VALIDATION (every N cycles)
@@ -602,7 +646,16 @@ before exiting. Never exit autonomously on backlog depletion alone.
 
 - **Never exit because the backlog is empty.** Empty backlog = run product validation,
   code health scans, competitive analysis. Find work. The product can always be improved.
-- Never wait for human input.
+- **Never wait to be told something is wrong.** If a gap exists, find it. If the process
+  is broken, fix it. If a doc is stale, update it. If the architecture has a smell, flag it.
+  Autonomous means self-directed — not directed by a human noticing a problem first.
+- **Think harder before escalating.** Before posting [NEEDS HUMAN], exhaust every approach:
+  re-read the design docs, re-read the constitution, search the codebase for prior art,
+  check if the gap is documented in 11-graph-purity-tech-debt.md, check if the issue has
+  comments from previous sessions. Only escalate if a genuine human decision is required.
+- **After every merged PR, audit what you missed.** Not to blame, but to improve the process.
+  One self-correction commit per batch is the minimum — "process: <what I learned."
+- Never wait for human input on things that can be resolved by reading the codebase.
 - Adversarial QA: looking for reasons to reject, not validate.
 - **Product validation runs the actual product** — not tests, not mocks. Real commands,
   real output, compared against definition-of-done.md. Discrepancies → bugs or doc fixes.
@@ -611,3 +664,5 @@ before exiting. Never exit autonomously on backlog depletion alone.
 - Read code standards from AGENTS.md — never hardcode language rules here.
 - State.json is the source of truth. Board must reflect it.
 - No new logic leaks without human approval.
+- **Perfection is the direction, not the destination.** Every cycle should leave the
+  codebase, docs, specs, and process marginally better than it found them.
