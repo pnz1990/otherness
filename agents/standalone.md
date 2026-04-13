@@ -23,6 +23,51 @@ Badges: Coordinator `[🎯 COORD]` | Engineer `[🔨 ENG]` | QA `[🔍 QA]` | SM
 
 ---
 
+## STATE MANAGEMENT — READ THIS FIRST
+
+State (`state.json`) lives on a dedicated `_state` branch, **not on `main`**.
+
+This prevents parallel sessions from conflicting: code goes through feature branches
+and PRs to `main`. State writes go directly to `_state`. They never touch each other.
+
+### Reading state
+```bash
+# Pull latest _state before reading anything
+git fetch origin _state --quiet
+git checkout origin/_state -- .otherness/state.json 2>/dev/null
+```
+
+### Writing state
+```bash
+# Write state.json, then push directly to _state (NOT main)
+write_state() {
+  # Must be called from the main repo directory
+  local MSG="$1"
+  git add .otherness/state.json
+  git commit -m "state: $MSG" 2>/dev/null || true
+  # Push only the state.json commit to _state, not to main
+  git push origin "HEAD:.otherness/state.json" 2>/dev/null || \
+  git subtree push --prefix=.otherness origin _state 2>/dev/null || {
+    # Fallback: use a state worktree
+    local STATE_WT="/tmp/$(basename $(pwd))-state-$$"
+    git worktree add "$STATE_WT" origin/_state 2>/dev/null || \
+      git worktree add "$STATE_WT" _state 2>/dev/null
+    cp .otherness/state.json "$STATE_WT/.otherness/state.json"
+    git -C "$STATE_WT" add .otherness/state.json
+    git -C "$STATE_WT" commit -m "state: $MSG" 2>/dev/null || true
+    git -C "$STATE_WT" push origin _state
+    git worktree remove "$STATE_WT" --force
+    # Reset the main worktree state commit (don't pollute main history)
+    git reset HEAD~1 --soft 2>/dev/null || true
+    git checkout -- .otherness/state.json 2>/dev/null || true
+  }
+}
+```
+
+**Rule**: Never `git push origin main` with a state.json change. Use `write_state` only.
+
+---
+
 ## PARALLEL SESSION PROTOCOL
 
 **Read this first. It governs everything.**
@@ -99,13 +144,17 @@ git push origin main
 ### Heartbeat
 
 Write your heartbeat to `session_heartbeats.<MY_SESSION_ID>` every cycle.
-Do NOT write to a shared `STANDALONE` key — that causes collisions.
 
 ```bash
 python3 - <<EOF
-import json, datetime, os
+import json, datetime, os, subprocess
 MY_ID = os.environ.get('MY_SESSION_ID', 'STANDALONE-unknown')
-with open('.otherness/state.json','r') as f: s=json.load(f)
+result = subprocess.run(['git','show','origin/_state:.otherness/state.json'],
+                       capture_output=True, text=True)
+if result.returncode == 0:
+    s = json.loads(result.stdout)
+else:
+    with open('.otherness/state.json') as f: s = json.load(f)
 s.setdefault('session_heartbeats',{})[MY_ID]={
     'last_seen': datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
     'cycle': s.get('session_heartbeats',{}).get(MY_ID,{}).get('cycle',0)+1,
@@ -113,6 +162,7 @@ s.setdefault('session_heartbeats',{})[MY_ID]={
 }
 with open('.otherness/state.json','w') as f: json.dump(s,f,indent=2)
 EOF
+write_state "heartbeat $MY_SESSION_ID"
 ```
 
 ### Cleanup after merge
@@ -120,10 +170,22 @@ EOF
 After `gh pr merge --squash --delete-branch`:
 
 ```bash
-cd ../<repo-name>          # back to main worktree
+cd $(git rev-parse --show-toplevel)  # back to main worktree
 git worktree remove "$MY_WORKTREE" --force
 git worktree prune
-# The remote branch was deleted by --delete-branch
+
+# Update state on _state branch
+git fetch origin _state --quiet
+git checkout origin/_state -- .otherness/state.json 2>/dev/null
+python3 - <<EOF
+import json, datetime
+with open('.otherness/state.json','r') as f: s=json.load(f)
+s['features']['$ITEM_ID']['state']='done'
+s['features']['$ITEM_ID']['pr_merged']=True
+with open('.otherness/state.json','w') as f: json.dump(s,f,indent=2)
+EOF
+write_state "[$MY_SESSION_ID] $ITEM_ID done"
+
 # Reset item vars for next cycle
 ITEM_ID="" ; MY_BRANCH="" ; MY_WORKTREE="" ; MY_SESSION_ID=""
 ```
@@ -134,7 +196,12 @@ ITEM_ID="" ; MY_BRANCH="" ; MY_WORKTREE="" ; MY_SESSION_ID=""
 
 ```bash
 git config pull.rebase false 2>/dev/null || true
-git pull origin main
+git pull origin main --quiet
+
+# Pull latest state from dedicated _state branch
+git fetch origin _state --quiet
+git checkout origin/_state -- .otherness/state.json 2>/dev/null
+
 REPO=$(git remote get-url origin 2>/dev/null | sed 's|.*github.com[:/]||;s|\.git$||')
 REPO_NAME=$(basename $(git rev-parse --show-toplevel))
 REPORT_ISSUE=$(python3 -c "
@@ -228,35 +295,34 @@ move_board_card() {
 
 ## Reading order (once at startup)
 
-Read ALL of the following before taking any action:
+Read these — in order, no skipping. Keep it fast: skim what you know, read carefully what's new.
 
-1. `docs/aide/vision.md`
-2. `docs/aide/roadmap.md`
-3. `docs/aide/progress.md`
-4. `docs/aide/definition-of-done.md`
-5. `.specify/memory/constitution.md`
-6. `.specify/memory/sdlc.md`
-7. `docs/aide/team.yml`
-8. `AGENTS.md`
-9. `docs/design/10-graph-first-architecture.md`
-10. `docs/design/11-graph-purity-tech-debt.md`
-11. Other `docs/design/*.md` files
-12. `docs/concepts.md`, `docs/policy-gates.md`, `docs/pipeline-reference.md`, `docs/roadmap.md`
-13. `.otherness/state.json` — handoff note, in-flight items
-14. `~/.otherness/agents/gh-features.md`
+1. `AGENTS.md` — identity, commands, anti-patterns, label taxonomy (most important)
+2. `.otherness/state.json` — queue, in-flight items, handoff note
+3. `docs/aide/vision.md` — product intent
+4. `docs/design/10-graph-first-architecture.md` — architecture rules
+5. `docs/design/11-graph-purity-tech-debt.md` — what is and isn't blocked
+6. `.specify/memory/constitution.md` — behavioral rules
+7. `.specify/memory/sdlc.md` — process loops
+8. `~/.otherness/agents/gh-features.md`
+
+**Only read the remaining docs when they're relevant to your current item:**
+- `docs/aide/roadmap.md`, `docs/aide/definition-of-done.md` — when generating a queue
+- `docs/concepts.md`, `docs/policy-gates.md`, `docs/pipeline-reference.md` — when implementing a feature
+- Other `docs/design/*.md` — when implementing something in that design area
 
 **After reading:**
 ```bash
+# Read handoff from state
 python3 -c "
 import json
 s=json.load(open('.otherness/state.json'))
 h=s.get('handoff',{})
-if h:
-    print('=== HANDOFF ===')
-    for k,v in h.items(): print(f'{k}: {v}')
+if h: [print(f'{k}: {v}') for k,v in h.items()]
 "
+# Check for blockers
 gh issue list --repo $REPO --state open --label "needs-human" \
-  --json number,title --jq '.[] | "NEEDS-HUMAN #\(.number) \(.title)"' 2>/dev/null
+  --json number,title --jq '.[] | "NEEDS-HUMAN #\(.number) \(.title)"' 2>/dev/null | head -5
 ```
 
 ## RESUME CHECK
@@ -376,10 +442,14 @@ for id,d in s.get('features',{}).items():
       # Create local worktree
       git worktree add "$MY_WORKTREE" "$MY_BRANCH"
 
-      # Write claim to state.json
+      # Write claim to state.json on _state branch (NOT main)
       python3 - <<EOF
 import json, datetime
-with open('.otherness/state.json','r') as f: s=json.load(f)
+git_fetch = __import__('subprocess').run(['git','fetch','origin','_state','--quiet'])
+import subprocess
+result = subprocess.run(['git','show','origin/_state:.otherness/state.json'],
+                       capture_output=True, text=True)
+s = json.loads(result.stdout) if result.returncode==0 else json.load(open('.otherness/state.json'))
 s['features']['$ITEM_ID'].update({
     'state':'assigned','assigned_to':'$MY_SESSION_ID',
     'assigned_at':datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
@@ -387,9 +457,7 @@ s['features']['$ITEM_ID'].update({
 })
 with open('.otherness/state.json','w') as f: json.dump(s,f,indent=2)
 EOF
-      git add .otherness/state.json
-      git commit -m "state: [$MY_SESSION_ID] claimed $ITEM_ID"
-      git push origin main
+      write_state "[$MY_SESSION_ID] claimed $ITEM_ID"
 
       # Comment on the issue
       ISSUE_NUM=$(echo $ITEM_ID | grep -oE '[0-9]+' | head -1)
