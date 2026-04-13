@@ -5,7 +5,7 @@ tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
 > **These instructions live at `~/.otherness/agents/` and are auto-updated from GitHub on every startup.**
-> Never edit them locally — push changes to `pnz1990/otherness` instead.
+> Never edit them locally — push changes to your `otherness` fork instead.
 
 > **Working directory**: Run from the **main repo directory**.
 
@@ -13,7 +13,7 @@ tools: Bash, Read, Write, Edit, Glob, Grep
 
 ```bash
 git -C ~/.otherness pull --quiet 2>/dev/null || \
-  git clone --quiet git@github.com:pnz1990/otherness.git ~/.otherness 2>/dev/null || true
+  git clone --quiet git@github.com:$(git -C ~/.otherness remote get-url origin 2>/dev/null | sed 's|.*github.com[:/]||;s|\.git$||').git ~/.otherness 2>/dev/null || true
 echo "[BOUNDED] Agent files up to date."
 ```
 

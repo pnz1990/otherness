@@ -12,7 +12,7 @@ The key difference from new project onboarding: you are not starting from scratc
 uv tool install specify-cli
 specify extension add maqa
 gh auth login
-git clone git@github.com:pnz1990/otherness.git ~/.otherness
+git clone git@github.com:<your-username>/otherness.git ~/.otherness
 ```
 
 ---
@@ -37,19 +37,15 @@ Agents will read your answers from `AGENTS.md` and `docs/aide/`. The more accura
 
 ---
 
-## Step 2 — Copy maqa-config.yml
+## Step 2 — Run otherness setup
 
 ```bash
-cp ~/.otherness/maqa-config-template.yml maqa-config.yml
+/otherness.setup
 ```
 
-Edit to match your project. Start with `mode: standalone` regardless of team size — get one working loop before adding parallelism.
+This creates `otherness-config.yaml` from the template and auto-fills `project.repo` and `project.name` from your git remote. Edit the file to configure CI, board, and cycle settings.
 
-```yaml
-mode: "standalone"
-agents_path: "~/.otherness/agents"
-max_parallel: 3
-```
+Start with `mode: standalone` regardless of team size — get one working loop before adding parallelism.
 
 ---
 
@@ -187,7 +183,7 @@ If `specify init` was already run, you have a `constitution.md`. Read it and ver
 
 ### If starting from scratch
 
-Copy `constitution.md` from `~/.otherness` (ask the agent to generate it from your AGENTS.md using `/speckit.constitution`).
+Copy `constitution.md` from `~/.otherness` (ask the agent to generate it from your AGENTS.md).
 
 ### Critical article to add: your core architectural constraint
 
@@ -261,7 +257,7 @@ The state file must exist before agents start. Create it with the correct curren
 
 ## Step 8 — Set up the GitHub Projects board
 
-If you already have a board: add the required fields (Team, Priority, Size, Target date) and record the IDs in `maqa-github-projects/github-projects-config.yml`.
+If you already have a board: add the required fields (Team, Priority, Size, Target date) and record the IDs in the `github_projects:` section of `otherness-config.yaml`.
 
 If you don't have a board: follow Step 8 in `onboarding-new-project.md`.
 
@@ -290,7 +286,7 @@ cat docs/aide/vision.md
 cat docs/aide/roadmap.md
 cat docs/aide/definition-of-done.md
 cat AGENTS.md | grep -E "PROJECT_NAME|CLI_BINARY|BUILD_COMMAND|TEST_COMMAND"
-cat maqa-config.yml
+cat otherness-config.yaml
 cat .maqa/state.json | python3 -m json.tool > /dev/null && echo "state.json: valid JSON"
 
 # Check build and test commands work
@@ -305,7 +301,7 @@ Fix any issues before starting the agent. A misconfigured `BUILD_COMMAND` will c
 ## Step 11 — First run
 
 ```bash
-/speckit.maqa.standalone
+/otherness.run
 ```
 
 The agent will:

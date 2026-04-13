@@ -51,7 +51,7 @@ github_projects:
   project_number: ""                  # numeric project number
   linked_repo: owner/repo             # same as project.repo
 
-  # Status column field + options — from /speckit.maqa-github-projects.setup
+  # Status column field + options — run /otherness.setup to auto-populate via GitHub GraphQL
   status_field_id: ""
   todo_option_id: ""
   in_progress_option_id: ""

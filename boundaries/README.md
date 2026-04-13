@@ -2,7 +2,7 @@
 
 A BOUNDARY file defines the scope of a bounded standalone session.
 You can either place it as `BOUNDARY` in the repo root, or inject the
-fields directly in the prompt when starting `/speckit.maqa.bounded-standalone`.
+fields directly in the prompt when starting `/otherness.run.bounded`.
 
 ## Fields
 
@@ -19,7 +19,7 @@ fields directly in the prompt when starting `/speckit.maqa.bounded-standalone`.
 ## Injecting in the prompt (recommended — no file needed)
 
 ```
-/speckit.maqa.bounded-standalone
+/otherness.run.bounded
 
 AGENT_NAME=Refactor Agent
 AGENT_ID=STANDALONE-REFACTOR
@@ -35,7 +35,7 @@ DENY_PACKAGES=cmd/myapp,api/v1
 ```bash
 cp ~/.otherness/boundaries/example.boundary BOUNDARY
 # edit BOUNDARY, then:
-/speckit.maqa.bounded-standalone
+/otherness.run.bounded
 ```
 
 ## Multiple concurrent sessions
