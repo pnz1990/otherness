@@ -183,7 +183,7 @@ mutation {
   createProjectV2StatusUpdate(input: {
     projectId: "'"$BOARD_PROJECT_ID"'"
     status: ON_TRACK
-    body: "## 🟢 Project Status — May 1, 2026\n\n**Overall**: ON_TRACK\n\n### Milestone Progress\nv0.2.1: 80% (6 open)\n\n### Recently Shipped\n- feat: PRStatus CRD\n\n### Next focus\nWorking towards **v0.4.0**\n\n### Attention needed\nNone"
+    body: "## 🟢 Project Status — May 1, 2026\n\n**Overall**: ON_TRACK\n\n### Milestone Progress\nv1.1.0: 80% (6 open)\n\n### Recently Shipped\n- feat: new feature X\n\n### Next focus\nWorking towards **v1.2.0**\n\n### Attention needed\nNone"
   }) {
     statusUpdate { id status createdAt }
   }

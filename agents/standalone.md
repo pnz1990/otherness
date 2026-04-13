@@ -404,13 +404,15 @@ PHASE 2 — [🔨 ENG] SPEC + IMPLEMENT
     2. Does any similar feature already exist in the codebase that sets a pattern?
        - Search: `grep -r "similar concept" pkg/ api/ docs/`
        - New features MUST follow the same pattern as existing ones. No parallel mechanisms.
-    3. Does this feature have a CEL expression component?
-       - If yes: use the existing `bundle.*`, `environment.*`, `schedule.*`, `upstream.*`,
-         `metrics.*` namespaces. Do not invent new top-level CEL variables.
-       - New CEL functions MUST be registered via `pkg/cel/NewCELEnvironment()` only.
+    3. Does this feature have a CEL or expression language component?
+       - If yes: use the namespaces already defined in the project's expression environment.
+         Read AGENTS.md or the project's CEL/expression docs to find them.
+         Do not invent new top-level variables — extend what exists.
+       - New expression functions MUST be registered through the project's designated
+         CEL/expression registration point (documented in AGENTS.md or design docs).
     4. Does this feature require a new reconciler?
-       - Answer the three Graph-first questions from AGENTS.md in order:
-         (1) Can it be a Watch node? (2) Can it be an Owned node? (3) CEL extension?
+       - Answer the three architecture questions from AGENTS.md in order:
+         (1) Can it be a Watch node? (2) Can it be an Owned node? (3) Expression extension?
          If none: STOP and post [NEEDS HUMAN].
     5. Does the user-facing API (CRD field names, CLI flags, CEL function names) match
        the existing naming conventions? Check docs/pipeline-reference.md and docs/policy-gates.md.
@@ -568,8 +570,7 @@ fi
 # Step 2: Get real test image (project-specific — read from AGENTS.md PRODUCT_VALIDATION section)
 # The AGENTS.md file documents which test app repo and image to use.
 # For projects with a test app CI: get the latest SHA and use the sha-tagged image.
-# Example (kardinal): gh api repos/pnz1990/kardinal-test-app/commits/main --jq '.sha[:7]'
-# Example: get latest SHA from a test app CI
+# Example: gh api repos/<owner>/<test-app>/commits/main --jq '.sha[:7]'
 # TEST_IMAGE=$(gh api repos/<owner>/<test-app>/commits/main --jq '.sha[:7]' | xargs -I{} echo "ghcr.io/<owner>/<test-app>:sha-{}")
 
 # Step 3: Run validation scenarios from AGENTS.md §Product Validation Scenarios

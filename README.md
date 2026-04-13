@@ -153,10 +153,10 @@ See **[onboarding-existing-project.md](./onboarding-existing-project.md)** for a
 Session 1: /otherness.run.bounded
            AGENT_NAME=Refactor Agent
            AGENT_ID=STANDALONE-REFACTOR
-           SCOPE=Fix logic leaks in health and scm packages
-           ALLOWED_AREAS=area/health,area/scm
-           ALLOWED_MILESTONES=v0.2.1
-           ALLOWED_PACKAGES=pkg/health,pkg/scm
+           SCOPE=Fix logic leaks in the health and auth packages
+           ALLOWED_AREAS=area/health,area/auth
+           ALLOWED_MILESTONES=v1.1.0
+           ALLOWED_PACKAGES=pkg/health,pkg/auth
            DENY_PACKAGES=cmd/myapp,api/v1
 
 Session 2: /otherness.run.bounded
@@ -164,9 +164,9 @@ Session 2: /otherness.run.bounded
            AGENT_ID=STANDALONE-CLI
            SCOPE=CLI commands and output formatting
            ALLOWED_AREAS=area/cli
-           ALLOWED_MILESTONES=v0.2.1
+           ALLOWED_MILESTONES=v1.1.0
            ALLOWED_PACKAGES=cmd/myapp
-           DENY_PACKAGES=pkg/reconciler
+           DENY_PACKAGES=pkg/core
 ```
 
 Each session creates its own `[AGENT_NAME] Progress Log` GitHub issue with hourly updates.
