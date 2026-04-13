@@ -147,7 +147,7 @@ python3 - <<'EOF'
 import json, datetime, os
 aid = os.environ['AGENT_ID']
 aname = os.environ.get('AGENT_NAME', aid)
-with open('.maqa/state.json', 'r') as f: s = json.load(f)
+with open('.otherness/state.json', 'r') as f: s = json.load(f)
 s.setdefault('bounded_sessions', {})
 prev = s['bounded_sessions'].get(aid, {})
 s['bounded_sessions'][aid] = {
@@ -159,7 +159,7 @@ s['bounded_sessions'][aid] = {
     'progress_issue': prev.get('progress_issue', ''),
     'last_report_at': prev.get('last_report_at', ''),
 }
-with open('.maqa/state.json', 'w') as f: json.dump(s, f, indent=2)
+with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
 EOF
 ```
 
@@ -177,7 +177,7 @@ EOF
 ```bash
 python3 -c "
 import json
-s = json.load(open('.maqa/state.json'))
+s = json.load(open('.otherness/state.json'))
 for sid, d in s.get('bounded_sessions', {}).items():
     if d.get('current_item'):
         print(f'  {d.get(\"name\",sid)}: working on {d[\"current_item\"]}')
@@ -233,25 +233,25 @@ PHASE 1a — HEARTBEAT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 STOP SENTINEL CHECK — only triggers when no item is currently claimed by this session:
-if [ -f ".maqa/stop-after-current" ]; then
+if [ -f ".otherness/stop-after-current" ]; then
   MY_ITEM=$(python3 -c "
 import json,os
-s=json.load(open('.maqa/state.json'))
+s=json.load(open('.otherness/state.json'))
 print(s.get('bounded_sessions',{}).get(os.environ['AGENT_ID'],{}).get('current_item') or '')
 " 2>/dev/null)
   if [ -z "$MY_ITEM" ]; then
     python3 - <<'PYEOF'
 import json, datetime, os
-with open('.maqa/state.json','r') as f: s=json.load(f)
+with open('.otherness/state.json','r') as f: s=json.load(f)
 aid=os.environ['AGENT_ID']
 s.setdefault('bounded_sessions',{}).setdefault(aid,{})['current_item'] = None
 s['handoff'] = {
     "stopped_at": datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
     "agent": aid,
-    "reason": "Graceful stop — sentinel .maqa/stop-after-current present, no in-flight item",
+    "reason": "Graceful stop — sentinel .otherness/stop-after-current present, no in-flight item",
     "resume_with": "/otherness.run.bounded"
 }
-with open('.maqa/state.json','w') as f: json.dump(s,f,indent=2)
+with open('.otherness/state.json','w') as f: json.dump(s,f,indent=2)
 PYEOF
     gh issue comment $PROGRESS_ISSUE --repo $REPO \
       --body "[$AGENT_NAME] Graceful stop. Current item complete. State saved. Resume with /otherness.run.bounded." 2>/dev/null
@@ -265,12 +265,12 @@ fi
 Re-read state.json, update heartbeat:
 python3 -c "
 import json,datetime,os
-with open('.maqa/state.json','r') as f: s=json.load(f)
+with open('.otherness/state.json','r') as f: s=json.load(f)
 aid=os.environ['AGENT_ID']
 s.setdefault('bounded_sessions',{}).setdefault(aid,{})
 s['bounded_sessions'][aid]['last_seen']=datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
 s['bounded_sessions'][aid]['cycle']=s['bounded_sessions'][aid].get('cycle',0)+1
-with open('.maqa/state.json','w') as f: json.dump(s,f,indent=2)
+with open('.otherness/state.json','w') as f: json.dump(s,f,indent=2)
 "
 
 MAIN CI check:
@@ -284,7 +284,7 @@ PHASE 1b — PROGRESS REPORT (every hour)
 # Ensure progress issue exists — create on first cycle
 PROGRESS_ISSUE=$(python3 -c "
 import json,os
-s=json.load(open('.maqa/state.json'))
+s=json.load(open('.otherness/state.json'))
 print(s.get('bounded_sessions',{}).get(os.environ['AGENT_ID'],{}).get('progress_issue',''))
 " 2>/dev/null)
 
@@ -302,9 +302,9 @@ Updated hourly. Subscribe to follow this agent's work." 2>/dev/null)
   PROGRESS_ISSUE=$(echo "$PROGRESS_URL" | grep -oE '[0-9]+$')
   python3 -c "
 import json,os
-with open('.maqa/state.json','r') as f: s=json.load(f)
+with open('.otherness/state.json','r') as f: s=json.load(f)
 s['bounded_sessions']['$AGENT_ID']['progress_issue']='$PROGRESS_ISSUE'
-with open('.maqa/state.json','w') as f: json.dump(s,f,indent=2)
+with open('.otherness/state.json','w') as f: json.dump(s,f,indent=2)
 "
   echo "[$AGENT_NAME] Progress issue: #$PROGRESS_ISSUE"
 fi
@@ -312,7 +312,7 @@ fi
 # Hourly report — check elapsed since last report
 LAST_REPORT=$(python3 -c "
 import json,os
-s=json.load(open('.maqa/state.json'))
+s=json.load(open('.otherness/state.json'))
 print(s.get('bounded_sessions',{}).get(os.environ['AGENT_ID'],{}).get('last_report_at',''))
 " 2>/dev/null)
 NOW_EPOCH=$(date +%s)
@@ -334,7 +334,7 @@ if [ "$ELAPSED" -ge 3600 ] || [ "$LAST_EPOCH" -eq 0 ]; then
 
   CURRENT=$(python3 -c "
 import json,os
-s=json.load(open('.maqa/state.json'))
+s=json.load(open('.otherness/state.json'))
 print(s.get('bounded_sessions',{}).get(os.environ['AGENT_ID'],{}).get('current_item') or 'none')
 " 2>/dev/null)
 
@@ -353,9 +353,9 @@ $PLANNED
 
   python3 -c "
 import json,datetime,os
-with open('.maqa/state.json','r') as f: s=json.load(f)
+with open('.otherness/state.json','r') as f: s=json.load(f)
 s['bounded_sessions']['$AGENT_ID']['last_report_at']=datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-with open('.maqa/state.json','w') as f: json.dump(s,f,indent=2)
+with open('.otherness/state.json','w') as f: json.dump(s,f,indent=2)
 "
 fi
 
@@ -366,7 +366,7 @@ PHASE 1c — FIND NEXT ITEM
 # Get all claimed items from other sessions
 CLAIMED=$(python3 -c "
 import json,os
-s=json.load(open('.maqa/state.json'))
+s=json.load(open('.otherness/state.json'))
 me=os.environ['AGENT_ID']
 items=[v.get('current_item') for k,v in s.get('bounded_sessions',{}).items() if k!=me and v.get('current_item')]
 print(','.join(filter(None,items)))
@@ -397,11 +397,11 @@ if [ -z "$NEXT_ISSUE" ]; then
       --body "[$AGENT_NAME] Scope exhausted after 3 rechecks. All in-scope issues resolved or claimed. Exiting." 2>/dev/null
     python3 -c "
 import json,os
-with open('.maqa/state.json','r') as f: s=json.load(f)
+with open('.otherness/state.json','r') as f: s=json.load(f)
 aid=os.environ['AGENT_ID']
 s['bounded_sessions'][aid]['current_item']=None
 s['bounded_sessions'][aid]['last_seen']=None
-with open('.maqa/state.json','w') as f: json.dump(s,f,indent=2)
+with open('.otherness/state.json','w') as f: json.dump(s,f,indent=2)
 "
     exit 0
   fi
@@ -413,9 +413,9 @@ EMPTY_CHECKS=0  # reset on success
 # Claim atomically
 python3 -c "
 import json,os
-with open('.maqa/state.json','r') as f: s=json.load(f)
+with open('.otherness/state.json','r') as f: s=json.load(f)
 s['bounded_sessions'][os.environ['AGENT_ID']]['current_item']='$NEXT_ISSUE'
-with open('.maqa/state.json','w') as f: json.dump(s,f,indent=2)
+with open('.otherness/state.json','w') as f: json.dump(s,f,indent=2)
 "
 # Move board card to In Progress
 move_board_card $NEXT_ISSUE $OPT_IN_PROGRESS
@@ -431,7 +431,7 @@ PHASE 2 — IMPLEMENT (TDD)
     file_in_scope "$FILE" || {
       gh issue comment $NEXT_ISSUE --repo $REPO \
         --body "[$AGENT_NAME] Cross-boundary: $FILE is outside my scope ($ALLOWED_PACKAGES). Skipping."
-      python3 -c "import json,os; s=json.load(open('.maqa/state.json')); s['bounded_sessions'][os.environ['AGENT_ID']]['current_item']=None; json.dump(s,open('.maqa/state.json','w'),indent=2)"
+      python3 -c "import json,os; s=json.load(open('.otherness/state.json')); s['bounded_sessions'][os.environ['AGENT_ID']]['current_item']=None; json.dump(s,open('.otherness/state.json','w'),indent=2)"
       move_board_card $NEXT_ISSUE $OPT_TODO
       continue  # LOOP
     }
@@ -483,9 +483,9 @@ PHASE 3 — QA (ADVERSARIAL) + MERGE
 
     python3 -c "
 import json,os
-with open('.maqa/state.json','r') as f: s=json.load(f)
+with open('.otherness/state.json','r') as f: s=json.load(f)
 s['bounded_sessions'][os.environ['AGENT_ID']]['current_item']=None
-with open('.maqa/state.json','w') as f: json.dump(s,f,indent=2)
+with open('.otherness/state.json','w') as f: json.dump(s,f,indent=2)
 "
     eval "$BUILD_COMMAND" || (gh issue create --repo $REPO --label needs-human \
       --title "[$AGENT_NAME] hotfix: build broke after #$NEXT_ISSUE" && exit 1)

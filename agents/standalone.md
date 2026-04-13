@@ -123,10 +123,10 @@ move_board_card() {
 ```bash
 python3 - <<'EOF'
 import json, datetime
-with open('.maqa/state.json', 'r') as f: s = json.load(f)
+with open('.otherness/state.json', 'r') as f: s = json.load(f)
 s['session_heartbeats']['STANDALONE']['last_seen'] = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
 s['session_heartbeats']['STANDALONE']['cycle'] = s['session_heartbeats']['STANDALONE'].get('cycle', 0) + 1
-with open('.maqa/state.json', 'w') as f: json.dump(s, f, indent=2)
+with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
 EOF
 ```
 
@@ -150,7 +150,7 @@ for line in open('otherness-config.yaml'):
 
 CURRENT_CYCLE=$(python3 -c "
 import json
-s=json.load(open('.maqa/state.json'))
+s=json.load(open('.otherness/state.json'))
 print(s['session_heartbeats']['STANDALONE'].get('cycle',0))
 " 2>/dev/null || echo "0")
 
@@ -244,14 +244,14 @@ fi
 ## MODE CHECK
 
 ```bash
-MODE=$(python3 -c "import json; print(json.load(open('.maqa/state.json')).get('mode','standalone'))" 2>/dev/null)
+MODE=$(python3 -c "import json; print(json.load(open('.otherness/state.json')).get('mode','standalone'))" 2>/dev/null)
 [ "$MODE" = "team" ] && echo "[STANDALONE] state.json mode=team. Change to standalone first." && exit 1
 python3 -c "
 import json
-s=json.load(open('.maqa/state.json'))
+s=json.load(open('.otherness/state.json'))
 s['mode']='standalone'
 s['session_heartbeats'].setdefault('STANDALONE',{'last_seen':None,'cycle':0})
-json.dump(s,open('.maqa/state.json','w'),indent=2)
+json.dump(s,open('.otherness/state.json','w'),indent=2)
 "
 ```
 
@@ -272,26 +272,26 @@ PHASE 1 — [🎯 COORD] HEARTBEAT + BOARD SYNC + ASSIGN
 
     STOP SENTINEL CHECK — runs at the top of every cycle, only after current item is done:
     ```bash
-    if [ -f ".maqa/stop-after-current" ]; then
+    if [ -f ".otherness/stop-after-current" ]; then
       IN_FLIGHT=$(python3 -c "
 import json
-s=json.load(open('.maqa/state.json'))
+s=json.load(open('.otherness/state.json'))
 items=[id for id,d in s.get('features',{}).items() if d.get('state') in ('assigned','in_progress','in_review')]
 print(','.join(items))
 " 2>/dev/null)
       if [ -z "$IN_FLIGHT" ]; then
-        REASON=$(python3 -c "import json; print(json.load(open('.maqa/stop-after-current')).get('reason',''))" 2>/dev/null)
+        REASON=$(python3 -c "import json; print(json.load(open('.otherness/stop-after-current')).get('reason',''))" 2>/dev/null)
         python3 - <<'PYEOF'
 import json, datetime
-with open('.maqa/state.json','r') as f: s=json.load(f)
+with open('.otherness/state.json','r') as f: s=json.load(f)
 s['handoff'] = {
     "stopped_at": datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
-    "reason": "Graceful stop — sentinel .maqa/stop-after-current present, no in-flight items",
+    "reason": "Graceful stop — sentinel .otherness/stop-after-current present, no in-flight items",
     "resume_with": "/otherness.run"
 }
-with open('.maqa/state.json','w') as f: json.dump(s,f,indent=2)
+with open('.otherness/state.json','w') as f: json.dump(s,f,indent=2)
 PYEOF
-        import os; os.remove('.maqa/stop-after-current') 2>/dev/null || true
+        import os; os.remove('.otherness/stop-after-current') 2>/dev/null || true
         REPORT_MSG="[🎯 COORD] Graceful stop. All in-flight work complete. State saved. Resume with /otherness.run."
         gh issue comment $REPORT_ISSUE --repo $REPO --body "$REPORT_MSG" 2>/dev/null
         echo "$REPORT_MSG"
@@ -406,7 +406,7 @@ for line in open('otherness-config.yaml'):
 
 CURRENT_CYCLE=$(python3 -c "
 import json
-s=json.load(open('.maqa/state.json'))
+s=json.load(open('.otherness/state.json'))
 print(s['session_heartbeats']['STANDALONE'].get('cycle',0))
 " 2>/dev/null || echo "0")
 ```
