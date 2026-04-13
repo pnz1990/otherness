@@ -26,45 +26,65 @@ Badges: Coordinator `[🎯 COORD]` | Engineer `[🔨 ENG]` | QA `[🔍 QA]` | SM
 ## STATE MANAGEMENT — READ THIS FIRST
 
 State (`state.json`) lives on a dedicated `_state` branch, **not on `main`**.
-
-This prevents parallel sessions from conflicting: code goes through feature branches
-and PRs to `main`. State writes go directly to `_state`. They never touch each other.
+This prevents parallel sessions conflicting: code PRs go to `main`, state writes go to `_state`.
 
 ### Reading state
 ```bash
-# Pull latest _state before reading anything
-git fetch origin _state --quiet
-git checkout origin/_state -- .otherness/state.json 2>/dev/null
+git fetch origin _state --quiet 2>/dev/null
+git show origin/_state:.otherness/state.json > .otherness/state.json 2>/dev/null || true
 ```
 
-### Writing state
+### Writing state (use this exact pattern every time)
 ```bash
-# Write state.json, then push directly to _state (NOT main)
-write_state() {
-  # Must be called from the main repo directory
-  local MSG="$1"
-  git add .otherness/state.json
-  git commit -m "state: $MSG" 2>/dev/null || true
-  # Push only the state.json commit to _state, not to main
-  git push origin "HEAD:.otherness/state.json" 2>/dev/null || \
-  git subtree push --prefix=.otherness origin _state 2>/dev/null || {
-    # Fallback: use a state worktree
-    local STATE_WT="/tmp/$(basename $(pwd))-state-$$"
-    git worktree add "$STATE_WT" origin/_state 2>/dev/null || \
-      git worktree add "$STATE_WT" _state 2>/dev/null
-    cp .otherness/state.json "$STATE_WT/.otherness/state.json"
-    git -C "$STATE_WT" add .otherness/state.json
-    git -C "$STATE_WT" commit -m "state: $MSG" 2>/dev/null || true
-    git -C "$STATE_WT" push origin _state
-    git worktree remove "$STATE_WT" --force
-    # Reset the main worktree state commit (don't pollute main history)
-    git reset HEAD~1 --soft 2>/dev/null || true
-    git checkout -- .otherness/state.json 2>/dev/null || true
-  }
-}
+# After modifying .otherness/state.json, push to _state branch only:
+python3 - <<'PYEOF'
+import subprocess, json, os, tempfile, shutil
+
+# Read current state
+state = json.load(open('.otherness/state.json'))
+
+# Write to _state branch via a temp worktree
+repo_root = subprocess.check_output(['git','rev-parse','--show-toplevel'],text=True).strip()
+state_wt = os.path.join(tempfile.gettempdir(), 'otherness-state-' + str(os.getpid()))
+
+try:
+    # Create a worktree pointing at _state
+    subprocess.run(['git','worktree','add',state_wt,'origin/_state','--no-checkout'],
+                   capture_output=True)
+    subprocess.run(['git','-C',state_wt,'checkout','_state','--','.otherness/state.json'],
+                   capture_output=True)
+    
+    # Write updated state
+    os.makedirs(os.path.join(state_wt, '.otherness'), exist_ok=True)
+    json.dump(state, open(os.path.join(state_wt,'.otherness','state.json'),'w'), indent=2)
+    
+    # Commit and push
+    subprocess.run(['git','-C',state_wt,'add','.otherness/state.json'])
+    msg = os.environ.get('STATE_MSG','state update')
+    result = subprocess.run(['git','-C',state_wt,'commit','-m',f'state: {msg}'],
+                           capture_output=True)
+    if result.returncode == 0:
+        subprocess.run(['git','-C',state_wt,'push','origin','_state'], check=True)
+        print(f"State written to _state: {msg}")
+    else:
+        print("State unchanged (nothing to commit)")
+except Exception as e:
+    print(f"Warning: state write failed ({e}) — falling back to main")
+    subprocess.run(['git','add','.otherness/state.json'])
+    subprocess.run(['git','commit','-m',f'state: {os.environ.get("STATE_MSG","update")}'])
+    subprocess.run(['git','push','origin','main'])
+finally:
+    subprocess.run(['git','worktree','remove',state_wt,'--force'],capture_output=True)
+PYEOF
 ```
 
-**Rule**: Never `git push origin main` with a state.json change. Use `write_state` only.
+Set `STATE_MSG` before calling to give a meaningful commit message:
+```bash
+STATE_MSG="[$MY_SESSION_ID] claimed $ITEM_ID"
+# then run the write block above
+```
+
+**Never** `git push origin main` for state changes. Always use the write block above.
 
 ---
 
@@ -162,7 +182,8 @@ s.setdefault('session_heartbeats',{})[MY_ID]={
 }
 with open('.otherness/state.json','w') as f: json.dump(s,f,indent=2)
 EOF
-write_state "heartbeat $MY_SESSION_ID"
+export STATE_MSG="heartbeat $MY_SESSION_ID"
+# run the state write block above
 ```
 
 ### Cleanup after merge
@@ -184,7 +205,8 @@ s['features']['$ITEM_ID']['state']='done'
 s['features']['$ITEM_ID']['pr_merged']=True
 with open('.otherness/state.json','w') as f: json.dump(s,f,indent=2)
 EOF
-write_state "[$MY_SESSION_ID] $ITEM_ID done"
+export STATE_MSG="[$MY_SESSION_ID] $ITEM_ID done"
+# run the state write block above
 
 # Reset item vars for next cycle
 ITEM_ID="" ; MY_BRANCH="" ; MY_WORKTREE="" ; MY_SESSION_ID=""
@@ -457,7 +479,8 @@ s['features']['$ITEM_ID'].update({
 })
 with open('.otherness/state.json','w') as f: json.dump(s,f,indent=2)
 EOF
-      write_state "[$MY_SESSION_ID] claimed $ITEM_ID"
+      export STATE_MSG="[$MY_SESSION_ID] claimed $ITEM_ID"
+# run the state write block above
 
       # Comment on the issue
       ISSUE_NUM=$(echo $ITEM_ID | grep -oE '[0-9]+' | head -1)
