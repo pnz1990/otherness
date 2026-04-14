@@ -98,3 +98,33 @@ jo-inc/camofox-browser (irrelevant)
 
 **standalone.md changes:**
 - Phase 2d: load agent-coding-discipline skill, add surgical changes and verifiable goals checkpoints
+
+---
+
+## 2026-04-14 — crewAIInc/crewAI (automated learn session, issue #21)
+
+**Files read:**
+- `README.md` (full — 48,000 chars)
+- `docs.crewai.com` — Crews vs Flows architecture overview
+
+**Repos assessed:** 3 (microsoft/autogen — maintenance mode, less signal; langchain-ai/langchain — too broad; crewAIInc/crewAI — highest signal for this session)
+
+**Patterns extracted:** 3
+
+**Disposition:**
+
+- `autonomy-precision-spectrum` → EXTENDED_SKILL (agents/skills/autonomous-workflow-patterns.md §Autonomy-Precision Spectrum)
+  Crews (autonomous, uncertain path) vs Flows (precise, event-driven). Key insight: choose per step, not per system. Maps directly to otherness's coordinator (flow-like) vs engineer/QA (crew-like) phases. Added with concrete otherness-specific routing pattern.
+
+- `conditional-routing-on-state` → EXTENDED_SKILL (agents/skills/autonomous-workflow-patterns.md §Conditional Routing on State)
+  Route on structured state values (confidence level, counts), not just binary pass/fail. Directly applicable to improving coordinator queue-empty handling. Added with concrete bash routing pattern.
+
+- `role-identity-trinity` → NEW_SKILL (agents/skills/role-based-agent-identity.md)
+  role + goal + backstory as a three-part constraint on agent judgment, not just a label. Backstory calibrates how the agent resolves ambiguous cases. Includes: tools-vs-tasks separation, concrete phase identity pattern for otherness.
+
+**Rejected patterns:**
+
+- `telemetry-collection-design` (CrewAI) — not transferable: specific to Python framework usage tracking; not relevant to otherness's markdown/git-based operation
+- `uv-over-pip-install` (CrewAI) — not transferable: Python packaging toolchain choice; otherness has no Python packages
+- `crew-control-plane-architecture` (CrewAI AMP) — not transferable: requires a persistent service layer; otherness is stateless by design
+- `role-backstory-as-persona` (CrewAI) — partially captured; the persona aspect (flavor text) was excluded; only the judgment-calibration aspect was extracted
