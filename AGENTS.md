@@ -25,8 +25,8 @@ The team process is embedded in `~/.otherness/agents/standalone.md`. This file c
 PROJECT_NAME:   otherness
 CLI_BINARY:     ""
 PR_LABEL:       otherness
-REPORT_ISSUE:   1
-REPORT_URL:     https://github.com/pnz1990/otherness/issues/1
+REPORT_ISSUE:   2
+REPORT_URL:     https://github.com/pnz1990/otherness/issues/2
 BOARD_URL:      ""
 BUILD_COMMAND:  bash scripts/validate.sh
 TEST_COMMAND:   bash scripts/test.sh

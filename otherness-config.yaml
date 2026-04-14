@@ -4,7 +4,7 @@
 project:
   name: otherness
   repo: pnz1990/otherness
-  report_issue: 1
+  report_issue: 2
   board_url: ""
   pr_label: "otherness"
 
