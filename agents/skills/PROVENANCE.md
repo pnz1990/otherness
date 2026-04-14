@@ -128,3 +128,36 @@ jo-inc/camofox-browser (irrelevant)
 - `uv-over-pip-install` (CrewAI) — not transferable: Python packaging toolchain choice; otherness has no Python packages
 - `crew-control-plane-architecture` (CrewAI AMP) — not transferable: requires a persistent service layer; otherness is stateless by design
 - `role-backstory-as-persona` (CrewAI) — partially captured; the persona aspect (flavor text) was excluded; only the judgment-calibration aspect was extracted
+
+---
+
+## 2026-04-14 — langchain-ai/langchain (automated learn session, feat/learn-langchain)
+
+**Files read:**
+- `AGENTS.md` (full — global development guidelines, 6,000+ chars)
+
+**Repos assessed:** 1 (langchain-ai/langchain — highest-signal general AI framework with detailed AGENTS.md)
+
+**Patterns extracted:** 3
+
+**Disposition:**
+
+- `ai-disclosure-in-prs` → NEW_SKILL (agents/skills/contribution-hygiene.md §AI Disclosure in Every PR)
+  LangChain requires AI contributors to add a disclosure footer to every PR. Directly applicable to otherness — every standalone agent PR should identify itself as AI-generated. Added with exact footer text.
+
+- `commit-scope-enforcement` → NEW_SKILL (agents/skills/contribution-hygiene.md §Commit Scope Is Not Optional)
+  LangChain: "All PR titles must include a scope with no exceptions." Otherness already uses conventional commits but doesn't enforce scope strictly. Added concrete check.
+
+- `stable-interface-gate` → EXTENDED_SKILL (agents/skills/reconciling-implementations.md §Stable Interface Gate)
+  LangChain: "Always attempt to preserve function signatures for exported/public methods." Maps to otherness's state.json field stability and agent command interface stability. Added as a QA approval gate for PRs that rename/remove public fields.
+
+**Also extracted to contribution-hygiene.md:**
+- `pr-description-why-not-what` — describe the why of changes, not what the diff contains
+- `remove-dead-code-before-commit` — AI agents often leave commented-out prior approaches
+
+**Rejected patterns:**
+
+- `monorepo-layer-architecture` (LangChain) — not transferable: requires a multi-package Python monorepo; otherness is a single markdown repo
+- `model-profiles-cli` (LangChain) — not transferable: specific to LLM model capability tracking; otherness doesn't manage LLM models
+- `uv-workspace-management` (LangChain) — not transferable: Python-specific dependency management
+- `pr-labeler-config` (LangChain) — partially interesting for otherness label taxonomy, but already solved with gh label commands; deferred

@@ -13,6 +13,7 @@ Skills are **additive only** — never delete content from a skill file (see con
 | `reconciling-implementations.md` | Reviewing a PR as QA | Phase 3 (QA — ADVERSARIAL REVIEW) |
 | `autonomous-workflow-patterns.md` | Designing a multi-step feature or reviewing workflow logic | Phase 2a, 2d, or 3 |
 | `role-based-agent-identity.md` | Writing or improving agent instructions (standalone.md, onboard.md) | Phase 4 (SM) or when updating agent files |
+| `contribution-hygiene.md` | Opening a PR or writing a commit message | Phase 2f (ENG — before gh pr create) |
 
 ## Skill summaries
 
@@ -43,6 +44,9 @@ Workflow design patterns from Archon and CrewAI. Covers: human approval as a nam
 
 ### `role-based-agent-identity.md`
 Role identity patterns from CrewAI. The role+goal+backstory trinity as a behavior constraint (not just a label). Backstory calibrates agent judgment on ambiguous cases. Roles vs tools vs task contracts. Use when writing or improving agent phase instructions to ensure consistent behavior across diverse inputs.
+
+### `contribution-hygiene.md`
+PR and commit discipline patterns from LangChain. Covers: AI disclosure footer required in every AI-opened PR; conventional commit scope enforcement (scope is not optional); PR body should explain why not what; dead code removal before committing. Load before opening any PR or writing commit messages.
 
 ## `PROVENANCE.md`
 Audit trail of `/otherness.learn` sessions. Records what was learned, from which repo, on what
