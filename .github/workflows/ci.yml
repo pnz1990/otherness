@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate + Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run validate
+        run: bash scripts/validate.sh
+
+      - name: Run lint
+        run: bash scripts/lint.sh
+
+      - name: Check CRITICAL tier PRs have needs-human label
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Check if this PR touches standalone.md or bounded-standalone.md
+          CHANGED=$(git diff --name-only origin/main...HEAD 2>/dev/null || true)
+          if echo "$CHANGED" | grep -qE "agents/(standalone|bounded-standalone)\.md"; then
+            echo "CRITICAL tier files changed — checking for needs-human label..."
+            LABELS=$(gh pr view ${{ github.event.pull_request.number }} \
+              --repo ${{ github.repository }} \
+              --json labels --jq '[.labels[].name]' 2>/dev/null || echo "[]")
+            if ! echo "$LABELS" | python3 -c "import json,sys; labels=json.load(sys.stdin); exit(0 if 'needs-human' in labels else 1)"; then
+              echo "ERROR: PR modifies CRITICAL tier files but is missing 'needs-human' label"
+              echo "Add the 'needs-human' label before this PR can be merged"
+              exit 1
+            fi
+            echo "OK: needs-human label present"
+          else
+            echo "No CRITICAL tier files changed — skipping label check"
+          fi

@@ -1,0 +1,150 @@
+# Definition of Done
+
+> The project is complete when every journey below passes.
+> These journeys are validated by the PM agent every `product_validation_cycles` cycles.
+
+---
+
+## Journey 1: otherness can build and validate itself
+
+**The user story**: A developer clones the otherness repo, runs the three validation scripts, and they all exit 0.
+
+### Exact steps that must work
+
+```bash
+cd ~/.otherness
+bash scripts/validate.sh   # must exit 0
+bash scripts/lint.sh       # must exit 0
+bash scripts/test.sh       # must exit 0
+```
+
+### Pass criteria
+
+- [ ] `validate.sh` exits 0: no hardcoded project paths in agents/, all skill refs exist
+- [ ] `lint.sh` exits 0: all markdown files in agents/ are well-formed
+- [ ] `test.sh` exits 0: including the alibi integration check (state commits within 72h)
+
+---
+
+## Journey 2: otherness runs correctly on a reference project
+
+**The user story**: otherness runs autonomously on alibi for at least one full batch (claim item → implement → PR → merge) without human intervention.
+
+### Exact steps that must work
+
+```bash
+# Verify alibi _state shows recent activity
+gh api repos/pnz1990/alibi/branches/_state \
+  --jq '.commit.commit.committer.date'
+# Must be within 72 hours
+
+# Verify at least one PR merged recently
+gh pr list --repo pnz1990/alibi --state merged \
+  --json mergedAt --jq '.[0].mergedAt'
+# Must be within 7 days
+
+# Verify no stuck [NEEDS HUMAN] blocking the queue
+gh issue list --repo pnz1990/alibi --label needs-human --state open \
+  --json number,title | python3 -c "
+import json,sys
+issues = json.load(sys.stdin)
+stale = [i for i in issues]  # any is a flag
+print(f'{len(stale)} needs-human issues open')
+"
+```
+
+### Pass criteria
+
+- [ ] alibi `_state` branch has commits within 72 hours
+- [ ] At least 1 alibi PR merged in the last 7 days
+- [ ] Zero alibi `needs-human` issues open for >72 hours without a human comment
+
+---
+
+## Journey 3: self-improvement is happening
+
+**The user story**: otherness is autonomously improving itself — PRs are being opened and merged to `pnz1990/otherness`.
+
+### Exact steps that must work
+
+```bash
+# At least one self-improvement PR merged in last 14 days
+gh pr list --repo pnz1990/otherness --state merged \
+  --json mergedAt,title --jq '.[0] | "\(.mergedAt) \(.title)"'
+
+# Skills are growing
+ls ~/.otherness/agents/skills/*.md | grep -v PROVENANCE | wc -l
+# Must be ≥ 4 (grows over time)
+
+# PROVENANCE.md has recent entries
+tail -5 ~/.otherness/agents/skills/PROVENANCE.md
+```
+
+### Pass criteria
+
+- [ ] At least 1 PR merged to `pnz1990/otherness` within the last 14 days
+- [ ] Skill count ≥ 4 and non-decreasing
+- [ ] PROVENANCE.md last entry within 30 days
+
+---
+
+## Journey 4: CRITICAL tier protection works
+
+**The user story**: A PR modifying `agents/standalone.md` cannot be autonomously merged — it requires human review.
+
+### Exact steps that must work
+
+```bash
+# Any open PR touching standalone.md must have needs-human label
+gh pr list --repo pnz1990/otherness --state open \
+  --json number,title,labels,files \
+  --jq '.[] | select(.files[].path | test("standalone.md")) | {number, labels: [.labels[].name]}'
+# Every result must include "needs-human" in its labels array
+```
+
+### Pass criteria
+
+- [ ] No PR touching `agents/standalone.md` or `agents/bounded-standalone.md` is merged without `needs-human` label
+- [ ] The QA phase explicitly checks file paths and applies the CRITICAL tier rule
+
+---
+
+## Journey 5: `/otherness.run` starts cleanly on a fresh clone of otherness
+
+**The user story**: Running `/otherness.run` from `~/.otherness` produces a working session that reads the project correctly.
+
+### Exact steps that must work
+
+```bash
+cd ~/.otherness
+# (from an OpenCode session)
+# /otherness.run
+# Agent must:
+# 1. Self-update (git pull)
+# 2. Read AGENTS.md successfully
+# 3. Read state.json from _state branch
+# 4. Read docs/aide/vision.md
+# 5. Post a [COORD] startup comment on issue #1
+# 6. Claim or generate a work item
+# 7. NOT crash with "AGENTS.md not found" or "state.json not found"
+```
+
+### Pass criteria
+
+- [ ] Agent reads AGENTS.md without error
+- [ ] Agent reads state.json from _state branch
+- [ ] Agent posts startup comment on report issue #1
+- [ ] Agent claims or generates a work item within the first cycle
+- [ ] No `[NEEDS HUMAN]` posted due to missing infrastructure files
+
+---
+
+## Journey Status
+
+| Journey | Status | Last checked | Notes |
+|---|---|---|---|
+| 1: Build and validate itself | ❌ Not started | — | Requires Stage 0 (scripts) |
+| 2: Runs correctly on reference project | ✅ Passing | 2026-04-14 | alibi active |
+| 3: Self-improvement happening | ⚠️ Partial | 2026-04-14 | PRs merged to otherness but not via the loop |
+| 4: CRITICAL tier protection | ❌ Not started | — | Requires Stage 0 (CI) |
+| 5: Starts cleanly on fresh clone | ❌ Not started | — | Requires Stage 0 (all files) |
