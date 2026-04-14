@@ -25,6 +25,7 @@
 | 2026-04-14 | 1 | 1 | 1 | ~0.5 | 4 | 0 | — | Bootstrap: CI fix PR; CRITICAL tier PRs awaiting review |
 | 2026-04-14 | 2 | 4 | 2 | 0 | 5 | 4 | ~12 | Shipped #11 #12 #14 #15; CRITICAL #13 #16 pending human |
 | 2026-04-14 | 3 | 5 | 0 | 0 | 5 | 6 | ~8 | Merged all CRITICAL PRs; shipped #17 #18; Stage 1 complete |
+| 2026-04-14 | 4 | 4 | 0 | 0 | 6 | 3 | ~10 | Shipped #25 #29 #31; autonomous learn scheduling live; 6 skills |
 
 ---
 
@@ -34,4 +35,6 @@
 
 **Batch 2→3**: All CRITICAL PRs merged by human. needs_human dropped to 0. time_to_merge improved as items are smaller (xs/s). Stage 1 complete.
 
-**Next target**: Grow skills_count from 5 to ≥7 via /otherness.learn session (#21). Ship autonomous learn scheduling (#20 — CRITICAL tier). Establish metrics.md as living document.
+**Batch 3→4**: Autonomous learn scheduling shipped (CRITICAL — standalone.md). Two learn sessions completed (CrewAI + LangChain). Skills grew 5→6. Onboard.md schema bug fixed. needs_human=0 — CRITICAL tier PRs merged promptly. Strong velocity maintained.
+
+**Next target**: Stage 3 onboarding quality — run /otherness.onboard on real project, validate output. Third learn session (target: 8 skills).
