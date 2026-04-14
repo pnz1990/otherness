@@ -313,19 +313,28 @@ if os.path.isdir(specs_dir):
                     "title": spec
                 }
 
-import datetime
+import datetime, subprocess as _sp
+
+_repo_url = _sp.check_output(['git','remote','get-url','origin'],text=True).strip()
+_repo = _repo_url.split('github.com')[-1].strip(':/')
+if _repo.endswith('.git'): _repo = _repo[:-4]
+
 state = {
-    "version": "1.2",
-    "project": os.path.basename(os.getcwd()),
+    "version": "1.3",
     "mode": "standalone",
-    "initialized": datetime.datetime.utcnow().strftime('%Y-%m-%d'),
-    "last_updated": datetime.datetime.utcnow().strftime('%Y-%m-%d'),
+    "repo": _repo,
     "current_queue": None,
-    "last_sm_review": None,
-    "last_pm_review": None,
-    "batches_since_competitive_analysis": 0,
-    "session_heartbeats": {},
-    "features": features
+    "features": features,
+    "engineer_slots": {
+        "ENGINEER-1": None,
+        "ENGINEER-2": None,
+        "ENGINEER-3": None
+    },
+    "bounded_sessions": {},
+    "session_heartbeats": {
+        "STANDALONE": {"last_seen": None, "cycle": 0}
+    },
+    "handoff": None
 }
 
 with open('.otherness/state.json', 'w') as f:
@@ -456,12 +465,37 @@ The agent will read these files and generate the first queue automatically."
 
 ---
 
-## STEP 8 — Report
+## STEP 8 — Verify and report
 
-Post a summary of what was generated. Include:
+Verify the PR was created:
+
+```bash
+PR_URL=$(gh pr list --repo $REPO --head otherness-onboard --json url --jq '.[0].url' 2>/dev/null)
+if [ -z "$PR_URL" ]; then
+  echo "ERROR: PR creation failed — check git push and gh pr create output above"
+  exit 1
+fi
+echo "[ONBOARD] PR created: $PR_URL"
+```
+
+Post a summary. Include:
 - Files created
 - Number of done items seeded in state.json
 - Anything that needs human review before merging
 - The PR URL
+
+## Onboarding completion checklist
+
+This onboarding is complete when ALL of the following are true:
+
+- [ ] `docs/aide/vision.md` exists and accurately describes what the product does and for whom
+- [ ] `docs/aide/roadmap.md` exists with ≥2 stages, reflecting actual shipped work
+- [ ] `docs/aide/definition-of-done.md` exists with ≥2 journeys with exact commands
+- [ ] `docs/aide/progress.md` exists with a recent PRs list
+- [ ] `.otherness/state.json` has `version: 1.3`, a `repo` field matching the GitHub repo, and `features` populated with done items
+- [ ] `otherness-config.yaml` exists with correct `repo` and `report_issue` values
+- [ ] A PR is open for human review with all of the above files
+
+If any item is unchecked: fix it before exiting.
 
 **Exit.** Your job is done. The human reviews and merges the PR, then runs `/otherness.run`.
