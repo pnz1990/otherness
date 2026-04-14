@@ -456,11 +456,13 @@ otherness-config.yaml                  ← required (mode, CI, board field IDs)
 docs/aide/vision.md                    ← required (what you're building)
 docs/aide/roadmap.md                   ← required (stages)
 docs/aide/definition-of-done.md       ← required (acceptance criteria)
-docs/aide/progress.md                  ← required (seed with empty tables)
-docs/aide/team.yml                     ← required (source of truth list)
-.specify/memory/constitution.md        ← required (agent behavioral rules)
-.specify/memory/sdlc.md               ← required (process definition)
-.maqa/state.json                       ← required (seed with empty state)
+.otherness/state.json                  ← required (seed with empty state)
 ```
 
 Without any of these, agents will either crash or produce wrong behavior.
+
+**Not required to start** (agents will work without them, or will generate them):
+- `docs/aide/team.yml` — generic boilerplate, not read by runtime agents
+- `docs/aide/pr-template.md` — optional, agents open PRs without it
+- `.specify/memory/constitution.md` — recommended but gracefully absent; agent reads AGENTS.md instead
+- `.specify/memory/sdlc.md` — the process is embedded in `standalone.md`; this file is for the old multi-session model

@@ -322,16 +322,18 @@ Read these — in order, no skipping. Keep it fast: skim what you know, read car
 1. `AGENTS.md` — identity, commands, anti-patterns, label taxonomy (most important)
 2. `.otherness/state.json` — queue, in-flight items, handoff note
 3. `docs/aide/vision.md` — product intent
-4. `docs/design/10-graph-first-architecture.md` — architecture rules
-5. `docs/design/11-graph-purity-tech-debt.md` — what is and isn't blocked
-6. `.specify/memory/constitution.md` — behavioral rules
-7. `.specify/memory/sdlc.md` — process loops
-8. `~/.otherness/agents/gh-features.md`
+4. `.specify/memory/constitution.md` — behavioral rules (if present)
+5. `~/.otherness/agents/gh-features.md`
+
+**Project-specific architecture docs**: after reading `AGENTS.md`, follow any
+architecture doc references it lists (e.g. a "must read before implementing"
+section, anti-patterns table, or design doc links). Every project is different —
+AGENTS.md is the authoritative map. Do not assume any specific file path.
 
 **Only read the remaining docs when they're relevant to your current item:**
 - `docs/aide/roadmap.md`, `docs/aide/definition-of-done.md` — when generating a queue
-- `docs/concepts.md`, `docs/policy-gates.md`, `docs/pipeline-reference.md` — when implementing a feature
-- Other `docs/design/*.md` — when implementing something in that design area
+- User-facing docs referenced in AGENTS.md — when implementing a user-facing feature
+- Any `docs/design/*.md` referenced in AGENTS.md — when implementing in that area
 
 **After reading:**
 ```bash
@@ -503,15 +505,15 @@ All work happens in $MY_WORKTREE on branch $MY_BRANCH.
 2a. SPEC-FIRST: generate/verify spec.md + tasks.md in .specify/specs/<item-id>/.
 
     CONCEPT CONSISTENCY CHECK before writing the spec:
-    1. Extends existing CRD or new one? If new: is a field addition sufficient?
-    2. Existing pattern in codebase to follow?
-    3. CEL component? Use project's existing CEL namespaces (read AGENTS.md).
-    4. New reconciler needed? Answer Watch/Owned/Extension questions from AGENTS.md.
-    5. API naming matches docs/pipeline-reference.md and docs/policy-gates.md?
+    1. Does an existing abstraction already cover this? If so, extend it rather than adding a new one.
+    2. What existing patterns in the codebase should this follow? (search for similar features)
+    3. Re-read AGENTS.md §Anti-Patterns — does this feature risk introducing any of them?
+    4. Does any architecture constraint doc (referenced in AGENTS.md) apply to this feature?
+    5. Does the API/interface naming match the project's existing user-facing docs?
 
-2b. DOC-FIRST: verify/create user-facing doc page before writing Go.
+2b. DOC-FIRST: verify/create user-facing doc page before writing code.
 
-2c. GRAPH-FIRST: re-read docs/design/10-graph-first-architecture.md.
+2c. ARCHITECTURE-FIRST: re-read any architecture constraint docs listed in AGENTS.md.
     Re-read AGENTS.md §Anti-Patterns.
 
 2d. Implement TDD: test first, then code. All in $MY_WORKTREE.
@@ -607,5 +609,5 @@ are ✅ validated live AND human confirms project complete.
 - **Think harder before escalating.** Re-read design docs, search codebase, check issue thread, look at similar PRs.
 - Never exit because the backlog is empty. Find work.
 - Adversarial QA. TDD always. Merge mandatory. Max 3 QA cycles.
-- No new logic leaks without human approval.
+- No anti-patterns (per AGENTS.md) without human approval.
 - Perfection is the direction, not the destination.
