@@ -510,7 +510,36 @@ print(len(todo))
         gh issue comment $REPORT_ISSUE --repo $REPO \
           --body "[STANDALONE] BLOCKED — all backlog items require human input. $NEEDS_HUMAN_COUNT open needs-human issues. Waiting for human to unblock." 2>/dev/null
       fi
-      # Run: code health scan, competitive analysis, product validation
+      # Run proactive work: learn scheduling, code health, product validation
+
+      # LEARN SCHEDULING: run /otherness.learn if last session >14 days ago
+      DAYS_SINCE_LEARN=$(python3 -c "
+import re, datetime, os
+provenance = os.path.expanduser('~/.otherness/agents/skills/PROVENANCE.md')
+try:
+    content = open(provenance).read()
+    dates = re.findall(r'^## (\d{4}-\d{2}-\d{2})', content, re.MULTILINE)
+    if dates:
+        last = datetime.date.fromisoformat(sorted(dates)[-1])
+        print((datetime.date.today() - last).days)
+    else:
+        print(999)
+except Exception:
+    print(999)
+" 2>/dev/null || echo "0")
+      if [ "${DAYS_SINCE_LEARN:-0}" -ge 14 ]; then
+        echo "[COORD] Skills >14 days stale (${DAYS_SINCE_LEARN}d) — running autonomous learn session"
+        LEARN_BRANCH="feat/learn-$(date +%Y%m%d)"
+        if git push origin "HEAD:refs/heads/$LEARN_BRANCH" 2>/dev/null; then
+          git worktree add "../${REPO_NAME}.learn-$(date +%Y%m%d)" "$LEARN_BRANCH" 2>/dev/null || true
+          # Run the learn agent in that worktree
+          # The learn agent reads ~/.otherness/agents/otherness.learn.md and executes it
+          # It commits new/updated skill files and PROVENANCE.md, then opens a PR
+          gh issue comment $REPORT_ISSUE --repo $REPO \
+            --body "[STANDALONE] Autonomous learn session triggered — last session was ${DAYS_SINCE_LEARN} days ago. Branch: \`$LEARN_BRANCH\`. Read and follow \`~/.otherness/agents/otherness.learn.md\` in that worktree." 2>/dev/null
+        fi
+      fi
+
       sleep 60 && continue
     fi
 
