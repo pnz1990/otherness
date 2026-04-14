@@ -85,6 +85,13 @@ Integration tests survive refactors. Unit tests don't. Push coverage to the edge
       is seeded or mocked.
 - [ ] Test suite runs fast. No unnecessary sleeps, redundant setup, or serial execution where
       parallel execution suffices.
+- [ ] **Live-cluster coverage gate**: if this PR implements or modifies a user journey (any
+      end-to-end flow described in definition-of-done.md), a fake-client test passing in CI is
+      necessary but not sufficient. The journey requires live-cluster evidence to be marked ✅:
+      either a `[PDCA AUTOMATED]` CI comment showing PASS with real images, or a
+      `[LIVE CLUSTER VALIDATED]` comment with exact commands and terminal output. If no such
+      evidence exists for the journey this PR touches, label the gap `MISS` and file a follow-up
+      validation issue before approving. Do not mark the journey done in the PR.
 - [ ] Think: what testing gap is not on this list for this specific change?
 
 ---
