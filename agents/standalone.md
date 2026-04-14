@@ -38,43 +38,52 @@ git show origin/_state:.otherness/state.json > .otherness/state.json 2>/dev/null
 ```bash
 # After modifying .otherness/state.json, push to _state branch only:
 python3 - <<'PYEOF'
-import subprocess, json, os, tempfile, shutil
+import subprocess, json, os, tempfile, time
 
 # Read current state
 state = json.load(open('.otherness/state.json'))
 
-# Write to _state branch via a temp worktree
-repo_root = subprocess.check_output(['git','rev-parse','--show-toplevel'],text=True).strip()
+# Write to _state branch via a temp worktree (retries up to 3× on push conflict)
 state_wt = os.path.join(tempfile.gettempdir(), 'otherness-state-' + str(os.getpid()))
+msg = os.environ.get('STATE_MSG','state update')
+for attempt in range(3):
+    try:
+        subprocess.run(['git','worktree','add',state_wt,'origin/_state','--no-checkout'],
+                       capture_output=True)
+        subprocess.run(['git','-C',state_wt,'checkout','_state','--','.otherness/state.json'],
+                       capture_output=True)
 
-try:
-    # Create a worktree pointing at _state
-    subprocess.run(['git','worktree','add',state_wt,'origin/_state','--no-checkout'],
-                   capture_output=True)
-    subprocess.run(['git','-C',state_wt,'checkout','_state','--','.otherness/state.json'],
-                   capture_output=True)
-    
-    # Write updated state
-    os.makedirs(os.path.join(state_wt, '.otherness'), exist_ok=True)
-    json.dump(state, open(os.path.join(state_wt,'.otherness','state.json'),'w'), indent=2)
-    
-    # Commit and push
-    subprocess.run(['git','-C',state_wt,'add','.otherness/state.json'])
-    msg = os.environ.get('STATE_MSG','state update')
-    result = subprocess.run(['git','-C',state_wt,'commit','-m',f'state: {msg}'],
-                           capture_output=True)
-    if result.returncode == 0:
-        subprocess.run(['git','-C',state_wt,'push','origin','_state'], check=True)
-        print(f"State written to _state: {msg}")
-    else:
-        print("State unchanged (nothing to commit)")
-except Exception as e:
-    print(f"Warning: state write failed ({e}) — falling back to main")
-    subprocess.run(['git','add','.otherness/state.json'])
-    subprocess.run(['git','commit','-m',f'state: {os.environ.get("STATE_MSG","update")}'])
-    subprocess.run(['git','push','origin','main'])
-finally:
-    subprocess.run(['git','worktree','remove',state_wt,'--force'],capture_output=True)
+        # Merge: load remote state, overlay local changes (local wins on conflict)
+        remote_path = os.path.join(state_wt,'.otherness','state.json')
+        os.makedirs(os.path.dirname(remote_path), exist_ok=True)
+        try:
+            remote = json.load(open(remote_path))
+            remote.update(state)
+            merged = remote
+        except Exception:
+            merged = state
+        json.dump(merged, open(remote_path,'w'), indent=2)
+
+        subprocess.run(['git','-C',state_wt,'add','.otherness/state.json'])
+        commit_result = subprocess.run(['git','-C',state_wt,'commit','-m',f'state: {msg}'],
+                                       capture_output=True)
+        if commit_result.returncode != 0:
+            print("State unchanged (nothing to commit)")
+            break
+        push_result = subprocess.run(['git','-C',state_wt,'push','origin','_state'],
+                                     capture_output=True)
+        if push_result.returncode == 0:
+            print(f"State written to _state: {msg}")
+            break
+        print(f"State push conflict (attempt {attempt+1}/3) — retrying...")
+    except Exception as e:
+        print(f"State write error (attempt {attempt+1}/3): {e}")
+    finally:
+        subprocess.run(['git','worktree','remove',state_wt,'--force'],capture_output=True)
+    if attempt < 2:
+        time.sleep(2 ** attempt)  # 1s then 2s
+else:
+    print(f"Warning: state write failed after 3 attempts — {msg} not persisted. Execution continues.")
 PYEOF
 ```
 
