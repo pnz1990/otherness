@@ -23,6 +23,9 @@ done
 [ $FOUND -eq 0 ] && echo "  OK: no hardcoded project paths" || exit 1
 
 # 2. Check all skill refs in standalone.md point to existing files
+# Skill paths use ~/.otherness/agents/skills/<name>.md — on a CI runner ~/.otherness
+# doesn't exist, but the files are present in the repo at agents/skills/<name>.md.
+# We resolve both locations: prefer the expanded ~ path, fall back to repo-local.
 echo "[2/4] Checking skill references..."
 MISSING=0
 while IFS= read -r line; do
@@ -34,7 +37,10 @@ if m: print(m.group(1))
 " <<< "$line" 2>/dev/null)
   [ -z "$skill_file" ] && continue
   expanded="${skill_file/#\~/$HOME}"
-  if [ ! -f "$expanded" ]; then
+  # Also check repo-local path: ~/.otherness/agents/skills/X.md → agents/skills/X.md
+  skill_basename=$(basename "$skill_file")
+  repo_local="$SKILLS_DIR/$skill_basename"
+  if [ ! -f "$expanded" ] && [ ! -f "$repo_local" ]; then
     echo "  ERROR: referenced skill file not found: $skill_file"
     MISSING=1
   fi
