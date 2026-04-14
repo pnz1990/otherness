@@ -330,9 +330,17 @@ Read these — in order, no skipping. Keep it fast: skim what you know, read car
 
 1. `AGENTS.md` — identity, commands, anti-patterns, label taxonomy (most important)
 2. `.otherness/state.json` — queue, in-flight items, handoff note
-3. `docs/aide/vision.md` — product intent
+3. `docs/aide/vision.md` — product intent **(if present — skip gracefully if missing, warn once)**
 4. `.specify/memory/constitution.md` — behavioral rules (if present)
 5. `~/.otherness/agents/gh-features.md`
+
+```bash
+# Vision fallback: warn if missing, do not crash
+if [ ! -f "docs/aide/vision.md" ]; then
+  echo "[STANDALONE] Warning: docs/aide/vision.md not found — proceeding without it."
+  echo "  Consider running /otherness.onboard to generate docs/aide/ files."
+fi
+```
 
 **Project-specific architecture docs**: after reading `AGENTS.md`, follow any
 architecture doc references it lists (e.g. a "must read before implementing"
@@ -429,6 +437,29 @@ with open('.otherness/state.json','w') as f: json.dump(s,f,indent=2)
       # Fix CI first. Do not assign a new item while main is red.
       # Open a feat/fix-ci-<timestamp> branch, fix, open PR, merge.
       # Only then proceed to claim the next backlog item.
+
+      # If CI has been red for >24 hours: escalate to [NEEDS HUMAN]
+      OLDEST_FAILURE=$(gh run list --repo $REPO --branch main --limit 20 \
+        --json conclusion,createdAt \
+        --jq '[.[]|select(.conclusion=="failure")]|last.createdAt' 2>/dev/null)
+      if [ -n "$OLDEST_FAILURE" ]; then
+        HOURS_RED=$(python3 -c "
+import datetime
+t=datetime.datetime.fromisoformat('$OLDEST_FAILURE'.replace('Z','+00:00'))
+now=datetime.datetime.now(datetime.timezone.utc)
+print(int((now-t).total_seconds()/3600))
+" 2>/dev/null)
+        if [ "${HOURS_RED:-0}" -ge 24 ]; then
+          gh issue comment $REPORT_ISSUE --repo $REPO \
+            --body "[STANDALONE] [NEEDS HUMAN] CI has been red on main for ${HOURS_RED}h. Failing job: $FAILED. Automated fix attempts have not resolved it. Human intervention needed." 2>/dev/null
+          gh issue list --repo $REPO --state open --label "needs-human" --json number \
+            --jq '.[].number' | grep -q . || \
+          gh issue create --repo $REPO \
+            --title "CI broken for ${HOURS_RED}h — needs human" \
+            --label "needs-human,priority/critical" \
+            --body "CI on main has been failing for ${HOURS_RED} hours. Failing job: $FAILED. Automated fix was unable to resolve it." 2>/dev/null
+        fi
+      fi
     fi
     ```
 
@@ -459,7 +490,26 @@ for id,d in s.get('features',{}).items():
 " 2>/dev/null)
 
     if [ -z "$ITEM_ID" ]; then
-      echo "[COORD] No unclaimed items. Running proactive work or waiting."
+      echo "[COORD] No unclaimed items."
+      # Distinguish: is the queue empty, or is it fully blocked by needs-human?
+      BLOCKED_COUNT=$(python3 -c "
+import json, subprocess
+with open('.otherness/state.json') as f: s=json.load(f)
+claimed=set()
+for line in subprocess.check_output(['git','ls-remote','--heads','origin'],text=True).splitlines():
+    if 'refs/heads/feat/' in line:
+        claimed.add(line.split('refs/heads/feat/')[-1])
+todo=[id for id,d in s.get('features',{}).items()
+      if d.get('state')=='todo' and id not in claimed]
+print(len(todo))
+" 2>/dev/null || echo "0")
+      NEEDS_HUMAN_COUNT=$(gh issue list --repo $REPO --state open --label "needs-human" \
+        --json number --jq 'length' 2>/dev/null || echo "0")
+      if [ "${BLOCKED_COUNT:-0}" -eq 0 ] && [ "${NEEDS_HUMAN_COUNT:-0}" -gt 0 ]; then
+        echo "[COORD] Queue fully blocked — $NEEDS_HUMAN_COUNT needs-human items open."
+        gh issue comment $REPORT_ISSUE --repo $REPO \
+          --body "[STANDALONE] BLOCKED — all backlog items require human input. $NEEDS_HUMAN_COUNT open needs-human issues. Waiting for human to unblock." 2>/dev/null
+      fi
       # Run: code health scan, competitive analysis, product validation
       sleep 60 && continue
     fi
@@ -474,7 +524,12 @@ for id,d in s.get('features',{}).items():
       echo "[COORD] ✅ Claimed $ITEM_ID (branch $MY_BRANCH created on remote)"
       export ITEM_ID MY_BRANCH MY_WORKTREE MY_SESSION_ID
 
-      # Create local worktree
+      # Create local worktree — check for stale dir first
+      if [ -d "$MY_WORKTREE" ]; then
+        echo "[COORD] Stale worktree dir found at $MY_WORKTREE — cleaning up..."
+        git worktree remove "$MY_WORKTREE" --force 2>/dev/null || rm -rf "$MY_WORKTREE"
+        git worktree prune
+      fi
       git worktree add "$MY_WORKTREE" "$MY_BRANCH"
 
       # Write claim to state.json on _state branch (NOT main)
