@@ -12,6 +12,7 @@ Skills are **additive only** — never delete content from a skill file (see con
 | `agent-coding-discipline.md` | About to write or modify code | Phase 2d (ENG — TDD) |
 | `reconciling-implementations.md` | Reviewing a PR as QA | Phase 3 (QA — ADVERSARIAL REVIEW) |
 | `autonomous-workflow-patterns.md` | Designing a multi-step feature or reviewing workflow logic | Phase 2a, 2d, or 3 |
+| `role-based-agent-identity.md` | Writing or improving agent instructions (standalone.md, onboard.md) | Phase 4 (SM) or when updating agent files |
 
 ## Skill summaries
 
@@ -33,9 +34,15 @@ Gap classification: WRONG (fix code), STALE (surface to human), SMELL (fix code)
 Approval and request-changes criteria. Live-cluster coverage gate for user journeys.
 
 ### `autonomous-workflow-patterns.md`
-Workflow design patterns from Archon (YAML workflow engine). Transferable to otherness markdown
+Workflow design patterns from Archon and CrewAI. Transferable to otherness markdown
 loops: deterministic vs AI nodes, human approval as first-class gate, context refresh in long
 loops, failure handling. Use when designing how a multi-step feature should be broken down.
+
+### `autonomous-workflow-patterns.md`
+Workflow design patterns from Archon and CrewAI. Covers: human approval as a named gate vs emergency stop; deterministic vs AI steps; context refresh in long loops; single registry for extension points; autonomy-precision spectrum (crews vs flows); conditional routing on state values. Use when deciding how to structure a multi-step implementation.
+
+### `role-based-agent-identity.md`
+Role identity patterns from CrewAI. The role+goal+backstory trinity as a behavior constraint (not just a label). Backstory calibrates agent judgment on ambiguous cases. Roles vs tools vs task contracts. Use when writing or improving agent phase instructions to ensure consistent behavior across diverse inputs.
 
 ## `PROVENANCE.md`
 Audit trail of `/otherness.learn` sessions. Records what was learned, from which repo, on what

@@ -1,7 +1,9 @@
 # Skill: Autonomous Workflow Patterns
 
 <!-- provenance: coleam00/Archon, README.md, 2026-04-14 -->
+<!-- provenance: crewAIInc/crewAI, README.md, 2026-04-14 -->
 <!-- otherness-learn: Archon's YAML workflow model; human approval as first-class gate; deterministic vs AI nodes; context refresh in long loops -->
+<!-- otherness-learn: CrewAI's autonomy-precision spectrum; Crews vs Flows; conditional routing on state -->
 
 Load this skill when designing or reviewing how a feature is implemented across multiple steps.
 
@@ -95,3 +97,67 @@ The anti-pattern it prevents: dispatch logic scattered across multiple files, wh
 Applied to the ALIBI project: the 14 clue type evaluators are defined as a registry in `src/engine/clues.ts`. The generator, the solver, the QA checklist, and the Playwright test suite all reference the same type names. If a new clue type is added, it is added to the registry once, and all consumers automatically handle it.
 
 This is not just an architecture tip — it is a correctness property: an entity that exists in the registry but not in all consumers is a bug.
+
+---
+
+## Autonomy-Precision Spectrum: Choose Per Step <!-- provenance: crewAIInc/crewAI, README.md, 2026-04-14 -->
+
+CrewAI distinguishes two execution modes:
+
+- **Crews** (autonomous): agents collaborate dynamically, delegate to each other, and decide how to solve a problem. Use when the path to the output is genuinely uncertain.
+- **Flows** (precise): deterministic event-driven steps with exact state transitions and conditional routing. Use when the execution path must be controlled and reproducible.
+
+The key insight: **both are needed, and the choice is per-step, not per-system.**
+
+```python
+# Crews: for uncertain problem-solving (agent decides how)
+@listen(fetch_data)
+def analyze_with_crew(self, data):
+    crew = Crew(agents=[analyst, researcher], tasks=[...])
+    return crew.kickoff(inputs=data)
+
+# Flows: for routing on outcome (precise control)
+@router(analyze_with_crew)
+def route_on_confidence(self):
+    if self.state.confidence > 0.8:
+        return "high_confidence"
+    return "low_confidence"
+```
+
+**The otherness implication:** The coordinator (Phase 1) and SM/PM phases are Flows — their behavior must be deterministic given the same state. The engineer (Phase 2) and QA (Phase 3) are Crews — they require genuine agent judgment. When a step in the loop feels "wrong," ask: is this step in the wrong mode? A deterministic step that uses AI judgment will produce inconsistent results. An AI judgment step with hard-coded behavior will fail on novel inputs.
+
+**Concrete check for otherness items:** Before implementing, classify each task step:
+- If you can write an exact command that will always produce the correct result → command step (deterministic)
+- If the right action depends on reading the specific content → AI step (agent judgment)
+
+Mixing these two types in the same "step" is the source of most agent loop inconsistencies.
+
+---
+
+## Conditional Routing on State, Not Just Success/Failure <!-- provenance: crewAIInc/crewAI, README.md, 2026-04-14 -->
+
+In CrewAI Flows, routing decisions are made on **structured state values**, not just pass/fail:
+
+```python
+@router(analyze_with_crew)
+def determine_next_steps(self):
+    if self.state.confidence > 0.8:
+        return "high_confidence"
+    elif self.state.confidence > 0.5:
+        return "medium_confidence"
+    return "low_confidence"
+```
+
+This is richer than binary success/failure because it allows the workflow to adapt to the *degree* of success.
+
+**The otherness implication:** The coordinator's item selection already does this implicitly (state=todo vs assigned vs in_review vs done). But the routing logic for "what to do when queue is empty" currently branches only on count=0. Consider: an empty queue due to all items being done is different from an empty queue due to all items being in_review waiting for CI, which is different from all items being needs-human.
+
+**Concrete pattern for otherness coordinator:**
+```bash
+# Not just "is the queue empty?" — but "why is it empty?"
+if   [ $TODO_COUNT   -gt 0 ]; then  # claim next item
+elif [ $REVIEW_COUNT -gt 0 ]; then  # wait for CI, check for mergeability
+elif [ $BLOCKED_COUNT -gt 0 ]; then # post [STANDALONE] BLOCKED, wait for human
+else                                # queue truly empty — generate next batch
+fi
+```
