@@ -220,9 +220,13 @@ Options:
 
 ---
 
-## Step 7 — Seed `.maqa/state.json`
+## Step 7 — Seed `.otherness/state.json`
 
 The state file must exist before agents start. Create it with the correct current state — mark completed stages as done:
+
+```bash
+mkdir -p .otherness
+```
 
 ```json
 {
@@ -235,16 +239,12 @@ The state file must exist before agents start. Create it with the correct curren
   "last_sm_review": null,
   "last_pm_review": null,
   "batches_since_competitive_analysis": 0,
-  "batches_since_doc_audit": 0,
-  "batches_since_dead_scan": 0,
-  "session_heartbeats": {
-    "STANDALONE":  {"last_seen": null, "cycle": 0}
-  },
-    "features": {
+  "session_heartbeats": {},
+  "features": {
     "<already-completed-item-id>": {
       "state": "done",
       "assigned_to": null,
-      "pr_number": <pr-number>,
+      "pr_number": "<pr-number>",
       "pr_merged": true
     }
   }
@@ -252,6 +252,17 @@ The state file must exist before agents start. Create it with the correct curren
 ```
 
 **Important**: every item that was already implemented before adopting otherness should be listed as `"state": "done"` in `features`. Otherwise the coordinator will re-implement them.
+
+**Tip — auto-seed from merged PRs**: for projects with many merged PRs, generate
+the features map automatically rather than writing it by hand:
+
+```bash
+gh pr list --repo my-org/my-project --state merged \
+  --json number,title --jq \
+  '[.[] | {"key": ("pr-\(.number)"), "value": {"state":"done","assigned_to":null,"pr_number":.number,"pr_merged":true}}] | from_entries'
+```
+
+Pipe that into the `features` key of `state.json`.
 
 ---
 
@@ -287,7 +298,7 @@ cat docs/aide/roadmap.md
 cat docs/aide/definition-of-done.md
 cat AGENTS.md | grep -E "PROJECT_NAME|CLI_BINARY|BUILD_COMMAND|TEST_COMMAND"
 cat otherness-config.yaml
-cat .maqa/state.json | python3 -m json.tool > /dev/null && echo "state.json: valid JSON"
+cat .otherness/state.json | python3 -m json.tool > /dev/null && echo "state.json: valid JSON"
 
 # Check build and test commands work
 eval "$(grep BUILD_COMMAND AGENTS.md | cut -d: -f2- | xargs)"

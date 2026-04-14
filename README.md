@@ -60,7 +60,7 @@ brew install gh && gh auth login
 
 #### [python3](https://python.org)
 
-**What it provides:** Inline YAML parsing and JSON read/write. Agents use it exclusively to parse `otherness-config.yaml` and read/write `.maqa/state.json`. Only standard library modules are used (`re`, `json`, `os`, `datetime`). No pip packages required.
+**What it provides:** Inline YAML parsing and JSON read/write. Agents use it exclusively to parse `otherness-config.yaml` and read/write `.otherness/state.json`. Only standard library modules are used (`re`, `json`, `os`, `datetime`). No pip packages required.
 
 **Why it's required:** Config parsing and state management. Failures are wrapped in `2>/dev/null` fallbacks so the agent degrades gracefully rather than crashing.
 
@@ -86,7 +86,7 @@ uv tool install specify-cli    # or: pip install specify-cli
 
 #### [MAQA extension](https://github.com/GenieRobot/spec-kit-maqa-ext)
 
-**What it provides:** Entry-point shells and `.maqa/state.json` conventions that otherness reads and writes. otherness is built *on top of* MAQA — it adds the actual agent behavior (loops, roles, GitHub PM) that MAQA's shells redirect to.
+**What it provides:** Entry-point shells and `.otherness/state.json` conventions that otherness reads and writes. otherness is built *on top of* MAQA — it adds the actual agent behavior (loops, roles, GitHub PM) that MAQA's shells redirect to.
 
 #### [aide extension](https://github.com/mnriem/spec-kit-extensions)
 
