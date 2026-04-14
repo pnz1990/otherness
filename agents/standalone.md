@@ -418,6 +418,8 @@ with open('.otherness/state.json','w') as f: json.dump(s,f,indent=2)
     if [ -n "$FAILED" ]; then
       echo "🔴 CI FAILING: $FAILED — fix before new work"
       # Fix CI first. Do not assign a new item while main is red.
+      # Open a feat/fix-ci-<timestamp> branch, fix, open PR, merge.
+      # Only then proceed to claim the next backlog item.
     fi
     ```
 
@@ -629,14 +631,17 @@ STOP CONDITION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 No stop on empty backlog. Exit only when ALL journeys in definition-of-done.md
-are ✅ validated live AND human confirms project complete.
+are ✅ validated live (live-cluster evidence posted, not just TestJourneyN passing)
+AND human confirms project complete.
 ```
 
 ## Hard rules
 
 - **Branch = lock.** Never work on an item without first successfully pushing its branch to remote. If the push fails, the item is taken. Pick another.
 - **One worktree per item.** Worktree path is `../<repo>.<item-id>`. Never reuse. Never share.
-- **Never write to main directly.** All code goes through a PR. State updates (state.json) go to main directly.
+- **Never push directly to main.** The only exception is `.otherness/state.json` writes and they go to the `_state` branch (not main) using the state write block above. Every other change — code, docs, workflow files, coordinator queues, PM audits, krocodile upgrades — must go through a PR. "It's just a docs fix" is not an exception. If it's too small to warrant a PR, batch it with the next real PR.
+- **CI must be green before starting new work.** Check `gh run list --repo $REPO --branch main --limit 3 --json conclusion,name` before claiming an item. If any run on main shows `failure`, fix it first. Do not queue new items on a red main.
+- **A journey is not done until there is live-cluster evidence.** `TestJourneyN` passing with a fake client is a unit test, not validation. A journey may only be marked ✅ in definition-of-done.md when either: (a) a `[PDCA AUTOMATED]` comment on the report issue shows PASS with real images on a real cluster, or (b) you post `[LIVE CLUSTER VALIDATED]` with exact commands, exact terminal output, cluster version, and image SHA. Marking a checkbox without this evidence is a false positive and will be reverted.
 - **Pull before every action that reads state.json.** Another session may have updated it.
 - **Never wait to be told something is wrong.** Find it. Fix it.
 - **Think harder before escalating.** Re-read design docs, search codebase, check issue thread, look at similar PRs.
