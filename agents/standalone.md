@@ -638,6 +638,61 @@ All work happens in $MY_WORKTREE on branch $MY_BRANCH.
 2e. Self-validate from $MY_WORKTREE:
     eval "$BUILD_COMMAND" && eval "$TEST_COMMAND" && eval "$LINT_COMMAND"
 
+    **Dev server handling during self-validate and browser verification:**
+
+    If TEST_COMMAND requires a dev server (e.g. `npm run test:e2e`) AND the project's
+    test runner manages its own server (e.g. Playwright `webServer` in `playwright.config.ts`),
+    do NOT manually start the dev server — the test runner starts and kills it automatically.
+
+    If you need to manually start a dev server for browser extension verification steps
+    (browser_navigate, browser_screenshot, etc.), use this safe pattern — never `cmd &` alone:
+
+    ```bash
+    # Safe dev server start — guaranteed cleanup on exit
+    DEV_PORT=$(python3 -c "
+import re
+for line in open('AGENTS.md'):
+    m = re.match(r'^DEV_SERVER:\s*(.+)', line.strip())
+    if m: print(m.group(1).strip()); break
+" 2>/dev/null || echo "npm run dev")
+
+    # Kill any existing process on the port first (stale orphan from previous session)
+    DEV_PORT_NUM=$(python3 -c "
+import subprocess, re
+cmd = '''$DEV_PORT'''
+# try to find port from vite/next/etc config, default 5173
+print('5173')
+" 2>/dev/null || echo "5173")
+
+    # Kill any orphaned server on that port
+    lsof -ti :$DEV_PORT_NUM 2>/dev/null | xargs kill -9 2>/dev/null || true
+    sleep 1
+
+    # Start server with cleanup trap
+    eval "$DEV_PORT" &
+    DEV_SERVER_PID=$!
+    trap "kill $DEV_SERVER_PID 2>/dev/null; wait $DEV_SERVER_PID 2>/dev/null" EXIT INT TERM
+
+    # Wait for server to be ready (up to 30s) — do NOT use bare sleep N
+    for i in $(seq 1 30); do
+      curl -sf http://localhost:$DEV_PORT_NUM/ >/dev/null 2>&1 && break
+      sleep 1
+    done
+
+    # ... do browser verification steps ...
+
+    # After browser verification, kill server immediately — do not leave it running
+    kill $DEV_SERVER_PID 2>/dev/null
+    wait $DEV_SERVER_PID 2>/dev/null || true
+    trap - EXIT INT TERM
+    ```
+
+    **Hard rules for dev servers:**
+    - Never start `npm run dev &` without capturing the PID and registering a trap.
+    - Never assume `sleep 3` is enough — poll until the port responds.
+    - Always kill the server explicitly before moving to the next step.
+    - Never leave a server running after browser verification is complete.
+
 2f. Push and open PR from $MY_WORKTREE:
     ```bash
     cd $MY_WORKTREE
