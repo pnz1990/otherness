@@ -1,0 +1,20 @@
+{
+  "version": "1.3",
+  "mode": "standalone",
+  "repo": "pnz1990/otherness",
+  "current_queue": null,
+  "features": {},
+  "engineer_slots": {
+    "ENGINEER-1": null,
+    "ENGINEER-2": null,
+    "ENGINEER-3": null
+  },
+  "bounded_sessions": {},
+  "session_heartbeats": {
+    "STANDALONE": {
+      "last_seen": null,
+      "cycle": 0
+    }
+  },
+  "handoff": null
+}
