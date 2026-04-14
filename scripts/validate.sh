@@ -67,6 +67,7 @@ REQUIRED=(
   "$(cd "$(dirname "$0")/.." && pwd)/docs/aide/vision.md"
   "$(cd "$(dirname "$0")/.." && pwd)/docs/aide/roadmap.md"
   "$(cd "$(dirname "$0")/.." && pwd)/docs/aide/definition-of-done.md"
+  "$(cd "$(dirname "$0")/.." && pwd)/docs/aide/metrics.md"
   "$(cd "$(dirname "$0")/.." && pwd)/.opencode/command/otherness.run.md"
   "$(cd "$(dirname "$0")/.." && pwd)/.opencode/command/otherness.onboard.md"
   "$(cd "$(dirname "$0")/.." && pwd)/.opencode/command/otherness.setup.md"
