@@ -22,6 +22,8 @@ No coordinator. No engineer. No QA. No separate sessions. Each standalone *is* t
 | `/otherness.onboard` | First time on an existing project — reads the codebase, generates `docs/aide/` drafts, seeds `state.json` from merged PRs, opens a PR for review |
 | `/otherness.status` | Check what the agent is currently working on, CI state, and open blockers |
 | `/otherness.setup` | One-time project init — creates `otherness-config.yaml`, deploys all commands |
+| `/otherness.learn [repo ...]` | Study open-source projects and internalize patterns into `~/.otherness/agents/skills/`. Pass repo URLs or run without args to discover targets. Run periodically. |
+| `/otherness.upgrade` | Check for updates to speckit, maqa, and otherness itself |
 
 ---
 
@@ -100,6 +102,32 @@ uv tool install specify-cli    # or: pip install specify-cli
 
 **What it provides:** Queue and work item generation from the roadmap. otherness calls aide internally when `current_queue` is null. Customers never call aide directly.
 
+### Optional Integrations
+
+#### [muse](https://github.com/ellistarn/muse)
+
+**What it provides:** A distillation of how *you specifically* think — your reasoning patterns, epistemic standards, and voice — derived from your conversation history with AI coding agents. When loaded as an OpenCode instruction, it steers the agent to make decisions you would agree with, not generic decisions.
+
+**Why it improves otherness:** The agent loop makes hundreds of judgment calls per session — naming, architecture tradeoffs, what to defer vs implement now. Without calibration, these reflect generic training. With your muse, they reflect your specific judgment.
+
+**How to wire it:**
+
+```bash
+# Install muse
+go install github.com/ellistarn/muse@latest
+
+# Compose your muse from your conversation history
+muse compose
+
+# Add to OpenCode so every otherness session uses it
+# ~/.config/opencode/opencode.json
+{
+  "instructions": ["~/.muse/muse.md"]
+}
+```
+
+Your muse should be recomposed periodically (`muse compose`) as your thinking evolves. A stale muse is worse than no muse — it steers confidently in directions you have moved away from.
+
 ---
 
 ## How it fits the stack
@@ -116,12 +144,18 @@ Customer project
         otherness.status.md       ← /otherness.status (inspect state)
         otherness.setup.md        ← /otherness.setup (one-time init)
         otherness.upgrade.md      ← /otherness.upgrade (check dep updates)
+        otherness.learn.md        ← /otherness.learn (internalize from open-source)
 
 ~/.otherness/ (private, auto-updated on every agent startup)
   └── agents/standalone.md        ← full autonomous team logic
   └── agents/bounded-standalone.md
   └── agents/onboard.md           ← existing project onboarding logic
+  └── agents/otherness.learn.md   ← learning agent logic
   └── agents/gh-features.md
+  └── agents/skills/              ← reusable skill files, grown by /otherness.learn
+        declaring-designs.md      ← spec quality standard (from ellistarn/home)
+        reconciling-implementations.md  ← QA checklist (from ellistarn/home)
+        PROVENANCE.md             ← log of what was learned from where
 ```
 
 ---

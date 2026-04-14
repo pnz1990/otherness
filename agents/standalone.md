@@ -504,12 +504,22 @@ All work happens in $MY_WORKTREE on branch $MY_BRANCH.
 
 2a. SPEC-FIRST: generate/verify spec.md + tasks.md in .specify/specs/<item-id>/.
 
+    Load skill: read `~/.otherness/agents/skills/declaring-designs.md` before writing the spec.
+
     CONCEPT CONSISTENCY CHECK before writing the spec:
     1. Does an existing abstraction already cover this? If so, extend it rather than adding a new one.
     2. What existing patterns in the codebase should this follow? (search for similar features)
     3. Re-read AGENTS.md §Anti-Patterns — does this feature risk introducing any of them?
     4. Does any architecture constraint doc (referenced in AGENTS.md) apply to this feature?
     5. Does the API/interface naming match the project's existing user-facing docs?
+
+    SPEC QUALITY CHECK (from declaring-designs skill) before moving to implementation:
+    - Does the spec use the three-zone structure: Obligations / Implementer's judgment / Scoped out?
+    - Is every obligation falsifiable — can I describe behavior that would violate it?
+    - Does every abstraction earn its existence — can anything be collapsed without losing capability?
+    - Do concrete artifacts (interfaces, schemas, examples) carry the spec, not prose?
+    - Are concepts introduced before they are referenced?
+    - Does it stand alone without referencing the current implementation?
 
 2b. DOC-FIRST: verify/create user-facing doc page before writing code.
 
@@ -536,9 +546,20 @@ All work happens in $MY_WORKTREE on branch $MY_BRANCH.
 PHASE 3 — [🔍 QA] ADVERSARIAL REVIEW
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Wait for CI green. Re-read full diff. You are looking for reasons to REJECT.
-Check: spec compliance, docs updated, no logic leaks, no banned patterns.
-Max 3 cycles. Pass → merge.
+Load skill: read `~/.otherness/agents/skills/reconciling-implementations.md` before reviewing.
+
+Wait for CI green. Read the full diff. Read the spec. Build a mental model before evaluating.
+You are looking for reasons to REJECT. Apply the reconciling-implementations checklist in
+priority order: Correctness → Performance → Observability → Testing → Simplicity.
+
+Label every finding: WRONG (fix code) | STALE (surface to human) | SMELL (fix code) | MISS (new issue).
+
+Gap classification rule: if implementation diverges from design, determine whether the code is
+wrong or the design is stale before acting. Never silently resolve a conflict between two design
+commitments — post [NEEDS HUMAN] with the exact statements that conflict.
+
+Max 3 cycles. Approve when all Correctness items pass and no WRONG/STALE findings remain.
+File non-Correctness findings as follow-up issues before merging — never defer silently.
 
 ```bash
 # Merge from main worktree (not from worktree — avoids permission issues)
