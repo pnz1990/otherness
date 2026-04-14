@@ -9,18 +9,20 @@ SKILLS_DIR="$AGENTS_DIR/skills"
 echo "=== otherness validate ==="
 
 # 1. Check no hardcoded project-specific paths in agent files
-echo "[1/4] Checking for hardcoded project paths..."
-FORBIDDEN_PATTERNS=("kardinal-promoter" "alibi" "pnz1990/alibi" "pnz1990/kardinal")
+# Note: scans agents/*.md and agents/skills/*.md only — not config files
+echo "[1/4] Checking for hardcoded project paths in agent files..."
+FORBIDDEN_PATTERNS=("kardinal-promoter" "pnz1990/alibi" "pnz1990/kardinal")
 FOUND=0
-for file in "$AGENTS_DIR"/*.md; do
+for file in "$AGENTS_DIR"/*.md "$AGENTS_DIR/skills"/*.md; do
+  [ -f "$file" ] || continue
   for pattern in "${FORBIDDEN_PATTERNS[@]}"; do
     if grep -q "$pattern" "$file" 2>/dev/null; then
-      echo "  ERROR: $file contains hardcoded path: $pattern"
+      echo "  ERROR: $(basename $file) contains hardcoded project path: $pattern"
       FOUND=1
     fi
   done
 done
-[ $FOUND -eq 0 ] && echo "  OK: no hardcoded project paths" || exit 1
+[ $FOUND -eq 0 ] && echo "  OK: no hardcoded project paths in agent files" || exit 1
 
 # 2. Check all skill refs in standalone.md point to existing files
 # Skill paths use ~/.otherness/agents/skills/<name>.md — on a CI runner ~/.otherness

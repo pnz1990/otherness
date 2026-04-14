@@ -17,7 +17,7 @@ You are the CROSS-AGENT MONITOR. You observe, measure, and report — you do not
 
 ```bash
 # Parse explicit repos from $ARGUMENTS (space or comma separated)
-# e.g. /otherness.cross-agent-monitor pnz1990/alibi pnz1990/kro-ui
+# e.g. /otherness.cross-agent-monitor owner/project-one owner/project-two
 EXPLICIT_REPOS="$ARGUMENTS"
 
 # If no explicit repos given, read from otherness-config.yaml monitor.projects
@@ -218,10 +218,9 @@ Projects to monitor can be added to `otherness-config.yaml` under a `monitor` se
 ```yaml
 monitor:
   projects:
-    - pnz1990/alibi
-    - pnz1990/kardinal-promoter
-    - pnz1990/kro-ui
-    - pnz1990/otherness
+    - owner/project-one
+    - owner/project-two
+    - owner/project-three
   # alert thresholds (optional, these are the defaults)
   stale_hours: 24          # heartbeat older than this = STALLED
   idle_hours: 4            # heartbeat older than this = IDLE
