@@ -15,6 +15,14 @@ Autonomous software development. One session is an entire team.
 
 No coordinator. No engineer. No QA. No separate sessions. Each standalone *is* the team.
 
+**Utility commands** (run once, not in a loop):
+
+| Command | When to use |
+|---|---|
+| `/otherness.onboard` | First time on an existing project — reads the codebase, generates `docs/aide/` drafts, seeds `state.json` from merged PRs, opens a PR for review |
+| `/otherness.status` | Check what the agent is currently working on, CI state, and open blockers |
+| `/otherness.setup` | One-time project init — creates `otherness-config.yaml`, deploys all commands |
+
 ---
 
 ## Why this exists
@@ -99,16 +107,20 @@ uv tool install specify-cli    # or: pip install specify-cli
 ```
 Customer project
   └── otherness-config.yaml       ← only file the customer edits
+  └── .otherness/
+        state.json                ← team state (on _state branch)
   └── .opencode/command/
-        otherness.run.md          ← /otherness.run  (entry point)
-        otherness.run.bounded.md  ← /otherness.run.bounded
+        otherness.run.md          ← /otherness.run  (autonomous loop)
+        otherness.run.bounded.md  ← /otherness.run.bounded (scoped loop)
+        otherness.onboard.md      ← /otherness.onboard (existing project setup)
+        otherness.status.md       ← /otherness.status (inspect state)
         otherness.setup.md        ← /otherness.setup (one-time init)
-        otherness.status.md       ← /otherness.status
-        otherness.upgrade.md      ← /otherness.upgrade (dev: check dep updates)
+        otherness.upgrade.md      ← /otherness.upgrade (check dep updates)
 
 ~/.otherness/ (private, auto-updated on every agent startup)
-  └── agents/standalone.md        ← internally uses speckit, maqa, aide
+  └── agents/standalone.md        ← full autonomous team logic
   └── agents/bounded-standalone.md
+  └── agents/onboard.md           ← existing project onboarding logic
   └── agents/gh-features.md
 ```
 
@@ -120,6 +132,7 @@ Customer project
 agents/
   standalone.md           full autonomous team (unbounded)
   bounded-standalone.md   scoped agent — boundary injected in prompt
+  onboard.md              one-shot existing project onboarding
   gh-features.md          reference: GitHub fields, label taxonomy, sub-issues
 ```
 
@@ -134,15 +147,22 @@ specify extension add maqa
 gh auth login
 git clone git@github.com:<your-username>/otherness.git ~/.otherness
 
-# 2. Once per project
+# 2. Once per project (new project)
 /otherness.setup                  # creates otherness-config.yaml, deploys commands
+
+# 2b. Once per project (existing project with code)
+/otherness.onboard                # reads codebase → generates docs/aide/ drafts + state.json → opens PR
+# Review and merge the PR, then:
 
 # 3. Run
 /otherness.run                    # unbounded: one session, full team
 /otherness.run.bounded            # bounded: inject scope in prompt
+
+# Inspect at any time
+/otherness.status                 # what's in progress, CI state, open blockers
 ```
 
-See **[onboarding-new-project.md](./onboarding-new-project.md)** for full setup.
+See **[onboarding-new-project.md](./onboarding-new-project.md)** for full new project setup.
 See **[onboarding-existing-project.md](./onboarding-existing-project.md)** for adopting otherness into an existing codebase.
 
 ---

@@ -152,12 +152,10 @@ Create this directory structure:
 
 ```
 docs/aide/
-  vision.md              ← what the project is and why it exists
-  roadmap.md             ← development stages and deliverables
-  definition-of-done.md  ← user journeys that must pass end-to-end
+  vision.md              ← what the project is and why it exists (required)
+  roadmap.md             ← development stages and deliverables (required)
+  definition-of-done.md  ← user journeys that must pass end-to-end (required)
   progress.md            ← current state (standalone agent updates this)
-  team.yml               ← team configuration (copy template below)
-  pr-template.md         ← PR body template
 ```
 
 ### `docs/aide/vision.md` — required, human-written, agents never modify
@@ -286,31 +284,9 @@ This is the most important document. Every agent reads it before starting work. 
 |---|---|---|---|
 ```
 
-### `docs/aide/team.yml` — agent source-of-truth list
-
-```yaml
-# Team configuration — read by agents at startup
-source_of_truth:
-  - docs/aide/vision.md
-  - docs/aide/roadmap.md
-  - docs/aide/definition-of-done.md
-  - docs/aide/team.yml
-  - .specify/memory/sdlc.md
-  - .specify/memory/constitution.md
-
-board:
-  provider: github-projects
-  config: otherness-config.yaml
-  sync_strategy: "state.json is authoritative. Coordinator syncs board on every cycle."
-
-reporting:
-  issue_number: "see AGENTS.md REPORT_ISSUE"
-  label: report
-```
-
 ---
 
-## Step 6 — Set up `.specify/memory/`
+## Step 6 — Set up `.specify/memory/` (optional but recommended)
 
 ### `constitution.md` — generate or adapt from another otherness project
 

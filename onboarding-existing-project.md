@@ -2,7 +2,40 @@
 
 This guide walks through adopting otherness into a **project that already has code** — an existing repo with an existing team, codebase, and potentially some CI/CD already.
 
-The key difference from new project onboarding: you are not starting from scratch. You need to *describe* what already exists so agents understand the codebase before they start modifying it.
+---
+
+## Fast path — let the agent do it
+
+If your project already has `AGENTS.md` and a git history, skip the manual steps and run:
+
+```bash
+# 1. Prerequisites (once per machine)
+uv tool install specify-cli
+specify extension add maqa
+gh auth login
+git clone git@github.com:<your-username>/otherness.git ~/.otherness
+
+# 2. Deploy otherness commands into your project
+/otherness.setup
+
+# 3. Let the agent read the codebase and generate everything
+/otherness.onboard
+```
+
+`/otherness.onboard` will:
+- Read your README, AGENTS.md, CI config, git log, merged PRs, and existing specs
+- Generate `docs/aide/vision.md`, `roadmap.md`, `definition-of-done.md`, `progress.md` as drafts
+- Auto-seed `.otherness/state.json` with all merged PRs marked as done (no manual JSON)
+- Create `otherness-config.yaml` if not present
+- Open a PR with everything for your review
+
+Review the PR, correct anything that's wrong, merge, then:
+
+```bash
+/otherness.run
+```
+
+**The rest of this guide is the manual alternative** — useful if `/otherness.onboard` needs correction or if you want to understand what each file does.
 
 ---
 
