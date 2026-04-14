@@ -301,9 +301,17 @@ Pipe that into the `features` key of `state.json`.
 
 ## Step 8 — Set up the GitHub Projects board
 
-If you already have a board: add the required fields (Team, Priority, Size, Target date) and record the IDs in the `github_projects:` section of `otherness-config.yaml`.
+All board fields can be created via the GitHub GraphQL API — no UI required beyond the initial project creation.
 
-If you don't have a board: follow Step 8 in `onboarding-new-project.md`.
+If you already have a board, add the missing fields (Priority, Size, Team, Target date) using the API scripts in Step 8 of `onboarding-new-project.md`. Then read back the field IDs and fill in `otherness-config.yaml`.
+
+If you don't have a board yet, follow Step 8 in `onboarding-new-project.md` in full.
+
+**Key mutations:**
+- `createProjectV2Field` — creates Priority, Size, Team, Target date fields
+- `updateProjectV2Field` — updates the existing Status field to add In Review + Blocked options
+
+The token must have `read:project` scope. Run `gh auth refresh -s read:project` if you get scope errors.
 
 ---
 

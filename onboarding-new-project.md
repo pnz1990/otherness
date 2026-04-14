@@ -311,55 +311,137 @@ Note the issue number — it becomes `REPORT_ISSUE` in `AGENTS.md`.
 
 ---
 
-## Step 8 — Set up GitHub Projects board
+## Step 8 — Set up GitHub Projects board (fully automated via API)
 
-Create a board at https://github.com/users/YOUR-USERNAME/projects/new with:
+All board fields and options can be created via the GitHub GraphQL API — no UI needed.
+The only step that requires the browser is the initial project creation.
 
-**Status field** (single-select): Todo, In Progress, In Review, Done, Blocked
-**Team field** (single-select): STANDALONE-ENG, and any bounded agent names you use (e.g. STANDALONE-REFACTOR, STANDALONE-CORE)
-**Priority field** (single-select): P0 - Critical, P1 - High, P2 - Medium, P3 - Low
-**Size field** (single-select): XS, S, M, L, XL
-**Target date field** (date)
+### 8a — Create the project in the browser (once)
 
-Then record the field IDs in the `github_projects:` section of `otherness-config.yaml`:
+Go to https://github.com/users/YOUR-USERNAME/projects/new, choose **Board** or **Table**,
+name it (e.g. `my-project`), click Create. Note the project number from the URL
+(`/projects/N`).
 
-```yaml
-github_projects:
-  project_id: "PVT_xxxx"
-  project_number: "1"
-  linked_repo: "your-org/your-project"
+### 8b — Get the project ID and create all fields via API
 
-  status_field_id: "PVTSSF_xxxx"
-  todo_option_id: "xxxx"
-  in_progress_option_id: "xxxx"
-  in_review_option_id: "xxxx"
-  done_option_id: "xxxx"
-  blocked_option_id: "xxxx"
-
-  team_field_id: "PVTSSF_xxxx"
-  team_standalone_option_id: "xxxx"
-
-  priority_field_id: "PVTSSF_xxxx"
-  priority_critical_option_id: "xxxx"
-  priority_high_option_id: "xxxx"
-  priority_medium_option_id: "xxxx"
-  priority_low_option_id: "xxxx"
-
-  size_field_id: "PVTSSF_xxxx"
-  size_xs_option_id: "xxxx"
-  size_s_option_id: "xxxx"
-  size_m_option_id: "xxxx"
-  size_l_option_id: "xxxx"
-  size_xl_option_id: "xxxx"
-
-  start_date_field_id: "PVTF_xxxx"
-  target_date_field_id: "PVTF_xxxx"
-```
-
-To find field IDs, run:
 ```bash
-gh api graphql -f query='{node(id:"PVT_xxxx"){...on ProjectV2{fields(first:20){nodes{...on ProjectV2SingleSelectField{id name options{id name}}...on ProjectV2Field{id name}}}}}}'
+REPO="my-org/my-project"
+OWNER="my-org-or-username"    # just the owner, no slash
+PROJECT_NUMBER=1               # from the URL
+
+# 1. Get the project node ID
+PROJECT_ID=$(gh api graphql -f query='{
+  user(login: "'"$OWNER"'") {
+    projectV2(number: '"$PROJECT_NUMBER"') { id }
+  }
+}' --jq '.data.user.projectV2.id' 2>/dev/null || \
+gh api graphql -f query='{
+  organization(login: "'"$OWNER"'") {
+    projectV2(number: '"$PROJECT_NUMBER"') { id }
+  }
+}' --jq '.data.organization.projectV2.id')
+echo "Project ID: $PROJECT_ID"
+
+# 2. Update Status field with all 5 options
+# First get the existing Status field ID
+STATUS_FIELD_ID=$(gh api graphql -f query='{
+  node(id: "'"$PROJECT_ID"'") {
+    ... on ProjectV2 { fields(first: 20) { nodes {
+      ... on ProjectV2SingleSelectField { id name }
+    }}}
+  }
+}' --jq '.data.node.fields.nodes[] | select(.name=="Status") | .id')
+
+gh api graphql -f query='mutation {
+  updateProjectV2Field(input: {
+    fieldId: "'"$STATUS_FIELD_ID"'"
+    singleSelectOptions: [
+      {name: "Todo",        color: GRAY,   description: ""},
+      {name: "In Progress", color: BLUE,   description: ""},
+      {name: "In Review",   color: YELLOW, description: ""},
+      {name: "Done",        color: GREEN,  description: ""},
+      {name: "Blocked",     color: RED,    description: ""}
+    ]
+  }) {
+    projectV2Field { ... on ProjectV2SingleSelectField { id name options { id name } } }
+  }
+}'
+
+# 3. Create Priority field
+gh api graphql -f query='mutation {
+  createProjectV2Field(input: {
+    projectId: "'"$PROJECT_ID"'"
+    dataType: SINGLE_SELECT
+    name: "Priority"
+    singleSelectOptions: [
+      {name: "Critical", color: RED,    description: "P0"},
+      {name: "High",     color: ORANGE, description: "P1"},
+      {name: "Medium",   color: YELLOW, description: "P2"},
+      {name: "Low",      color: BLUE,   description: "P3"}
+    ]
+  }) {
+    projectV2Field { ... on ProjectV2SingleSelectField { id name options { id name } } }
+  }
+}'
+
+# 4. Create Size field
+gh api graphql -f query='mutation {
+  createProjectV2Field(input: {
+    projectId: "'"$PROJECT_ID"'"
+    dataType: SINGLE_SELECT
+    name: "Size"
+    singleSelectOptions: [
+      {name: "XS", color: GREEN,  description: ""},
+      {name: "S",  color: GREEN,  description: ""},
+      {name: "M",  color: YELLOW, description: ""},
+      {name: "L",  color: ORANGE, description: ""},
+      {name: "XL", color: RED,    description: ""}
+    ]
+  }) {
+    projectV2Field { ... on ProjectV2SingleSelectField { id name options { id name } } }
+  }
+}'
+
+# 5. Create Team field (add bounded agent names as needed)
+gh api graphql -f query='mutation {
+  createProjectV2Field(input: {
+    projectId: "'"$PROJECT_ID"'"
+    dataType: SINGLE_SELECT
+    name: "Team"
+    singleSelectOptions: [
+      {name: "STANDALONE-ENG", color: PURPLE, description: "Unbounded standalone agent"}
+    ]
+  }) {
+    projectV2Field { ... on ProjectV2SingleSelectField { id name options { id name } } }
+  }
+}'
+
+# 6. Create Target date field
+gh api graphql -f query='mutation {
+  createProjectV2Field(input: {
+    projectId: "'"$PROJECT_ID"'"
+    dataType: DATE
+    name: "Target date"
+  }) {
+    projectV2Field { ... on ProjectV2Field { id name } }
+  }
+}'
+
+# 7. Read back all field IDs to paste into otherness-config.yaml
+gh api graphql -f query='{
+  node(id: "'"$PROJECT_ID"'") {
+    ... on ProjectV2 { fields(first: 30) { nodes {
+      ... on ProjectV2SingleSelectField { id name options { id name } }
+      ... on ProjectV2Field { id name }
+    }}}
+  }
+}' --jq '.data.node.fields.nodes[]'
 ```
+
+The final query prints every field ID and option ID. Copy them into `otherness-config.yaml`.
+
+**Note**: the token used by `gh` must have the `read:project` scope to query project fields.
+Run `gh auth refresh -s read:project` if you get scope errors.
 
 ---
 
