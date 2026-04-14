@@ -46,3 +46,12 @@ github_projects:
   size_xl_option_id: ""
   start_date_field_id: ""
   target_date_field_id: ""
+
+monitor:
+  projects:
+    - pnz1990/alibi
+    - pnz1990/kardinal-promoter
+    - pnz1990/kro-ui
+    - pnz1990/otherness
+  stale_hours: 24
+  idle_hours: 4
