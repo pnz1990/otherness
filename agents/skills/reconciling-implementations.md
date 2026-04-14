@@ -141,5 +141,19 @@ Performance, Observability, Testing, and Simplicity issues may be raised as foll
 if they do not affect correctness — but must be filed as issues before merging, not deferred
 silently.
 
+---
+
+## Stable Interface Gate <!-- provenance: langchain-ai/langchain, AGENTS.md, 2026-04-14 -->
+
+Before approving any PR that modifies an existing function, command, or agent interface:
+
+1. **Check if the symbol is public/exported.** In otherness: any command in `.opencode/command/`, any phase name in `standalone.md`, any field in `state.json` schema, any skill file name referenced in `standalone.md`.
+2. **Check if the signature changed.** For agent instructions: did the calling convention change? For state.json: were existing fields renamed or removed? For command files: did the invocation pattern change?
+3. **If yes: is there a migration path?** If a field is renamed in state.json without migration, existing `_state` branch data breaks all running sessions. If a command file is renamed, users with `/otherness.run` in their muscle memory break.
+
+**The otherness-specific rule:** Fields in `state.json` and phase names in `standalone.md` are public interfaces. Renaming them without a migration step is a breaking change that affects all running sessions (the `_state` branch may have the old field names).
+
+**Concrete gate:** If the diff renames or removes a `state.json` field that is referenced in `standalone.md` (e.g., `features`, `handoff`, `session_heartbeats`): BLOCK the PR until a migration script is added or the rename is confirmed to not affect `_state` data in the wild.
+
 **REQUEST CHANGES** when any Correctness item fails, or when a WRONG or STALE classification
 is found. Maximum 3 QA cycles. If unresolved after 3 cycles, escalate to `[NEEDS HUMAN]`.
