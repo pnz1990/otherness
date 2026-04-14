@@ -57,43 +57,74 @@ echo "Monitoring: $REPOS"
 
 ## Step 2 — Collect data for each project
 
-For each repo in $REPOS, collect the following signals. Run in parallel where possible.
+For each repo in $REPOS, collect the following signals.
+
+**Important**: `_state` branch age is a LAGGING indicator — it only updates when an agent finishes an item. An agent actively working on a long item may not have written state for hours. Never classify a session as "idle" based on `_state` age alone.
+
+The correct activity signals in priority order:
+1. **CI runs on feature branches in last 60 min** — agent is mid-item, actively pushing
+2. **Open PRs with `updatedAt` in last 60 min** — agent is iterating on a PR
+3. **`_state` branch age** — only stale if signals 1+2 are also absent AND age >24h
 
 ```bash
 NOW_EPOCH=$(date +%s)
+WINDOW_MIN=60   # minutes to look back for "currently active"
+
+age_hours() {
+  # Usage: age_hours "2026-04-14T23:19:00Z"
+  python3 -c "
+import datetime, sys
+d = sys.argv[1]
+try:
+    dt = datetime.datetime.fromisoformat(d.replace('Z','+00:00'))
+    now = datetime.datetime.now(datetime.timezone.utc)
+    print(f'{(now-dt).total_seconds()/3600:.1f}')
+except: print('9999')
+" "$1" 2>/dev/null || echo 9999
+}
 
 for REPO in $REPOS; do
   REPO_NAME=$(echo $REPO | cut -d/ -f2)
   echo ""
   echo "━━━ $REPO ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-  # --- Signal 1: Heartbeat freshness (_state branch last commit) ---
+  # --- Signal 1: CI runs on feature branches in last 60 min ---
+  RECENT_FEAT_CI=$(gh run list --repo $REPO --limit 10 \
+    --json status,conclusion,headBranch,createdAt,name \
+    --jq "[.[] | select(.headBranch | startswith(\"feat/\") or startswith(\"fix/\")) | select(.createdAt > \"$(python3 -c "import datetime; print((datetime.datetime.now(datetime.timezone.utc)-datetime.timedelta(minutes=60)).strftime('%Y-%m-%dT%H:%M:%SZ'))")\")]" \
+    2>/dev/null || echo "[]")
+  FEAT_CI_COUNT=$(echo "$RECENT_FEAT_CI" | python3 -c "import json,sys; print(len(json.load(sys.stdin)))" 2>/dev/null || echo 0)
+
+  # --- Signal 2: Open PRs updated in last 60 min ---
+  RECENT_PR=$(gh pr list --repo $REPO --state open \
+    --json number,title,updatedAt,headRefName \
+    --jq "[.[] | select(.updatedAt > \"$(python3 -c "import datetime; print((datetime.datetime.now(datetime.timezone.utc)-datetime.timedelta(minutes=60)).strftime('%Y-%m-%dT%H:%M:%SZ'))")\")]" \
+    2>/dev/null || echo "[]")
+  RECENT_PR_COUNT=$(echo "$RECENT_PR" | python3 -c "import json,sys; print(len(json.load(sys.stdin)))" 2>/dev/null || echo 0)
+  RECENT_PR_TITLE=$(echo "$RECENT_PR" | python3 -c "
+import json,sys
+prs=json.load(sys.stdin)
+if prs: print(f'#{prs[0][\"number\"]} [{prs[0][\"headRefName\"]}] {prs[0][\"title\"]}')
+" 2>/dev/null || echo "")
+
+  # --- Signal 3: _state age (lagging) ---
   LAST_STATE=$(gh api repos/$REPO/branches/_state \
     --jq '.commit.commit.committer.date' 2>/dev/null || echo "")
+  STATE_AGE=$([ -n "$LAST_STATE" ] && age_hours "$LAST_STATE" || echo "9999")
 
-  if [ -z "$LAST_STATE" ]; then
-    echo "  ⚠️  _state branch: NOT FOUND (not onboarded to otherness or no activity yet)"
-    STATE_AGE_H=999
+  # --- Determine activity status ---
+  if [ "$FEAT_CI_COUNT" -gt 0 ] || [ "$RECENT_PR_COUNT" -gt 0 ]; then
+    echo "  🟢 WORKING — mid-item"
+    [ "$RECENT_PR_COUNT" -gt 0 ] && echo "     Active PR: $RECENT_PR_TITLE"
+    [ "$FEAT_CI_COUNT" -gt 0 ] && echo "     CI firing on feature branch (${FEAT_CI_COUNT} run(s) in last 60min)"
+  elif python3 -c "exit(0 if float('$STATE_AGE') < 4 else 1)" 2>/dev/null; then
+    echo "  ✅ ACTIVE — recent state write (${STATE_AGE}h ago)"
+  elif python3 -c "exit(0 if float('$STATE_AGE') < 24 else 1)" 2>/dev/null; then
+    echo "  🟡 BETWEEN ITEMS — state ${STATE_AGE}h ago, no current CI activity"
+    echo "     (normal: agent may be sleeping between cycles or restarting)"
   else
-    STATE_AGE_H=$(python3 -c "
-import datetime
-d = '$LAST_STATE'
-try:
-    dt = datetime.datetime.fromisoformat(d.replace('Z','+00:00'))
-    now = datetime.datetime.now(datetime.timezone.utc)
-    print(f'{(now-dt).total_seconds()/3600:.1f}')
-except: print('999')
-")
-    if python3 -c "exit(0 if float('$STATE_AGE_H') < 4 else 1)" 2>/dev/null; then
-      echo "  ✅ Heartbeat: ${STATE_AGE_H}h ago (ACTIVE)"
-    elif python3 -c "exit(0 if float('$STATE_AGE_H') < 24 else 1)" 2>/dev/null; then
-      echo "  🟡 Heartbeat: ${STATE_AGE_H}h ago (IDLE — may need restart)"
-    else
-      echo "  🔴 Heartbeat: ${STATE_AGE_H}h ago (STALLED — likely stopped)"
-    fi
+    echo "  🔴 LIKELY STOPPED — no activity in ${STATE_AGE}h (no CI, no open PRs, no state write)"
   fi
-
-  # --- Signal 2: NEEDS-HUMAN blockers ---
   BLOCKERS=$(gh issue list --repo $REPO --state open --label "needs-human" \
     --json number,title,createdAt \
     --jq '.[] | "#\(.number) \(.title) (open \(.createdAt))"' 2>/dev/null)
@@ -156,9 +187,12 @@ For each project, assign one of these overall statuses:
 
 | Status | Criteria |
 |---|---|
-| 🟢 HEALTHY | Heartbeat <4h, no needs-human, CI green, PRs merging |
-| 🟡 IDLE | Heartbeat 4–24h, no blockers, CI green — agent probably stopped |
-| 🟠 SLOW | Heartbeat <24h but velocity is 0 PRs/7d and no visible reason |
+| 🟢 WORKING | CI firing on feature branch OR open PR updated in last 60 min |
+| ✅ ACTIVE | Recent _state write (<4h), no current CI but clearly just finished an item |
+| 🟡 BETWEEN ITEMS | No CI, no recent PR activity, _state 4–24h old — likely sleeping between items |
+| 🔴 LIKELY STOPPED | No CI, no open PRs, _state >24h old with open queue items |
+| 🚨 BLOCKED | has needs-human open, OR CI failing on main |
+| ⚫ UNKNOWN | _state branch missing, no activity ever |
 | 🔴 BLOCKED | has needs-human open, or CI failing, or heartbeat >24h with open queue |
 | ⚫ UNKNOWN | _state branch missing, no activity ever |
 
