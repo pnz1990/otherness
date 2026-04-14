@@ -143,8 +143,8 @@ cd ~/.otherness
 
 | Journey | Status | Last checked | Notes |
 |---|---|---|---|
-| 1: Build and validate itself | ❌ Not started | — | Requires Stage 0 (scripts) |
-| 2: Runs correctly on reference project | ✅ Passing | 2026-04-14 | alibi active |
-| 3: Self-improvement happening | ⚠️ Partial | 2026-04-14 | PRs merged to otherness but not via the loop |
-| 4: CRITICAL tier protection | ❌ Not started | — | Requires Stage 0 (CI) |
-| 5: Starts cleanly on fresh clone | ❌ Not started | — | Requires Stage 0 (all files) |
+| 1: Build and validate itself | ✅ Passing | 2026-04-14 | validate.sh, lint.sh, test.sh all exit 0 |
+| 2: Runs correctly on reference project | ✅ Passing | 2026-04-14 | alibi active (state commits <4h ago) |
+| 3: Self-improvement happening | ✅ Passing | 2026-04-14 | 5+ PRs merged to otherness via autonomous loop today |
+| 4: CRITICAL tier protection | ✅ Passing | 2026-04-14 | CI enforces needs-human label on standalone.md PRs |
+| 5: Starts cleanly on fresh clone | ✅ Passing | 2026-04-14 | All 8 command files present; state seeds correctly |
