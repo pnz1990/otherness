@@ -44,3 +44,57 @@ for every skill update.
   deeper project-level work to adapt. File as future learning item.
 - `observations pipeline concurrency model` — not transferable: the upload-channel / observe-channel
   pipeline architecture is specific to muse's data ingestion problem, not to otherness workflows.
+
+---
+
+## 2026-04-14 — GitHub Trending (weekly) — automated learning session
+
+**Repos studied:** 13 trending repos assessed; 4 read in depth
+**Files read:**
+- forrestchang/andrej-karpathy-skills: CLAUDE.md
+- NousResearch/hermes-agent: AGENTS.md, README.md, skills/ directory listing
+- multica-ai/multica: README.md
+- coleam00/Archon: README.md
+
+**Rejected (9 repos):** HKUDS/DeepTutor (domain-specific), microsoft/markitdown (utility),
+google-ai-edge/gallery (ML deployment), thedotmack/claude-mem (insufficient content),
+TapXWorld/ChinaTextbook (irrelevant), TheCraigHewitt/seomachine (domain-specific),
+virattt/ai-hedge-fund (domain-specific), NVIDIA/personaplex (domain-specific),
+jo-inc/camofox-browser (irrelevant)
+
+**Patterns extracted:** 6
+
+**Disposition:**
+- `surgical-changes` → NEW_SKILL (agents/skills/agent-coding-discipline.md §Surgical Changes)
+  "Touch only what the task requires. Do not improve adjacent code."
+  Source: forrestchang/andrej-karpathy-skills CLAUDE.md
+
+- `no-speculative-scope` → NEW_SKILL (agents/skills/agent-coding-discipline.md §No Speculative Scope)
+  "Minimum code that satisfies the spec. No features beyond what was asked."
+  Source: forrestchang/andrej-karpathy-skills CLAUDE.md
+
+- `verifiable-goals` → NEW_SKILL (agents/skills/agent-coding-discipline.md §Verifiable Goals)
+  "Transform task into concrete success criterion before starting."
+  Source: forrestchang/andrej-karpathy-skills CLAUDE.md
+
+- `human-approval-as-named-gate` → NEW_SKILL (agents/skills/autonomous-workflow-patterns.md)
+  "Human approval is a planned gate in the workflow, not an emergency stop."
+  Source: coleam00/Archon README.md
+
+- `deterministic-vs-ai-nodes` → NEW_SKILL (agents/skills/autonomous-workflow-patterns.md)
+  "Steps with deterministic outputs should be exact commands, not AI decisions."
+  Source: coleam00/Archon README.md
+
+- `single-registry-for-extension-points` → NEW_SKILL (agents/skills/autonomous-workflow-patterns.md)
+  "Define extension points in one registry; derive all consumers automatically."
+  Source: NousResearch/hermes-agent AGENTS.md
+
+**Rejected patterns:**
+- `prompt-caching-invariant` (hermes) — not transferable: specific to multi-turn conversation cost management
+- `profile-safe-paths` (hermes) — already captured in otherness constitution IV
+- `YAML-declarative-workflows` (Archon) — architecturally interesting but requires deep otherness redesign; deferred
+- `context-fresh-per-iteration` (Archon) — captured as guideline in autonomous-workflow-patterns.md rather than new skill
+- `multica-skills-lock` (multica) — interesting future enhancement for PROVENANCE.md machine-readability; deferred
+
+**standalone.md changes:**
+- Phase 2d: load agent-coding-discipline skill, add surgical changes and verifiable goals checkpoints

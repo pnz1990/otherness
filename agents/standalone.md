@@ -528,6 +528,18 @@ All work happens in $MY_WORKTREE on branch $MY_BRANCH.
 
 2d. Implement TDD: test first, then code. All in $MY_WORKTREE.
 
+    Load skill: read `~/.otherness/agents/skills/agent-coding-discipline.md` before writing code.
+
+    BEFORE WRITING CODE:
+    - Write down the concrete success criterion (failing test, or exact observable behavior).
+    - In tasks.md, mark which steps are AI steps (require judgment) vs command steps (deterministic).
+
+    WHILE WRITING CODE:
+    - Touch only what the task requires. Do not improve adjacent code.
+    - Write the minimum that satisfies the spec obligations. No speculative scope.
+    - If implementing more than ~8 distinct file operations: re-read spec.md and state what
+      is done vs remaining before continuing.
+
 2e. Self-validate from $MY_WORKTREE:
     eval "$BUILD_COMMAND" && eval "$TEST_COMMAND" && eval "$LINT_COMMAND"
 
