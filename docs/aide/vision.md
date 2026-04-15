@@ -2,48 +2,60 @@
 
 > Created: 2026-04-14 | Status: Active
 
-## What otherness is
+## The goal
 
-otherness is an autonomous software development system. One session is an entire team. It reads a project's `AGENTS.md`, `docs/aide/`, and `state.json`, then loops autonomously: it coordinates work, writes and tests code, adversarially reviews its own PRs, acts as scrum master, acts as product manager, and ships releases — all without human input except for rare `[NEEDS HUMAN]` escalations.
+Software that builds itself. You write what you want. The system figures out how to build it, does the work, ships it, and keeps going.
 
-The human's role: define the vision, read the batch reports on the report issue, unblock `[NEEDS HUMAN]` items. Nothing else.
+That is the destination. otherness is the path toward it.
 
-## Why otherness exists
+## What otherness is today
 
-Every AI coding tool that existed before otherness assists a human. The human still owns the loop: they decide what to build next, review every PR, trigger releases, run retrospectives. The AI is a tool in a human process.
+otherness is an autonomous software development system. One session plays the roles of coordinator, engineer, adversarial QA, scrum master, and product manager — in sequence, in a loop, without human input between cycles.
 
-otherness eliminates the human from the execution loop entirely. The human defines intent. The system executes. This is not an incremental improvement on "AI-assisted development" — it is a different model of software delivery.
+It reads a project's `AGENTS.md`, `docs/aide/`, and `state.json`. Then it loops: claims work from the backlog, implements it in an isolated branch, reviews its own PR with genuine skepticism, runs CI, merges, and moves to the next item. The PM phase checks that the work is moving in the right direction. The SM phase tracks metrics and spots regressions.
 
-## The self-improvement goal
+The human's role: write the vision, read the batch reports, unblock the rare `[NEEDS HUMAN]` escalation. Nothing else.
 
-otherness is now running on itself. This closes the loop: the system that builds software is itself built by that same system. Every improvement to otherness — a better QA checklist, a sharper spec quality standard, a new skill learned from open-source — deploys to every project using otherness on their next session startup.
+## What makes otherness different
 
-The target: otherness improves itself faster than humans can improve it manually.
+Every AI coding tool that existed before this assists a human. The human still owns the loop — they decide what to build next, review every PR, trigger releases. The AI is a tool in a human process.
 
-## Current state
+otherness eliminates the human from the execution loop. The human defines intent. The system executes. This is a different model of software delivery, not an incremental improvement on AI-assisted development.
 
-- Core loop (`standalone.md`): stable, battle-tested on kardinal-promoter and alibi
-- Skills system: 4 skills, growing via `/otherness.learn`
-- Self-improvement: enabled as of 2026-04-14
-- Known limitation: global deployment model (Option A) — a CRITICAL tier regression affects all users immediately. Mitigated by human review gate on CRITICAL files. Future Option B (versioned releases) documented in AGENTS.md.
+The mechanism is deliberately simple: markdown instruction files, read by an AI coding agent. No compiled binary. No server. No database. Hackable by anyone with a text editor. Deployed with a `git clone`.
 
-## What "done" looks like for otherness
+## The self-improvement loop
 
-otherness is never done. It is a living system that improves continuously. The benchmark for "good enough to stop manually maintaining" is:
+otherness runs on itself. The system that builds software is built by that same system.
 
-1. otherness ships at least one improvement to itself per week without human prompting
-2. The alibi and kardinal-promoter reference projects continue advancing without human intervention
-3. `/otherness.learn` discovers and internalizes at least one new pattern per month autonomously
-4. The PM validation scenarios all pass: reference projects are alive, skills are growing, docs match behavior
+Every improvement to otherness — a sharper QA checklist, a new skill learned from open-source, a better spec quality standard — deploys to every project using otherness on their next session startup, via `git -C ~/.otherness pull`.
+
+The target: otherness improves itself faster than humans can improve it manually. We are not there yet. But every merged PR to this repo is a step toward it.
 
 ## Design decisions that will not change
 
-1. **Markdown instructions, not code.** The agents are `.md` files. OpenCode runs them. No compiled binary, no server, no database. This makes otherness hackable by anyone with a text editor, and deployable by a `git clone`.
+**Markdown instructions, not code.** The agents are `.md` files. OpenCode runs them. This makes the system inspectable, forkable, and improvable by anyone — no build toolchain required.
 
-2. **GitHub as the only external system.** All coordination, state, progress reporting, and delivery goes through GitHub. No Slack, no Jira, no custom dashboard. If it's not in GitHub, it doesn't exist.
+**GitHub as the only external system.** All coordination, state, progress reporting, and delivery goes through GitHub. No Slack, no Jira, no custom dashboard. If it's not in GitHub, it doesn't exist.
 
-3. **`~/.otherness` as a shared global install.** Every project on a machine shares the same agent files. Self-update (`git pull`) is the deployment mechanism. Simple to operate, fast to update.
+**`~/.otherness` as a shared global install.** Every project on a machine shares the same agent files. Self-update on startup is the deployment mechanism. Simple to operate, instant to update.
 
-4. **Branch-push as the distributed lock.** Parallel sessions don't collide because git's server-side ref update is atomic. No coordinator needed. No lock file. No heartbeat election.
+**Branch-push as the distributed lock.** Parallel sessions don't collide because git's server-side ref update is atomic. No coordinator, no lock file, no heartbeat election needed.
 
-5. **State on `_state` branch.** Code PRs go to `main`. State changes go to `_state`. This prevents merge conflicts between parallel sessions doing code work and state writes simultaneously.
+**State on `_state` branch, code on `main`.** This prevents merge conflicts between parallel sessions doing code work and state writes simultaneously.
+
+## Current state
+
+- Core loop (`standalone.md`): stable, in production on multiple reference projects
+- Skills system: growing via `/otherness.learn`
+- Self-improvement: active as of 2026-04-14
+- Global deployment model (Option A): a CRITICAL tier regression affects all users immediately. Mitigated by the human review gate on CRITICAL files. Future Option B (versioned releases) documented in AGENTS.md for when the user base grows.
+
+## What "done" looks like
+
+otherness is never done. It is a living system that improves continuously. The benchmark for "good enough to stop manually maintaining":
+
+1. otherness ships at least one improvement to itself per week without human prompting
+2. Reference projects continue advancing without human intervention
+3. `/otherness.learn` discovers and internalizes at least one new pattern per month autonomously
+4. The PM validation scenarios all pass: reference projects alive, skills growing, docs matching behavior
