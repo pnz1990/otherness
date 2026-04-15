@@ -78,6 +78,8 @@ Agents will read your answers from `AGENTS.md` and `docs/aide/`. The more accura
 
 This creates `otherness-config.yaml` from the template and auto-fills `project.repo` and `project.name` from your git remote. Edit the file to configure CI, board, and cycle settings.
 
+If your project has a UI (web app, mobile app, frontend), set `project.job_family: FEE`. For infrastructure/platform projects, set `project.job_family: SysDE`. For backend-only projects the default (`SDE`) is correct — you can omit the field.
+
 Start with `mode: standalone` regardless of team size — get one working loop before adding parallelism.
 
 ---

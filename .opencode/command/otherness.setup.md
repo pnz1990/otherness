@@ -165,6 +165,6 @@ fi
 
 ## Done
 
-Edit `otherness-config.yaml` to configure your CI, GitHub Projects board, and agent settings.
+Edit `otherness-config.yaml` to configure your CI, GitHub Projects board, and agent settings. If your project has a UI, add `project.job_family: FEE`; for platform/infrastructure projects use `SysDE`; backend-only projects can omit the field (defaults to `SDE`).
 
 Then run `/otherness.run` to start the autonomous team.

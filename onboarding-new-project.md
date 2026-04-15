@@ -50,6 +50,8 @@ This creates `.specify/`, `.opencode/`, and scaffolding files.
 
 This creates `otherness-config.yaml` from the template and auto-fills `project.repo` and `project.name` from your git remote. Edit the file to configure CI, board field IDs, and cycle settings.
 
+If your project has a UI (web app, mobile app, frontend), set `project.job_family: FEE`. For infrastructure/platform projects, set `project.job_family: SysDE`. For backend-only projects the default (`SDE`) is correct — you can omit the field.
+
 ---
 
 ## Step 4 — Create AGENTS.md
