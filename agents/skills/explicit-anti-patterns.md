@@ -41,8 +41,9 @@ Each pitfall has:
 2. **Worktree dir already exists**: Always check `[ -d "$MY_WORKTREE" ]` before
    `git worktree add`. A stale dir from a crashed session will cause a confusing error.
 
-3. **Hardcoded project names**: Never write `pnz1990`, `alibi`, `kardinal`, or any
-   specific project name into standalone.md. It runs on all projects.
+3. **Hardcoded project names**: Never write the name of any specific project that uses otherness
+   into standalone.md. It runs on all projects — fleet project names belong only in the
+   user's local \`otherness-config.yaml\`, never in agent instruction files.
 
 4. **`git add .` stages state.json**: If .otherness/state.json was modified while reading
    state, `git add .` will stage it. Always `git add <specific-file>` per the
