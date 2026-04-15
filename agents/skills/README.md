@@ -15,6 +15,7 @@ Skills are **additive only** — never delete content from a skill file (see con
 | `role-based-agent-identity.md` | Writing or improving agent instructions (standalone.md, onboard.md) | Phase 4 (SM) or when updating agent files |
 | `contribution-hygiene.md` | Opening a PR or writing a commit message | Phase 2f (ENG — before gh pr create) |
 | `agent-responsibility.md` | Starting any non-trivial task — before spec, before code, before PR | All phases — load at task start |
+| `ephemeral-pr-artifacts.md` | Opening a CRITICAL tier PR or any complex PR needing reviewer context | Phase 2f (ENG — before gh pr create) |
 
 ## Skill summaries
 
@@ -51,6 +52,9 @@ PR and commit discipline patterns from LangChain. Covers: AI disclosure footer r
 
 ### `agent-responsibility.md`
 Responsibility and judgment patterns from Pydantic AI. The agent's primary responsibility is to the project and all its users, not the immediate requester. Covers: trust-but-verify research before implementing; alignment before implementation for unclear scope; the how matters as much as the what. Load at the start of any non-trivial task — the most fundamental skill for autonomous agent quality.
+
+### `ephemeral-pr-artifacts.md`
+PR operational patterns from OpenHands. Covers: `.pr/` directory for reviewer context that auto-cleans on merge; `git add <file>` over `git add .` for safe autonomous staging; trigger-based skill loading (improvement direction for when skills library exceeds 15 files). Load before opening any complex or CRITICAL tier PR.
 
 ## `PROVENANCE.md`
 Audit trail of `/otherness.learn` sessions. Records what was learned, from which repo, on what
