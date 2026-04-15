@@ -114,7 +114,21 @@ for attempt in range(3):
         push_result = subprocess.run(['git','-C',state_wt,'push','origin','_state'],
                                      capture_output=True)
         if push_result.returncode == 0:
-            print(f"State written to _state: {msg}")
+            # Read-back: verify the commit is visible on the remote before declaring success
+            subprocess.run(['git','fetch','origin','_state','--quiet'], capture_output=True)
+            verify = subprocess.run(['git','show','origin/_state:.otherness/state.json'],
+                                    capture_output=True, text=True)
+            if verify.returncode == 0:
+                try:
+                    written = json.loads(verify.stdout)
+                    if written.get('version') == state.get('version'):
+                        print(f"State written and verified: {msg}")
+                    else:
+                        print(f"State written (version mismatch on read-back — may be race): {msg}")
+                except Exception:
+                    print(f"State written (read-back parse error): {msg}")
+            else:
+                print(f"State written (read-back fetch failed — push succeeded): {msg}")
             break
         print(f"State push conflict (attempt {attempt+1}/3) — retrying...")
     except Exception as e:

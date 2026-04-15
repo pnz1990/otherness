@@ -15,7 +15,7 @@ otherness operates at two distinct layers. Role identity works differently at ea
 
 **Layer 1 — otherness building itself**
 
-When otherness runs on the `pnz1990/otherness` repo, it is an autonomous software team building
+When otherness runs on its own repository (the otherness source repo), it is an autonomous software team building
 a markdown-instruction system. The roles here are internal to the agent loop: coordinator,
 engineer, adversarial reviewer, delivery manager, product manager. These are defined below in
 §Layer 1 Role Definitions.

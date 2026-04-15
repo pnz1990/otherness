@@ -67,7 +67,7 @@ When writing tasks.md, distinguish AI steps from command steps:
 ## Command steps (deterministic, run exactly)
 - [ ] `npm test` — must exit 0
 - [ ] `git push origin feat/<item-id>`
-- [ ] `gh pr create --title "..." --label "alibi"`
+- [ ] `gh pr create --title "..." --label "$PR_LABEL"`
 ```
 
 This prevents the agent from burning context on steps where there is nothing to reason about.
