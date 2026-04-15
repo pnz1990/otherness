@@ -53,5 +53,16 @@ else
   echo "  OK: alibi is alive (last activity ${COMMIT_EPOCH}h ago)"
 fi
 
+# [5b] Schema version check — warn (non-fatal) if alibi state is on old schema
+echo "[5b] Checking alibi state schema version..."
+ALIBI_VER=$(gh api "repos/pnz1990/alibi/contents/.otherness%2Fstate.json?ref=_state" \
+  --jq '.content' 2>/dev/null | base64 -d 2>/dev/null | \
+  python3 -c "import json,sys; print(json.load(sys.stdin).get('version','?'))" 2>/dev/null || echo "?")
+if [ "$ALIBI_VER" = "1.3" ]; then
+  echo "  OK: alibi state.json is v1.3"
+else
+  echo "  WARN: alibi state.json is v$ALIBI_VER (expected 1.3) — migration runs at next startup"
+fi
+
 echo ""
 echo "=== test: PASSED ==="

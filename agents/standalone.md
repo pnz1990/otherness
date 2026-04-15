@@ -231,7 +231,65 @@ git pull origin main --quiet
 
 # Pull latest state from dedicated _state branch
 git fetch origin _state --quiet
-git checkout origin/_state -- .otherness/state.json 2>/dev/null
+git show origin/_state:.otherness/state.json > .otherness/state.json 2>/dev/null || true
+
+# Migrate state.json to current schema (v1.3) if needed — idempotent
+python3 - << 'MIGRATE_EOF'
+import json, os, subprocess
+
+try:
+    with open('.otherness/state.json') as f:
+        s = json.load(f)
+except Exception:
+    # Missing or corrupt — create minimal valid v1.3 state
+    try:
+        r = subprocess.check_output(['git','remote','get-url','origin'],text=True).strip()
+        repo = r.split('github.com')[-1].strip(':/').rstrip('/').rstrip('.git')
+    except Exception:
+        repo = ''
+    s = {'version':'0.0','repo':repo}
+
+if s.get('version') == '1.3':
+    exit(0)   # already current, nothing to do
+
+changes = []
+
+# v1.2 → v1.3: rename 'project' → 'repo'
+if 'project' in s and 'repo' not in s:
+    s['repo'] = s.pop('project')
+    changes.append("renamed 'project' → 'repo'")
+
+# Ensure repo field is populated
+if not s.get('repo'):
+    try:
+        r = subprocess.check_output(['git','remote','get-url','origin'],text=True).strip()
+        s['repo'] = r.split('github.com')[-1].strip(':/').rstrip('/').rstrip('.git')
+        changes.append(f"set repo={s['repo']}")
+    except Exception:
+        pass
+
+# Add missing fields with safe defaults
+for k, default in [
+    ('mode', 'standalone'),
+    ('current_queue', None),
+    ('features', {}),
+    ('engineer_slots', {'ENGINEER-1': None, 'ENGINEER-2': None, 'ENGINEER-3': None}),
+    ('bounded_sessions', {}),
+    ('session_heartbeats', {'STANDALONE': {'last_seen': None, 'cycle': 0}}),
+    ('handoff', None),
+]:
+    if k not in s:
+        s[k] = default
+        changes.append(f"added {k}")
+
+s['version'] = '1.3'
+
+os.makedirs('.otherness', exist_ok=True)
+with open('.otherness/state.json', 'w') as f:
+    json.dump(s, f, indent=2)
+
+print(f"[STANDALONE] Migrated state.json to v1.3: {', '.join(changes) if changes else 'no changes'}")
+MIGRATE_EOF
 
 REPO=$(git remote get-url origin 2>/dev/null | sed 's|.*github.com[:/]||;s|\.git$||')
 REPO_NAME=$(basename $(git rev-parse --show-toplevel))
