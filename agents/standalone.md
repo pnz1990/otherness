@@ -154,7 +154,7 @@ MY_WORKTREE="../${REPO_NAME}.${ITEM_ID}"
 git worktree add "$MY_WORKTREE" "$MY_BRANCH"
 MY_SESSION_ID="STANDALONE-${ITEM_ID}"
 
-# 5. NOW write the claim to state.json (the branch push already locks it)
+# 5. Write the claim to state.json — use the canonical write block, never push to main
 python3 - <<EOF
 import json, datetime
 with open('.otherness/state.json','r') as f: s=json.load(f)
@@ -165,9 +165,8 @@ s['features']['$ITEM_ID']['branch']='$MY_BRANCH'
 s['features']['$ITEM_ID']['worktree']='$MY_WORKTREE'
 with open('.otherness/state.json','w') as f: json.dump(s,f,indent=2)
 EOF
-git add .otherness/state.json
-git commit -m "state: $MY_SESSION_ID claimed $ITEM_ID"
-git push origin main
+export STATE_MSG="$MY_SESSION_ID claimed $ITEM_ID"
+# run the STATE MANAGEMENT write block from the top of this file
 ```
 
 ### Heartbeat
@@ -422,7 +421,8 @@ s['handoff']={'stopped_at':datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%
 with open('.otherness/state.json','w') as f: json.dump(s,f,indent=2)
 "
       rm -f .otherness/stop-after-current
-      git add .otherness/ && git commit -m "state: graceful stop" && git push origin main
+      export STATE_MSG="graceful stop"
+      # run the STATE MANAGEMENT write block (never push to main)
       gh issue comment $REPORT_ISSUE --repo $REPO --body "[STANDALONE] Stopped cleanly." 2>/dev/null
       exit 0
     fi
@@ -491,16 +491,12 @@ for id,d in s.get('features',{}).items():
 
     if [ -z "$ITEM_ID" ]; then
       echo "[COORD] No unclaimed items."
-      # Distinguish: is the queue empty, or is it fully blocked by needs-human?
+      # Distinguish: empty queue vs fully blocked by needs-human?
+      # Reuse state.json already loaded — no second ls-remote needed
       BLOCKED_COUNT=$(python3 -c "
-import json, subprocess
+import json
 with open('.otherness/state.json') as f: s=json.load(f)
-claimed=set()
-for line in subprocess.check_output(['git','ls-remote','--heads','origin'],text=True).splitlines():
-    if 'refs/heads/feat/' in line:
-        claimed.add(line.split('refs/heads/feat/')[-1])
-todo=[id for id,d in s.get('features',{}).items()
-      if d.get('state')=='todo' and id not in claimed]
+todo=[id for id,d in s.get('features',{}).items() if d.get('state')=='todo']
 print(len(todo))
 " 2>/dev/null || echo "0")
       NEEDS_HUMAN_COUNT=$(gh issue list --repo $REPO --state open --label "needs-human" \
