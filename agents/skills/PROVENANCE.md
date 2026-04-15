@@ -164,6 +164,35 @@ jo-inc/camofox-browser (irrelevant)
 
 ---
 
+## 2026-04-14 — All-Hands-AI/OpenHands (automated learn session, feat/learn-openhands)
+
+**Files read:**
+- `AGENTS.md` (full — 7,500+ chars, operational AI software engineer system)
+
+**Repos assessed:** 1 (All-Hands-AI/OpenHands — 71k stars, actively maintained)
+
+**Patterns extracted:** 3 (into one new skill file)
+
+**Disposition:**
+
+- `pr-ephemeral-artifacts` → NEW_SKILL (agents/skills/ephemeral-pr-artifacts.md §The .pr/ Directory)
+  `.pr/` directory for reviewer context that auto-cleans on merge. Applicable to otherness CRITICAL tier PRs — adds design.md explaining reasoning without polluting the repo.
+
+- `specific-git-staging` → NEW_SKILL (agents/skills/ephemeral-pr-artifacts.md §Specific Git Staging)
+  `git add <file>` not `git add .`. Prevents autonomous agents from accidentally staging state files, temp outputs, or scratch files. Added with audit checklist and the one valid exception (temp state worktree).
+
+- `trigger-based-skill-loading` → NEW_SKILL (agents/skills/ephemeral-pr-artifacts.md §Trigger-Based Skill Loading)
+  Load skills only when the current task matches trigger keywords. As otherness skills library grows, loading all files every phase wastes context. Added as an improvement direction with concrete header format.
+
+**Rejected patterns:**
+
+- `lockfile-version-preservation` — not transferable: Python/JS lockfiles; otherness has no dependencies
+- `enterprise-directory-pattern` — not transferable: requires separate licensed codebase layer
+- `settings-ui-patterns` — not transferable: React frontend; otherness has no UI
+- `microagent-frontmatter-format` — partially captured in trigger-based-skill-loading; YAML format is OpenHands-specific
+
+---
+
 ## 2026-04-14 — pydantic/pydantic-ai (automated learn session, feat/learn-pydantic-ai)
 
 **Files read:**
