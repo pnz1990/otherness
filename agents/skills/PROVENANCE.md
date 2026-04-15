@@ -223,3 +223,35 @@ jo-inc/camofox-browser (irrelevant)
 - `inline-snapshot-testing` (Pydantic AI) — Python-specific testing pattern; not transferable
 - `vcrpy-recording-for-api-calls` (Pydantic AI) — Python-specific; not transferable
 - `mkdocs-with-mkdocstrings` (Pydantic AI) — documentation toolchain; not transferable to markdown agent files
+
+---
+
+## 2026-04-14 — BerriAI/litellm (automated learn session, feat/learn-aider)
+
+**Files read:**
+- `AGENTS.md` (full — 8,000+ chars, LLM gateway with extensive AI agent guidelines)
+
+**Note:** Session targeted Aider-AI/aider first but AGENTS.md was not present (404). Pivoted to BerriAI/litellm (43k stars) which had a high-quality AGENTS.md with strong operational patterns.
+
+**Repos assessed:** 2 (Aider-AI/aider — no AGENTS.md; BerriAI/litellm — 43k stars, high signal)
+
+**Patterns extracted:** 3 (into one new skill file)
+
+**Disposition:**
+
+- `common-pitfalls-section` → NEW_SKILL (agents/skills/explicit-anti-patterns.md §The COMMON PITFALLS Section)
+  LiteLLM ends AGENTS.md with a named, numbered list of recurring mistakes. Each has a reason and a concrete fix. Directly applicable to otherness: the 5 most common otherness pitfalls now documented in the skill. The list should be grown as bugs are fixed.
+
+- `config-driven-flags` → NEW_SKILL (agents/skills/explicit-anti-patterns.md §Config-Driven Flags)
+  Behavior flags that differ per project (14-day learn threshold, retry counts) should live in otherness-config.yaml, not be hardcoded in standalone.md. Added as an improvement direction — not actionable today, but important for scale.
+
+- `follow-existing-patterns` → NEW_SKILL (agents/skills/explicit-anti-patterns.md §When in Doubt, Follow Existing Patterns)
+  Before writing new code, search for how the same thing was done before. Copy exact patterns; don't invent variations. Prevents codebase fragmentation.
+
+**Rejected patterns:**
+
+- `no-type-hints` (Aider CONTRIBUTING.md) — deliberate choice for Python; not transferable to markdown
+- `prisma-over-raw-sql` (LiteLLM) — not transferable: database ORM choice; otherness has no database
+- `antd-over-tremor` (LiteLLM) — not transferable: React UI library choice; otherness has no frontend
+- `vitest-testing-conventions` (LiteLLM) — not transferable: JavaScript test framework
+- `litellm-proxy-architecture` (LiteLLM) — not transferable: specific to API gateway design

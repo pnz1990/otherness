@@ -16,6 +16,7 @@ Skills are **additive only** — never delete content from a skill file (see con
 | `contribution-hygiene.md` | Opening a PR or writing a commit message | Phase 2f (ENG — before gh pr create) |
 | `agent-responsibility.md` | Starting any non-trivial task — before spec, before code, before PR | All phases — load at task start |
 | `ephemeral-pr-artifacts.md` | Opening a CRITICAL tier PR or any complex PR needing reviewer context | Phase 2f (ENG — before gh pr create) |
+| `explicit-anti-patterns.md` | Writing any agent instruction file, or during QA review | Phase 3 (QA) or Phase 4 (SM) when updating agent files |
 
 ## Skill summaries
 
@@ -55,6 +56,9 @@ Responsibility and judgment patterns from Pydantic AI. The agent's primary respo
 
 ### `ephemeral-pr-artifacts.md`
 PR operational patterns from OpenHands. Covers: `.pr/` directory for reviewer context that auto-cleans on merge; `git add <file>` over `git add .` for safe autonomous staging; trigger-based skill loading (improvement direction for when skills library exceeds 15 files). Load before opening any complex or CRITICAL tier PR.
+
+### `explicit-anti-patterns.md`
+Anti-pattern documentation patterns from LiteLLM. Covers: the COMMON PITFALLS section format (numbered, named, with reason + fix); config-driven flags over hardcoded checks (improvement direction); "when in doubt, follow existing patterns." Load when writing agent instruction files or during QA review to check coverage of known failure modes.
 
 ## `PROVENANCE.md`
 Audit trail of `/otherness.learn` sessions. Records what was learned, from which repo, on what
