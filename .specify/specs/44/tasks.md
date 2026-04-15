@@ -13,13 +13,13 @@
 ## Concrete success criterion
 
 ```bash
-echo '{"version":"1.2","project":"pnz1990/test","features":{}}' > .otherness/state.json
+echo '{"version":"1.2","project":"owner/test-repo","features":{}}' > .otherness/state.json
 # run migration block
 python3 -c "
 import json
 s=json.load(open('.otherness/state.json'))
 assert s['version']=='1.3'
-assert s['repo']=='pnz1990/test'
+assert s['repo']=='owner/test-repo'
 assert 'engineer_slots' in s
 assert 'handoff' in s
 print('PASS')

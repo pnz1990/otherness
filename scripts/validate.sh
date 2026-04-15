@@ -8,24 +8,67 @@ SKILLS_DIR="$AGENTS_DIR/skills"
 
 echo "=== otherness validate ==="
 
-# 1. Check no hardcoded project-specific paths in agent files
-# Uses structural detection — catches any pnz1990/<X> that isn't pnz1990/otherness,
-# plus known fleet repos in project-reference context (belt-and-suspenders).
+# 1. Check no hardcoded project-specific paths in agent files.
+# The rule: agent files must never reference specific projects by name — they
+# run on any project and must stay generic.
+#
+# Detection:
+#   Rule 1 — reads the project owner from otherness-config.yaml and catches any
+#             <owner>/<X> that isn't <owner>/otherness. Falls back gracefully.
+#   Rule 2 — reads fleet project names from otherness-config.yaml monitor.projects
+#             and catches them in project-reference context.
 echo "[1/4] Checking for hardcoded project paths in agent files..."
+
+# Resolve owner from config (used in Rule 1)
+OWNER=$(python3 -c "
+import re, os
+config = os.path.join('$(cd "$(dirname "$0")/.." && pwd)', 'otherness-config.yaml')
+try:
+    for line in open(config):
+        m = re.match(r'^\s+repo:\s*(.+)', line)
+        if m:
+            parts = m.group(1).strip().strip('\"').strip(\"'\").split('/')
+            if len(parts) == 2: print(parts[0]); break
+except Exception:
+    print('pnz1990')
+" 2>/dev/null || echo "pnz1990")
+
+# Resolve fleet project names from config (used in Rule 2)
+FLEET_NAMES=$(python3 -c "
+import re, os
+config = os.path.join('$(cd "$(dirname "$0")/.." && pwd)', 'otherness-config.yaml')
+names = []
+try:
+    in_monitor = in_projects = False
+    for line in open(config):
+        if re.match(r'^monitor:', line): in_monitor = True
+        if in_monitor and re.match(r'\s+projects:', line): in_projects = True
+        if in_projects:
+            m = re.match(r'\s+- (.+)', line)
+            if m:
+                repo = m.group(1).strip().strip('\"').strip(\"'\")
+                name = repo.split('/')[-1]
+                if name and name != 'otherness':
+                    names.append(name)
+except Exception:
+    pass
+print(' '.join(names))
+" 2>/dev/null || echo "")
+
 FOUND=0
 for file in "$AGENTS_DIR"/*.md "$AGENTS_DIR/skills"/*.md; do
   [ -f "$file" ] || continue
-  # Rule 1: any pnz1990/<X> where X is not 'otherness'
-  if grep -qE 'pnz1990/[a-zA-Z0-9_-]+' "$file" 2>/dev/null; then
-    BAD=$(grep -oE 'pnz1990/[a-zA-Z0-9_-]+' "$file" | grep -v '^pnz1990/otherness$' | head -3)
+  # Rule 1: any <owner>/<X> where X is not 'otherness'
+  if grep -qE "${OWNER}/[a-zA-Z0-9_-]+" "$file" 2>/dev/null; then
+    BAD=$(grep -oE "${OWNER}/[a-zA-Z0-9_-]+" "$file" | grep -v "^${OWNER}/otherness$" | head -3)
     if [ -n "$BAD" ]; then
       echo "  ERROR: $(basename $file) contains hardcoded project path(s): $BAD"
       FOUND=1
     fi
   fi
-  # Rule 2: known fleet repos in project-reference context (bare name)
-  for name in alibi kro-ui kardinal-promoter; do
-    if grep -qE "(repo:|/)$name(\.git|/|\")" "$file" 2>/dev/null; then
+  # Rule 2: fleet project names in project-reference context
+  for name in $FLEET_NAMES; do
+    if grep -qE "(repo:|/)${name}(\.git|/|\")" "$file" 2>/dev/null; then
       echo "  ERROR: $(basename $file) contains hardcoded fleet project reference: $name"
       FOUND=1
     fi

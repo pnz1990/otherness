@@ -84,3 +84,14 @@ github_projects:
   # Date fields
   start_date_field_id: ""
   target_date_field_id: ""
+
+# ── Fleet monitoring ──────────────────────────────────────────────────────────
+# List all projects managed by this otherness installation.
+# Used by /otherness.status for cross-project health view, and by
+# scripts/test.sh to pick a reference project for integration checks.
+# The first non-otherness project in the list becomes the reference project.
+monitor:
+  projects: []
+  #   - owner/your-project-name    # add your managed projects here
+  stale_hours: 24    # alert if _state branch older than this many hours
+  idle_hours: 4      # alert if no heartbeat within this many hours
