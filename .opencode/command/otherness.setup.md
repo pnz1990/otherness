@@ -111,9 +111,55 @@ state = {
   "handoff": None
 }
 with open('.otherness/state.json', 'w') as f:
-    json.dump(state, f, indent=2)
+     json.dump(state, f, indent=2)
 print("Created .otherness/state.json")
 EOF
+fi
+```
+
+## Step 6 — Create _state branch for state persistence
+
+The `_state` branch is where otherness stores its persistent memory across sessions.
+It must exist on the remote before `/otherness.run` can write state.
+
+```bash
+if ! git ls-remote --heads origin _state | grep -q '_state'; then
+  echo "Creating _state branch for state persistence..."
+  CURRENT_BRANCH=$(git branch --show-current)
+  REPO=$(git remote get-url origin 2>/dev/null | sed 's|.*github.com[:/]||;s|\.git$||')
+
+  # Create an orphan branch (no shared history with main)
+  git checkout --orphan _state
+  git rm -rf . --quiet 2>/dev/null || true   # clear index — orphan starts empty
+
+  # Write initial state.json
+  mkdir -p .otherness
+  python3 - "$REPO" << 'EOF'
+import json, sys
+repo = sys.argv[1]
+state = {
+  "version": "1.3",
+  "mode": "standalone",
+  "repo": repo,
+  "current_queue": None,
+  "features": {},
+  "engineer_slots": {"ENGINEER-1": None, "ENGINEER-2": None, "ENGINEER-3": None},
+  "bounded_sessions": {},
+  "session_heartbeats": {"STANDALONE": {"last_seen": None, "cycle": 0}},
+  "handoff": None
+}
+with open('.otherness/state.json', 'w') as f:
+    json.dump(state, f, indent=2)
+print("Wrote .otherness/state.json")
+EOF
+
+  git add .otherness/state.json
+  git commit -m "state: initialize _state branch"
+  git push origin _state
+  git checkout "$CURRENT_BRANCH" --quiet
+  echo "_state branch created and pushed."
+else
+  echo "_state branch already exists — skipping."
 fi
 ```
 

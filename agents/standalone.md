@@ -38,7 +38,7 @@ git show origin/_state:.otherness/state.json > .otherness/state.json 2>/dev/null
 ```bash
 # After modifying .otherness/state.json, push to _state branch only:
 python3 - <<'PYEOF'
-import subprocess, json, os, tempfile, time
+import subprocess, json, os, tempfile, time, shutil
 
 # Read current state
 state = json.load(open('.otherness/state.json'))
@@ -46,6 +46,43 @@ state = json.load(open('.otherness/state.json'))
 # Write to _state branch via a temp worktree (retries up to 3× on push conflict)
 state_wt = os.path.join(tempfile.gettempdir(), 'otherness-state-' + str(os.getpid()))
 msg = os.environ.get('STATE_MSG','state update')
+
+# Bootstrap _state branch if it doesn't exist (first run on a new project)
+_check = subprocess.run(['git','ls-remote','--heads','origin','_state'],
+                        capture_output=True, text=True)
+if not _check.stdout.strip():
+    print("State: _state branch missing — bootstrapping...")
+    boot = tempfile.mkdtemp(prefix='otherness-boot-')
+    try:
+        repo_raw = subprocess.check_output(['git','remote','get-url','origin'],text=True).strip()
+        repo_slug = repo_raw.split('github.com')[-1].strip(':/').rstrip('/')
+        if repo_slug.endswith('.git'): repo_slug = repo_slug[:-4]
+        subprocess.run(['git','clone','--no-local','.',boot,'--quiet'], capture_output=True)
+        subprocess.run(['git','-C',boot,'checkout','--orphan','_state'], capture_output=True)
+        subprocess.run(['git','-C',boot,'rm','-rf','.'], capture_output=True)
+        os.makedirs(os.path.join(boot,'.otherness'), exist_ok=True)
+        initial = {
+            "version":"1.3","mode":"standalone","repo":repo_slug,
+            "current_queue":None,"features":{},
+            "engineer_slots":{"ENGINEER-1":None,"ENGINEER-2":None,"ENGINEER-3":None},
+            "bounded_sessions":{},
+            "session_heartbeats":{"STANDALONE":{"last_seen":None,"cycle":0}},
+            "handoff":None
+        }
+        json.dump(initial, open(os.path.join(boot,'.otherness','state.json'),'w'), indent=2)
+        subprocess.run(['git','-C',boot,'add','.otherness/state.json'])
+        subprocess.run(['git','-C',boot,'commit','-m','state: initialize _state branch'],
+                       capture_output=True)
+        r = subprocess.run(['git','-C',boot,'push','origin','_state'], capture_output=True)
+        if r.returncode == 0:
+            print("State: _state branch bootstrapped successfully")
+        else:
+            print("State: bootstrap push failed — will retry below")
+    except Exception as e:
+        print(f"State: bootstrap error: {e}")
+    finally:
+        shutil.rmtree(boot, ignore_errors=True)
+
 for attempt in range(3):
     try:
         subprocess.run(['git','worktree','add',state_wt,'origin/_state','--no-checkout'],
