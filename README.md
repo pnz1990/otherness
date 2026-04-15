@@ -1,174 +1,39 @@
 # otherness
 
-_In memory of mankind_
+_The goal is simple: software that builds itself._
 
-Autonomous software development. One session is an entire team.
+You write the vision. otherness writes the code, reviews it, ships it, and keeps going — without you in the loop. No stand-ups, no PR reviews, no release ceremonies. Just a GitHub repo advancing on its own.
+
+We are not there yet. But every session gets closer.
 
 ---
 
-## Two modes, that's it
+## What it does today
+
+One session is an entire engineering team. It claims work from your backlog, implements it in an isolated branch, adversarially reviews its own PR, runs CI, merges, and moves to the next item. It also acts as scrum master and product manager — writing batch reports, tracking metrics, validating that the project is moving in the right direction.
+
+The human's role: write the vision, read the reports, unblock the rare `[NEEDS HUMAN]`.
+
+otherness runs on itself. Every improvement it makes to its own agent logic deploys to every project using it on their next session startup.
+
+---
+
+## Two modes
 
 | Mode | Command | When to use |
 |---|---|---|
-| **Standalone** | `/otherness.run` | Full autonomous team — coordinates, implements, reviews, releases |
-| **Bounded** | `/otherness.run.bounded` | Focused agent with a declared scope — multiple can run concurrently |
-
-No coordinator. No engineer. No QA. No separate sessions. Each standalone *is* the team.
+| **Standalone** | `/otherness.run` | One session is the full team — coordinates, implements, reviews, releases |
+| **Bounded** | `/otherness.run.bounded` | Scoped agent with declared boundaries — run multiple concurrently |
 
 **Utility commands** (run once, not in a loop):
 
-| Command | When to use |
+| Command | Purpose |
 |---|---|
-| `/otherness.onboard` | First time on an existing project — reads the codebase, generates `docs/aide/` drafts, seeds `state.json` from merged PRs, opens a PR for review |
-| `/otherness.status` | Check what the agent is currently working on, CI state, and open blockers |
-| `/otherness.setup` | One-time project init — creates `otherness-config.yaml`, deploys all commands |
-| `/otherness.learn [repo ...]` | Study open-source projects and internalize patterns into `~/.otherness/agents/skills/`. Pass repo URLs or run without args to discover targets. Run periodically. |
-| `/otherness.upgrade` | Check for updates to speckit, maqa, and otherness itself |
-
----
-
-## Why this exists
-
-Most AI coding tools assist a human. otherness replaces the team loop entirely. The human's role: define the vision, read the hourly reports, unblock the rare `[NEEDS HUMAN]`.
-
-The goal: **100% autonomous project management and execution**, observable through GitHub — milestones, epics, sub-issues, boards, labels, releases. No external dashboards.
-
----
-
-## Dependencies
-
-### Required
-
-#### [OpenCode](https://opencode.ai)
-
-**What it provides:** The AI coding agent runtime. OpenCode discovers `.opencode/command/*.md` files in your project and exposes them as slash commands. When you type `/otherness.run`, OpenCode loads that file and sends its body as the LLM prompt. It also provides the Bash, Read, Write, Edit, Glob, Grep tools the agent uses to interact with your filesystem and run commands.
-
-**Why it's required:** OpenCode is the runtime that executes the agents. Without it there is no command dispatch. The agents are markdown files — OpenCode is what runs them.
-
-**Tested with:** OpenCode only. Claude Code support is planned but not yet implemented.
-
-```bash
-# Install OpenCode
-npm install -g @opencode-ai/cli   # or see https://opencode.ai
-```
-
-#### [gh CLI](https://cli.github.com)
-
-**What it provides:** All GitHub interaction. Agents use it for the complete PR lifecycle (create, CI check, merge), issue management (create, list, close, comment), Projects board updates (card status, field values), GraphQL API calls (sub-issues, board items), and CI status monitoring.
-
-**Why it's required:** GitHub is otherness's single source of truth. Every coordination action — finding work, claiming issues, opening PRs, posting progress reports, syncing the board — calls `gh`. There is no alternative path.
-
-```bash
-brew install gh && gh auth login
-```
-
-#### [git](https://git-scm.com)
-
-**What it provides:** VCS operations and the multi-worktree isolation model. Agents use `git worktree add` to create an isolated working directory for each feature, push branches for PRs, and use `git -C ~/.otherness pull` to self-update agent files from this repo on every startup.
-
-**Why it's required:** The self-update mechanism, repo detection (`git remote get-url`, `git rev-parse`), feature branch isolation (`git worktree`), and all code delivery (`git push`) depend on git.
-
-#### [python3](https://python.org)
-
-**What it provides:** Inline YAML parsing and JSON read/write. Agents use it exclusively to parse `otherness-config.yaml` and read/write `.otherness/state.json`. Only standard library modules are used (`re`, `json`, `os`, `datetime`). No pip packages required.
-
-**Why it's required:** Config parsing and state management. Failures are wrapped in `2>/dev/null` fallbacks so the agent degrades gracefully rather than crashing.
-
-```bash
-python3 --version  # 3.8+ required; usually pre-installed
-```
-
----
-
-### Soft Required (deploy-time only)
-
-These are **otherness's internal dependencies** — customers never install or interact with them directly. otherness owns their versioning and upgrade cycle.
-
-#### [speckit](https://github.com/github/spec-kit)
-
-**What it provides:** The command infrastructure. speckit deploys the `.opencode/command/*.md` files into your project. otherness wraps speckit completely — customers only see `otherness.*` commands.
-
-**Why soft required:** The speckit CLI binary is not called at runtime. It is required once per project to bootstrap the internal command files. otherness manages this via `/otherness.setup`.
-
-```bash
-uv tool install specify-cli    # or: pip install specify-cli
-```
-
-#### [MAQA extension](https://github.com/GenieRobot/spec-kit-maqa-ext)
-
-**What it provides:** Entry-point shells and `.otherness/state.json` conventions that otherness reads and writes. otherness is built *on top of* MAQA — it adds the actual agent behavior (loops, roles, GitHub PM) that MAQA's shells redirect to.
-
-#### [aide extension](https://github.com/mnriem/spec-kit-extensions)
-
-**What it provides:** Queue and work item generation from the roadmap. otherness calls aide internally when `current_queue` is null. Customers never call aide directly.
-
-### Optional Integrations
-
-#### [muse](https://github.com/ellistarn/muse)
-
-**What it provides:** A distillation of how *you specifically* think — your reasoning patterns, epistemic standards, and voice — derived from your conversation history with AI coding agents. When loaded as an OpenCode instruction, it steers the agent to make decisions you would agree with, not generic decisions.
-
-**Why it improves otherness:** The agent loop makes hundreds of judgment calls per session — naming, architecture tradeoffs, what to defer vs implement now. Without calibration, these reflect generic training. With your muse, they reflect your specific judgment.
-
-**How to wire it:**
-
-```bash
-# Install muse
-go install github.com/ellistarn/muse@latest
-
-# Compose your muse from your conversation history
-muse compose
-
-# Add to OpenCode so every otherness session uses it
-# ~/.config/opencode/opencode.json
-{
-  "instructions": ["~/.muse/muse.md"]
-}
-```
-
-Your muse should be recomposed periodically (`muse compose`) as your thinking evolves. A stale muse is worse than no muse — it steers confidently in directions you have moved away from.
-
----
-
-## How it fits the stack
-
-```
-Customer project
-  └── otherness-config.yaml       ← only file the customer edits
-  └── .otherness/
-        state.json                ← team state (on _state branch)
-  └── .opencode/command/
-        otherness.run.md          ← /otherness.run  (autonomous loop)
-        otherness.run.bounded.md  ← /otherness.run.bounded (scoped loop)
-        otherness.onboard.md      ← /otherness.onboard (existing project setup)
-        otherness.status.md       ← /otherness.status (inspect state)
-        otherness.setup.md        ← /otherness.setup (one-time init)
-        otherness.upgrade.md      ← /otherness.upgrade (check dep updates)
-        otherness.learn.md        ← /otherness.learn (internalize from open-source)
-
-~/.otherness/ (private, auto-updated on every agent startup)
-  └── agents/standalone.md        ← full autonomous team logic
-  └── agents/bounded-standalone.md
-  └── agents/onboard.md           ← existing project onboarding logic
-  └── agents/otherness.learn.md   ← learning agent logic
-  └── agents/gh-features.md
-  └── agents/skills/              ← reusable skill files, grown by /otherness.learn
-        declaring-designs.md      ← spec quality standard (from ellistarn/home)
-        reconciling-implementations.md  ← QA checklist (from ellistarn/home)
-        PROVENANCE.md             ← log of what was learned from where
-```
-
----
-
-## Agent files
-
-```
-agents/
-  standalone.md           full autonomous team (unbounded)
-  bounded-standalone.md   scoped agent — boundary injected in prompt
-  onboard.md              one-shot existing project onboarding
-  gh-features.md          reference: GitHub fields, label taxonomy, sub-issues
-```
+| `/otherness.setup` | One-time project init — creates config, deploys all commands |
+| `/otherness.onboard` | Existing project — reads the codebase, generates `docs/aide/` drafts, seeds state |
+| `/otherness.status` | What the agent is working on, CI state, open blockers |
+| `/otherness.learn [repo ...]` | Study open-source projects and internalize patterns into skills |
+| `/otherness.upgrade` | Check for updates to internal dependencies |
 
 ---
 
@@ -181,23 +46,89 @@ specify extension add maqa
 gh auth login
 git clone git@github.com:<your-username>/otherness.git ~/.otherness
 
-# 2. Once per project (new project)
-/otherness.setup                  # creates otherness-config.yaml, deploys commands
+# 2. New project
+/otherness.setup
 
-# 2b. Once per project (existing project with code)
-/otherness.onboard                # reads codebase → generates docs/aide/ drafts + state.json → opens PR
-# Review and merge the PR, then:
+# 2b. Existing project
+/otherness.onboard
+# Review and merge the generated PR, then:
 
 # 3. Run
-/otherness.run                    # unbounded: one session, full team
-/otherness.run.bounded            # bounded: inject scope in prompt
-
-# Inspect at any time
-/otherness.status                 # what's in progress, CI state, open blockers
+/otherness.run
 ```
 
-See **[onboarding-new-project.md](./onboarding-new-project.md)** for full new project setup.
-See **[onboarding-existing-project.md](./onboarding-existing-project.md)** for adopting otherness into an existing codebase.
+See **[onboarding-new-project.md](./onboarding-new-project.md)** and **[onboarding-existing-project.md](./onboarding-existing-project.md)** for full walkthroughs.
+
+---
+
+## Dependencies
+
+### Required
+
+**[OpenCode](https://opencode.ai)** — the AI coding agent runtime. Discovers `.opencode/command/*.md` files and exposes them as slash commands. Provides the Bash, Read, Write, Edit, Glob, Grep tools the agents use. otherness is tested with OpenCode only.
+
+```bash
+npm install -g @opencode-ai/cli
+```
+
+**[gh CLI](https://cli.github.com)** — all GitHub interaction: PR lifecycle, issue management, Projects board, CI status. GitHub is otherness's single source of truth.
+
+```bash
+brew install gh && gh auth login
+```
+
+**[git](https://git-scm.com)** — VCS, worktree isolation per feature branch, and the self-update mechanism (`git -C ~/.otherness pull` on every startup).
+
+**[python3](https://python.org)** — config parsing (`otherness-config.yaml`) and state read/write (`.otherness/state.json`). Standard library only. 3.8+ required.
+
+### Internal dependencies (managed by otherness, not you)
+
+**[speckit](https://github.com/github/spec-kit)** — deploys `.opencode/command/*.md` files into your project. Called once by `/otherness.setup`, never at runtime.
+
+```bash
+uv tool install specify-cli
+```
+
+**[MAQA](https://github.com/GenieRobot/spec-kit-maqa-ext)** — entry-point shells and `state.json` conventions that otherness reads and writes.
+
+**[aide](https://github.com/mnriem/spec-kit-extensions)** — work item generation from the roadmap. Called internally when the queue is empty.
+
+### Optional
+
+**[muse](https://github.com/ellistarn/muse)** — a distillation of how you specifically think, derived from your AI conversation history. Steers the agent to make decisions you'd agree with rather than generic ones. Recompose periodically as your thinking evolves.
+
+```bash
+go install github.com/ellistarn/muse@latest
+muse compose
+# Add to ~/.config/opencode/opencode.json:
+# { "instructions": ["~/.muse/muse.md"] }
+```
+
+---
+
+## How it fits together
+
+```
+Your project
+  otherness-config.yaml         ← the only file you edit
+  .otherness/state.json         ← team state (on _state branch)
+  .opencode/command/
+    otherness.run.md            ← /otherness.run
+    otherness.run.bounded.md    ← /otherness.run.bounded
+    otherness.onboard.md
+    otherness.status.md
+    otherness.setup.md
+    otherness.upgrade.md
+    otherness.learn.md
+
+~/.otherness/                   ← shared, auto-updated on every startup
+  agents/standalone.md          ← full autonomous team logic
+  agents/bounded-standalone.md
+  agents/onboard.md
+  agents/otherness.learn.md
+  agents/gh-features.md
+  agents/skills/                ← reusable patterns, grown by /otherness.learn
+```
 
 ---
 
@@ -223,7 +154,7 @@ Session 2: /otherness.run.bounded
            DENY_PACKAGES=pkg/core
 ```
 
-Each session creates its own `[AGENT_NAME] Progress Log` GitHub issue with hourly updates.
+Each session posts hourly updates to its own `[AGENT_NAME] Progress Log` GitHub issue.
 
 ---
 
@@ -232,27 +163,15 @@ Each session creates its own `[AGENT_NAME] Progress Log` GitHub issue with hourl
 | What you want | Where |
 |---|---|
 | What's being worked on | Projects → Sprint board |
-| Full backlog by milestone | Projects → Backlog |
-| Next release progress | GitHub Milestones |
+| Full backlog | Projects → Backlog |
+| Release progress | GitHub Milestones |
 | What shipped | GitHub Releases |
 | Agent reports | Issue #REPORT_ISSUE |
-| Per-agent progress | Each agent's `[Name] Progress Log` issue |
+| Per-agent progress | Each agent's Progress Log issue |
 | Blocking decisions | Issues labeled `needs-human` |
 
 ---
 
-## Upgrading dependencies
+## Updating the agents
 
-otherness owns the version pins for speckit, maqa, and aide. To check for updates and apply them:
-
-```bash
-/otherness.upgrade
-```
-
-This checks the community catalog for new speckit/extension versions, shows a changelog diff, and applies updates with your confirmation. Customers never run this — it's a dev/maintainer command.
-
----
-
-## Updating the process
-
-Push to this repo. Every agent self-updates on next startup via `git -C ~/.otherness pull`.
+Push to this repo. Every session self-updates via `git -C ~/.otherness pull` on startup.
