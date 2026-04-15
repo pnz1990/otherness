@@ -39,16 +39,15 @@
 ### ~/.otherness/otherness-config.yaml — new fleet section
 
 ```yaml
-fleet:
+# In ~/.otherness/otherness-config.yaml — this is the local instance config,
+# not part of the otherness source code. Add your own managed projects here.
+monitor:
   projects:
-    - repo: pnz1990/otherness
-      name: otherness
-    - repo: pnz1990/alibi
-      name: alibi
-    - repo: pnz1990/kro-ui
-      name: kro-ui
-    - repo: pnz1990/kardinal-promoter
-      name: kardinal-promoter
+    - owner/your-main-project
+    - owner/another-project
+    - owner/otherness          # the otherness repo itself
+  stale_hours: 24
+  idle_hours: 4
 ```
 
 ### Expected output
@@ -57,12 +56,11 @@ fleet:
 === otherness fleet health ===
 2026-04-14 21:30 UTC
 
-PROJECT              _STATE        CI        PRS  🚨  TODO
-------------------------------------------------------------
-otherness            2h ago        ✅         1    0    2
-alibi                5h ago        ✅         0    0    0
-kro-ui               ⚠️ STALE 26h   ✅         1    0    0
-kardinal-promoter    3h ago        ✅         0    0    0
+PROJECT                  _STATE        CI        PRS  🚨  TODO
+--------------------------------------------------------------
+your-main-project        2h ago        ✅         1    0    2
+another-project          5h ago        ✅         0    0    0
+otherness                3h ago        ✅         0    0    0
 
 🚨 = needs-human issues open
 ⚠️ = _state stale or CI red

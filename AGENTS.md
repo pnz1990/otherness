@@ -104,7 +104,7 @@ This is the most important section. Every PR must be classified before merge.
 | Tier | Files | Risk | Merge gate |
 |---|---|---|---|
 | **CRITICAL** | `agents/standalone.md`, `agents/bounded-standalone.md` | Deploys to ALL projects immediately. A broken instruction can stall every otherness user's next session. | **[NEEDS HUMAN] review required before merge. No autonomous merge.** |
-| **HIGH** | `agents/onboard.md`, `agents/otherness.learn.md`, `otherness-config-template.yaml`, `onboarding-*.md` | Affects new project setup or the learning loop. Regressions affect onboarding experience. | QA must verify against a real project (alibi). Autonomous merge permitted if tests pass. |
+| **HIGH** | `agents/onboard.md`, `agents/otherness.learn.md`, `otherness-config-template.yaml`, `onboarding-*.md` | Affects new project setup or the learning loop. Regressions affect onboarding experience. | QA must verify against the reference project. Autonomous merge permitted if tests pass. |
 | **MEDIUM** | `agents/skills/*.md`, `agents/gh-features.md`, `boundaries/` | Additive knowledge. Regressions are low-impact (agent ignores bad skill content gracefully). | Standard QA cycle. Autonomous merge. |
 | **LOW** | `docs/`, `README.md`, `AGENTS.md`, `scripts/` | Documentation and scaffolding. No runtime impact. | Autonomous merge. |
 
@@ -120,7 +120,7 @@ otherness has no unit tests. Its correctness can only be validated by running it
 2. **State schema check** — `agents/standalone.md` references all required state.json fields.
 3. **Self-reference check** — `standalone.md` references `AGENTS.md`, `otherness-config.yaml`, and `docs/aide/` correctly (no hardcoded project paths).
 4. **Skills consistency** — every skill referenced in `standalone.md` (`Load skill: read ...`) exists on disk.
-5. **Integration test** — verify otherness is running correctly on the reference project (`pnz1990/alibi`) by checking the alibi `_state` branch shows activity within the last 72 hours.
+5. **Integration test** — verify otherness is running correctly on the reference project (first non-otherness entry in `monitor.projects` in `otherness-config.yaml`) by checking the `_state` branch shows activity within the last 72 hours.
 
 `scripts/validate.sh` (BUILD_COMMAND) runs 1–4 only. `scripts/test.sh` runs all 5. `scripts/lint.sh` runs markdownlint on all agent files.
 
@@ -145,7 +145,7 @@ The PM phase must compare otherness against the community it came from (Hermes, 
 | Pattern | Caught by |
 |---|---|
 | Merging CRITICAL tier PR without `[NEEDS HUMAN]` label | QA — hard block |
-| Hardcoding project-specific paths in `standalone.md` (e.g. `kardinal`, `alibi`, `pnz1990`) | QA |
+| Hardcoding project-specific paths in `standalone.md` (e.g. fleet project names, owner/repo slugs) | QA |
 | Agent instruction that blocks on missing optional file without graceful fallback | QA |
 | Skill file that references tools not available in every OpenCode session | QA |
 | Removing or weakening the self-update `git pull` at startup | QA — hard block |
@@ -171,24 +171,36 @@ The PM phase must compare otherness against the community it came from (Hermes, 
 ## Product Validation Scenarios (PM Phase)
 
 The PM agent validates otherness by observing it on reference projects.
+The **reference project** is the first non-otherness entry in `otherness-config.yaml`
+under `monitor.projects`. Commands below use `$REFERENCE_PROJECT` as a placeholder —
+replace with your actual project slug (e.g. `owner/my-project`).
 
-### Scenario 1: alibi is alive
+### Scenario 1: reference project is alive
 
 ```bash
-# Check that alibi's _state branch shows recent activity
-git ls-remote https://github.com/pnz1990/alibi.git refs/heads/_state
-# Must exist. Then:
-gh api repos/pnz1990/alibi/branches/_state \
+REFERENCE_PROJECT=$(python3 -c "
+import re
+in_monitor=in_projects=False
+for line in open('otherness-config.yaml'):
+    if re.match(r'^monitor:',line): in_monitor=True
+    if in_monitor and re.match(r'\s+projects:',line): in_projects=True
+    if in_projects:
+        m=re.match(r'\s+- (.+)',line)
+        if m:
+            r=m.group(1).strip()
+            if not r.endswith('/otherness'): print(r); break
+")
+gh api "repos/$REFERENCE_PROJECT/branches/_state" \
   --jq '.commit.commit.committer.date'
-# Must be within 72 hours. If older: otherness has stalled on alibi.
+# Must be within 72 hours. If older: otherness has stalled on the reference project.
 ```
 
-Pass: alibi shows state commits within 72 hours.
+Pass: `_state` shows commits within 72 hours.
 
-### Scenario 2: alibi has open PRs or recent merges
+### Scenario 2: reference project has open PRs or recent merges
 
 ```bash
-gh pr list --repo pnz1990/alibi --json number,title,state,createdAt \
+gh pr list --repo $REFERENCE_PROJECT --json number,title,state,createdAt \
   --jq '.[] | "\(.state) \(.createdAt) \(.title)"' | head -5
 ```
 
@@ -207,14 +219,20 @@ Pass: PROVENANCE.md has at least one entry dated within the last 30 days.
 ### Scenario 4: README matches actual behavior
 
 Read `README.md` and cross-reference against `agents/standalone.md`.
-Check: every command listed in README exists in `.opencode/command/`. 
+Check: every command listed in README exists in `.opencode/command/`.
 Check: every agent file listed in the stack diagram exists on disk.
 Open `kind/docs` issue for each discrepancy found.
 
 ### Scenario 5: self-improvement is happening
 
 ```bash
-gh pr list --repo pnz1990/otherness --state merged \
+OTHERNESS_REPO=$(python3 -c "
+import re
+for line in open('otherness-config.yaml'):
+    m=re.match(r'^\s+repo:\s*(.+)',line)
+    if m: print(m.group(1).strip()); break
+")
+gh pr list --repo $OTHERNESS_REPO --state merged \
   --json mergedAt,title --jq '.[] | "\(.mergedAt) \(.title)"' | head -10
 ```
 
@@ -233,9 +251,9 @@ Pass: at least one PR merged in the last 14 days. If zero: otherness has not imp
 
 **Document for future consideration (Option B):**
 
-Currently, any merged PR to `pnz1990/otherness:main` deploys immediately to every project using otherness via `git -C ~/.otherness pull`. This is Option A — fast, simple, no versioning overhead.
+Currently, any merged PR to the otherness main branch deploys immediately to every project using otherness via `git -C ~/.otherness pull`. This is Option A — fast, simple, no versioning overhead.
 
-The risk: a bug in `agents/standalone.md` breaks every otherness session everywhere simultaneously. Currently mitigated by: CRITICAL tier requiring human review, integration test on alibi, and the fact that the agent loop is resilient (a bad instruction causes a `[NEEDS HUMAN]` rather than a crash).
+The risk: a bug in `agents/standalone.md` breaks every otherness session everywhere simultaneously. Currently mitigated by: CRITICAL tier requiring human review, integration test on the reference project, and the fact that the agent loop is resilient (a bad instruction causes a `[NEEDS HUMAN]` rather than a crash).
 
 When to upgrade to Option B (versioned releases):
 - When otherness is used by >10 distinct repos

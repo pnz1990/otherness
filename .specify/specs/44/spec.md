@@ -19,7 +19,7 @@
 
 4. If `state.json` is missing or unparseable, the migration creates a minimal valid v1.3 state.json with the `repo` field populated from `git remote get-url origin`.
 
-5. `scripts/test.sh` adds a check that warns (non-fatal) when the reference project (alibi) is not on schema v1.3.
+5. `scripts/test.sh` adds a check that warns (non-fatal) when the reference project is not on schema v1.3.
 
 ## Implementer's judgment (Zone 2)
 
@@ -99,15 +99,15 @@ EOF
 ### scripts/test.sh — schema check (non-fatal)
 
 ```bash
-# After alibi alive check, add:
-echo "[5b] Checking alibi state schema version..."
-ALIBI_VER=$(gh api "repos/pnz1990/alibi/contents/.otherness%2Fstate.json?ref=_state" \
+# After reference project alive check, add:
+echo "[5b] Checking reference project state schema version..."
+REF_VER=$(gh api "repos/$REFERENCE_PROJECT/contents/.otherness%2Fstate.json?ref=_state" \
   --jq '.content' 2>/dev/null | base64 -d 2>/dev/null | \
   python3 -c "import json,sys; print(json.load(sys.stdin).get('version','?'))" 2>/dev/null || echo "?")
-if [ "$ALIBI_VER" = "1.3" ]; then
-  echo "  OK: alibi state.json is v1.3"
+if [ "$REF_VER" = "1.3" ]; then
+  echo "  OK: state.json is v1.3"
 else
-  echo "  WARN: alibi state.json is v$ALIBI_VER (expected 1.3) — migration runs at next startup"
+  echo "  WARN: state.json is v$REF_VER (expected 1.3) — migration runs at next startup"
 fi
 ```
 
