@@ -531,12 +531,37 @@ with open('.otherness/state.json','w') as f: json.dump(s,f,indent=2)
 
     CI CHECK:
     ```bash
-    FAILED=$(gh run list --repo $REPO --branch main --limit 5 \
-      --json conclusion,name --jq '[.[]|select(.conclusion=="failure")]|.[0].name' 2>/dev/null)
+    # Check for failure OR hung in_progress (running >30 min on main = stuck)
+    CI_STATUS=$(gh run list --repo $REPO --branch main --limit 5 \
+      --json conclusion,status,name,createdAt \
+      --jq '[.[] | {conclusion,status,name,createdAt}]' 2>/dev/null || echo "[]")
+
+    FAILED=$(echo "$CI_STATUS" | python3 -c "
+import json,sys,datetime
+runs=json.load(sys.stdin)
+# Failure
+for r in runs:
+    if r.get('conclusion')=='failure': print(r['name']); exit()
+# Hung: in_progress for >30 minutes on main
+for r in runs:
+    if r.get('status')=='in_progress':
+        try:
+            t=datetime.datetime.fromisoformat(r['createdAt'].replace('Z','+00:00'))
+            mins=(datetime.datetime.now(datetime.timezone.utc)-t).total_seconds()/60
+            if mins > 30: print(f'HUNG: {r[\"name\"]} ({mins:.0f}m)'); exit()
+        except: pass
+" 2>/dev/null)
+
     if [ -n "$FAILED" ]; then
-      echo "🔴 CI FAILING: $FAILED — fix before new work"
-      # Fix CI first. Do not assign a new item while main is red.
-      # Open a feat/fix-ci-<timestamp> branch, fix, open PR, merge.
+      echo "🔴 CI BLOCKING: $FAILED — fix before new work"
+      # If hung: cancel all in_progress runs on main, then re-trigger CI
+      if echo "$FAILED" | grep -q "^HUNG:"; then
+        gh run list --repo $REPO --branch main --json databaseId,status \
+          --jq '.[] | select(.status=="in_progress") | .databaseId' 2>/dev/null | \
+          xargs -I{} gh api --method POST "repos/$REPO/actions/runs/{}/cancel" 2>/dev/null
+        echo "  Cancelled hung runs. CI will re-run on next commit."
+      fi
+      # If failure: fix the root cause, open a PR, merge
       # Only then proceed to claim the next backlog item.
 
       # If CI has been red for >24 hours: escalate to [NEEDS HUMAN]
