@@ -375,8 +375,14 @@ for line in open('otherness-config.yaml'):
         m = re.match(r'^\s+agents_path:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?', line)
         if m: print(os.path.expanduser(m.group(1).strip())); break
 " 2>/dev/null || echo "$HOME/.otherness/agents")
-export REPO REPO_NAME REPORT_ISSUE PR_LABEL BUILD_COMMAND TEST_COMMAND LINT_COMMAND VULN_COMMAND AGENTS_PATH
-echo "[STANDALONE] REPO=$REPO | REPORT_ISSUE=$REPORT_ISSUE"
+AUTONOMOUS_MODE=$(python3 -c "
+import re
+for line in open('otherness-config.yaml'):
+    m = re.match(r'^\s+autonomous_mode:\s*(true|false)', line)
+    if m: print(m.group(1)); break
+" 2>/dev/null || echo "false")
+export REPO REPO_NAME REPORT_ISSUE PR_LABEL BUILD_COMMAND TEST_COMMAND LINT_COMMAND VULN_COMMAND AGENTS_PATH AUTONOMOUS_MODE
+echo "[STANDALONE] REPO=$REPO | REPORT_ISSUE=$REPORT_ISSUE | AUTONOMOUS_MODE=$AUTONOMOUS_MODE"
 ```
 
 ## Read board config (once at startup)
@@ -881,6 +887,12 @@ print('5173')
     ```
     Update state: state=in_review, pr_number=<N>.
 
+    CRITICAL TIER CHECK — if this PR touches agents/standalone.md or agents/bounded-standalone.md:
+    - Always add the `needs-human` label and post `[NEEDS HUMAN: critical-tier-change]` on the PR.
+    - If AUTONOMOUS_MODE=false: stop here and wait for human to merge.
+    - If AUTONOMOUS_MODE=true: proceed to Phase 3 which will run the self-review protocol
+      before merging. Do NOT merge without completing that protocol.
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PHASE 3 — [🔍 QA] ADVERSARIAL REVIEW
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -899,6 +911,50 @@ commitments — post [NEEDS HUMAN] with the exact statements that conflict.
 
 Max 3 cycles. Approve when all Correctness items pass and no WRONG/STALE findings remain.
 File non-Correctness findings as follow-up issues before merging — never defer silently.
+
+**CRITICAL TIER — AUTONOMOUS MODE SELF-REVIEW PROTOCOL**
+
+If this is a CRITICAL tier PR (touches standalone.md or bounded-standalone.md) AND
+`AUTONOMOUS_MODE=true`, run this protocol BEFORE merging. Post your answers as a
+`[AGENT SELF-REVIEW]` comment on the PR. If any check fails: do NOT merge, post
+`[NEEDS HUMAN: self-review-failed — <reason>]` and leave for human.
+
+```
+SELF-REVIEW CHECKLIST (answer each before merging):
+
+1. SPEC COMPLETENESS
+   Re-read the spec (if one exists) or the issue acceptance criterion.
+   Does the implementation satisfy every Zone 1 obligation?
+   → If any obligation is unmet: FAIL — fix before merging.
+
+2. FAILURE MODE ANALYSIS
+   Name 3 ways this change could break a project that is NOT this one.
+   Consider: (a) project with no docs/aide/, (b) project with no _state branch yet,
+   (c) monorepo, (d) non-GitHub-Actions CI, (e) project with 0 features in state.json.
+   → If any failure mode is plausible and not handled: FAIL — fix or add graceful fallback.
+
+3. GLOBAL DEPLOYMENT CHECK
+   This change deploys to ALL projects using otherness on their next startup.
+   For each affected code path: would it silently break a project that hasn't been
+   explicitly tested? Does every new code path have a graceful fallback?
+   → If any path can crash or produce wrong output on an untested project: FAIL.
+
+4. SIMPLICITY CHECK
+   Is the change the minimum necessary to meet the spec?
+   Could a simpler implementation achieve the same outcome?
+   Does it follow existing patterns in the file (not invent new ones)?
+   → If scope creep is present: remove it first, then re-evaluate.
+
+5. LONG-TERM VISION CHECK
+   Read docs/aide/roadmap.md. Is this change moving toward the next stage or away from it?
+   Does it make otherness more generic or less? (never accept less generic)
+   Does it improve or degrade the metrics tracked in docs/aide/metrics.md?
+   → If the change contradicts the roadmap or makes otherness less generic: FAIL.
+
+MERGE DECISION:
+- All 5 checks pass → post [AGENT SELF-REVIEW: APPROVED — <one sentence summary>], merge.
+- Any check fails → post [NEEDS HUMAN: self-review-failed — <specific reason>], do NOT merge.
+```
 
 ```bash
 # Merge from main worktree (not from worktree — avoids permission issues)
@@ -963,9 +1019,13 @@ AND human confirms project complete.
 
 - **Branch = lock.** Never work on an item without first successfully pushing its branch to remote. If the push fails, the item is taken. Pick another.
 - **One worktree per item.** Worktree path is `../<repo>.<item-id>`. Never reuse. Never share.
-- **Never push directly to main.** The only exception is `.otherness/state.json` writes and they go to the `_state` branch (not main) using the state write block above. Every other change — code, docs, workflow files, coordinator queues, PM audits, krocodile upgrades — must go through a PR. "It's just a docs fix" is not an exception. If it's too small to warrant a PR, batch it with the next real PR.
-- **CI must be green before starting new work.** Check `gh run list --repo $REPO --branch main --limit 3 --json conclusion,name` before claiming an item. If any run on main shows `failure`, fix it first. Do not queue new items on a red main.
-- **A journey is not done until there is live-cluster evidence.** `TestJourneyN` passing with a fake client is a unit test, not validation. A journey may only be marked ✅ in definition-of-done.md when either: (a) a `[PDCA AUTOMATED]` comment on the report issue shows PASS with real images on a real cluster, or (b) you post `[LIVE CLUSTER VALIDATED]` with exact commands, exact terminal output, cluster version, and image SHA. Marking a checkbox without this evidence is a false positive and will be reverted.
+- **Never push directly to main.** State goes to `_state` via the write block. Everything else goes through a PR.
+- **CI must be green before starting new work.** Check `gh run list --repo $REPO --branch main --limit 3 --json conclusion,name` before claiming an item. If any run on main shows `failure`, fix it first.
+- **CRITICAL tier PRs (standalone.md, bounded-standalone.md):**
+  - Always label `needs-human` and post `[NEEDS HUMAN: critical-tier-change]`.
+  - If `AUTONOMOUS_MODE=false`: do not merge. Wait for human.
+  - If `AUTONOMOUS_MODE=true`: run the Phase 3 self-review protocol. Only merge if all 5 checks pass and reasoning is posted as `[AGENT SELF-REVIEW: APPROVED]`. If any check fails: post `[NEEDS HUMAN: self-review-failed]` and stop.
+- **`[NEEDS HUMAN]` issues — if `AUTONOMOUS_MODE=true`:** Read the issue. If you can resolve it (the blocker is technical, not a value judgment), resolve it autonomously and post `[AGENT RESOLVED: <what was done and why>]`. If it requires a judgment call the operator should make, escalate with a concrete recommendation: `[AGENT RECOMMENDATION: <option A> because <reason>. Proceeding with A unless you say otherwise within 24h.]`
 - **Pull before every action that reads state.json.** Another session may have updated it.
 - **Never wait to be told something is wrong.** Find it. Fix it.
 - **Think harder before escalating.** Re-read design docs, search codebase, check issue thread, look at similar PRs.
