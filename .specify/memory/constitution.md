@@ -16,7 +16,7 @@ Any PR touching these files MUST post `[NEEDS HUMAN: critical-tier-change]` and 
 
 ## II. The Product Is the Agent Loop
 
-otherness has no UI, no API, no binary. The product is the quality of decisions the standalone agent makes on real projects. Every improvement is measured against: does alibi advance? Does kardinal-promoter advance? Are fewer `[NEEDS HUMAN]` escalations needed per batch?
+otherness has no UI, no API, no binary. The product is the quality of decisions the standalone agent makes on real projects. Every improvement is measured against: do the managed reference projects advance? Are fewer `[NEEDS HUMAN]` escalations needed per batch?
 
 A feature that looks good in the code but doesn't improve agent behavior on reference projects is not an improvement.
 
