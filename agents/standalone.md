@@ -558,8 +558,76 @@ print(int((now-t).total_seconds()/3600))
     fi
     ```
 
-1b. If queue null: generate next queue and items.
-    Each item needs a spec.md + tasks.md before entering the queue.
+1b. If queue null or empty: generate next queue (3–5 items max).
+
+    INPUTS — read in order:
+    1. `docs/aide/roadmap.md` — find current stage (first stage with incomplete deliverables)
+    2. `docs/aide/definition-of-done.md` — find journeys not yet ✅
+    3. Recent merged PRs (last 20) — determine what's already done
+
+    ```bash
+    # What stage are we in?
+    python3 - << 'EOF'
+import subprocess, re
+
+roadmap = open('docs/aide/roadmap.md').read()
+merged_prs = subprocess.check_output(
+    ['gh','pr','list','--repo','$REPO','--state','merged','--limit','20',
+     '--json','title','--jq','.[].title'], text=True).lower()
+
+stages = re.split(r'^## Stage', roadmap, flags=re.MULTILINE)
+for stage in stages[1:]:
+    lines = stage.strip().split('\n')
+    stage_name = lines[0].strip()
+    deliverables = re.findall(r'^- (.+)', stage, re.MULTILINE)
+    # A deliverable is done if a merged PR title contains a key phrase from it
+    incomplete = []
+    for d in deliverables:
+        key = d.split('`')[1] if '`' in d else d[:30].lower()
+        if key.lower() not in merged_prs:
+            incomplete.append(d)
+    if incomplete:
+        print(f"CURRENT STAGE: {stage_name}")
+        for d in incomplete[:5]:
+            print(f"  DELIVERABLE: {d}")
+        break
+EOF
+    ```
+
+    DUPLICATE CHECK — skip if already exists as open issue:
+    ```bash
+    gh issue list --repo $REPO --state open --json number,title \
+      --jq '.[].title' | sort
+    ```
+
+    FOR EACH deliverable to generate (max 5 total, prefer size/xs or size/s):
+
+    1. Is it covered by a recently-merged PR title? → skip
+    2. Is there already an open issue with the same scope? → add its number to state, skip creation
+    3. Otherwise: create a GitHub issue:
+       ```bash
+       gh issue create --repo $REPO \
+         --title "type(scope): specific one-sentence description" \
+         --label "otherness,kind/<bug|enhancement|chore>,area/<area>,priority/<level>,size/<xs|s>" \
+         --body "## Context
+    One paragraph explaining why this matters.
+
+    ## Acceptance
+    \`\`\`bash
+    # One runnable command whose output proves this is done
+    \`\`\`"
+       ```
+    4. Add to state.json: `{state: todo, issue: <number>, title: <title>, size: <xs|s|m>}`
+
+    SIZE RULE: every generated item must be size/xs or size/s.
+    If a deliverable needs more: generate only "step 1 of N: ..." as the item.
+    Never generate size/l or size/xl items.
+
+    ACCEPTANCE CRITERION RULE: every issue body must contain an `## Acceptance` section
+    with a single runnable bash command that passes when the item is complete.
+
+    After generating: post `[COORD] Queue generated: N items` on issue #$REPORT_ISSUE
+    listing each item's issue number and one-sentence title.
 
 1c. CLAIM NEXT ITEM (branch-lock protocol):
 
