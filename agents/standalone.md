@@ -87,6 +87,9 @@ for attempt in range(3):
     try:
         subprocess.run(['git','worktree','add',state_wt,'origin/_state','--no-checkout'],
                        capture_output=True)
+        # Fetch latest _state into worktree before reading, to avoid stale ref on retry
+        subprocess.run(['git','-C',state_wt,'fetch','origin','_state','--quiet'],
+                       capture_output=True)
         subprocess.run(['git','-C',state_wt,'checkout','_state','--','.otherness/state.json'],
                        capture_output=True)
 
@@ -98,6 +101,7 @@ for attempt in range(3):
             remote.update(state)
             merged = remote
         except Exception:
+            print(f"State: no readable remote state — writing local state as authoritative")
             merged = state
         json.dump(merged, open(remote_path,'w'), indent=2)
 
