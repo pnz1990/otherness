@@ -758,9 +758,8 @@ s['features']['$ITEM_ID']['state']='done'
 s['features']['$ITEM_ID']['pr_merged']=True
 with open('.otherness/state.json','w') as f: json.dump(s,f,indent=2)
 EOF
-git add .otherness/state.json
-git commit -m "state: [$MY_SESSION_ID] $ITEM_ID done"
-git push origin main
+export STATE_MSG="[$MY_SESSION_ID] $ITEM_ID done"
+# run the STATE MANAGEMENT write block from the top of this file
 
 # Reset for next item
 ITEM_ID="" ; MY_BRANCH="" ; MY_WORKTREE="" ; MY_SESSION_ID=""

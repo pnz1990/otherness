@@ -420,9 +420,8 @@ s['bounded_sessions'][os.environ['AGENT_ID']]['current_item']='$NEXT_ISSUE'
 s['bounded_sessions'][os.environ['AGENT_ID']]['branch']='$BRANCH'
 with open('.otherness/state.json','w') as f: json.dump(s,f,indent=2)
 "
-  git add .otherness/state.json
-  git commit -m "state: [$AGENT_NAME] claimed #$NEXT_ISSUE"
-  git push origin main
+  export STATE_MSG="[$AGENT_NAME] claimed #$NEXT_ISSUE"
+  # run the STATE MANAGEMENT write block from the top of this file
   move_board_card $NEXT_ISSUE $OPT_IN_PROGRESS
 else
   echo "[$AGENT_NAME] ⚡ Branch $BRANCH already exists — another session claimed #$NEXT_ISSUE. Trying next."
