@@ -41,3 +41,4 @@
 **Batch 4→5**: Human direction: "invent but also simplify." Both honored simultaneously. Simplification audit found 3 real bugs in standalone.md (-12 lines). Four learn sessions ran: OpenHands (ephemeral-pr-artifacts), LiteLLM (explicit-anti-patterns), AutoGen (triage-discipline), Pydantic AI (agent-responsibility). Skills 6→10. Stage 2 complete. PR #36 (CRITICAL simplification) awaits human review.
 
 **Next target**: Stage 3 — onboarding quality (#27 epic). Also: merge PR #36 to make the -12 line simplification effective.
+| 2026-04-15 | 6 | 1 | 0 | 0 | 11 | 1 | ~8 | Batch 6: docs vision rewrite merged (#64); state write reliability bug found and queued (#62); onboarding audit queued (#61) |

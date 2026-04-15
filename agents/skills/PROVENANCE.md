@@ -258,6 +258,63 @@ jo-inc/camofox-browser (irrelevant)
 
 ---
 
+## 2026-04-15 — Amazon Role Guidelines (manual import) + AI-Assisted Coding survey docs
+
+**Files read:**
+- `sde-role-guidelines.md` — L4/L5/L6/L7 SDE expectations (Amazon official, Nov 2024)
+- `fee-role-guidelines.md` — L5/L6 FEE expectations (Amazon official, Oct 2022)
+- `pm-role-guidelines.md` — L5/L6/L7 PM expectations (Amazon official, May 2019)
+- `sdm-role-guidelines.md` — L5/L6/L7/L8 SDM expectations (Amazon official, Apr 2025)
+- `sysde-role-guidelines.md` — L4/L5/L6/L7 SysDE expectations (Amazon official, Jun 2025)
+- `uxr-role-guidelines.md` — L4/L5/L6/L7 UXR expectations (Amazon official, Oct 2023)
+- EKS Lighthouse AI-Assisted Coding survey doc (internal, 2026)
+- EKS Lighthouse AIM Package design doc (internal, 2026)
+
+**Patterns extracted:** 5
+
+**Disposition:**
+
+- `role-definitions-for-phases` → EXTENDED_SKILL (`agents/skills/role-based-agent-identity.md`)
+  Added full role+goal+backstory definitions for all 5 otherness phases (COORD, ENG, QA, SDM, PM)
+  sourced from Amazon's official role guidelines. L5 SDE = ENG, L6 SDE = QA, L6 SDM = SDM phase,
+  PM III = PM phase. The key contribution: backstory blocks calibrate agent judgment for each phase's
+  specific tradeoffs (correctness over velocity for QA, simplification over building for PM, etc.)
+  Wired into standalone.md phase headers.
+
+- `judgment-vs-execution-axis` → EXTENDED_SKILL (`agents/skills/role-based-agent-identity.md` §Task Classification)
+  From the SDE role guidelines: work divides into judgment-heavy (architecture, ambiguous scope) and
+  execution-heavy (well-specified, deterministic). Maps to HIHO/LILO task framework from the survey doc.
+  Added as queue item tagging guidance for Phase 1b.
+
+- `sdm-operational-checks` → EXTENDED_SKILL (standalone.md Phase 4)
+  From SDM L6 + SysDE role guidelines: the SM phase becomes SDM with explicit operational checks —
+  stale needs-human issues, orphaned worktrees, state branch verification, repeated-error pattern detection.
+  SM renamed to SDM throughout.
+
+- `uxr-lens-for-pm` → EXTENDED_SKILL (`agents/skills/role-based-agent-identity.md` §PM)
+  UXR role adds a specific question to the PM phase: "where does the product violate the user's mental
+  model?" For otherness: every [NEEDS HUMAN] is a data point about where the agent's world model
+  diverged from reality. PM phase now includes a UXR lens check.
+
+- `implicit-context-explicit-tools` → NOTE (future skill candidate)
+  From the AIM Package design doc: context packages should be mostly implicit (patterns the agent infers)
+  while tools/commands should be explicit (exact commands in SOPs). Applies to otherness's skills files:
+  skills should express patterns and judgment calibration; standalone.md should express exact commands.
+  The current skills files already follow this structure. Filed for awareness, no immediate change.
+
+**Rejected patterns:**
+
+- `aim-package-microservices` — not transferable: AIM CLI-specific architecture; otherness uses git + markdown
+- `kiro-spec-workflows` — already captured in declaring-designs.md skill
+- `sync-steering.sh` — Amazon-internal toolchain; not transferable
+- `fee-specific-dimensions` (accessibility, i18n, real user metrics) — frontend-specific; otherness has no UI
+- `sysde-sla-ORR-patterns` — operational readiness reviews for deployed services; otherness is not a deployed service
+- `sdm-people-management` (hiring, promotion, performance reviews) — human team management; not applicable
+- `uxr-research-methodology` (HCI, ethnography, user studies) — research methods for human participants; not applicable
+- `"architects not babysitters" framing` — good positioning language, already captured in vision.md rewrite
+
+---
+
 ## 2026-04-14 — microsoft/autogen (automated learn session, feat/learn-autogen)
 
 **Files read:**
