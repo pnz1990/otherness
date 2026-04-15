@@ -17,6 +17,7 @@ Skills are **additive only** — never delete content from a skill file (see con
 | `agent-responsibility.md` | Starting any non-trivial task — before spec, before code, before PR | All phases — load at task start |
 | `ephemeral-pr-artifacts.md` | Opening a CRITICAL tier PR or any complex PR needing reviewer context | Phase 2f (ENG — before gh pr create) |
 | `explicit-anti-patterns.md` | Writing any agent instruction file, or during QA review | Phase 3 (QA) or Phase 4 (SM) when updating agent files |
+| `triage-discipline.md` | Running the SM phase review | Phase 4 (SM — every batch) |
 
 ## Skill summaries
 
@@ -59,6 +60,9 @@ PR operational patterns from OpenHands. Covers: `.pr/` directory for reviewer co
 
 ### `explicit-anti-patterns.md`
 Anti-pattern documentation patterns from LiteLLM. Covers: the COMMON PITFALLS section format (numbered, named, with reason + fix); config-driven flags over hardcoded checks (improvement direction); "when in doubt, follow existing patterns." Load when writing agent instruction files or during QA review to check coverage of known failure modes.
+
+### `triage-discipline.md`
+Triage process patterns from AutoGen. Covers: structured SM triage with explicit per-category queues (issues, PRs, discussions, security); awaiting-response label lifecycle (clear needs-human when blocker resolved); breaking change detection in versioning. Load during Phase 4 (SM) every batch.
 
 ## `PROVENANCE.md`
 Audit trail of `/otherness.learn` sessions. Records what was learned, from which repo, on what

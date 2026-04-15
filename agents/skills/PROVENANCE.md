@@ -255,3 +255,34 @@ jo-inc/camofox-browser (irrelevant)
 - `antd-over-tremor` (LiteLLM) — not transferable: React UI library choice; otherness has no frontend
 - `vitest-testing-conventions` (LiteLLM) — not transferable: JavaScript test framework
 - `litellm-proxy-architecture` (LiteLLM) — not transferable: specific to API gateway design
+
+---
+
+## 2026-04-14 — microsoft/autogen (automated learn session, feat/learn-autogen)
+
+**Files read:**
+- `CONTRIBUTING.md` (full — triage process, versioning, docstring standards)
+
+**Note:** AGENTS.md not present (404). CONTRIBUTING.md had high-quality triage and process patterns.
+
+**Repos assessed:** 1 (microsoft/autogen — 57k stars, multi-agent orchestration framework)
+
+**Patterns extracted:** 3 (into one new skill file)
+
+**Disposition:**
+
+- `triage-with-explicit-categories` → NEW_SKILL (agents/skills/triage-discipline.md §Triage Has Explicit Per-Category Responsibilities)
+  AutoGen runs formal weekly triage with per-category checklists: issues, PRs, discussions, security. The SM phase should be equally structured. Added bash queue commands for each category.
+
+- `awaiting-response-label-lifecycle` → NEW_SKILL (agents/skills/triage-discipline.md §Awaiting Response Tagging)
+  needs-human labels should be removed when the blocker is resolved (human replied). The SM should check and clear stale needs-human labels each batch.
+
+- `breaking-change-versioning` → NEW_SKILL (agents/skills/triage-discipline.md §Breaking Change Detection)
+  Standalone.md changes to state.json schema or phase structure are breaking changes. Improvement direction: CHANGELOG.md for agent interface changes. Appropriate for scale >10 projects.
+
+**Rejected patterns:**
+
+- `contributor-license-agreement` (AutoGen) — legal process; not applicable to autonomous agent
+- `versionadded-sphinx-annotations` (AutoGen) — Python Sphinx docs; not transferable to markdown
+- `codespace-based-pr-review` (AutoGen) — GitHub Codespaces specific; not a core pattern
+- `minor-version-for-breaking-changes` (AutoGen) — semver versioning; otherness doesn't version releases yet (deferred to Option B)
