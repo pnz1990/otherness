@@ -25,6 +25,24 @@ otherness runs on itself. Every improvement it makes to its own agent logic depl
 | **Standalone** | `/otherness.run` | One session is the full team — coordinates, implements, reviews, releases |
 | **Bounded** | `/otherness.run.bounded` | Scoped agent with declared boundaries — run multiple concurrently |
 
+## Quick start
+
+```bash
+# Prerequisites: OpenCode, gh CLI, git, python3
+npm install -g @opencode-ai/cli
+brew install gh && gh auth login
+git clone git@github.com:pnz1990/otherness.git ~/.otherness
+uv tool install specify-cli && specify extension add maqa
+
+# New project — from your project directory
+/otherness.setup   # creates otherness-config.yaml, deploys commands
+/otherness.run     # the agent reads your project, generates a backlog, starts working
+```
+
+That's it. The agent reads `AGENTS.md` and `docs/aide/`, generates a queue from your roadmap, and starts working. For an existing project with code already written, use `/otherness.onboard` first — it reads the codebase and generates the `docs/aide/` files automatically.
+
+---
+
 **Utility commands** (run once, not in a loop):
 
 | Command | Purpose |
