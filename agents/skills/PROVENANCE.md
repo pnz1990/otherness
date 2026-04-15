@@ -258,6 +258,34 @@ jo-inc/camofox-browser (irrelevant)
 
 ---
 
+## 2026-04-15 — Two-layer role model: otherness-internal vs. target-project roles (conceptual refinement)
+
+**Source:** Conceptual refinement — recognition that FEE and SysDE roles apply to *target projects*
+using otherness, not to otherness building itself. otherness is a markdown/git system with no UI
+and no infrastructure to operate. FEE and SysDE are irrelevant to Layer 1 (otherness self-improvement).
+They are directly applicable to Layer 2 (projects otherness autonomously develops).
+
+**Patterns extracted:** 3
+
+**Disposition:**
+
+- `two-layer-role-model` → EXTENDED_SKILL (`agents/skills/role-based-agent-identity.md` §Two Layers)
+  Added explicit Layer 1 / Layer 2 distinction. Layer 1: the 5 otherness-internal phases (COORD, ENG, QA,
+  SDM, PM) which are domain-agnostic. Layer 2: domain-specific role identities for target projects, selected
+  by `job_family` in `otherness-config.yaml`. FEE and SysDE live here.
+
+- `job-family-field` → CONFIG (`otherness-config-template.yaml` §project)
+  Added `job_family: SDE|FEE|SysDE` field with inline documentation. Defaults to SDE. Controls which
+  Layer 2 identity the ENG and QA agents adopt.
+
+- `job-family-runtime-read` → AGENT_LOOP (`agents/standalone.md` Phase 2 + Phase 3)
+  Both ENG and QA phases now read `job_family` at runtime from `otherness-config.yaml` and adopt the
+  matching Layer 2 identity. Graceful default to SDE if field absent — fully backward compatible.
+
+**Rejected patterns:** none — this was a conceptual refinement, not a source study.
+
+---
+
 ## 2026-04-15 — Amazon Role Guidelines (manual import) + AI-Assisted Coding survey docs
 
 **Files read:**
