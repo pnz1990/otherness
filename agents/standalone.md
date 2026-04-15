@@ -526,17 +526,35 @@ try:
         print(999)
 except Exception:
     print(999)
-" 2>/dev/null || echo "0")
-      if [ "${DAYS_SINCE_LEARN:-0}" -ge 14 ]; then
+" 2>/dev/null || echo "999")
+      if [ "${DAYS_SINCE_LEARN:-999}" -ge 14 ]; then
         echo "[COORD] Skills >14 days stale (${DAYS_SINCE_LEARN}d) — running autonomous learn session"
         LEARN_BRANCH="feat/learn-$(date +%Y%m%d)"
         if git push origin "HEAD:refs/heads/$LEARN_BRANCH" 2>/dev/null; then
-          git worktree add "../${REPO_NAME}.learn-$(date +%Y%m%d)" "$LEARN_BRANCH" 2>/dev/null || true
-          # Run the learn agent in that worktree
-          # The learn agent reads ~/.otherness/agents/otherness.learn.md and executes it
-          # It commits new/updated skill files and PROVENANCE.md, then opens a PR
+          LEARN_WT="../${REPO_NAME}.learn-$(date +%Y%m%d)"
+          # Check for stale dir
+          if [ -d "$LEARN_WT" ]; then
+            git worktree remove "$LEARN_WT" --force 2>/dev/null || rm -rf "$LEARN_WT"
+            git worktree prune
+          fi
+          git worktree add "$LEARN_WT" "$LEARN_BRANCH"
           gh issue comment $REPORT_ISSUE --repo $REPO \
-            --body "[STANDALONE] Autonomous learn session triggered — last session was ${DAYS_SINCE_LEARN} days ago. Branch: \`$LEARN_BRANCH\`. Read and follow \`~/.otherness/agents/otherness.learn.md\` in that worktree." 2>/dev/null
+            --body "[STANDALONE] Autonomous learn session triggered — last session was ${DAYS_SINCE_LEARN} days ago. Branch: \`$LEARN_BRANCH\`." 2>/dev/null
+          # Execute the learn agent in the learn worktree.
+          # Read otherness.learn.md, study a high-signal repo, extract skills,
+          # commit new/updated skill files and PROVENANCE.md, open a PR.
+          # The learn branch is MEDIUM tier — CI green → auto-merge.
+          # After completion: clean up the worktree.
+          # Switch to learn worktree context and follow otherness.learn.md:
+          echo "[STANDALONE] Running learn session in $LEARN_WT"
+          # Read and follow: ~/.otherness/agents/otherness.learn.md
+          # (The agent executes this as a sub-task in the learn worktree, then returns here)
+          # After learn PR is open and CI is green, merge it, then clean up:
+          #   gh pr merge feat/learn-$(date +%Y%m%d) --repo $REPO --squash --delete-branch
+          #   git worktree remove "$LEARN_WT" --force
+          #   git worktree prune
+        else
+          echo "[COORD] Learn branch already exists this cycle — skipping duplicate"
         fi
       fi
 
