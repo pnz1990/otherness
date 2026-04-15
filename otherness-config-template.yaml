@@ -22,6 +22,18 @@ maqa:
   # Opens bug/doc issues for failures. Set in cycles. 0 = off.
   product_validation_cycles: 3
 
+  # Autonomous mode — agent acts on the operator's behalf for CRITICAL changes.
+  # When true: CRITICAL tier PRs are self-reviewed with logged reasoning and
+  # merged autonomously if all safety checks pass. [NEEDS HUMAN] issues are
+  # resolved by the agent directly. The loop never blocks waiting for human input.
+  #
+  # When false (default): CRITICAL PRs require human review and merge.
+  #
+  # Only enable this if you understand the risk: a wrong standalone.md change
+  # deploys to ALL projects using otherness on their next session startup.
+  # The self-review protocol is rigorous, but it is not infallible.
+  autonomous_mode: false
+
 # ── CI gate ───────────────────────────────────────────────────────────────────
 ci:
   provider: github-actions            # github-actions | circleci | gitlab | bitbucket
