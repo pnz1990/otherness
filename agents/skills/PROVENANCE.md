@@ -161,3 +161,36 @@ jo-inc/camofox-browser (irrelevant)
 - `model-profiles-cli` (LangChain) — not transferable: specific to LLM model capability tracking; otherness doesn't manage LLM models
 - `uv-workspace-management` (LangChain) — not transferable: Python-specific dependency management
 - `pr-labeler-config` (LangChain) — partially interesting for otherness label taxonomy, but already solved with gh label commands; deferred
+
+---
+
+## 2026-04-14 — pydantic/pydantic-ai (automated learn session, feat/learn-pydantic-ai)
+
+**Files read:**
+- `AGENTS.md` (full — 6,500 chars, exceptionally high-quality agent instructions)
+
+**Repos assessed:** 2 (microsoft/agent-framework — 9k stars, too new; pydantic/pydantic-ai — 16k stars, high-signal AGENTS.md)
+
+**Patterns extracted:** 4 (all into one new skill file)
+
+**Disposition:**
+
+- `responsibility-to-project-not-requester` → NEW_SKILL (agents/skills/agent-responsibility.md §Responsibility Is to the Project)
+  "Work for the benefit of the project and all its users, not just the specific user driving you." Completely novel framing — the most important principle in the skill. Directly applicable to otherness agents optimizing for the issue description rather than the broader project health.
+
+- `trust-but-verify-research` → NEW_SKILL (agents/skills/agent-responsibility.md §Trust But Verify)
+  Before implementing, research the codebase and related issues independently. Don't just execute the request. Concrete steps: check recent PRs in the same area, search for existing handling, verify scope hasn't shifted.
+
+- `alignment-before-implementation` → NEW_SKILL (agents/skills/agent-responsibility.md §Alignment Before Implementation)
+  If scope is unclear: post a comment with two approaches and a stated choice, or open a draft with a PLAN.md. Do NOT post [NEEDS HUMAN] for scope ambiguity — that is for genuine blockers only. Novel distinction from otherness's current [NEEDS HUMAN] escalation pattern.
+
+- `how-matters-as-much-as-what` → NEW_SKILL (agents/skills/agent-responsibility.md §The How Matters)
+  "Shipping the best solution is more important than being fast." The instruction files themselves are the product — confusing instructions are bugs. Readability and consistency in standalone.md matter as much as correctness.
+
+**Rejected patterns:**
+
+- `never-add-claude-as-coauthor` (Pydantic AI) — already handled by contribution-hygiene.md AI disclosure pattern; the no-co-author rule is GitHub-platform-specific and doesn't apply to otherness's git-based operations
+- `PR-template-ai-checkbox` (Pydantic AI) — requires GitHub PR template infrastructure; not worth adding for otherness's current scale
+- `inline-snapshot-testing` (Pydantic AI) — Python-specific testing pattern; not transferable
+- `vcrpy-recording-for-api-calls` (Pydantic AI) — Python-specific; not transferable
+- `mkdocs-with-mkdocstrings` (Pydantic AI) — documentation toolchain; not transferable to markdown agent files
