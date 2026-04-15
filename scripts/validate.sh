@@ -9,15 +9,24 @@ SKILLS_DIR="$AGENTS_DIR/skills"
 echo "=== otherness validate ==="
 
 # 1. Check no hardcoded project-specific paths in agent files
-# Note: scans agents/*.md and agents/skills/*.md only — not config files
+# Uses structural detection — catches any pnz1990/<X> that isn't pnz1990/otherness,
+# plus known fleet repos in project-reference context (belt-and-suspenders).
 echo "[1/4] Checking for hardcoded project paths in agent files..."
-FORBIDDEN_PATTERNS=("kardinal-promoter" "pnz1990/alibi" "pnz1990/kardinal")
 FOUND=0
 for file in "$AGENTS_DIR"/*.md "$AGENTS_DIR/skills"/*.md; do
   [ -f "$file" ] || continue
-  for pattern in "${FORBIDDEN_PATTERNS[@]}"; do
-    if grep -q "$pattern" "$file" 2>/dev/null; then
-      echo "  ERROR: $(basename $file) contains hardcoded project path: $pattern"
+  # Rule 1: any pnz1990/<X> where X is not 'otherness'
+  if grep -qE 'pnz1990/[a-zA-Z0-9_-]+' "$file" 2>/dev/null; then
+    BAD=$(grep -oE 'pnz1990/[a-zA-Z0-9_-]+' "$file" | grep -v '^pnz1990/otherness$' | head -3)
+    if [ -n "$BAD" ]; then
+      echo "  ERROR: $(basename $file) contains hardcoded project path(s): $BAD"
+      FOUND=1
+    fi
+  fi
+  # Rule 2: known fleet repos in project-reference context (bare name)
+  for name in alibi kro-ui kardinal-promoter; do
+    if grep -qE "(repo:|/)$name(\.git|/|\")" "$file" 2>/dev/null; then
+      echo "  ERROR: $(basename $file) contains hardcoded fleet project reference: $name"
       FOUND=1
     fi
   done
