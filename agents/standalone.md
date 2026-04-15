@@ -258,6 +258,11 @@ cd $(git rev-parse --show-toplevel)  # back to main worktree
 git worktree remove "$MY_WORKTREE" --force
 git worktree prune
 
+# IMPORTANT: always return main worktree to main after finishing an item.
+# If this session is interrupted before this line, the next session's startup
+# check will detect the stale branch and reset it automatically.
+git checkout main && git pull origin main --quiet
+
 # Update state on _state branch
 git fetch origin _state --quiet
 git checkout origin/_state -- .otherness/state.json 2>/dev/null
@@ -276,6 +281,71 @@ ITEM_ID="" ; MY_BRANCH="" ; MY_WORKTREE="" ; MY_SESSION_ID=""
 ```
 
 ---
+
+## Startup safety check (run before anything else)
+
+```bash
+# 1. Ensure the main worktree is on main — a prior session may have left it on a
+#    feature branch. If it is, check it out to main before proceeding.
+#    This prevents silent branch collision with a running parallel session.
+CURRENT_BRANCH=$(git branch --show-current 2>/dev/null)
+if [ "$CURRENT_BRANCH" != "main" ] && [ -n "$CURRENT_BRANCH" ]; then
+  echo "[STANDALONE] Warning: main worktree is on '$CURRENT_BRANCH', not 'main'."
+  echo "  A previous session may have left it here. Checking out main now."
+  git status --short
+  if [ -z "$(git status --short)" ]; then
+    git checkout main && git pull origin main --quiet
+    echo "[STANDALONE] Main worktree reset to main. Safe to proceed."
+  else
+    echo "[STANDALONE] ERROR: main worktree has uncommitted changes on '$CURRENT_BRANCH'."
+    echo "  This is unexpected — agents should never leave uncommitted changes in the"
+    echo "  main worktree. Resolve manually before running /otherness.run."
+    exit 1
+  fi
+fi
+
+# 2. Check for an already-active session on this repo. A heartbeat written within
+#    the last 30 minutes means another agent is running. Do not start a second session
+#    unless the human explicitly confirmed they want parallel sessions.
+#
+#    This detects the case where /otherness.run is invoked while a standalone is
+#    already running (e.g. human triggers it from a second OpenCode window).
+git fetch origin _state --quiet 2>/dev/null
+LAST_HEARTBEAT=$(git show origin/_state:.otherness/state.json 2>/dev/null | python3 -c "
+import json, sys, datetime
+try:
+    s = json.load(sys.stdin)
+    beats = s.get('session_heartbeats', {})
+    most_recent = None
+    for sid, v in beats.items():
+        ts = v.get('last_seen')
+        if ts:
+            try:
+                dt = datetime.datetime.fromisoformat(ts.replace('Z','+00:00'))
+                if most_recent is None or dt > most_recent[1]:
+                    most_recent = (sid, dt)
+            except Exception:
+                pass
+    if most_recent:
+        age_min = (datetime.datetime.now(datetime.timezone.utc) - most_recent[1]).total_seconds() / 60
+        print(f'{most_recent[0]} {age_min:.0f}')
+    else:
+        print('none 9999')
+except Exception:
+    print('none 9999')
+" 2>/dev/null || echo "none 9999")
+ACTIVE_SESSION=$(echo "$LAST_HEARTBEAT" | cut -d' ' -f1)
+HEARTBEAT_AGE=$(echo "$LAST_HEARTBEAT" | cut -d' ' -f2)
+if [ "$ACTIVE_SESSION" != "none" ] && [ "$HEARTBEAT_AGE" -lt 30 ] 2>/dev/null; then
+  echo "[STANDALONE] ⚠️  Another session ($ACTIVE_SESSION) wrote a heartbeat ${HEARTBEAT_AGE}m ago."
+  echo "  This suggests an agent is already running on this repo."
+  echo "  Parallel standalone sessions are safe (branch-as-lock prevents item collision)"
+  echo "  but they compete for the same backlog and create extra worktrees."
+  echo "  If this is unintentional, close the other session and re-run /otherness.run."
+  echo "  Proceeding in 10s — Ctrl+C to abort."
+  sleep 10
+fi
+```
 
 ## Read project config (once at startup)
 
@@ -1076,6 +1146,7 @@ Specific checks this phase:
 - Update docs/aide/metrics.md with this batch's row
 - Check for stale `[NEEDS HUMAN]` issues (>48h without resolution) — attempt autonomous resolution or escalate with a concrete recommendation
 - Check for orphaned worktrees, stale feature branches from previous batches
+- Verify main worktree is on `main` (not a leftover feature branch from a prior session)
 - Verify `_state` branch has the current state (fetch and confirm)
 - Identify any pattern of repeated errors → file a process improvement issue
 
@@ -1119,6 +1190,7 @@ AND human confirms project complete.
 
 - **Branch = lock.** Never work on an item without first successfully pushing its branch to remote. If the push fails, the item is taken. Pick another.
 - **One worktree per item.** Worktree path is `../<repo>.<item-id>`. Never reuse. Never share.
+- **Main worktree stays on main.** The main repo directory (`$REPO_NAME/`) must always be on the `main` branch. Feature work happens exclusively in worktrees. After every merge, run `git checkout main && git pull origin main` in the main worktree. If a session ends before cleanup completes, the startup check will detect and fix this automatically.
 - **Never push directly to main.** State goes to `_state` via the write block. Everything else goes through a PR.
 - **CI must be green before starting new work.** Check `gh run list --repo $REPO --branch main --limit 3 --json conclusion,name` before claiming an item. If any run on main shows `failure`, fix it first.
 - **CRITICAL tier PRs (standalone.md, bounded-standalone.md):**
