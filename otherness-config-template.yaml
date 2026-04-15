@@ -9,6 +9,18 @@ project:
   board_url: ""                       # https://github.com/users/<owner>/projects/<N>
   pr_label: ""                        # label applied to all feature PRs (e.g. "myproject")
 
+  # The engineering domain of this project. Controls which role identity the ENG
+  # and QA agents adopt when implementing and reviewing code.
+  #
+  #   SDE     — backend service, API, CLI tool, library, data pipeline (default)
+  #   FEE     — web app, mobile app, browser extension, any user-facing UI
+  #   SysDE   — infrastructure-as-code, deployment pipelines, platform tooling,
+  #             monitoring systems, developer tooling
+  #
+  # See ~/.otherness/agents/skills/role-based-agent-identity.md §Layer 2
+  # for the full role definition applied to each value.
+  job_family: SDE
+
 # ── Execution mode ────────────────────────────────────────────────────────────
 maqa:
   mode: standalone                    # standalone | bounded-standalone
