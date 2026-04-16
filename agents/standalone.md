@@ -93,12 +93,27 @@ for attempt in range(3):
         subprocess.run(['git','-C',state_wt,'checkout','_state','--','.otherness/state.json'],
                        capture_output=True)
 
-        # Merge: load remote state, overlay local changes (local wins on conflict)
+        # Merge: field-level merge — remote is the base, local changes win only for
+        # keys this session actually modified. This prevents parallel sessions from
+        # overwriting each other's state writes with stale local copies.
         remote_path = os.path.join(state_wt,'.otherness','state.json')
         os.makedirs(os.path.dirname(remote_path), exist_ok=True)
         try:
             remote = json.load(open(remote_path))
-            remote.update(state)
+            # Merge top-level scalar fields (mode, current_queue, etc) from local
+            for k, v in state.items():
+                if k == 'features':
+                    continue  # features merged below at item level
+                remote[k] = v
+            # Merge features at item level: local item entries overwrite remote,
+            # remote items not touched by this session are preserved as-is.
+            remote.setdefault('features', {})
+            for item_id, item_data in state.get('features', {}).items():
+                remote['features'][item_id] = item_data
+            # Merge session_heartbeats at session level (same pattern)
+            remote.setdefault('session_heartbeats', {})
+            for sid, hb in state.get('session_heartbeats', {}).items():
+                remote['session_heartbeats'][sid] = hb
             merged = remote
         except Exception:
             print(f"State: no readable remote state — writing local state as authoritative")
@@ -1200,6 +1215,18 @@ Specific checks this phase:
 
 Post [SDM REVIEW] on Issue #$REPORT_ISSUE. Find at least one thing to improve — minimum one committed change per batch.
 
+**Parallel-safe direct push pattern** — use this for low-risk SM commits (metrics.md, docs):
+```bash
+git add docs/aide/metrics.md  # or whatever changed
+git commit -m "chore(sm): ..."
+# Pull-rebase-push with retry — safe when parallel sessions both push to main
+for i in 1 2 3; do
+  git pull --rebase origin main --quiet 2>/dev/null && \
+  git push origin main && break || sleep $((i * 2))
+done
+```
+Use a PR (not direct push) for any SM change that touches agent or skill files.
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PHASE 5 — [📋 PM] PRODUCT REVIEW (every batch)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1253,7 +1280,7 @@ complete" satisfies it. Until that message arrives, loop.
 - **Branch = lock.** Never work on an item without first successfully pushing its branch to remote. If the push fails, the item is taken. Pick another.
 - **One worktree per item.** Worktree path is `../<repo>.<item-id>`. Never reuse. Never share.
 - **Main worktree stays on main.** The main repo directory (`$REPO_NAME/`) must always be on the `main` branch. Feature work happens exclusively in worktrees. After every merge, run `git checkout main && git pull origin main` in the main worktree. If a session ends before cleanup completes, the startup check will detect and fix this automatically.
-- **Never push directly to main.** State goes to `_state` via the write block. Everything else goes through a PR.
+- **Never push directly to main.** State goes to `_state` via the write block. Feature work goes through a PR. Exception: SM phase low-risk doc commits (metrics.md, progress.md) may push directly to main using the pull-rebase-retry pattern from Phase 4. All other direct pushes to main are forbidden.
 - **CI must be green before starting new work.** Check `gh run list --repo $REPO --branch main --limit 3 --json conclusion,name` before claiming an item. If any run on main shows `failure`, fix it first.
 - **CRITICAL tier PRs (standalone.md, bounded-standalone.md):**
   - Always label `needs-human` and post `[NEEDS HUMAN: critical-tier-change]`.
