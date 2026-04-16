@@ -547,6 +547,26 @@ content = re.sub(r'(report_issue:\s*)TBD', f'\\g<1>{num}', content)
 content = re.sub(r'(report_issue:\s*)""', f'\\g<1>{num}', content)
 open('otherness-config.yaml', 'w').write(content)
 print(f"Set report_issue = {num} in otherness-config.yaml")
+
+# Also write REPORT_ISSUE into AGENTS.md if it exists but doesn't have the field yet.
+# standalone.md reads REPORT_ISSUE exclusively from AGENTS.md.
+import os, re as _re
+if os.path.exists('AGENTS.md'):
+    agents_content = open('AGENTS.md').read()
+    if not _re.search(r'^REPORT_ISSUE:', agents_content, _re.MULTILINE):
+        # Insert after PR_LABEL line if present, otherwise append
+        if _re.search(r'^PR_LABEL:', agents_content, _re.MULTILINE):
+            agents_content = _re.sub(
+                r'(^PR_LABEL:\s*\S+)',
+                f'\\g<1>\nREPORT_ISSUE:   {num}',
+                agents_content, count=1, flags=_re.MULTILINE
+            )
+        else:
+            agents_content += f'\nREPORT_ISSUE:   {num}\n'
+        open('AGENTS.md', 'w').write(agents_content)
+        print(f"Added REPORT_ISSUE = {num} to AGENTS.md")
+    else:
+        print("AGENTS.md already has REPORT_ISSUE — skipping")
 EOF
     echo "Report issue created: #$REPORT_NUM"
   else
@@ -567,6 +587,7 @@ BRANCH="otherness-onboard"
 
 git checkout -b "$BRANCH"
 git add docs/aide/ .otherness/state.json otherness-config.yaml
+[ -f AGENTS.md ] && git add AGENTS.md 2>/dev/null || true
 git commit -m "chore: otherness onboarding — add docs/aide, state.json, config"
 git push origin "$BRANCH"
 
