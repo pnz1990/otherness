@@ -56,6 +56,35 @@ Each pitfall has:
 
 This list should be maintained and grown. When a bug is fixed, add the failure mode to the pitfalls list so future sessions don't repeat it.
 
+6. **New command not appearing in palette after restart**: Two failure modes, both must be
+   checked:
+
+   a. **Wrong directory** — OpenCode discovers per-project commands from `.opencode/command/`
+      (singular, this project's convention) but also from `.opencode/commands/` (plural, the
+      OpenCode docs convention). The global location `~/.config/opencode/commands/` makes a
+      command available in every project without per-project deployment. When a new agent
+      command is created, deploy it to `~/.config/opencode/commands/<name>.md` so it
+      works everywhere immediately.
+
+   b. **File only exists on a feature branch** — a command file committed to a PR branch but
+      not merged to main is on disk in the working tree during that session but will not be
+      present after a checkout of main. For commands that should be permanent, deploy them
+      to `~/.config/opencode/commands/` independently of any PR merge.
+
+   **The fix pattern for new otherness commands:**
+   ```bash
+   # 1. Write the agent to ~/.otherness/agents/otherness.<name>.md
+   # 2. Write the per-project launcher to .opencode/command/otherness.<name>.md
+   # 3. Deploy globally so it's available in all projects immediately:
+   cp .opencode/command/otherness.<name>.md ~/.config/opencode/commands/otherness.<name>.md
+   # 4. Commit the agent to the otherness repo (auto-updates all sessions)
+   # 5. Commit the launcher to the project repo (for repo-local discoverability)
+   ```
+
+   **Naming rule**: all otherness command files must be named `otherness.<name>.md`. OpenCode
+   uses the filename (minus `.md`) as the slash command. A file named `arch-audit.md` creates
+   `/arch-audit` — which won't appear when a user types `/otherness`.
+
 ---
 
 ## Config-Driven Flags Over Hardcoded Checks <!-- provenance: BerriAI/litellm, AGENTS.md, 2026-04-14 -->
