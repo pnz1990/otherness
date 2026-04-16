@@ -690,64 +690,103 @@ print(int((now-t).total_seconds()/3600))
 
 1b. If queue null or empty: generate next queue (3–5 items max).
 
-    INPUTS — read in order:
-    1. `docs/aide/roadmap.md` — find current stage (first stage with incomplete deliverables)
-    2. `docs/aide/definition-of-done.md` — find journeys not yet ✅
-    3. Recent merged PRs (last 20) — determine what's already done
+     INPUTS — read in order:
+     1. `docs/aide/roadmap.md` — find current stage (first stage with incomplete deliverables)
+     2. `docs/aide/definition-of-done.md` — find journeys not yet ✅
+     3. `state.json` features map — items already marked done are considered complete
+     4. Recent merged PRs (last 100) — secondary completeness signal for items not in state
 
-    ```bash
-    # What stage are we in?
-    python3 - << 'EOF'
-import subprocess, re
+     ```bash
+     # What stage are we in?
+     python3 - << 'EOF'
+import subprocess, re, json
 
 roadmap = open('docs/aide/roadmap.md').read()
-merged_prs = subprocess.check_output(
-    ['gh','pr','list','--repo','$REPO','--state','merged','--limit','20',
-     '--json','title','--jq','.[].title'], text=True).lower()
+
+# PRIMARY: load done items from state.json
+try:
+    state = json.load(open('.otherness/state.json'))
+    done_titles = set(
+        v.get('title', '').lower()
+        for v in state.get('features', {}).values()
+        if v.get('state') == 'done' and v.get('title')
+    )
+    done_issues = set(
+        str(v.get('issue', ''))
+        for v in state.get('features', {}).values()
+        if v.get('state') == 'done'
+    )
+except Exception:
+    done_titles = set()
+    done_issues = set()
+
+# SECONDARY: merged PR titles (last 100 — not 20, to cover mature projects)
+try:
+    merged_prs = subprocess.check_output(
+        ['gh','pr','list','--repo','$REPO','--state','merged','--limit','100',
+         '--json','title','--jq','.[].title'], text=True).lower()
+except Exception:
+    merged_prs = ''
+
+# TERTIARY: existing open+closed issues (for duplicate detection)
+try:
+    all_issues = subprocess.check_output(
+        ['gh','issue','list','--repo','$REPO','--state','all','--limit','200',
+         '--json','number,title','--jq','.[].title'], text=True).lower()
+except Exception:
+    all_issues = ''
+
+def is_done(deliverable):
+    """Return True if a deliverable is already shipped."""
+    d_lower = deliverable.lower()
+    # 1. Exact title match in done state.json items
+    if d_lower in done_titles:
+        return True
+    # 2. Key phrase from deliverable in merged PR titles
+    key = deliverable.split('`')[1] if '`' in deliverable else deliverable[:40].lower()
+    if key.lower() in merged_prs:
+        return True
+    return False
 
 stages = re.split(r'^## Stage', roadmap, flags=re.MULTILINE)
 for stage in stages[1:]:
     lines = stage.strip().split('\n')
     stage_name = lines[0].strip()
     deliverables = re.findall(r'^- (.+)', stage, re.MULTILINE)
-    # A deliverable is done if a merged PR title contains a key phrase from it
-    incomplete = []
-    for d in deliverables:
-        key = d.split('`')[1] if '`' in d else d[:30].lower()
-        if key.lower() not in merged_prs:
-            incomplete.append(d)
+    incomplete = [d for d in deliverables if not is_done(d)]
     if incomplete:
         print(f"CURRENT STAGE: {stage_name}")
         for d in incomplete[:5]:
             print(f"  DELIVERABLE: {d}")
         break
 EOF
-    ```
+     ```
 
-    DUPLICATE CHECK — skip if already exists as open issue:
-    ```bash
-    gh issue list --repo $REPO --state open --json number,title \
-      --jq '.[].title' | sort
-    ```
+     DUPLICATE CHECK — skip if already exists as open or closed issue:
+     ```bash
+     gh issue list --repo $REPO --state all --json number,title \
+       --jq '.[].title' | sort
+     ```
 
-    FOR EACH deliverable to generate (max 5 total, prefer size/xs or size/s):
+     FOR EACH deliverable to generate (max 5 total, prefer size/xs or size/s):
 
-    1. Is it covered by a recently-merged PR title? → skip
-    2. Is there already an open issue with the same scope? → add its number to state, skip creation
-    3. Otherwise: create a GitHub issue:
-       ```bash
-       gh issue create --repo $REPO \
-         --title "type(scope): specific one-sentence description" \
-         --label "otherness,kind/<bug|enhancement|chore>,area/<area>,priority/<level>,size/<xs|s>" \
-         --body "## Context
-    One paragraph explaining why this matters.
+     1. Is it already done in state.json (state=done)? → skip
+     2. Is it covered by a recently-merged PR title? → skip
+     3. Is there already an open or closed issue with the same scope? → if open: add its number to state; if closed: treat as done, skip
+     4. Otherwise: create a GitHub issue:
+        ```bash
+        gh issue create --repo $REPO \
+          --title "type(scope): specific one-sentence description" \
+          --label "otherness,kind/<bug|enhancement|chore>,area/<area>,priority/<level>,size/<xs|s>" \
+          --body "## Context
+     One paragraph explaining why this matters.
 
-    ## Acceptance
-    \`\`\`bash
-    # One runnable command whose output proves this is done
-    \`\`\`"
-       ```
-    4. Add to state.json: `{state: todo, issue: <number>, title: <title>, size: <xs|s|m>}`
+     ## Acceptance
+     \`\`\`bash
+     # One runnable command whose output proves this is done
+     \`\`\`"
+        ```
+     4. Add to state.json: `{state: todo, issue: <number>, title: <title>, size: <xs|s|m>}`
 
     SIZE RULE: every generated item must be size/xs or size/s.
     If a deliverable needs more: generate only "step 1 of N: ..." as the item.
