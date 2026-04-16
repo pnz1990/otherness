@@ -835,12 +835,15 @@ except Exception:
           # After completion: clean up the worktree.
           # Switch to learn worktree context and follow otherness.learn.md:
           echo "[STANDALONE] Running learn session in $LEARN_WT"
-          # Read and follow: ~/.otherness/agents/otherness.learn.md
-          # (The agent executes this as a sub-task in the learn worktree, then returns here)
-          # After learn PR is open and CI is green, merge it, then clean up:
-          #   gh pr merge feat/learn-$(date +%Y%m%d) --repo $REPO --squash --delete-branch
-          #   git worktree remove "$LEARN_WT" --force
-          #   git worktree prune
+          # [AI-STEP] Navigate to $LEARN_WT and read + follow ~/.otherness/agents/otherness.learn.md.
+          # This is an AI-level instruction — not a shell command. The agent reads otherness.learn.md,
+          # selects a high-signal open-source repo, extracts skills, commits new/updated skill files
+          # and PROVENANCE.md to $LEARN_BRANCH, and opens a PR. This requires the AI to interpret
+          # and act on the learn agent instructions from within the $LEARN_WT worktree context.
+          # After the learn PR is open and CI is green, the agent merges and cleans up:
+          gh pr merge "feat/learn-$(date +%Y%m%d)" --repo "$REPO" --squash --delete-branch 2>/dev/null || true
+          git worktree remove "$LEARN_WT" --force 2>/dev/null || true
+          git worktree prune
         else
           echo "[COORD] Learn branch already exists this cycle — skipping duplicate"
         fi
