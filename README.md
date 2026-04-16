@@ -32,7 +32,6 @@ otherness runs on itself. Every improvement it makes to its own agent logic depl
 npm install -g @opencode-ai/cli
 brew install gh && gh auth login
 git clone git@github.com:pnz1990/otherness.git ~/.otherness
-uv tool install specify-cli && specify extension add maqa
 
 # New project — from your project directory
 /otherness.setup   # creates otherness-config.yaml, deploys commands
@@ -63,8 +62,6 @@ That's it. The agent reads `AGENTS.md` and `docs/aide/`, generates a queue from 
 
 ```bash
 # 1. Once per machine
-uv tool install specify-cli
-specify extension add maqa
 gh auth login
 git clone git@github.com:<your-username>/otherness.git ~/.otherness
 
@@ -105,15 +102,7 @@ brew install gh && gh auth login
 
 ### Internal dependencies (managed by otherness, not you)
 
-**[speckit](https://github.com/github/spec-kit)** — deploys `.opencode/command/*.md` files into your project. Called once by `/otherness.setup`, never at runtime.
-
-```bash
-uv tool install specify-cli
-```
-
-**[MAQA](https://github.com/GenieRobot/spec-kit-maqa-ext)** — entry-point shells and `state.json` conventions that otherness reads and writes.
-
-**[aide](https://github.com/mnriem/spec-kit-extensions)** — work item generation from the roadmap. Called internally when the queue is empty.
+**[speckit](https://github.com/github/spec-kit)** — optional: if you already use speckit in your project, it can manage `.opencode/command/` deployment. Not required — `/otherness.setup` deploys command files directly via `cp`.
 
 ### Optional
 

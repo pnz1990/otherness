@@ -7,16 +7,10 @@ This guide walks through setting up otherness on a **brand new project** — one
 ## Prerequisites (install once per machine)
 
 ```bash
-# 1. speckit CLI
-uv tool install specify-cli
-
-# 2. MAQA extension
-specify extension add maqa
-
-# 3. GitHub CLI
+# 1. GitHub CLI
 brew install gh && gh auth login
 
-# 4. otherness agent files
+# 2. otherness agent files
 git clone git@github.com:<your-username>/otherness.git ~/.otherness
 ```
 
@@ -31,18 +25,7 @@ cd my-project
 
 ---
 
-## Step 2 — Initialize speckit
-
-```bash
-specify init
-# Choose: opencode integration
-```
-
-This creates `.specify/`, `.opencode/`, and scaffolding files.
-
----
-
-## Step 3 — Run otherness setup
+## Step 2 — Run otherness setup
 
 ```bash
 /otherness.setup

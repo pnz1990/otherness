@@ -29,6 +29,7 @@ maqa:
   agents_path: ~/.otherness/agents
   status_update_cycles: 5
   product_validation_cycles: 3
+  autonomous_mode: true
 
 ci:
   provider: github-actions
@@ -36,6 +37,9 @@ ci:
     workflow: ci.yml
   wait_timeout_seconds: 1200
   block_on_red: true
+
+monitor:
+  projects: []
 
 github_projects:
   project_id: ""
@@ -77,7 +81,32 @@ if [ ! -d ~/.otherness ]; then
 fi
 ```
 
-## Step 4 — Migrate .maqa/ → .otherness/ (upgrade from older otherness versions)
+## Step 4 — Deploy otherness command files into this project
+
+OpenCode reads slash commands from `.opencode/command/` in the current project directory.
+Copy the command files from `~/.otherness` so `/otherness.run`, `/otherness.onboard`, etc. work.
+
+```bash
+if [ -d ~/.otherness/.opencode/command ]; then
+  mkdir -p .opencode/command
+  # Copy all otherness.*.md commands — skip any that already exist (don't overwrite customisations)
+  for src in ~/.otherness/.opencode/command/otherness.*.md; do
+    fname=$(basename "$src")
+    dest=".opencode/command/$fname"
+    if [ ! -f "$dest" ]; then
+      cp "$src" "$dest"
+      echo "  Deployed: $fname"
+    else
+      echo "  Already present (skipped): $fname"
+    fi
+  done
+  echo "Commands deployed to .opencode/command/"
+else
+  echo "WARNING: ~/.otherness/.opencode/command not found. Clone otherness first (Step 3)."
+fi
+```
+
+## Step 4b — Migrate .maqa/ → .otherness/ (upgrade from older otherness versions)
 
 ```bash
 if [ -d ".maqa" ] && [ ! -d ".otherness" ]; then
@@ -165,6 +194,6 @@ fi
 
 ## Done
 
-Edit `otherness-config.yaml` to configure your CI, GitHub Projects board, and agent settings. If your project has a UI, add `project.job_family: FEE`; for platform/infrastructure projects use `SysDE`; backend-only projects can omit the field (defaults to `SDE`).
+Edit `otherness-config.yaml` to set your `BUILD_COMMAND`, `TEST_COMMAND`, `LINT_COMMAND`, and other project-specific values. If your project has a UI, add `project.job_family: FEE`; for platform/infrastructure projects use `SysDE`; backend-only projects can omit the field (defaults to `SDE`).
 
 Then run `/otherness.run` to start the autonomous team.
