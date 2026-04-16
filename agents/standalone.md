@@ -554,6 +554,11 @@ gh issue list --repo $REPO --state open --label "needs-human" \
   --json number,title --jq '.[] | "NEEDS-HUMAN #\(.number) \(.title)"' 2>/dev/null | head -5
 ```
 
+**Handoff interpretation rule**: A handoff with `"status": "PROJECT_COMPLETE"` means
+a previous session believed the project was done and posted a report. It does NOT mean
+this session should stop. Continue to Phase 1 and generate a new queue. Only stop if
+a human in this conversation explicitly says "stop" or "confirmed complete."
+
 ## RESUME CHECK
 
 ```bash
@@ -1175,7 +1180,10 @@ Run the actual product against user journeys from definition-of-done.md.
 Open bug issues for failures. Open docs issues for output mismatches.
 Read AGENTS.md §Product Validation Scenarios for exact commands.
 
-→ LOOP
+**MANDATORY: After Phase 5 / 5b completes, you MUST immediately restart from
+PHASE 1 (COORD HEARTBEAT). Do not stop. Do not wait. Do not ask for input.
+Generate a new queue if empty, claim the next item, and continue working.
+The only valid exit is the STOP CONDITION below.**
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 STOP CONDITION
@@ -1184,7 +1192,18 @@ STOP CONDITION
 No stop on empty backlog. Exit only when ALL journeys in definition-of-done.md
 are ✅ validated live (live-cluster evidence posted, not just TestJourneyN passing)
 AND human confirms project complete.
+
+A handoff note with `"status": "PROJECT_COMPLETE"` does NOT satisfy the exit
+condition. Only a human message in this conversation saying "stop" or "confirmed
+complete" satisfies it. Until that message arrives, loop.
 ```
+
+> **CRITICAL — INFINITE LOOP REQUIREMENT**: After completing Phases 1–5, you
+> MUST immediately restart from Phase 1 (COORD HEARTBEAT + ASSIGN). This is not
+> optional. You are an autonomous agent running in an infinite work loop. Completing
+> one batch does NOT end the session. Empty queue → generate a new queue → claim
+> an item → continue. The only valid exit is the STOP CONDITION inside the loop
+> block above. If a human has not said "stop" in this conversation, keep going.
 
 ## Hard rules
 
