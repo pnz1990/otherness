@@ -261,6 +261,37 @@ Template:
 <List the last 20 merged PRs with numbers and titles>
 ```
 
+### `docs/aide/metrics.md`
+
+Required by `scripts/validate.sh`. Seed with the header and empty batch log:
+
+```markdown
+# <PROJECT_NAME> Self-Improvement Metrics
+
+> Updated by the SM phase every batch. One row per batch appended at the bottom.
+
+---
+
+## Metric Definitions
+
+| Metric | What it measures | Target direction |
+|---|---|---|
+| `prs_merged` | PRs merged to main in this batch | ↑ (throughput) |
+| `needs_human` | [NEEDS HUMAN] issues opened this batch | ↓ (autonomy) |
+| `ci_red_hours` | Hours main CI was red this batch | ↓ (stability) |
+| `skills_count` | Total skill files in agents/skills/ (excl. PROVENANCE, README) | ↑ (knowledge) |
+| `todo_shipped` | Backlog items moved to done this batch | ↑ (velocity) |
+| `time_to_merge_avg_min` | Average minutes from PR open to merge | ↓ (efficiency) |
+
+---
+
+## Batch Log
+
+| Date | Batch | prs_merged | needs_human | ci_red_hours | skills_count | todo_shipped | time_to_merge_avg_min | Notes |
+|---|---|---|---|---|---|---|---|---|
+| <ONBOARD_DATE> | 0 | 0 | 0 | 0 | — | 0 | — | Onboarding — otherness not yet running |
+```
+
 ---
 
 ## STEP 5 — Seed `.otherness/state.json`
@@ -378,6 +409,7 @@ maqa:
   agents_path: ~/.otherness/agents
   status_update_cycles: 5
   product_validation_cycles: 3
+  autonomous_mode: true    # operator has authorized agent to act on their behalf
 
 ci:
   provider: github-actions
@@ -385,6 +417,12 @@ ci:
     workflow: ci.yml
   wait_timeout_seconds: 1200
   block_on_red: true
+
+monitor:
+  projects:
+    - $REPO
+  stale_hours: 24
+  idle_hours: 4
 
 github_projects:
   project_id: ""
@@ -492,8 +530,9 @@ This onboarding is complete when ALL of the following are true:
 - [ ] `docs/aide/roadmap.md` exists with ≥2 stages, reflecting actual shipped work
 - [ ] `docs/aide/definition-of-done.md` exists with ≥2 journeys with exact commands
 - [ ] `docs/aide/progress.md` exists with a recent PRs list
+- [ ] `docs/aide/metrics.md` exists with the metric definitions table and an empty batch log row
 - [ ] `.otherness/state.json` has `version: 1.3`, a `repo` field matching the GitHub repo, and `features` populated with done items
-- [ ] `otherness-config.yaml` exists with correct `repo` and `report_issue` values
+- [ ] `otherness-config.yaml` exists with correct `repo`, `report_issue`, `autonomous_mode`, and `monitor` values
 - [ ] A PR is open for human review with all of the above files
 
 If any item is unchecked: fix it before exiting.
