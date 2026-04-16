@@ -39,12 +39,15 @@ maqa:
   # merged autonomously if all safety checks pass. [NEEDS HUMAN] issues are
   # resolved by the agent directly. The loop never blocks waiting for human input.
   #
-  # When false (default): CRITICAL PRs require human review and merge.
+  # When false: CRITICAL tier PRs (changes to agents/standalone.md in the
+  # *otherness repo itself*) require a human to review and merge them. For projects
+  # other than the otherness repo, there are no CRITICAL tier files — leave this
+  # true unless you are running otherness on the otherness source repo.
   #
-  # Only enable this if you understand the risk: a wrong standalone.md change
-  # deploys to ALL projects using otherness on their next session startup.
-  # The self-review protocol is rigorous, but it is not infallible.
-  autonomous_mode: false
+  # Set to false only if: you are running otherness on the pnz1990/otherness repo
+  # AND you want to personally review every change to the agent loop before it
+  # deploys globally to all otherness users.
+  autonomous_mode: true
 
 # ── CI gate ───────────────────────────────────────────────────────────────────
 ci:
