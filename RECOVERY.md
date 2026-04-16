@@ -137,6 +137,22 @@ git worktree prune
 
 ---
 
+## Situation 6b: Parallel agents stopped working — all are waiting and nothing is happening
+
+This can happen if an agent acquired the queue-gen lock (`refs/otherness/queue-gen`) and then crashed before releasing it. All other agents are waiting for the queue to appear, but it never does.
+
+```bash
+# Check if the stale lock exists
+git ls-remote --refs origin refs/otherness/queue-gen
+
+# If it shows a ref: delete it
+gh api -X DELETE "repos/<owner/repo>/git/refs/otherness/queue-gen"
+```
+
+After deleting the lock, the next agent cycle will re-acquire it and generate a fresh queue. If the queue was partially written to `_state` before the crash, those items will be used — no duplicate generation.
+
+---
+
 ## Situation 7: I want to completely remove otherness from a project
 
 ```bash
