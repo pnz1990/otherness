@@ -53,17 +53,20 @@ otherness is a collection of **markdown instruction files** read by OpenCode (th
 ```
 ~/.otherness/                  ← the repo root (git clone at this path)
   agents/
-    standalone.md              ← full autonomous team loop (646 lines)
+    standalone.md              ← full autonomous team loop
     bounded-standalone.md      ← scoped concurrent agent
     onboard.md                 ← existing project onboarding
     otherness.learn.md         ← learning agent — internalize from open-source
+    otherness.arch-audit.md    ← architectural audit agent
     gh-features.md             ← GitHub API reference
     skills/                    ← reusable skill files
       declaring-designs.md     ← spec quality standard
       reconciling-implementations.md  ← QA checklist
       agent-coding-discipline.md      ← surgical changes, verifiable goals
       autonomous-workflow-patterns.md ← workflow design patterns
+      architectural-audit.md   ← four-lens audit methodology
       PROVENANCE.md            ← learning session audit trail
+      README.md                ← skill index
   boundaries/
     README.md
     example.boundary
@@ -83,6 +86,8 @@ otherness is a collection of **markdown instruction files** read by OpenCode (th
       otherness.status.md
       otherness.upgrade.md
       otherness.learn.md
+      otherness.arch-audit.md
+      otherness.cross-agent-monitor.md
   otherness-config.yaml
   otherness-config-template.yaml
   AGENTS.md
@@ -114,15 +119,20 @@ This is the most important section. Every PR must be classified before merge.
 
 ## What "Tests" Mean for otherness
 
-otherness has no unit tests. Its correctness can only be validated by running it on a real project and observing behavior. The `scripts/test.sh` does the following:
+otherness has no unit tests. Its correctness can only be validated by running it on a real project and observing behavior.
 
-1. **Markdown lint** — all `.md` files in `agents/` are well-formed.
-2. **State schema check** — `agents/standalone.md` references all required state.json fields.
-3. **Self-reference check** — `standalone.md` references `AGENTS.md`, `otherness-config.yaml`, and `docs/aide/` correctly (no hardcoded project paths).
-4. **Skills consistency** — every skill referenced in `standalone.md` (`Load skill: read ...`) exists on disk.
+`scripts/validate.sh` (BUILD_COMMAND) performs these structural checks:
+
+1. **No hardcoded project paths** — agent and skill files must not reference specific projects (other than otherness itself) in executable instruction context. PROVENANCE.md and HTML comment provenance metadata are exempt.
+2. **Skill references resolve** — every `Load skill: read ...` reference in `standalone.md` points to an existing file on disk or in the repo.
+3. **Required files present** — all agent files, skill files, docs, and command files listed in the required set exist.
+4. **Self-update present** — `standalone.md` contains the `git -C ~/.otherness pull` self-update block.
+
+`scripts/test.sh` (TEST_COMMAND) runs all 4 validate checks plus:
+
 5. **Integration test** — verify otherness is running correctly on the reference project (first non-otherness entry in `monitor.projects` in `otherness-config.yaml`) by checking the `_state` branch shows activity within the last 72 hours.
 
-`scripts/validate.sh` (BUILD_COMMAND) runs 1–4 only. `scripts/test.sh` runs all 5. `scripts/lint.sh` runs markdownlint on all agent files.
+`scripts/lint.sh` (LINT_COMMAND) checks agent files for structural correctness using python3 (no external tools required): CRLF line endings, null bytes, required phase headers in `standalone.md`.
 
 ---
 
