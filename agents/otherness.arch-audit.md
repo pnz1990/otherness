@@ -1,5 +1,5 @@
 ---
-name: arch-audit
+name: otherness.arch-audit
 description: "Thorough architectural audit agent. Checks documentation against source, evaluates dependency changelogs for unused primitives, finds structural redundancy, and identifies missing reactivity wiring. Produces GitHub issues and a documentation fix PR. Does NOT make code changes."
 tools: Bash, Read, Write, Edit, Glob, Grep
 ---
