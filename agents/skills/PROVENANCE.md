@@ -370,4 +370,50 @@ They are directly applicable to Layer 2 (projects otherness autonomously develop
 - `contributor-license-agreement` (AutoGen) — legal process; not applicable to autonomous agent
 - `versionadded-sphinx-annotations` (AutoGen) — Python Sphinx docs; not transferable to markdown
 - `codespace-based-pr-review` (AutoGen) — GitHub Codespaces specific; not a core pattern
+
+---
+
+## 2026-04-15 — pnz1990/kardinal-promoter (live session extraction)
+
+**Source type:** Live architecture review session (not a `/otherness.learn` run — extracted manually)
+
+**What was studied:**
+- A thorough architectural review of kardinal-promoter against krocodile 745998f
+- 11 distinct findings produced across four categories: documentation drift, unused primitives, structural redundancy, missing reactivity
+- The review methodology used was adversarial and source-verified (every claim checked against code)
+
+**Files that informed the extraction:**
+- `AGENTS.md` — false claims found: NewCELEnvironment, schedule.* as Graph functions
+- `docs/design/10-graph-first-architecture.md` — Q3 claim false
+- `docs/design/11-graph-purity-tech-debt.md` — status claims vs actual code
+- `pkg/reconciler/policygate/reconciler.go` — actual schedule.* implementation
+- `pkg/reconciler/policygate/cel_evaluator.go` — actual CEL environment construction
+- `pkg/graph/builder.go` — baked-in literals vs live CEL references
+- `pkg/reconciler/bundle/reconciler.go:SetupWithManager` — missing Pipeline watch
+- `/tmp/kro-review/experimental/docs/design/001-graph.md` — krocodile primitives (Definition, forEach, WatchKind, Decorator)
+- `/tmp/kro-review/experimental/docs/design/005-standard-library.md` — Decorator/Kind/Singleton
+
+**Patterns extracted:** 2
+
+**Disposition:**
+
+- `architectural-audit` → NEW_SKILL (`agents/skills/architectural-audit.md`)
+  The methodology used in this session — adversarial claim verification, four audit lenses,
+  structured output format (issues + doc PR, no code changes) — is fully generalizable to any
+  project. Captures: the four lenses (drift, unused primitive, structural redundancy, missing
+  reactivity), the adversarial stance, scope declaration, common false positives, output artifacts.
+  Also created `agents/arch-audit.md` (the agent that loads this skill) and
+  `.opencode/command/arch-audit.md` (the thin project-level launcher).
+
+- `live-session-to-skill-extraction` → EXTEND_SKILL (this PROVENANCE.md entry)
+  Pattern: a live work session that produces high-quality systematic findings is a valid
+  source for `/otherness.learn`-style skill extraction, even without running the learn command.
+  The adversarial review methodology was derived organically from the session and then
+  distilled post-hoc into a reusable skill. This is a valid and encouraged workflow.
+
+**Rejected patterns:**
+
+- `krocodile-specific-upgrade-protocol` — too domain-specific (Kubernetes/krocodile)
+- `kardinal-cel-context-map-pattern` — project-specific implementation detail, not transferable
+- `prstatus-crd-pattern` — Kubernetes CRD design pattern, not an agent process pattern
 - `minor-version-for-breaking-changes` (AutoGen) — semver versioning; otherness doesn't version releases yet (deferred to Option B)
