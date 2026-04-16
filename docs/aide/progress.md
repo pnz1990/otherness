@@ -27,9 +27,9 @@
 - `docs/aide/roadmap.md` — 5 stages of improvement
 - `docs/aide/definition-of-done.md` — 5 journeys
 - `.specify/memory/constitution.md` — 6 behavioral rules
-- `.opencode/command/otherness.*.md` — all 6 commands deployed
+- `.opencode/command/otherness.*.md` — all 8 commands deployed
 - `_state` branch with seeded `state.json`
-- GitHub report issue #1 and all labels
+- GitHub report issue #2 and all labels
 
 ## What the agent must complete in Stage 0
 

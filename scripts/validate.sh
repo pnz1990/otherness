@@ -58,12 +58,26 @@ print(' '.join(names))
 FOUND=0
 for file in "$AGENTS_DIR"/*.md "$AGENTS_DIR/skills"/*.md; do
   [ -f "$file" ] || continue
+  # PROVENANCE.md is an audit trail log — it legitimately records which project a skill
+  # was extracted from. Skip it for hardcoded-path checks (see issue #78).
+  if [ "$(basename $file)" = "PROVENANCE.md" ]; then
+    continue
+  fi
   # Rule 1: any <owner>/<X> where X is not 'otherness'
+  # Exempt: HTML comment metadata lines (<!-- provenance: ... -->) in skill files.
   if grep -qE "${OWNER}/[a-zA-Z0-9_-]+" "$file" 2>/dev/null; then
-    BAD=$(grep -oE "${OWNER}/[a-zA-Z0-9_-]+" "$file" | grep -v "^${OWNER}/otherness$" | head -3)
+    BAD=$(grep -oE "${OWNER}/[a-zA-Z0-9_-]+" "$file" \
+      | grep -v "^${OWNER}/otherness$" | head -3)
     if [ -n "$BAD" ]; then
-      echo "  ERROR: $(basename $file) contains hardcoded project path(s): $BAD"
-      FOUND=1
+      # Re-check: filter lines that are only in HTML provenance comments
+      BAD_REAL=$(grep -E "${OWNER}/[a-zA-Z0-9_-]+" "$file" \
+        | grep -v "^<!--" \
+        | grep -oE "${OWNER}/[a-zA-Z0-9_-]+" \
+        | grep -v "^${OWNER}/otherness$" | head -3)
+      if [ -n "$BAD_REAL" ]; then
+        echo "  ERROR: $(basename $file) contains hardcoded project path(s): $BAD_REAL"
+        FOUND=1
+      fi
     fi
   fi
   # Rule 2: fleet project names in project-reference context
@@ -121,11 +135,14 @@ REQUIRED=(
   "$(cd "$(dirname "$0")/.." && pwd)/docs/aide/definition-of-done.md"
   "$(cd "$(dirname "$0")/.." && pwd)/docs/aide/metrics.md"
   "$(cd "$(dirname "$0")/.." && pwd)/.opencode/command/otherness.run.md"
+  "$(cd "$(dirname "$0")/.." && pwd)/.opencode/command/otherness.run.bounded.md"
   "$(cd "$(dirname "$0")/.." && pwd)/.opencode/command/otherness.onboard.md"
   "$(cd "$(dirname "$0")/.." && pwd)/.opencode/command/otherness.setup.md"
   "$(cd "$(dirname "$0")/.." && pwd)/.opencode/command/otherness.status.md"
   "$(cd "$(dirname "$0")/.." && pwd)/.opencode/command/otherness.upgrade.md"
   "$(cd "$(dirname "$0")/.." && pwd)/.opencode/command/otherness.learn.md"
+  "$(cd "$(dirname "$0")/.." && pwd)/.opencode/command/otherness.arch-audit.md"
+  "$(cd "$(dirname "$0")/.." && pwd)/.opencode/command/otherness.cross-agent-monitor.md"
 )
 MISSING_FILES=0
 for f in "${REQUIRED[@]}"; do

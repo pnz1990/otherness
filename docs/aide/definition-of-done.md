@@ -124,7 +124,7 @@ cd ~/.otherness
 # 2. Read AGENTS.md successfully
 # 3. Read state.json from _state branch
 # 4. Read docs/aide/vision.md
-# 5. Post a [COORD] startup comment on issue #1
+    # 5. Post a [COORD] startup comment on issue #2
 # 6. Claim or generate a work item
 # 7. NOT crash with "AGENTS.md not found" or "state.json not found"
 ```
@@ -133,7 +133,7 @@ cd ~/.otherness
 
 - [ ] Agent reads AGENTS.md without error
 - [ ] Agent reads state.json from _state branch
-- [ ] Agent posts startup comment on report issue #1
+- [ ] Agent posts startup comment on report issue #2
 - [ ] Agent claims or generates a work item within the first cycle
 - [ ] No `[NEEDS HUMAN]` posted due to missing infrastructure files
 
