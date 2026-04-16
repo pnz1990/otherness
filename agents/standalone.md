@@ -353,7 +353,8 @@ fi
 git config pull.rebase false 2>/dev/null || true
 git pull origin main --quiet
 
-# Pull latest state from dedicated _state branch
+# Prune stale remote-tracking refs for deleted branches, then fetch state
+git fetch --prune --quiet 2>/dev/null || true
 git fetch origin _state --quiet
 git show origin/_state:.otherness/state.json > .otherness/state.json 2>/dev/null || true
 
