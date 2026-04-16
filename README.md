@@ -1,6 +1,6 @@
 # otherness
 
-_The goal is simple: software that builds itself._
+_in memory of mankind_
 
 You write the vision. otherness writes the code, reviews it, ships it, and keeps going — without you in the loop. No stand-ups, no PR reviews, no release ceremonies. Just a GitHub repo advancing on its own.
 
