@@ -42,3 +42,8 @@
 
 **Next target**: Stage 3 — onboarding quality (#27 epic). Also: merge PR #36 to make the -12 line simplification effective.
 | 2026-04-15 | 6 | 1 | 0 | 0 | 11 | 1 | ~8 | Batch 6: docs vision rewrite merged (#64); state write reliability bug found and queued (#62); onboarding audit queued (#61) |
+| 2026-04-16 | 7 | 6 | 0 | ~12 | 11 | 7 | ~8 | Arch-audit session + fix-all sprint: CI fix (#85), loop bug (#86), git prune (#87), learn clarify (#88), onboard gaps (#89 — metrics.md + config template), fleet status (#90). All open PRs merged. All open issues closed except #27 (epic) and #48 (design gate). |
+
+---
+
+**Batch 6→7**: Largest batch yet. 6 PRs merged, 7 items shipped. Full autonomous arch-audit found 8 findings — all fixed in a single session including CI-breaking validate.sh false positive (3 consecutive failures unblocked). Loop continuation bug fixed. Onboarding gaps closed (metrics.md missing, config template incomplete). Fleet health added to /otherness.status. needs_human=0 — AUTONOMOUS_MODE=true enabled agent to self-review and merge CRITICAL PRs (#87, #88) without human gate. Stage 3 (#27) epic is the primary remaining target.
