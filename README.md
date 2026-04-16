@@ -78,6 +78,8 @@ git clone git@github.com:<your-username>/otherness.git ~/.otherness
 
 See **[onboarding-new-project.md](./onboarding-new-project.md)** and **[onboarding-existing-project.md](./onboarding-existing-project.md)** for full walkthroughs.
 
+If something goes wrong, see **[RECOVERY.md](./RECOVERY.md)** — how to stop, reset, and clean up.
+
 ---
 
 ## Dependencies
