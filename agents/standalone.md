@@ -171,10 +171,26 @@ STATE_MSG="[$MY_SESSION_ID] claimed $ITEM_ID"
 
 **Read this first. It governs everything.**
 
-Multiple unbounded sessions can run at the same time. The protocol that keeps them from
-colliding is simple: **the git branch name is the distributed lock**.
+Multiple unbounded sessions can run at the same time. Two distributed locks keep them
+from colliding — one for queue generation, one for item claiming.
 
-### How it works
+### Lock 1: Queue generation lock (`refs/otherness/queue-gen`)
+
+When the backlog is empty, multiple sessions would all try to generate a new queue.
+Without a lock, each would generate different item IDs for the same work — bypassing
+the item lock entirely.
+
+Before generating: push `refs/otherness/queue-gen`. Only one session succeeds. That
+session generates the queue, writes it to `_state`, and deletes the lock ref. All
+other sessions wait for `_state` to update, then re-read and proceed to claiming.
+
+### Lock 2: Item claiming lock (`refs/heads/feat/<item-id>`)
+
+When claiming an item: push `feat/<item-id>` to the remote.
+- Push succeeds → you own it. No other session can create the same branch name.
+- Push fails → another session owns it. Re-read `_state` and pick a different item.
+
+### How item claiming works
 
 1. Each session derives its identity from the item it claims, not from a pre-assigned slot.
 2. Claiming an item means pushing a branch named `feat/<item-id>` to the remote.
@@ -705,13 +721,54 @@ print(int((now-t).total_seconds()/3600))
 
 1b. If queue null or empty: generate next queue (3–5 items max).
 
-     INPUTS — read in order:
+     **QUEUE GENERATION LOCK** — must acquire before generating. Multiple sessions starting
+     simultaneously all see an empty queue. Without a lock, each generates its own queue with
+     different item IDs for the same work, bypassing the branch-as-lock on claiming.
+
+     ```bash
+     # Acquire the queue-gen lock by pushing a sentinel ref.
+     # Only one session can create this ref — git ref creation is atomic server-side.
+     QUEUE_LOCK_REF="refs/otherness/queue-gen"
+     QUEUE_LOCK_BRANCH="otherness/queue-gen"
+
+     if git push origin "HEAD:${QUEUE_LOCK_REF}" 2>/dev/null; then
+       echo "[COORD] Queue-gen lock acquired — I am the queue generator."
+       QUEUE_GEN_WINNER=true
+     else
+       echo "[COORD] Another session is generating the queue — waiting for _state update..."
+       # Wait up to 90s for the winner to push the new queue to _state, then re-read.
+       for i in $(seq 1 9); do
+         sleep 10
+         git fetch origin _state --quiet 2>/dev/null
+         FRESH_STATE=$(git show origin/_state:.otherness/state.json 2>/dev/null)
+         HAS_TODO=$(echo "$FRESH_STATE" | python3 -c "
+import json,sys
+try:
+    s=json.load(sys.stdin)
+    todo=[id for id,d in s.get('features',{}).items() if d.get('state')=='todo']
+    print(len(todo))
+except: print(0)
+" 2>/dev/null || echo "0")
+         if [ "${HAS_TODO:-0}" -gt 0 ]; then
+           echo "[COORD] Queue appeared in _state (${HAS_TODO} items). Syncing and proceeding."
+           echo "$FRESH_STATE" > .otherness/state.json
+           break
+         fi
+       done
+       QUEUE_GEN_WINNER=false
+     fi
+     ```
+
+     Only proceed with queue generation if `QUEUE_GEN_WINNER=true`. Skip directly to 1c otherwise.
+
+     INPUTS — read in order (queue-gen winner only):
      1. `docs/aide/roadmap.md` — find current stage (first stage with incomplete deliverables)
      2. `docs/aide/definition-of-done.md` — find journeys not yet ✅
      3. `state.json` features map — items already marked done are considered complete
      4. Recent merged PRs (last 100) — secondary completeness signal for items not in state
 
      ```bash
+     if [ "$QUEUE_GEN_WINNER" = "true" ]; then
      # What stage are we in?
      python3 - << 'EOF'
 import subprocess, re, json
@@ -775,15 +832,18 @@ for stage in stages[1:]:
             print(f"  DELIVERABLE: {d}")
         break
 EOF
+     fi
      ```
 
      DUPLICATE CHECK — skip if already exists as open or closed issue:
      ```bash
+     if [ "$QUEUE_GEN_WINNER" = "true" ]; then
      gh issue list --repo $REPO --state all --json number,title \
        --jq '.[].title' | sort
+     fi
      ```
 
-     FOR EACH deliverable to generate (max 5 total, prefer size/xs or size/s):
+     FOR EACH deliverable to generate (max 5 total, prefer size/xs or size/s) — queue-gen winner only:
 
      1. Is it already done in state.json (state=done)? → skip
      2. Is it covered by a recently-merged PR title? → skip
@@ -810,13 +870,36 @@ EOF
     ACCEPTANCE CRITERION RULE: every issue body must contain an `## Acceptance` section
     with a single runnable bash command that passes when the item is complete.
 
-    After generating: post `[COORD] Queue generated: N items` on issue #$REPORT_ISSUE
-    listing each item's issue number and one-sentence title.
+    After generating, queue-gen winner MUST:
+    1. Write state to _state immediately (canonical source of truth for sibling sessions).
+    2. Delete the queue-gen lock ref so future rounds can regenerate.
+    3. Post queue summary on report issue.
+
+    ```bash
+    if [ "$QUEUE_GEN_WINNER" = "true" ]; then
+      export STATE_MSG="[COORD] queue generated"
+      # run the STATE MANAGEMENT write block from the top of this file
+
+      # Release the queue-gen lock so future empty-queue cycles can regenerate
+      git push origin --delete "$QUEUE_LOCK_BRANCH" 2>/dev/null || true
+
+      # Post summary
+      gh issue comment $REPORT_ISSUE --repo $REPO \
+        --body "[COORD] Queue generated: N items — <list item IDs and titles>" 2>/dev/null
+    fi
+    ```
 
 1c. CLAIM NEXT ITEM (branch-lock protocol):
 
     ```bash
     git pull origin main --quiet
+
+    # Re-read state from _state (not local file) to get canonical item IDs.
+    # This is critical for parallel sessions: the queue-gen winner wrote canonical
+    # item IDs to _state. Sibling sessions MUST read from there, not from their
+    # local state.json which may be stale or from a different queue generation run.
+    git fetch origin _state --quiet 2>/dev/null
+    git show origin/_state:.otherness/state.json > .otherness/state.json 2>/dev/null || true
 
     # Find an unclaimed item
     ITEM_ID=$(python3 -c "
