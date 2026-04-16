@@ -10,8 +10,6 @@ If your project already has `AGENTS.md` and a git history, skip the manual steps
 
 ```bash
 # 1. Prerequisites (once per machine)
-uv tool install specify-cli
-specify extension add maqa
 gh auth login
 git clone git@github.com:<your-username>/otherness.git ~/.otherness
 
@@ -42,8 +40,6 @@ Review the PR, correct anything that's wrong, merge, then:
 ## Prerequisites (install once per machine)
 
 ```bash
-uv tool install specify-cli
-specify extension add maqa
 gh auth login
 git clone git@github.com:<your-username>/otherness.git ~/.otherness
 ```
