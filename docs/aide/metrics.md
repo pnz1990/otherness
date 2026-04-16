@@ -47,3 +47,4 @@
 ---
 
 **Batch 6→7**: Largest batch yet. 6 PRs merged, 7 items shipped. Full autonomous arch-audit found 8 findings — all fixed in a single session including CI-breaking validate.sh false positive (3 consecutive failures unblocked). Loop continuation bug fixed. Onboarding gaps closed (metrics.md missing, config template incomplete). Fleet health added to /otherness.status. needs_human=0 — AUTONOMOUS_MODE=true enabled agent to self-review and merge CRITICAL PRs (#87, #88) without human gate. Stage 3 (#27) epic is the primary remaining target.
+| 2026-04-16 | 8 | 6 | 0 | 0 | 11 | 6 | ~8 | Stage 3 complete: #92 README, #95 labels+report, #96 REPORT_ISSUE→AGENTS.md, #97 doc fix, #91 README table |
