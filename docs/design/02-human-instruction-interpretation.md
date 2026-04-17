@@ -24,10 +24,10 @@ input signals, not execution commands.
 - ✅ 60s wait before acting on translation — human can correct before agent proceeds (PR #145, 2026-04-17)
 - ✅ Infra exception — pure maintenance tasks skip translation, go directly to spec (PR #145, 2026-04-17)
 - ✅ Translation artifact persisted in spec — D4 translation saved to `.specify/d4/translation.md` before proceeding (PR #154, 2026-04-17)
+- ✅ GitHub issue instructions intercepted — coord.md checks last 5 comments on claimed issue for imperative instructions, posts D4 translation (PR #167, 2026-04-17)
 
 ## Future (🔲)
 
-- 🔲 GitHub issue instructions intercepted — instructions posted as comments on GitHub issues are classified and translated before the agent acts on them (deferred: complex; issues go through queue currently)
 - 🔲 Translation confidence score — agent rates its own translation confidence; low confidence triggers the clarifying question even for non-ambiguous instructions (deferred: speculative, may increase friction)
 
 ---

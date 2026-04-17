@@ -489,6 +489,15 @@ PYEOF
   gh issue comment $ISSUE_NUM --repo $REPO \
     --body "[$MY_SESSION_ID | otherness@${OTHERNESS_VERSION:-unknown}] Starting implementation. Branch: \`$MY_BRANCH\`" 2>/dev/null
 
+  # D4 check — scan recent human comments on the claimed issue for imperative instructions
+  # [AI-STEP] Fetch the last 5 comments on issue $ISSUE_NUM via:
+  #   gh issue view $ISSUE_NUM --repo $REPO --comments --json comments
+  # For each comment NOT starting with a role badge ([🎯 [🔨 [🔍 [🔄 [📋 [sess-):
+  #   Check if it contains imperative language (add, fix, update, change, make, create, remove)
+  #   If yes: post a [📋 D4 TRANSLATION] block on the issue (same format as session-start D4)
+  #   Wait 60s for human correction. Then create a new GitHub issue from the translation.
+  # If no imperative human comments: no-op, proceed to Phase 2.
+
 else
   echo "[COORD] ⚡ $ITEM_ID already claimed — picking another."
   ITEM_ID=""
