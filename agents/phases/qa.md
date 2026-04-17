@@ -61,6 +61,8 @@ else
   # Three valid outcomes:
   #   A) Section present with a docs/design/ file named → verify that file exists and
   #      check that the PR diff updates it (🔲 → ✅). If design doc not updated: WRONG.
+  #      Also: check if a docs/<feature>.md customer doc exists. If not: MISS finding —
+  #      open a follow-up issue "docs: add customer doc for <feature-area>". Do NOT block merge.
   #   B) Section present with "N/A — infrastructure change" → acceptable for chore/fix/refactor.
   #   C) Section absent → WRONG. Post:
   #      "[QA] WRONG — spec.md missing ## Design reference section.
