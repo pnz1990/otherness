@@ -2,7 +2,9 @@
 
 _in memory of mankind_
 
-<!-- D4 logo goes here -->
+<p align="center">
+  <img src="logo.png" alt="otherness D4" width="200" />
+</p>
 
 **D4** — Declarative Design-Driven Development.
 
