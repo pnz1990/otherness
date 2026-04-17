@@ -480,13 +480,20 @@
       "done_at": "2026-04-17T23:18:41Z"
     },
     "190": {
-      "state": "todo",
+      "state": "done",
       "title": "chore(docs): progress.md batch 22 + future-ideas.md Ideas 1&2",
       "issues": [
         190
       ],
       "risk": "low",
-      "created_at": "2026-04-17T23:21:09Z"
+      "created_at": "2026-04-17T23:21:09Z",
+      "assigned_to": "sess-518cc5ec",
+      "assigned_at": "2026-04-17T23:21:35Z",
+      "branch": "feat/190",
+      "worktree": "../otherness.190",
+      "pr_merged": true,
+      "pr_number": 191,
+      "done_at": "2026-04-17T23:23:43Z"
     }
   },
   "engineer_slots": {
@@ -508,6 +515,6 @@
   },
   "handoff": null,
   "queue_generated_at": "2026-04-17T16:47:47Z",
-  "sm_cycle_count": 12,
-  "pm_cycle_count": 11
+  "sm_cycle_count": 13,
+  "pm_cycle_count": 12
 }
