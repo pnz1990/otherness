@@ -14,10 +14,11 @@ echo "=== otherness integration test ==="
 
 # Resolve the reference project from otherness-config.yaml (first entry under monitor.projects)
 # Falls back gracefully if not configured — integration check is skipped, not failed.
-REFERENCE_PROJECT=$(python3 - << 'EOF'
+REFERENCE_PROJECT=$(REPO_ROOT="$REPO_ROOT" python3 - << 'EOF'
 import re, os, sys
 
-config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'otherness-config.yaml')
+# Use REPO_ROOT from shell env — __file__ is undefined in heredocs
+config_path = os.path.join(os.environ.get('REPO_ROOT', '.'), 'otherness-config.yaml')
 try:
     content = open(config_path).read()
     in_monitor = in_projects = False
@@ -28,7 +29,8 @@ try:
             m = re.match(r'\s+- (.+)', line)
             if m:
                 repo = m.group(1).strip()
-                repo = repo.strip('"').strip("'")  # strip quotes — avoid backslash in heredoc                # Skip the otherness repo itself as reference — pick a managed project
+                repo = repo.strip('"').strip("'")
+                # Skip the otherness repo itself — pick a managed project
                 if not repo.endswith('/otherness'):
                     print(repo)
                     sys.exit(0)
