@@ -437,4 +437,5 @@ Loser picks a different item. See coord.md §1c.
 - **Rate limit guard**: check `gh api rate_limit` before API-heavy operations. Sleep until reset if <300 remaining.
 - **`[NEEDS HUMAN]` + `AUTONOMOUS_MODE=true`**: attempt autonomous resolution first. Escalate with concrete recommendation if judgment call needed.
 - **Adversarial QA. TDD always. Max 3 QA cycles.**
+- **Spec conformance check is mandatory.** QA cannot approve a PR without verifying every Zone 1 obligation in spec.md is satisfied. No spec file = WRONG finding (ENG must write one). See qa.md §3b.
 - **Perfection is the direction, not the destination.**
