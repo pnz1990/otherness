@@ -496,13 +496,20 @@
       "done_at": "2026-04-17T23:23:43Z"
     },
     "192": {
-      "state": "todo",
+      "state": "done",
       "title": "fix(docs): metrics.md data rows and trend notes intermixed",
       "issues": [
         192
       ],
       "risk": "low",
-      "created_at": "2026-04-17T23:26:09Z"
+      "created_at": "2026-04-17T23:26:09Z",
+      "assigned_to": "sess-518cc5ec",
+      "assigned_at": "2026-04-17T23:26:48Z",
+      "branch": "feat/192",
+      "worktree": "../otherness.192",
+      "pr_merged": true,
+      "pr_number": 193,
+      "done_at": "2026-04-17T23:29:26Z"
     }
   },
   "engineer_slots": {
@@ -524,6 +531,6 @@
   },
   "handoff": null,
   "queue_generated_at": "2026-04-17T16:47:47Z",
-  "sm_cycle_count": 13,
-  "pm_cycle_count": 12
+  "sm_cycle_count": 14,
+  "pm_cycle_count": 13
 }
