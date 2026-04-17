@@ -3,8 +3,8 @@
   "mode": "standalone",
   "repo": "pnz1990/otherness",
   "current_queue": [
-    "174",
-    "175"
+    "178",
+    "179"
   ],
   "features": {
     "127-128-129": {
@@ -383,6 +383,24 @@
       "pr_merged": true,
       "pr_number": 177,
       "done_at": "2026-04-17T22:52:03Z"
+    },
+    "178": {
+      "state": "todo",
+      "title": "fix(test): test.sh integration check __file__ bug",
+      "issues": [
+        178
+      ],
+      "risk": "low",
+      "created_at": "2026-04-17T22:55:05Z"
+    },
+    "179": {
+      "state": "todo",
+      "title": "feat(sm): skill confidence scoring",
+      "issues": [
+        179
+      ],
+      "risk": "medium",
+      "created_at": "2026-04-17T22:55:05Z"
     }
   },
   "engineer_slots": {
