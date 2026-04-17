@@ -417,3 +417,64 @@ They are directly applicable to Layer 2 (projects otherness autonomously develop
 - `kardinal-cel-context-map-pattern` — project-specific implementation detail, not transferable
 - `prstatus-crd-pattern` — Kubernetes CRD design pattern, not an agent process pattern
 - `minor-version-for-breaking-changes` (AutoGen) — semver versioning; otherness doesn't version releases yet (deferred to Option B)
+
+---
+
+## 2026-04-17 — pnz1990/otherness (session sess-518cc5ec, live session extraction)
+
+**Session type**: live implementation session (batches 11-21 of autonomous loop)
+
+**What was implemented:**
+
+20+ improvements across the otherness codebase. Key patterns extracted:
+
+**Patterns extracted:** 6
+
+**Disposition:**
+
+- `design-doc-driven-queue-generation` → EXTEND_SKILL (existing declaring-designs.md)
+  When a COORD phase reads `docs/design/` files for `## Future (🔲)` items, it generates
+  a queue that is grounded in declared design intent rather than just roadmap deliverables.
+  The queue grows organically as design docs are written. Machine-readable markers
+  (`## Future (🔲)` / `## Present (✅)`) create a bidirectional feedback loop between
+  design state and work queue. The COORD regex `r'^## Future'` is the gate.
+
+- `critical-tier-self-review-discipline` → EXTEND_SKILL (existing agent-responsibility.md)
+  CRITICAL tier changes (phases/*.md, standalone.md) require an adversarial 5-check self-review
+  before autonomous merge. Three out of six CRITICAL PRs in this session found WRONG findings
+  on first pass that were corrected before merge. The self-review is genuinely adversarial —
+  the agent must assume there is a bug and look for counter-evidence. Rate: 50% bug-find rate
+  on CRITICAL tier PRs. Without this protocol, half the CRITICAL changes would have shipped buggy.
+
+- `heredoc-__file__-failure-mode` → EXTEND_SKILL (existing explicit-anti-patterns.md)
+  Python `__file__` is undefined inside bash heredocs. Scripts that use
+  `os.path.abspath(__file__)` to find their own path fail silently when embedded in heredocs.
+  Fix: pass the path as an environment variable from the shell (`SCRIPT_DIR="$SCRIPT_DIR" python3 - <<'EOF'`
+  ... `config_path = os.environ.get('SCRIPT_DIR', '.')`). This pattern appeared in test.sh
+  and was silently skipping the integration check for all previous sessions.
+
+- `is-done-filter-precision` → EXTEND_SKILL (existing agent-coding-discipline.md)
+  Substring matching (`key in merged_pr_blob`) causes false positives when the key appears
+  in unrelated PR titles. Fix: iterate per PR title, check if the first 60 chars of the
+  item description appear in an individual title. This prevented valid queue items from
+  being silently filtered. The per-title iteration is the correct pattern for intent matching.
+
+- `design-doc-trigger-guard` → EXTEND_SKILL (existing declaring-designs.md)
+  Design docs with future items that are gated on external triggers (human decision, quota)
+  should use a section header that does NOT match the COORD regex. Renaming `## Future (🔲)`
+  to `## Planned (🔲 — trigger required)` prevents premature queue item generation.
+  The COORD queue generator reads `^## Future` — any other heading is invisible to it.
+
+- `ai-step-graceful-fallback` → EXTEND_SKILL (existing autonomous-workflow-patterns.md)
+  Every AI-STEP in a phase file must have a graceful fallback path (no-op) when the required
+  resources are unavailable (empty project list, missing files, gh API failure). A block that
+  can crash or produce wrong output when called on any of the ~100 projects in the fleet is
+  a global deployment risk. Audit each new AI-STEP: what happens when each input is empty or
+  missing? Only add the step if all paths are graceful.
+
+**Rejected patterns:**
+
+- `otherness-specific-batch-sequence` — the specific batch numbering and PR numbers are
+  project-specific context, not transferable patterns.
+- `alibi-journey-2-failure` — specific operational failure requiring human restart.
+  Not a generalizable skill; documented in DoD Journey Status instead.
