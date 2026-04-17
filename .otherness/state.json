@@ -3,12 +3,9 @@
   "mode": "standalone",
   "repo": "pnz1990/otherness",
   "current_queue": [
-    "127-128-129",
-    "126",
-    "121",
-    "115",
-    "114",
-    "119"
+    "146",
+    "147",
+    "148"
   ],
   "features": {
     "127-128-129": {
@@ -136,6 +133,33 @@
       "pr_merged": true,
       "pr_number": 141,
       "done_at": "2026-04-17T17:53:27Z"
+    },
+    "146": {
+      "state": "todo",
+      "title": "fix(dod): Journey 2 FAILING \u2014 alibi _state stalled >72h, needs restart",
+      "issues": [
+        146
+      ],
+      "risk": "low",
+      "created_at": "2026-04-17T21:26:20Z"
+    },
+    "147": {
+      "state": "todo",
+      "title": "chore(docs): update progress.md \u2014 Stage 4 complete, Stage 5 pending human trigger",
+      "issues": [
+        147
+      ],
+      "risk": "low",
+      "created_at": "2026-04-17T21:26:20Z"
+    },
+    "148": {
+      "state": "todo",
+      "title": "docs(design): populate \ud83d\udd32 Future sections in design docs",
+      "issues": [
+        148
+      ],
+      "risk": "low",
+      "created_at": "2026-04-17T21:26:20Z"
     }
   },
   "engineer_slots": {
