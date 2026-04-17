@@ -289,22 +289,36 @@
       "done_at": "2026-04-17T22:23:46Z"
     },
     "166": {
-      "state": "todo",
+      "state": "done",
       "title": "chore(docs): update progress.md batch 16",
       "issues": [
         166
       ],
       "risk": "low",
-      "created_at": "2026-04-17T22:27:12Z"
+      "created_at": "2026-04-17T22:27:12Z",
+      "assigned_to": "sess-518cc5ec",
+      "assigned_at": "2026-04-17T22:28:03Z",
+      "branch": "feat/166",
+      "worktree": "../otherness.166",
+      "pr_merged": true,
+      "pr_number": 168,
+      "done_at": "2026-04-17T22:30:04Z"
     },
     "167": {
-      "state": "todo",
+      "state": "done",
       "title": "feat(coord): D4 translation for GitHub issue instructions",
       "issues": [
         167
       ],
       "risk": "medium",
-      "created_at": "2026-04-17T22:27:12Z"
+      "created_at": "2026-04-17T22:27:12Z",
+      "assigned_to": "sess-518cc5ec",
+      "assigned_at": "2026-04-17T22:30:17Z",
+      "branch": "feat/167",
+      "worktree": "../otherness.167",
+      "pr_merged": true,
+      "pr_number": 169,
+      "done_at": "2026-04-17T22:33:26Z"
     }
   },
   "engineer_slots": {
@@ -326,6 +340,6 @@
   },
   "handoff": null,
   "queue_generated_at": "2026-04-17T16:47:47Z",
-  "sm_cycle_count": 6,
-  "pm_cycle_count": 5
+  "sm_cycle_count": 7,
+  "pm_cycle_count": 6
 }
