@@ -37,17 +37,24 @@ fi
 
 ---
 
-## 3b. Spec conformance check (step 0 — mandatory before code review)
+## 3b. Spec conformance check (step 0 — **MANDATORY**, blocks approval)
+
+**This check is not optional. QA cannot approve without completing it.**
 
 ```bash
 SPEC_FILE="$MY_WORKTREE/.specify/specs/$ITEM_ID/spec.md"
-if [ -f "$SPEC_FILE" ]; then
+if [ ! -f "$SPEC_FILE" ]; then
+  echo "[QA] WRONG — spec.md missing at $SPEC_FILE"
+  echo "[QA] ENG must write spec.md (three-zone structure) before PR can be approved."
+  echo "[QA] Returning to ENG phase — write spec first, then re-push."
+  # [AI-STEP] Go back to ENG phase 2b, write the spec, commit it, re-enter QA
+else
   echo "[QA] Running spec conformance check..."
   # [AI-STEP] For each Zone 1 obligation in spec.md:
   #   1. Find the corresponding code in the diff
   #   2. Verify the behavior matches the obligation
-  #   3. If any obligation unimplemented or misimplemented: WRONG finding — must fix
-  # This is the highest-priority check. Cannot approve without completing it.
+  #   3. If any obligation unimplemented or misimplemented: WRONG finding — must fix before approve
+  # All obligations must be verified. This is the highest-priority check.
 fi
 ```
 
