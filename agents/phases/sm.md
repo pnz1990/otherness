@@ -163,9 +163,18 @@ else:
             )
         else:
             print(f'[SM] todo_shipped: no regression '
-                  f'({n1["todo_shipped"]} → {n0["todo_shipped"]})')
+                   f'({n1["todo_shipped"]} → {n0["todo_shipped"]})')
 REGEOF
 ```
+
+# Difficulty ledger: append when any hard case is detected
+# [AI-STEP] Check last batch metrics (from rows[-1]):
+#   - needs_human > 0 (an escalation occurred)
+#   - todo_shipped = 0 for 2 consecutive batches (velocity stalled)
+#   - time_to_merge_avg_min > 60 (items are taking too long)
+# If any trigger fires: append an entry to ~/.otherness/agents/skills/difficulty-ledger.md
+# Format: ## YYYY-MM-DD: <abstract situation> / **Situation** / **What resolved it** / **Guard**
+# Keep abstract — no project names.
 
 ---
 
