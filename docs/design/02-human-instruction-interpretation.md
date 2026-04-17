@@ -26,7 +26,9 @@ input signals, not execution commands.
 - ✅ Translation artifact persisted in spec — D4 translation saved to `.specify/d4/translation.md` before proceeding (PR #154, 2026-04-17)
 - ✅ GitHub issue instructions intercepted — coord.md checks last 5 comments on claimed issue for imperative instructions, posts D4 translation (PR #167, 2026-04-17)
 
-## Future (🔲)
+## Speculative (🔲 — not a queue input, deferred until needed)
+
+> ⚠️ Items in this section are explicitly deferred as speculative. COORD does NOT generate queue items from this section.
 
 - 🔲 Translation confidence score — agent rates its own translation confidence; low confidence triggers the clarifying question even for non-ambiguous instructions (deferred: speculative, may increase friction)
 
