@@ -193,11 +193,24 @@ except: print(0)
 
 if [ $((${BATCH_COUNT:-0} % 5)) -eq 0 ] && [ "${BATCH_COUNT:-0}" -gt 0 ]; then
   echo "[SM] Cross-project pattern mining cycle..."
-  # [AI-STEP] Read monitor.projects from otherness-config.yaml.
-  # For each project: fetch last 10 closed needs-human issues.
-  # Find patterns appearing in ≥2 projects.
-  # If a pattern is generalizable (no project names): append to difficulty-ledger.md skill.
-  # If pattern is entirely new: propose NEW_SKILL on the otherness repo.
+  # [AI-STEP] Cross-project needs-human pattern mining:
+  # 1. Read monitor.projects from otherness-config.yaml (list of owner/repo strings)
+  # 2. For each project in the list:
+  #    gh issue list --repo <project> --label needs-human --state closed --limit 10
+  #    --json number,title,body,comments → collect titles and comment bodies
+  # 3. Analyze patterns across ALL projects:
+  #    - Look for needs-human issues with similar root causes (e.g. "CI red >24h",
+  #      "spec missing", "merge conflict", "stale branch")
+  #    - A pattern qualifies if it appears in ≥2 different projects
+  # 4. For each qualifying pattern:
+  #    - Write a generic entry to ~/.otherness/agents/skills/difficulty-ledger.md
+  #    - Format: ## DATE: <abstract pattern name>
+  #      **Situation**: <abstract description — no project names>
+  #      **What resolved it**: <resolution pattern>
+  #      **Guard**: <preventive check for future>
+   # 5. If the pattern represents an entirely new failure class not yet in any skill file:
+   #    gh issue create --repo $REPO --title "skill: <pattern>" --label otherness
+  # If only 1 project or no patterns found: log "[SM] No cross-project patterns found."
 fi
 
 # Increment SM cycle count
