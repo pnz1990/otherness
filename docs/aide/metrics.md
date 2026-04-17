@@ -57,3 +57,4 @@
 | 2026-04-17 | 15 | 2 | 0 | 0 | 11 | 2 | ~5 | Batch 15: #162 is_done filter fix (CRITICAL, self-review found WRONG/fixed), #163 onboard design doc stubs — DDDD doc now 0 Future items |
 | 2026-04-17 | 16 | 2 | 0 | 0 | 11 | 2 | ~4 | Batch 16: #166 progress.md, #167 D4 for issue comments (CRITICAL) — D4 doc 1 deferred item |
 | 2026-04-17 | 17 | 2 | 0 | 0 | 12 | 2 | ~4 | Batch 17: #170 difficulty-ledger + SM trigger, #171 cross-project mining (self-review fixed WRONG) |
+| 2026-04-17 | 18 | 2 | 0 | 0 | 12 | 2 | ~3 | Batch 18: #174 skills README, #175 PM cross-project proposals (CRITICAL self-review) |
