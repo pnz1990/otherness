@@ -166,13 +166,20 @@
       "done_at": "2026-04-17T21:39:42Z"
     },
     "148": {
-      "state": "todo",
+      "state": "done",
       "title": "docs(design): populate \ud83d\udd32 Future sections in design docs",
       "issues": [
         148
       ],
       "risk": "low",
-      "created_at": "2026-04-17T21:26:20Z"
+      "created_at": "2026-04-17T21:26:20Z",
+      "assigned_to": "sess-518cc5ec",
+      "assigned_at": "2026-04-17T21:40:51Z",
+      "branch": "feat/148",
+      "worktree": "../otherness.148",
+      "pr_merged": true,
+      "pr_number": 151,
+      "done_at": "2026-04-17T21:44:41Z"
     }
   },
   "engineer_slots": {
