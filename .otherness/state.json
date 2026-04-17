@@ -12,7 +12,7 @@
   ],
   "features": {
     "127-128-129": {
-      "state": "todo",
+      "state": "done",
       "title": "report improvements: daily rotation + agent identity + otherness version",
       "issues": [
         127,
@@ -20,7 +20,14 @@
         129
       ],
       "risk": "critical",
-      "created_at": "2026-04-17T16:47:47Z"
+      "created_at": "2026-04-17T16:47:47Z",
+      "assigned_to": "STANDALONE-127-128-129",
+      "assigned_at": "2026-04-17T16:48:31Z",
+      "branch": "feat/127-128-129",
+      "worktree": "../otherness.127-128-129",
+      "pr_merged": true,
+      "pr_number": 130,
+      "done_at": "2026-04-17T16:53:58Z"
     },
     "126": {
       "state": "todo",
