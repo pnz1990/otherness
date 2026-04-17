@@ -73,5 +73,5 @@ fi
 
 ```bash
 gh issue comment $REPORT_ISSUE --repo $REPO \
-  --body "[📋 PM] Product review complete." 2>/dev/null
+  --body "[📋 PM | ${MY_SESSION_ID:-sess-unknown} | otherness@${OTHERNESS_VERSION:-unknown}] Product review complete." 2>/dev/null
 ```

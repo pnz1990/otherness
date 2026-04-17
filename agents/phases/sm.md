@@ -120,5 +120,5 @@ with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
 
 ```bash
 gh issue comment $REPORT_ISSUE --repo $REPO \
-  --body "[🔄 SDM] Batch complete. Metrics updated. Triage done." 2>/dev/null
+  --body "[🔄 SDM | ${MY_SESSION_ID:-sess-unknown} | otherness@${OTHERNESS_VERSION:-unknown}] Batch complete. Metrics updated. Triage done." 2>/dev/null
 ```

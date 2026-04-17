@@ -84,7 +84,7 @@ between two design commitments — post `[NEEDS HUMAN]` with the exact conflicti
 # Post review comment on PR
 gh pr review $PR_NUM --repo $REPO \
   --approve \
-  --body "[QA] APPROVED — spec conformance ✓, CI ✓, no blocking findings."
+  --body "[🔍 QA | ${MY_SESSION_ID:-sess-unknown} | otherness@${OTHERNESS_VERSION:-unknown}] APPROVED — spec conformance ✓, CI ✓, no blocking findings."
 ```
 
 **CRITICAL TIER — AUTONOMOUS MODE SELF-REVIEW PROTOCOL**
