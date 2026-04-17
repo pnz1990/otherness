@@ -69,6 +69,93 @@ fi
 
 ---
 
+## 5e. Stagnation detection (Stage 4 deliverable)
+
+Check `docs/aide/metrics.md` batch log. If velocity has stalled, open a `kind/chore` issue.
+
+```bash
+python3 - <<'EOF'
+import re, subprocess, os
+
+REPO = os.environ.get('REPO', '')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '')
+
+# Parse batch log rows from docs/aide/metrics.md
+# Table format: | Date | Batch | prs_merged | needs_human | ci_red_hours | skills_count | todo_shipped | ... |
+try:
+    content = open('docs/aide/metrics.md').read()
+    rows = []
+    for line in content.splitlines():
+        # Match data rows (not header or separator): | 2026-... | N | ...
+        m = re.match(r'^\|\s*\d{4}-\d{2}-\d{2}\s*\|(.+)', line)
+        if m:
+            cells = [c.strip() for c in line.split('|')[1:-1]]
+            if len(cells) >= 7:
+                try:
+                    row = {
+                        'date': cells[0],
+                        'batch': cells[1],
+                        'prs_merged': int(cells[2]) if cells[2].isdigit() else 0,
+                        'needs_human': int(cells[3]) if cells[3].isdigit() else 0,
+                        'todo_shipped': int(cells[6]) if cells[6].isdigit() else 0,
+                    }
+                    rows.append(row)
+                except (ValueError, IndexError):
+                    pass
+except Exception:
+    rows = []
+
+if len(rows) < 2:
+    print("[PM] Not enough batch rows in metrics.md to check stagnation (need ≥ 2).")
+    exit(0)
+
+last2 = rows[-2:]
+stagnation = all(r['todo_shipped'] == 0 for r in last2)
+needs_human_spike = all(r['needs_human'] > 0 for r in last2)
+
+# Stagnation: open kind/chore issue if not already open
+if stagnation:
+    STALE_TITLE = '[STALE] Queue appears blocked — investigate roadmap'
+    existing = subprocess.run(
+        ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+         '--search', STALE_TITLE, '--json', 'number', '--jq', 'length'],
+        capture_output=True, text=True)
+    count = int(existing.stdout.strip() or '0')
+    if count == 0:
+        r = subprocess.run(
+            ['gh', 'issue', 'create', '--repo', REPO,
+             '--title', STALE_TITLE,
+             '--label', 'kind/chore,otherness',
+             '--body', f'PM stagnation check triggered.\n\nLast 2 batches both had `todo_shipped = 0`:\n' +
+                       '\n'.join(f'- Batch {r["batch"]} ({r["date"]}): shipped={r["todo_shipped"]}' for r in last2) +
+                       '\n\nThis suggests the queue is empty or items are blocked. Check roadmap.md and open new issues.'],
+            capture_output=True, text=True)
+        if r.returncode == 0:
+            print(f'[PM] Stagnation detected — opened issue: {r.stdout.strip()}')
+        else:
+            print(f'[PM] Stagnation detected but failed to open issue: {r.stderr.strip()}')
+    else:
+        print('[PM] Stagnation detected but issue already open — skipping duplicate.')
+else:
+    print(f'[PM] No stagnation. Last 2 batches: {[(r["batch"], r["todo_shipped"]) for r in last2]}')
+
+# needs_human spike: post warning comment only (no issue — it may be legitimate)
+if needs_human_spike:
+    msg = ('[📋 PM | ' + os.environ.get('MY_SESSION_ID', 'sess-unknown') + ' | '
+           + 'otherness@' + os.environ.get('OTHERNESS_VERSION', 'unknown') + '] '
+           + f'⚠️  Persistent escalation: last 2 batches both had needs_human > 0 '
+           + f'({last2[-2]["needs_human"]}, {last2[-1]["needs_human"]}). '
+           + 'Review open needs-human issues.')
+    subprocess.run(['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO, '--body', msg],
+                   capture_output=True)
+    print('[PM] needs_human spike warning posted.')
+else:
+    print(f'[PM] No needs_human spike. Last 2 batches: {[(r["batch"], r["needs_human"]) for r in last2]}')
+EOF
+```
+
+---
+
 ## 5d. Post PM review
 
 ```bash
