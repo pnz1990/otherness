@@ -224,6 +224,28 @@ with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
 
 ---
 
+## 4c-skill. Skill confidence check (every 10 SM cycles)
+
+```bash
+if [ $((${BATCH_COUNT:-0} % 10)) -eq 0 ] && [ "${BATCH_COUNT:-0}" -gt 0 ]; then
+  echo "[SM] Running skill confidence check..."
+  # [AI-STEP] Check each skill file in ~/.otherness/agents/skills/ (excluding PROVENANCE, README):
+  # For each skill:
+  # 1. Check if it is referenced in phases/*.md or standalone.md:
+  #    grep -r "<skill-basename>" ~/.otherness/agents/phases/ ~/.otherness/agents/standalone.md
+  #    If not found: note as "unreferenced"
+  # 2. Check age: git -C ~/.otherness log --format='%ar' -1 -- agents/skills/<skill>.md
+  #    If last modified >180 days ago: note as "stale"
+  # 3. Check for obvious contradictions: if 2 skill files have the same topic heading:
+  #    note both as "possibly overlapping"
+  # Compile a report. Post it as a comment on $REPORT_ISSUE (informational only).
+  # Do NOT modify any skill file. Do NOT post [NEEDS HUMAN].
+  # Example comment: "[SM] Skill confidence: 12 skills checked. unreferenced: [X]. stale: [Y]."
+fi
+```
+
+---
+
 ## 4d. Write session handoff
 
 ```bash
