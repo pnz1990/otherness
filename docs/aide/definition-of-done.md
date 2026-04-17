@@ -143,8 +143,8 @@ cd ~/.otherness
 
 | Journey | Status | Last checked | Notes |
 |---|---|---|---|
-| 1: Build and validate itself | ✅ Passing | 2026-04-14 | validate.sh, lint.sh, test.sh all exit 0 |
+| 1: Build and validate itself | ✅ Passing | 2026-04-17 | validate.sh, lint.sh, test.sh all exit 0 |
 | 2: Runs correctly on reference project | ✅ Passing | 2026-04-14 | alibi active (state commits <4h ago) |
-| 3: Self-improvement happening | ✅ Passing | 2026-04-14 | 5+ PRs merged to otherness via autonomous loop today |
-| 4: CRITICAL tier protection | ✅ Passing | 2026-04-14 | CI enforces needs-human label on standalone.md PRs |
+| 3: Self-improvement happening | ✅ Passing | 2026-04-17 | 5+ PRs merged to otherness today; 11 skills; PROVENANCE updated |
+| 4: CRITICAL tier protection | ✅ Passing | 2026-04-17 | PR #139 has needs-human label; self-review protocol ran |
 | 5: Starts cleanly on fresh clone | ✅ Passing | 2026-04-14 | All 8 command files present; state seeds correctly |
