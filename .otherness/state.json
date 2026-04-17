@@ -353,22 +353,36 @@
       "done_at": "2026-04-17T22:43:19Z"
     },
     "174": {
-      "state": "todo",
+      "state": "done",
       "title": "chore(docs): update skills README (2 missing entries)",
       "issues": [
         174
       ],
       "risk": "low",
-      "created_at": "2026-04-17T22:45:42Z"
+      "created_at": "2026-04-17T22:45:42Z",
+      "assigned_to": "sess-518cc5ec",
+      "assigned_at": "2026-04-17T22:46:38Z",
+      "branch": "feat/174",
+      "worktree": "../otherness.174",
+      "pr_merged": true,
+      "pr_number": 176,
+      "done_at": "2026-04-17T22:49:07Z"
     },
     "175": {
-      "state": "todo",
+      "state": "done",
       "title": "feat(pm): cross-project improvement proposals",
       "issues": [
         175
       ],
       "risk": "medium",
-      "created_at": "2026-04-17T22:45:42Z"
+      "created_at": "2026-04-17T22:45:42Z",
+      "assigned_to": "sess-518cc5ec",
+      "assigned_at": "2026-04-17T22:49:21Z",
+      "branch": "feat/175",
+      "worktree": "../otherness.175",
+      "pr_merged": true,
+      "pr_number": 177,
+      "done_at": "2026-04-17T22:52:03Z"
     }
   },
   "engineer_slots": {
@@ -390,6 +404,6 @@
   },
   "handoff": null,
   "queue_generated_at": "2026-04-17T16:47:47Z",
-  "sm_cycle_count": 8,
-  "pm_cycle_count": 7
+  "sm_cycle_count": 9,
+  "pm_cycle_count": 8
 }
