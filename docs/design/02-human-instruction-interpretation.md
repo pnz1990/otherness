@@ -23,7 +23,7 @@ input signals, not execution commands.
 - ✅ Translation format posted before implementation — `[📋 D4 TRANSLATION]` block with Heard/Intent/D4 layer/Artifact (PR #145, 2026-04-17)
 - ✅ 60s wait before acting on translation — human can correct before agent proceeds (PR #145, 2026-04-17)
 - ✅ Infra exception — pure maintenance tasks skip translation, go directly to spec (PR #145, 2026-04-17)
-- ✅ Translation artifact persisted in spec — D4 translation saved to `.specify/specs/ITEM_ID/translation.md` before proceeding (PR #154, 2026-04-17)
+- ✅ Translation artifact persisted in spec — D4 translation saved to `.specify/d4/translation.md` before proceeding (PR #154, 2026-04-17)
 
 ## Future (🔲)
 

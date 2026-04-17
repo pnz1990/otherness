@@ -11,8 +11,8 @@
 
 ## Zone 1 — Obligations
 
-**O1**: After an IMPERATIVE instruction is translated, the `[📋 D4 TRANSLATION]` block must be saved to `.specify/specs/$ITEM_ID/translation.md` before the agent proceeds with implementation.
-- **Falsified by**: Agent proceeds with implementation without writing translation.md, even though an IMPERATIVE translation was performed.
+**O1**: After an IMPERATIVE instruction is translated, the `[📋 D4 TRANSLATION]` block must be saved to `.specify/d4/translation.md` before the agent proceeds with implementation. (Note: D4 fires at session start before ITEM_ID is set — use `.specify/d4/` not `.specify/specs/$ITEM_ID/`.)
+- **Falsified by**: Agent proceeds with implementation without writing translation.md.
 
 **O2**: The translation artifact must be written before the agent acts on the translation — not after.
 - **Falsified by**: translation.md is written after the first implementation commit.
