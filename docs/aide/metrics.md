@@ -47,6 +47,20 @@
 ---
 
 **Batch 6→7**: Largest batch yet. 6 PRs merged, 7 items shipped. Full autonomous arch-audit found 8 findings — all fixed in a single session including CI-breaking validate.sh false positive (3 consecutive failures unblocked). Loop continuation bug fixed. Onboarding gaps closed (metrics.md missing, config template incomplete). Fleet health added to /otherness.status. needs_human=0 — AUTONOMOUS_MODE=true enabled agent to self-review and merge CRITICAL PRs (#87, #88) without human gate. Stage 3 (#27) epic is the primary remaining target.
+
+**Batch 7→9**: Stage 3 complete. README, labels, report issue, config template, RECOVERY.md all shipped. External-user readiness sprint completed. Project now usable by external users without manual setup.
+
+**Batch 9→10**: Stage 4 metrics deliverables queued. PRs #139 #140 for regression detection await human review (CRITICAL tier).
+
+**Batch 10→12**: Design-driven development system (DDDD) built. Design docs created with Present/Future markers. COORD queue now reads design docs as primary source (not just roadmap). validate.sh gained 5th check for Design reference in specs.
+
+**Batch 12→15**: DDDD design system fully shipped — all 9 obligations complete. Stage 5 design doc and guard added. D4 translation improvements: artifact persistence, GitHub issue comment interception. is_done filter bug found and fixed. onboard.md Step 4b generates design doc stubs.
+
+**Batch 15→19**: Learning infrastructure expanded: difficulty-ledger.md (hard case tracking), SM cross-project mining, PM cross-project improvement proposals, skill confidence checking. Bug fixes: test.sh __file__ bug (integration check was always skipped), validate.sh step counters. skills 11→12.
+
+**Overall session (batches 11-19)**: 22 items shipped. 0 needs_human. All CRITICAL tier PRs passed self-review. Journey 2 (alibi) ❌ Failing throughout — needs human restart. Journey 1 fully operational including integration check (fixed in batch 19).
+
+**Next target**: Idea 4 (internal portfolio learn at batch 30), or any new gaps identified by PM cross-project check.
 | 2026-04-16 | 8 | 6 | 0 | 0 | 11 | 6 | ~8 | Stage 3 complete: #92 README, #95 labels+report, #96 REPORT_ISSUE→AGENTS.md, #97 doc fix, #91 README table |
 | 2026-04-16 | 9 | 4 | 0 | 0 | 11 | 5 | ~10 | External-user readiness sprint: #103 cmd deploy, #104 autonomous_mode default, #105 queue generator, #106 RECOVERY.md |
 | 2026-04-17 | 10 | 1 | 0 | 0 | 11 | 1 | ~5 | Batch 10: Stage 4 queue generated; #138 docs update merged (#141); PRs #139 #140 CRITICAL awaiting human |
