@@ -64,3 +64,8 @@ grep -n "push origin main" agents/standalone.md agents/bounded-standalone.md
 # Only allowed output: lines containing the string in a comment explaining what NOT to do
 # Zero matches = PASS
 ```
+
+---
+
+## Design reference
+- N/A — pre-DDDD item (written before design doc system, PR #144)

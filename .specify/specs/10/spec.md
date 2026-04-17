@@ -106,3 +106,8 @@ atomicity is the correct distributed lock. Rejected.
 
 **Three separate functions**: One function with a retry loop is sufficient. No single-caller
 abstractions needed. Rejected.
+
+---
+
+## Design reference
+- N/A — pre-DDDD item (written before design doc system, PR #144)

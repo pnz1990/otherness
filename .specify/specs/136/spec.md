@@ -36,3 +36,8 @@
 - Regression detection for metrics other than `todo_shipped` and `needs_human` (those belong to #137 which is the SM-side feature).
 - Changing the metrics table format or adding new columns.
 - Alerting via any channel other than GitHub issues and issue comments.
+
+---
+
+## Design reference
+- N/A — pre-DDDD item (written before design doc system, PR #144)

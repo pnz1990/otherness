@@ -115,3 +115,8 @@ git push origin --delete _state
 # trigger state write → it should bootstrap and write
 git ls-remote --heads origin _state  # branch recreated
 ```
+
+---
+
+## Design reference
+- N/A — pre-DDDD item (written before design doc system, PR #144)
