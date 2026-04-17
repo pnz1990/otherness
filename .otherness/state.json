@@ -182,13 +182,20 @@
       "done_at": "2026-04-17T21:44:41Z"
     },
     "152": {
-      "state": "todo",
+      "state": "done",
       "title": "docs(design): create design doc 03 for Stage 5 \u2014 Versioned Release Model",
       "issues": [
         152
       ],
       "risk": "low",
-      "created_at": "2026-04-17T21:48:23Z"
+      "created_at": "2026-04-17T21:48:23Z",
+      "assigned_to": "sess-518cc5ec",
+      "assigned_at": "2026-04-17T21:49:10Z",
+      "branch": "feat/152",
+      "worktree": "../otherness.152",
+      "pr_merged": true,
+      "pr_number": 155,
+      "done_at": "2026-04-17T21:52:08Z"
     },
     "153": {
       "state": "todo",
