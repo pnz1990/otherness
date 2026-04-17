@@ -16,7 +16,7 @@ those projects being hardcoded anywhere in the agent files.
 
 ---
 
-## Idea 1: Learn from `[NEEDS HUMAN]` items across the portfolio
+## ✅ Idea 1: Learn from `[NEEDS HUMAN]` items — COVERED (SM §4c cross-project mining, PR #173, 2026-04-17)
 
 **What**: After N batches, analyze the last 20 closed `[NEEDS HUMAN]` issues across all
 monitored projects. Extract recurring patterns. If a pattern appears ≥2 times, write or
@@ -32,7 +32,7 @@ prompt explicitly strips project-specific details.
 
 ---
 
-## Idea 2: Cross-project pattern mining in the SM phase
+## ✅ Idea 2: Cross-project pattern mining — COVERED (SM §4c implementation, PR #173, 2026-04-17)
 
 **What**: Once per batch, sample last 10 merged PRs and last 10 resolved issues from each
 monitored project. Ask: "What patterns appear in ≥2 projects?" Cross-project patterns
