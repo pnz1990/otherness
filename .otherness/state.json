@@ -214,13 +214,20 @@
       "done_at": "2026-04-17T21:56:29Z"
     },
     "154": {
-      "state": "todo",
+      "state": "done",
       "title": "feat(eng): persist D4 translation artifact in .specify/specs/ITEM_ID/translation.md",
       "issues": [
         154
       ],
       "risk": "medium",
-      "created_at": "2026-04-17T21:48:23Z"
+      "created_at": "2026-04-17T21:48:23Z",
+      "assigned_to": "sess-518cc5ec",
+      "assigned_at": "2026-04-17T21:57:34Z",
+      "branch": "feat/154",
+      "worktree": "../otherness.154",
+      "pr_merged": true,
+      "pr_number": 157,
+      "done_at": "2026-04-17T22:02:49Z"
     }
   },
   "engineer_slots": {
