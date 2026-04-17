@@ -94,7 +94,7 @@
       "done_at": "2026-04-17T17:14:24Z"
     },
     "136": {
-      "state": "in_review",
+      "state": "done",
       "title": "feat(pm): stagnation detection using metrics",
       "issue": 136,
       "areas": [
@@ -107,10 +107,12 @@
       "branch": "feat/136",
       "worktree": "../.otherness.136",
       "pr_number": 139,
-      "pr_url": "https://github.com/pnz1990/otherness/pull/139"
+      "pr_url": "https://github.com/pnz1990/otherness/pull/139",
+      "pr_merged": true,
+      "done_at": "2026-04-17T18:13:56Z"
     },
     "137": {
-      "state": "in_review",
+      "state": "done",
       "title": "feat(sm): auto-open kind/chore on metric regression",
       "issue": 137,
       "areas": [
@@ -118,7 +120,9 @@
       ],
       "risk_tier": "MEDIUM",
       "depends_on": [],
-      "pr_number": 140
+      "pr_number": 140,
+      "pr_merged": true,
+      "done_at": "2026-04-17T18:13:56Z"
     },
     "138": {
       "state": "done",
