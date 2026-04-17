@@ -226,8 +226,13 @@ except:
 def is_done(d):
     d_lower = d.lower().strip()
     if d_lower in done_titles: return True
+    # Use the backtick-quoted key if present, otherwise full description
+    # Require key to be ≥15 chars to avoid false positives from short common strings
     key = d.split('`')[1] if '`' in d else d[:40].lower()
-    return key.lower() in merged_prs
+    if len(key) >= 15:
+        return key.lower() in merged_prs
+    # Short key: fall back to full description match (stricter)
+    return d_lower in merged_prs
 
 # PRIMARY: read 🔲 Future items from docs/design/
 design_items = []
