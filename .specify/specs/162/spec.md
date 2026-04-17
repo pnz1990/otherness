@@ -9,14 +9,11 @@
 
 ## Zone 1 — Obligations
 
-**O1**: The `is_done` function in coord.md queue generation must require the matching key to be at least 15 characters before using substring matching against merged PR titles.
-- **Falsified by**: A 5-character key like `onboard` causes a design doc item to be skipped because `onboard` appears in unrelated PR titles.
+**O1**: The `is_done` function in coord.md must check full item description (first 60 chars) against individual PR titles, not use backtick-key substring matching in a blob of all titles.
+- **Falsified by**: A 17-char key like `/otherness.onboard` causes a valid queue item to be skipped because that string appears in unrelated PR titles.
 
 **O2**: Items that should not be filtered must appear in the queue after the fix. Specifically, the `/otherness.onboard generates design doc drafts` item must not be filtered based on the string `/otherness.onboard` appearing in PR titles.
 - **Falsified by**: Running queue generation still filters the onboarding item when it has not been implemented.
-
-**O3**: Items that ARE genuinely done (title appears in state.json done items or PR titles as a long, specific description) must still be filtered correctly.
-- **Falsified by**: A previously-done item reappears in the queue.
 
 **O4**: Change is confined to the `is_done` function in coord.md — no other logic changed.
 - **Falsified by**: Other parts of coord.md modified.
