@@ -294,6 +294,42 @@ Required by `scripts/validate.sh`. Seed with the header and empty batch log:
 
 ---
 
+## STEP 4b — Create docs/design/ stubs
+
+Create design doc stubs inferred from the codebase. These are drafts — they will be refined
+by the agent loop over time. Mark every generated doc as `⚠️ Inferred`.
+
+```bash
+mkdir -p docs/design
+```
+
+```bash
+# [AI-STEP] Infer 2-4 major feature areas from the codebase.
+#
+# Sources to read (in order):
+# 1. Repository top-level directory structure (ls .)
+# 2. README.md sections and headings
+# 3. Package manifest (package.json, pom.xml, go.mod, Cargo.toml, requirements.txt)
+# 4. Any existing docs/ files
+#
+# For each inferred feature area:
+# 1. Create docs/design/0N-<area-slug>.md
+# 2. Include: Status: Draft | ⚠️ Inferred — review before treating as authoritative
+# 3. Include: ## What this does (one paragraph from README or inferred)
+# 4. Include: ## Present (✅) — list major existing capabilities (inferred from code)
+# 5. Include: ## Future (🔲) — leave empty or add obvious TODOs
+# 6. Include: ## Zone 1 — Obligations (stub: "To be defined")
+#
+# If no feature areas can be identified: create docs/design/01-overview.md
+# with status: ⚠️ Inferred — project structure not yet identifiable.
+#
+# Example output for a web app with auth and API:
+#   docs/design/01-authentication.md
+#   docs/design/02-api-endpoints.md
+```
+
+---
+
 ## STEP 5 — Seed `.otherness/state.json`
 
 ```bash
