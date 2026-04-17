@@ -35,3 +35,8 @@ grep -c "spec.*conformance" ~/.otherness/agents/standalone.md  # ≥ 1
 - Enforcing three-zone structure quality programmatically (too hard to validate statically).
 - Auto-generating spec.md (that's ENG's job).
 - Enforcing spec on non-otherness projects using otherness (they may not use speckit).
+
+---
+
+## Design reference
+- N/A — pre-DDDD item (written before design doc system, PR #144)

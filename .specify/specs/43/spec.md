@@ -92,3 +92,8 @@ After this PR merges, trigger a queue generation and verify:
 3. No generated item is labeled `size/m` or larger.
 4. No generated item duplicates an open issue or recent merged PR title.
 5. Queue has ≤ 5 items.
+
+---
+
+## Design reference
+- N/A — pre-DDDD item (written before design doc system, PR #144)

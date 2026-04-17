@@ -114,3 +114,8 @@ fi
 # Verify output contains a table with all 4 projects
 # Verify a stale project shows ⚠️ STALE
 ```
+
+---
+
+## Design reference
+- N/A — pre-DDDD item (written before design doc system, PR #144)

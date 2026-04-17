@@ -159,12 +159,29 @@ done
 [ $MISSING_FILES -eq 0 ] && echo "  OK: all required files present" || exit 1
 
 # 4. Check self-update is present in standalone.md
-echo "[4/4] Checking self-update mechanism..."
+echo "[4/5] Checking self-update mechanism..."
 if ! grep -q "git -C ~/.otherness pull" "$AGENTS_DIR/standalone.md"; then
   echo "  ERROR: standalone.md missing self-update (git pull) mechanism"
   exit 1
 fi
 echo "  OK: self-update present"
+
+# 5. Check all spec.md files contain ## Design reference
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+SPECS_DIR="$ROOT_DIR/.specify/specs"
+echo "[5/5] Checking spec files for ## Design reference..."
+if [ ! -d "$SPECS_DIR" ]; then
+  echo "  OK: no .specify/specs/ directory — skipping spec lint"
+else
+  MISSING_REF=0
+  while IFS= read -r spec_file; do
+    if ! grep -q "^## Design reference" "$spec_file" 2>/dev/null; then
+      echo "  ERROR: spec missing ## Design reference: $spec_file"
+      MISSING_REF=1
+    fi
+  done < <(find "$SPECS_DIR" -name "spec.md" 2>/dev/null)
+  [ $MISSING_REF -eq 0 ] && echo "  OK: all spec files have ## Design reference" || exit 1
+fi
 
 echo ""
 echo "=== validate: PASSED ==="

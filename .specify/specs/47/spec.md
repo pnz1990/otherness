@@ -71,3 +71,8 @@ bash scripts/validate.sh  # must still pass
 # Test 3: current passing state still passes
 bash scripts/validate.sh && echo "PASS" || echo "FAIL"
 ```
+
+---
+
+## Design reference
+- N/A — pre-DDDD item (written before design doc system, PR #144)

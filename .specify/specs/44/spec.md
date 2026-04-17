@@ -122,3 +122,8 @@ EOF
 python3 -c "import json; s=json.load(open('.otherness/state.json')); print(s.get('version'), s.get('repo'), 'engineer_slots' in s)"
 # Must print: 1.3 pnz1990/test True
 ```
+
+---
+
+## Design reference
+- N/A — pre-DDDD item (written before design doc system, PR #144)

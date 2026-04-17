@@ -36,3 +36,8 @@ When CI_PROVIDER is unknown, the agent prints a warning that includes the provid
 - Full CircleCI/GitLab CI failure detail reporting (just green/red is enough).
 - Automatic token provision.
 - Other CI providers (Jenkins, Travis, etc.) — unknown → skip is sufficient.
+
+---
+
+## Design reference
+- N/A — pre-DDDD item (written before design doc system, PR #144)

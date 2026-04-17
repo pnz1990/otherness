@@ -45,3 +45,8 @@ label and follow the CRITICAL tier self-review protocol.
 - ci_red_hours regression detection (not an integer in current table — uses `~0`, `~12` etc.)
 - Alerting via any channel other than GitHub issues.
 - Adding new metrics columns to the table.
+
+---
+
+## Design reference
+- N/A — pre-DDDD item (written before design doc system, PR #144)

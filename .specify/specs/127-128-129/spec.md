@@ -51,3 +51,8 @@ If `git -C ~/.otherness ...` fails (no git, no repo): session ID still generated
 - Backfilling history: old comments don't get the new header format.
 - Weekly/monthly rotation granularity — daily only.
 - Bounded agents: they inherit `$REPORT_ISSUE`, `$MY_SESSION_ID`, `$OTHERNESS_VERSION` from the parent env; no separate changes to bounded-standalone.md needed.
+
+---
+
+## Design reference
+- N/A — pre-DDDD item (written before design doc system, PR #144)

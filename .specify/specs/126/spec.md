@@ -47,3 +47,8 @@ grep -c "handoff" ~/.otherness/agents/phases/sm.md       # ≥ 1
 - Mid-thought reasoning capture — too expensive and too noisy.
 - Per-item detailed history — state.json already has that.
 - Handoff for bounded agents — they inherit context from the parent session.
+
+---
+
+## Design reference
+- N/A — pre-DDDD item (written before design doc system, PR #144)

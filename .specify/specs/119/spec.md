@@ -39,3 +39,8 @@ If a capability profile specifies `job_family`, it overrides the default `JOB_FA
 - Profile-based rate limiting or resource quotas.
 - Profile validation (schema check of otherness-config.yaml).
 - Deprecating bounded-standalone.md — not changed here.
+
+---
+
+## Design reference
+- N/A — pre-DDDD item (written before design doc system, PR #144)

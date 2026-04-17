@@ -39,3 +39,8 @@ RECOVERY.md contains a section explaining how to pin to a previous tag when a ba
 - Auto-bumping version on every merge (too noisy; operator-driven).
 - Semantic versioning enforcement tooling.
 - Projects pinned to non-existent tags — they already fall back gracefully per standalone.md.
+
+---
+
+## Design reference
+- N/A — pre-DDDD item (written before design doc system, PR #144)
