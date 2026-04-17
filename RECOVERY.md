@@ -172,6 +172,47 @@ rm -rf docs/aide/
 
 ---
 
+## Situation 8: A bad otherness release broke my agent — I need to roll back
+
+If a new otherness release caused regressions (e.g. agents get stuck, wrong behavior), you can pin your project to the last known-good version.
+
+```bash
+# 1. List available releases to find the last good one
+gh release list --repo pnz1990/otherness --limit 10
+
+# 2. Pin your project to that version
+# Edit otherness-config.yaml:
+#   maqa:
+#     agent_version: "v0.1.0"   ← replace with the last good tag
+python3 - <<PYEOF
+import re
+TARGET = "v0.1.0"  # replace with desired version
+with open('otherness-config.yaml') as f:
+    content = f.read()
+if re.search(r'^\s+agent_version:', content, re.MULTILINE):
+    content = re.sub(r'(^\s+agent_version:\s*).*', f'\\g<1>"{TARGET}"', content, flags=re.MULTILINE)
+else:
+    content = re.sub(r'(^maqa:)', f'\\1\n  agent_version: "{TARGET}"', content, flags=re.MULTILINE)
+with open('otherness-config.yaml', 'w') as f:
+    f.write(content)
+print(f"Pinned to {TARGET}")
+PYEOF
+
+# 3. Commit the pin
+git add otherness-config.yaml
+git commit -m "fix: pin otherness to last known-good version"
+git push origin main
+
+# 4. Restart your otherness session — startup will show:
+#    [STANDALONE] Pinned to v0.1.0
+```
+
+To report the regression to the otherness team: open an issue on https://github.com/pnz1990/otherness with label `priority/critical` and the exact agent version where the problem appeared.
+
+To unpin once the regression is fixed: run `/otherness.upgrade` → Step 5.
+
+---
+
 ## Quick reference
 
 | What happened | Fix |
@@ -183,3 +224,4 @@ rm -rf docs/aide/
 | Agent stuck on `[NEEDS HUMAN]` | Read the issue, fix the root cause, close it |
 | State JSON corrupt | Delete `_state` branch, re-run `/otherness.setup` |
 | Orphaned worktrees | `git worktree prune` |
+| Bad otherness release | Pin to previous tag in `otherness-config.yaml` (Situation 8) |
