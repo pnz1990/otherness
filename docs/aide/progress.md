@@ -4,10 +4,10 @@
 
 ## Current State
 
-- **Active queue**: Design doc backlog exhausted — next work from future-ideas.md, DoD issues, or new roadmap stages
+- **Active queue**: Batch 22 — docs housekeeping; most improvements from future-ideas.md implemented
 - **Completed stages**: 0, 1, 2, 3, 4 (via autonomous loop)
 - **Current stage**: 5 — Versioned Release Model (pending human trigger)
-- **Batch**: 16 (2026-04-17)
+- **Batch**: 22 (2026-04-17)
 
 ## Stage Completion
 
@@ -41,3 +41,8 @@ Stage 5 begins when any trigger is met. Until then, otherness auto-updates to `m
 | 2026-04-17 | validate.sh has 5 checks including Design reference lint (PR #156) |
 | 2026-04-17 | onboard generates docs/design/ stubs — Step 4b (PR #165) |
 | 2026-04-17 | Journey 2 (alibi) ❌ Failing — awaiting human to restart otherness on alibi |
+| 2026-04-17 | DDDD design system fully implemented — all 9 obligations (PRs #144-#165) |
+| 2026-04-17 | test.sh integration check bug fixed (was always skipped — PR #180) |
+| 2026-04-17 | validate.sh 5-check suite: Design reference lint added (PR #156) |
+| 2026-04-17 | SM phase: difficulty-ledger, cross-project mining, skill confidence (PRs #172, #173, #181) |
+| 2026-04-17 | PM phase: cross-project improvement proposals (PR #177) |
