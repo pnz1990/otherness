@@ -79,6 +79,92 @@ for i in 1 2 3; do
   git pull --rebase origin main --quiet 2>/dev/null && \
   git push origin main && break || sleep $((i * 2))
 done
+
+# Regression detection: read back last 3 rows and auto-open issues on 2-batch regressions
+python3 - <<'REGEOF'
+import re, subprocess, os
+
+REPO = os.environ.get('REPO', '')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '')
+
+def parse_rows(content):
+    rows = []
+    for line in content.splitlines():
+        m = re.match(r'^\|\s*\d{4}-\d{2}-\d{2}\s*\|(.+)', line)
+        if m:
+            cells = [c.strip() for c in line.split('|')[1:-1]]
+            if len(cells) >= 7:
+                try:
+                    rows.append({
+                        'batch': cells[1],
+                        'needs_human': int(cells[3]) if cells[3].isdigit() else -1,
+                        'todo_shipped': int(cells[6]) if cells[6].isdigit() else -1,
+                    })
+                except (ValueError, IndexError):
+                    pass
+    return rows
+
+def open_if_absent(title, body):
+    """Open a kind/chore issue only if none with the same title is currently open."""
+    existing = subprocess.run(
+        ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+         '--search', title, '--json', 'number', '--jq', 'length'],
+        capture_output=True, text=True)
+    count = int(existing.stdout.strip() or '0')
+    if count == 0:
+        r = subprocess.run(
+            ['gh', 'issue', 'create', '--repo', REPO,
+             '--title', title, '--label', 'kind/chore,otherness', '--body', body],
+            capture_output=True, text=True)
+        if r.returncode == 0:
+            print(f'[SM] Opened regression issue: {r.stdout.strip()}')
+        else:
+            print(f'[SM] Failed to open regression issue: {r.stderr.strip()}')
+    else:
+        print(f'[SM] Regression issue already open — skipping duplicate for: {title}')
+
+try:
+    content = open('docs/aide/metrics.md').read()
+    rows = parse_rows(content)
+except Exception:
+    rows = []
+
+if len(rows) < 3:
+    print(f'[SM] Regression check: only {len(rows)} rows — need ≥ 3, skipping.')
+else:
+    n2, n1, n0 = rows[-3], rows[-2], rows[-1]
+
+    # needs_human regression: last 2 batches both higher than N-2
+    if n2['needs_human'] >= 0 and n1['needs_human'] >= 0 and n0['needs_human'] >= 0:
+        if n1['needs_human'] > n2['needs_human'] and n0['needs_human'] > n2['needs_human']:
+            open_if_absent(
+                '[METRIC REGRESSION] needs_human increasing — investigate',
+                f'SM regression check triggered.\n\n'
+                f'`needs_human` increased for 2 consecutive batches vs baseline:\n'
+                f'- Batch {n2["batch"]}: {n2["needs_human"]}\n'
+                f'- Batch {n1["batch"]}: {n1["needs_human"]}\n'
+                f'- Batch {n0["batch"]}: {n0["needs_human"]}\n\n'
+                f'Review open needs-human issues and identify the root cause.'
+            )
+        else:
+            print(f'[SM] needs_human: no regression '
+                  f'({n2["needs_human"]} → {n1["needs_human"]} → {n0["needs_human"]})')
+
+    # todo_shipped regression: last 2 batches both = 0
+    if n1['todo_shipped'] >= 0 and n0['todo_shipped'] >= 0:
+        if n1['todo_shipped'] == 0 and n0['todo_shipped'] == 0:
+            open_if_absent(
+                '[METRIC REGRESSION] no items shipped in 2 batches',
+                f'SM regression check triggered.\n\n'
+                f'`todo_shipped` = 0 for 2 consecutive batches:\n'
+                f'- Batch {n1["batch"]}: shipped={n1["todo_shipped"]}\n'
+                f'- Batch {n0["batch"]}: shipped={n0["todo_shipped"]}\n\n'
+                f'Check the queue: is it empty? Are items blocked? See docs/aide/roadmap.md.'
+            )
+        else:
+            print(f'[SM] todo_shipped: no regression '
+                  f'({n1["todo_shipped"]} → {n0["todo_shipped"]})')
+REGEOF
 ```
 
 ---
