@@ -512,13 +512,20 @@
       "done_at": "2026-04-17T23:29:26Z"
     },
     "194": {
-      "state": "todo",
+      "state": "done",
       "title": "chore(docs): update future-ideas.md implementation order",
       "issues": [
         194
       ],
       "risk": "low",
-      "created_at": "2026-04-17T23:31:52Z"
+      "created_at": "2026-04-17T23:31:52Z",
+      "assigned_to": "sess-518cc5ec",
+      "assigned_at": "2026-04-17T23:32:42Z",
+      "branch": "feat/194",
+      "worktree": "../otherness.194",
+      "pr_merged": true,
+      "pr_number": 195,
+      "done_at": "2026-04-17T23:34:49Z"
     }
   },
   "engineer_slots": {
@@ -540,6 +547,6 @@
   },
   "handoff": null,
   "queue_generated_at": "2026-04-17T16:47:47Z",
-  "sm_cycle_count": 14,
-  "pm_cycle_count": 13
+  "sm_cycle_count": 15,
+  "pm_cycle_count": 14
 }
