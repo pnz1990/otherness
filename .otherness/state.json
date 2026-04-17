@@ -3,8 +3,7 @@
   "mode": "standalone",
   "repo": "pnz1990/otherness",
   "current_queue": [
-    "186",
-    "187"
+    "190"
   ],
   "features": {
     "127-128-129": {
@@ -479,6 +478,15 @@
       "pr_merged": true,
       "pr_number": 189,
       "done_at": "2026-04-17T23:18:41Z"
+    },
+    "190": {
+      "state": "todo",
+      "title": "chore(docs): progress.md batch 22 + future-ideas.md Ideas 1&2",
+      "issues": [
+        190
+      ],
+      "risk": "low",
+      "created_at": "2026-04-17T23:21:09Z"
     }
   },
   "engineer_slots": {
