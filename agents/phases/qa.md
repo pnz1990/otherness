@@ -55,6 +55,18 @@ else
   #   2. Verify the behavior matches the obligation
   #   3. If any obligation unimplemented or misimplemented: WRONG finding — must fix before approve
   # All obligations must be verified. This is the highest-priority check.
+
+  # Design reference check — MANDATORY for feature PRs
+  # [AI-STEP] Read spec.md and find the ## Design reference section.
+  # Three valid outcomes:
+  #   A) Section present with a docs/design/ file named → verify that file exists and
+  #      check that the PR diff updates it (🔲 → ✅). If design doc not updated: WRONG.
+  #   B) Section present with "N/A — infrastructure change" → acceptable for chore/fix/refactor.
+  #   C) Section absent → WRONG. Post:
+  #      "[QA] WRONG — spec.md missing ## Design reference section.
+  #       Per docs/design/01-declarative-design-driven-development.md O2, every spec must
+  #       reference its design doc (or declare N/A for infra-only changes).
+  #       ENG must add this section and re-push."
 fi
 ```
 

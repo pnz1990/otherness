@@ -7,15 +7,48 @@ why it matters to a real user. Find gaps — do not confirm existing beliefs.
 
 ---
 
-## 5a. Roadmap health
+## 5a. Roadmap health + design doc coverage
 
 ```bash
-# Is the current stage making progress?
-cat docs/aide/roadmap.md | grep -A5 "^## Stage"
-cat docs/aide/definition-of-done.md | grep "^- \[" | head -20
-```
+# Roadmap stage progress
+cat docs/aide/roadmap.md | grep -A3 "^## Stage" | head -30
 
----
+# Design doc coverage — every roadmap stage should have a docs/design/ file
+python3 - <<'EOF'
+import re, os
+
+roadmap = open('docs/aide/roadmap.md').read() if os.path.exists('docs/aide/roadmap.md') else ''
+stages = re.findall(r'^## Stage \d+: (.+)', roadmap, re.MULTILINE)
+
+design_dir = 'docs/design'
+existing = set(os.listdir(design_dir)) if os.path.isdir(design_dir) else set()
+
+print(f"Design doc coverage ({len(existing)} files in docs/design/):")
+for stage in stages:
+    slug = stage.lower().replace(' ', '-').replace('/', '-')
+    matches = [f for f in existing if any(w in f.lower() for w in slug.split('-') if len(w) > 3)]
+    if matches:
+        print(f"  ✅ {stage} → {matches[0]}")
+    else:
+        print(f"  🔲 {stage} → no design doc")
+
+future_total = 0
+for fname in sorted(existing):
+    if not fname.endswith('.md'): continue
+    try:
+        content = open(f'{design_dir}/{fname}').read()
+        m = re.search(r'^## Future.*?\n(.*?)(?=^## |\Z)', content, re.MULTILINE | re.DOTALL)
+        if m:
+            items = re.findall(r'^- 🔲', m.group(1), re.MULTILINE)
+            future_total += len(items)
+    except: pass
+print(f"\nTotal 🔲 Future items across all design docs: {future_total}")
+EOF
+
+# [AI-STEP] For each stage without a design doc: open a kind/docs priority/high issue.
+# Check for existing open issue first to avoid duplicates.
+# Issue title: "docs(design): create design doc for <Stage N: Name>"
+```
 
 ## 5b. Product validation (every N_PM_CYCLES cycles)
 

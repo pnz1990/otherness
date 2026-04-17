@@ -198,14 +198,15 @@ except: print(0)
   fi
 
   if [ "$QUEUE_GEN_WINNER" = "true" ]; then
-    # Generate queue — uses speckit.specify for richer issue bodies when speckit present
+    # Queue generation: design docs are the PRIMARY source, roadmap is SECONDARY.
+    # Read 🔲 Future items from docs/design/ files first.
+    # Fall back to roadmap.md deliverables for stages without design docs yet.
     python3 - <<'PYEOF'
 import subprocess, re, json, os
 
-roadmap = open('docs/aide/roadmap.md').read()
 REPO = os.environ.get('REPO', '')
 
-# PRIMARY: state.json done items
+# Track what's already done
 try:
     state = json.load(open('.otherness/state.json'))
     done_titles = set(
@@ -215,7 +216,6 @@ try:
 except:
     done_titles = set()
 
-# SECONDARY: last 100 merged PR titles
 try:
     merged_prs = subprocess.check_output(
         ['gh','pr','list','--repo',REPO,'--state','merged','--limit','100',
@@ -223,32 +223,61 @@ try:
 except:
     merged_prs = ''
 
-# Also load project memory — avoid re-proposing decided topics
-try:
-    memory = open('.specify/memory/decisions.md').read().lower()
-except:
-    memory = ''
-
 def is_done(d):
-    d_lower = d.lower()
+    d_lower = d.lower().strip()
     if d_lower in done_titles: return True
     key = d.split('`')[1] if '`' in d else d[:40].lower()
     return key.lower() in merged_prs
 
-stages = re.split(r'^## Stage', roadmap, flags=re.MULTILINE)
-for stage in stages[1:]:
-    deliverables = re.findall(r'^- (.+)', stage, re.MULTILINE)
-    incomplete = [d for d in deliverables if not is_done(d)]
-    if incomplete:
-        print(f"STAGE: {stage.strip().split(chr(10))[0]}")
-        for d in incomplete[:5]: print(f"ITEM: {d}")
-        break
+# PRIMARY: read 🔲 Future items from docs/design/
+design_items = []
+design_dir = 'docs/design'
+if os.path.isdir(design_dir):
+    for fname in sorted(os.listdir(design_dir)):
+        if not fname.endswith('.md'): continue
+        try:
+            content = open(f'{design_dir}/{fname}').read()
+            # Find ## Future section
+            m = re.search(r'^## Future.*?\n(.*?)(?=^## |\Z)', content,
+                          re.MULTILINE | re.DOTALL)
+            if m:
+                items = re.findall(r'^- 🔲 (.+)', m.group(1), re.MULTILINE)
+                for item in items:
+                    desc = re.sub(r'\s*—.*$', '', item).strip()
+                    if not is_done(desc):
+                        design_items.append({'source': fname, 'item': desc})
+        except Exception:
+            pass
+
+if design_items:
+    print(f"SOURCE: design docs ({len(design_items)} future items)")
+    for d in design_items[:5]:
+        print(f"ITEM: {d['item']} [from {d['source']}]")
+else:
+    # SECONDARY: roadmap deliverables (for projects without design docs yet)
+    try:
+        roadmap = open('docs/aide/roadmap.md').read()
+        stages = re.split(r'^## Stage', roadmap, flags=re.MULTILINE)
+        for stage in stages[1:]:
+            deliverables = re.findall(r'^- (.+)', stage, re.MULTILINE)
+            incomplete = [d for d in deliverables if not is_done(d)]
+            if incomplete:
+                print(f"SOURCE: roadmap (no design docs found — add docs/design/ for design-first)")
+                print(f"STAGE: {stage.strip().split(chr(10))[0]}")
+                for d in incomplete[:5]: print(f"ITEM: {d}")
+                break
+    except Exception:
+        print("SOURCE: no roadmap or design docs found")
 PYEOF
 
-    # Create GitHub issues for each deliverable (max 5, prefer size/xs or s)
-    # For each: check for duplicate first, then create with acceptance criterion
+    # [AI-STEP] For each ITEM line above:
+    # 1. Check for an existing open issue with the same title (avoid duplicates)
+    # 2. If the item came from a design doc: issue body must reference that design doc
+    # 3. If the item came from roadmap (no design doc): issue body should note that
+    #    a docs/design/ file should be created as part of this item
+    # Create max 5 issues. Prefer size/s or size/xs.
     # Format:
-    # gh issue create --repo $REPO --title "..." --label "otherness,..." --body "..."
+    # gh issue create --repo $REPO --title "..." --label "..." --body "..."
 
     # Write state, release lock, post summary
     export STATE_MSG="[COORD] queue generated"

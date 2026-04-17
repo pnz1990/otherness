@@ -44,76 +44,89 @@ fi
 
 ---
 
-## 2b. SPEC-FIRST: generate spec + plan + tasks using speckit (if available)
+## 2b. SPEC-FIRST: find or create the design doc, then write the spec
 
 Load skill: `~/.otherness/agents/skills/declaring-designs.md` before writing the spec.
 
-**Concept consistency check before speccing:**
+**Step 0 — Identify the design doc for this feature area (MANDATORY).**
+
+Before writing a single line of spec or code, find the `docs/design/` file that covers
+this item. If the item is `chore`, `fix`, or `refactor` with no user-visible behavior
+change, skip to §2c — no design doc required. Otherwise:
+
+```bash
+# 1. List existing design docs
+ls docs/design/ 2>/dev/null || echo "(no docs/design/ yet)"
+
+# 2. Identify which design doc covers this item's feature area.
+#    Read the issue body — it will name an epic or feature area.
+#    Match to a docs/design/ file by name or content.
+ISSUE_BODY=$(gh issue view ${ITEM_ID//[^0-9]/} --repo $REPO --json title,body \
+  --jq '"Title: " + .title + "\n\n" + .body' 2>/dev/null)
+
+# 3. [AI-STEP] Read the matching design doc. Find the 🔲 Future item(s) this
+#    issue implements. The spec you write MUST reference this design doc.
+#
+#    If no matching design doc exists:
+#    - Create docs/design/<N>-<area>.md using the design doc structure from
+#      docs/design/01-declarative-design-driven-development.md
+#    - Mark the new item as 🔲 Future (you will flip it to ✅ Present in §2f)
+#    - Creating the design doc is part of THIS item's work — not a separate issue
+```
+
+**Step 1 — Concept consistency check before speccing:**
 1. Does an existing abstraction already cover this? Extend, don't add.
 2. What existing patterns in the codebase should this follow?
 3. Does AGENTS.md §Anti-Patterns apply?
 4. Does the API/interface naming match existing user-facing docs?
 5. Check `decisions.md` — has this pattern been decided before?
 
-**If speckit is installed (`specify --version 2>/dev/null`)**: use it for structured artifacts.
+**Step 2 — Write the spec (with design reference).**
+
+If speckit is installed (`specify --version 2>/dev/null`): use it for structured artifacts.
 
 ```bash
-if specify --version &>/dev/null; then
-  # Use speckit for spec, plan, and tasks — structured artifacts, better quality
+mkdir -p "$MY_WORKTREE/.specify/specs/$ITEM_ID"
 
-  # Point speckit to THIS item's spec directory in the worktree (parallel-safe)
-  export SPECIFY_FEATURE_DIRECTORY="$MY_WORKTREE/.specify/specs/$ITEM_ID"
-  mkdir -p "$SPECIFY_FEATURE_DIRECTORY"
-
-  # Read the issue to build the feature description
-  ISSUE_NUM=$(echo $ITEM_ID | grep -oE '[0-9]+' | head -1)
-  ISSUE_BODY=$(gh issue view $ISSUE_NUM --repo $REPO --json title,body \
-    --jq '"Title: " + .title + "\n\nBody: " + .body' 2>/dev/null)
-
-  echo "[ENG] Generating spec via /speckit.specify..."
-  # [AI-STEP] Run /speckit.specify with the issue title + body as the feature description.
-  # This creates spec.md in $SPECIFY_FEATURE_DIRECTORY using the spec-template.
-  # SPECIFY_FEATURE_DIRECTORY is set — speckit will use it instead of .specify/feature.json.
-
-  echo "[ENG] Generating plan via /speckit.plan..."
-  # [AI-STEP] Run /speckit.plan to generate research.md, data-model.md, contracts/, plan.md.
-  # This runs in $MY_WORKTREE with SPECIFY_FEATURE_DIRECTORY set.
-
-  echo "[ENG] Generating tasks via /speckit.tasks..."
-  # [AI-STEP] Run /speckit.tasks to generate dependency-ordered tasks.md with [P] markers.
-  # This reads the spec and plan from $SPECIFY_FEATURE_DIRECTORY.
-
-else
-  # Fallback: manual spec (no speckit) — still follow the three-zone structure
-  mkdir -p "$MY_WORKTREE/.specify/specs/$ITEM_ID"
-
-  echo "[ENG] Writing spec manually (speckit not installed)..."
-  # [AI-STEP] Write .specify/specs/$ITEM_ID/spec.md using the three-zone structure:
-  # Zone 1 — Obligations (falsifiable, must satisfy)
-  # Zone 2 — Implementer's judgment (choices left to engineer)
-  # Zone 3 — Scoped out (explicitly not covered)
-  # Each obligation must be falsifiable — describe behavior that would violate it.
-
-  # [AI-STEP] Write .specify/specs/$ITEM_ID/tasks.md — actionable, file-path-specific,
-  # dependency-ordered, with [P] markers for tasks safe to parallelize.
-fi
+# [AI-STEP] Write .specify/specs/$ITEM_ID/spec.md using the three-zone structure:
+# Zone 1 — Obligations (falsifiable, must satisfy)
+# Zone 2 — Implementer's judgment (choices left to engineer)
+# Zone 3 — Scoped out (explicitly not covered)
+# Each obligation must be falsifiable — describe behavior that would violate it.
+#
+# The spec MUST include a ## Design reference section:
+#
+#   ## Design reference
+#   - **Design doc**: `docs/design/<N>-<area>.md`
+#   - **Section**: `<section name>`
+#   - **Implements**: <brief description of 🔲 item being moved to ✅>
+#
+# If this item has no user-visible behavior change (pure chore/fix/refactor):
+#   ## Design reference
+#   - N/A — infrastructure change with no user-visible behavior
 ```
 
-**Spec quality gate** (from declaring-designs skill) — do not proceed to code until:
+**Spec quality gate** — do not proceed to code until:
 - [ ] Three-zone structure present (Obligations / Judgment / Scoped out)
 - [ ] Every obligation is falsifiable
-- [ ] Concrete artifacts (interfaces, schemas, examples) carry the spec — not prose
+- [ ] `## Design reference` section present (or N/A for infra items)
 - [ ] Spec stands alone without referencing the current implementation
 - [ ] No obligation contradicts `decisions.md` or `constitution.md`
 
 ---
 
-## 2c. DOC-FIRST + ARCHITECTURE check
+## 2c. Customer doc check
 
 ```bash
-# If this item touches user-facing behavior: verify/create user-facing doc page first
-# Re-read any architecture constraint docs listed in AGENTS.md
-# Re-read AGENTS.md §Anti-Patterns
+# If this item adds or changes user-visible behavior:
+# 1. Check whether a customer-facing doc exists for this feature area
+#    (docs/<feature>.md — e.g. docs/keyboard-shortcuts.md, docs/cli-reference.md)
+# 2. If it exists: read it. The spec obligations must be consistent with it.
+# 3. If it doesn't exist: create a stub with the interface contract.
+#    Mark unimplemented sections 🔲 Future — do NOT describe how the code works.
+#
+# [AI-STEP] Perform this check. Update or create the customer doc stub if needed.
+# The customer doc change will ship in the same PR as the feature (see §2f).
 ```
 
 ---
@@ -165,31 +178,55 @@ Max 3 fix attempts. If still failing after 3: post `[NEEDS HUMAN: build failing 
 
 ---
 
-## 2f. Commit and push
+## 2f. Update design doc, commit and push
 
 Load skill: `~/.otherness/agents/skills/contribution-hygiene.md` before committing.
 Load skill: `~/.otherness/agents/skills/ephemeral-pr-artifacts.md` before opening the PR.
+
+**Before committing — update the design doc (if this item has user-visible behavior):**
+
+```bash
+# [AI-STEP] Open the design doc identified in §2b.
+# Find the 🔲 Future item(s) this PR implements.
+# Move them to the ✅ Present section, adding "(PR #N, date)".
+# If new behavior was added that wasn't in the design doc: add it to ✅ Present.
+# Do NOT add new 🔲 Future items here — that is the PM's job.
+#
+# Also update the customer doc (docs/<feature>.md) to match what was actually shipped:
+# - Remove 🔲 Future markers from sections now implemented
+# - Ensure the doc accurately describes what the user can do today
+```
 
 ```bash
 cd $MY_WORKTREE
 
 # Use specific git add — never `git add .` (contribution-hygiene skill)
-git add <specific files>
+# Include design doc and customer doc changes in the same commit as the feature
+git add <specific files> docs/design/<relevant-doc>.md docs/<relevant-customer-doc>.md
 git commit -m "<type>(<scope>): <description>
 
 <body explaining why, not what>
+
+Design doc updated: docs/design/<N>-<area>.md (🔲 → ✅)
 
 🤖 Generated with [Claude Code](https://claude.ai/code)"
 
 git push origin $MY_BRANCH
 ```
 
-Open PR:
+Open PR — the PR body must list which design doc was updated:
 ```bash
 gh pr create --repo $REPO --base main --head $MY_BRANCH \
   --title "<type>(<scope>): <description>" \
   --label "$PR_LABEL" \
-  --body "..."
+  --body "## Summary
+...
+
+## Design doc
+Updated \`docs/design/<N>-<area>.md\`: moved <item> from 🔲 Future to ✅ Present.
+
+## Customer doc
+Updated \`docs/<feature>.md\`: <what changed>."
 ```
 
 Update state: `state=in_review`, `pr_number=<N>`.
