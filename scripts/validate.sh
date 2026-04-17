@@ -17,7 +17,7 @@ echo "=== otherness validate ==="
 #             <owner>/<X> that isn't <owner>/otherness. Falls back gracefully.
 #   Rule 2 — reads fleet project names from otherness-config.yaml monitor.projects
 #             and catches them in project-reference context.
-echo "[1/4] Checking for hardcoded project paths in agent files..."
+echo "[1/5] Checking for hardcoded project paths in agent files..."
 
 # Resolve owner from config (used in Rule 1)
 OWNER=$(python3 -c "
@@ -94,7 +94,7 @@ done
 # Skill paths use ~/.otherness/agents/skills/<name>.md — on a CI runner ~/.otherness
 # doesn't exist, but the files are present in the repo at agents/skills/<name>.md.
 # We resolve both locations: prefer the expanded ~ path, fall back to repo-local.
-echo "[2/4] Checking skill references..."
+echo "[2/5] Checking skill references..."
 MISSING=0
 while IFS= read -r line; do
   # Extract path after "Load skill: read `" up to closing backtick
@@ -116,7 +116,7 @@ done < <(grep "Load skill: read" "$AGENTS_DIR/standalone.md" "$AGENTS_DIR/phases
 [ $MISSING -eq 0 ] && echo "  OK: all skill refs resolve" || exit 1
 
 # 3. Check required files exist
-echo "[3/4] Checking required files..."
+echo "[3/5] Checking required files..."
 REQUIRED=(
   "$AGENTS_DIR/standalone.md"
   "$AGENTS_DIR/bounded-standalone.md"
