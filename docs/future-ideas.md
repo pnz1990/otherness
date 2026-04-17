@@ -1,6 +1,10 @@
 # Future Ideas: Compounding Self-Improvement
 
 > Status: Backlog — not scheduled. Review when otherness is running stably on ≥5 projects.
+>
+> Ideas in this file were moved here from GitHub issues because they are too large, too
+> architectural, or too early to implement autonomously. They are preserved so they are
+> not forgotten and can be revisited when the time is right.
 
 These ideas were identified on 2026-04-16 when thinking about how to make projects improve
 exponentially rather than linearly. None of these are implemented. They are recorded here
@@ -119,3 +123,71 @@ but much closer) improvement across the portfolio.
 
 The ceiling is still model capability. But the gap between ceiling and current performance
 closes much faster, and faster the more projects are running.
+
+---
+
+## Idea 7: Event-sourced state (was GitHub issue #118)
+
+**What**: Replace `state.json` mutable snapshot with an append-only `events.jsonl` log on
+the `_state` branch. Each action appends one line:
+```json
+{"ts":"2026-04-17T00:45:09Z","session":"STANDALONE-900","event":"item.claimed","item":"900-playwright","branch":"feat/900-playwright-e2e-fix"}
+```
+Current state is derived by replaying the log. Appends don't conflict → true parallel safety
+without field-level merge hacks.
+
+**Why it matters**: The current field-level merge (PR #107) mostly works but has edge cases.
+Event sourcing eliminates the problem class entirely. Gives full audit trail and replay.
+
+**Why deferred**: Full rewrite of the state management layer — the most sensitive part of
+standalone.md. The field-level merge fix is good enough for current scale. Revisit when
+parallel session count exceeds ~10 or when state corruption is observed in production.
+
+**Prior art**: Martin Fowler Event Sourcing (2005), Apache Kafka log architecture.
+
+---
+
+## Idea 8: Cross-project learning loop (was GitHub issue #120)
+
+> Note: This overlaps significantly with Ideas 1 and 4 above. Issue #120 is the GitHub
+> version of the same concept — closed to avoid duplication.
+
+**Extended design from issue #120**:
+
+The SM phase has a stub for cross-project pattern mining (phases/sm.md §4c). The stub
+fires every 5 SM cycles and collects needs-human items. What it doesn't do yet:
+- Actually extract patterns from the collected items
+- Write generalizable patterns to skill files
+- Do this across the full portfolio (not just the current project)
+
+The full implementation requires:
+1. SM phase reads `monitor.projects` from otherness-config.yaml
+2. For each project: fetch last 10 closed `[needs-human]` issues
+3. Ask the model: "What generalizable pattern do ≥2 of these represent?"
+4. If pattern found: append to `~/.otherness/agents/skills/difficulty-ledger.md`
+5. If pattern is entirely novel: open a PR on the otherness repo
+
+The stub in sm.md is ready. The AI step inside it needs to be written.
+
+---
+
+## Idea 9: otherness as a service (was GitHub issue #122)
+
+**What**: Move agent execution from local machine to cloud infrastructure.
+- Trigger: GitHub webhook → cloud function → ephemeral container → run `/otherness.run` → tear down
+- State: already in `_state` branch — no database needed
+- Auth: GitHub App installation token per repo (rate limits per-installation, not per-user)
+- Billing: per-agent-minute or per-PR-merged
+
+**Why it matters**: Agents currently stop when the laptop closes. At 10+ projects, requires
+10+ always-on machines. This is the path every production autonomous coding product
+(Devin, Jules, OpenHands Cloud) has taken.
+
+**Why deferred**: Requires a hosting layer outside this repo. The agent instructions
+(standalone.md) don't need to change — the container just runs them. The main design
+consideration: worktree paths like `../<repo>.<item>` won't work in containers — needs
+an absolute path convention. File an issue when ready to build.
+
+**Constraint to preserve**: standalone.md must never assume local execution — no hardcoded
+absolute paths, no `~/` assumptions in core logic. The v2 refactor already avoids this.
+
