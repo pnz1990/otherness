@@ -46,6 +46,7 @@
 | 2026-04-17 | 22 | 1 | 0 | 0 | 12 | 1 | ~3 | Batch 22: #190 progress.md batch 22 + Ideas 1&2 covered — 6/9 future ideas done |
 | 2026-04-17 | 23 | 1 | 0 | 0 | 12 | 1 | ~3 | Batch 23: #192 metrics.md restructure (all 22 rows in sequential order) |
 | 2026-04-17 | 24 | 1 | 0 | 0 | 12 | 1 | ~2 | Batch 24: #194 future-ideas.md implementation order updated (6/9 done) |
+| 2026-04-17 | 25 | 1 | 0 | 0 | 12 | 1 | ~2 | Batch 25: #196 D4 speculative item removed from COORD queue — 0 non-deferred Future items |
 
 ---
 
