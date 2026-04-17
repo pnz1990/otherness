@@ -209,6 +209,57 @@ for line in open('otherness-config.yaml'):
         if m: print(m.group(1)); break
 " 2>/dev/null || echo "SDE")
 
+# Capability profile: read from otherness-config.yaml agents[] section.
+# Allows specialized agents to declare which item areas they can work on.
+# AGENT_ID env var selects a specific profile; otherwise the first profile is used.
+# If no profile found or areas empty: ALLOWED_AREAS stays unset (claim any item).
+eval "$(python3 - <<'CAP_EOF'
+import re, os, yaml as _yaml_unused
+# Parse agents section with regex (no PyYAML dependency)
+try:
+    content = open("otherness-config.yaml").read()
+    # Find agents: block
+    agents_block = re.search(r'^agents:\s*\n((?:  .+\n?)*)', content, re.MULTILINE)
+    if not agents_block:
+        raise ValueError("no agents section")
+
+    lines = agents_block.group(1).splitlines()
+    profiles = []
+    current = {}
+    for line in lines:
+        id_m = re.match(r"\s+-\s+id:\s*(.+)", line)
+        area_m = re.match(r"\s+areas:\s*\[(.+)\]", line)
+        area_m2 = re.match(r"\s+-\s+(.+)", line)
+        jf_m = re.match(r"\s+job_family:\s*(\S+)", line)
+        if id_m:
+            if current: profiles.append(current)
+            current = {"id": id_m.group(1).strip()}
+        elif area_m and current:
+            current["areas"] = [a.strip().strip("\"'") for a in area_m.group(1).split(",")]
+        elif jf_m and current:
+            current["job_family"] = jf_m.group(1).strip()
+    if current: profiles.append(current)
+
+    if not profiles:
+        raise ValueError("empty agents list")
+
+    # Select profile: by AGENT_ID env var or first
+    target_id = os.environ.get("AGENT_ID", "")
+    profile = next((p for p in profiles if p.get("id") == target_id), profiles[0])
+
+    areas = profile.get("areas", [])
+    if areas:
+        print(f"export ALLOWED_AREAS=\"{','.join(areas)}\"")
+        print(f"echo \"[STANDALONE] Capability profile: id={profile.get('id','')} areas={','.join(areas)}\"")
+    jf = profile.get("job_family", "")
+    if jf:
+        print(f"JOB_FAMILY=\"{jf}\"")
+        print(f"echo \"[STANDALONE] Job family override from profile: {jf}\"")
+except Exception:
+    pass  # No profile — no-op, agent claims any item
+CAP_EOF
+)"
+
 AUTONOMOUS_MODE=$(python3 -c "
 import re
 section = None
