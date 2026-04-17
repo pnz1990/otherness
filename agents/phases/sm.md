@@ -205,9 +205,11 @@ with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
 ## 4d. Write session handoff
 
 ```bash
-# Write .otherness/handoff.md — next session reads this at startup
+# Write handoff to the _state branch — NOT to main working tree.
+# _state is the distributed store: parallel-safe, machine-independent,
+# survives clean checkouts. Works whether agents run on one machine or many.
 python3 - <<'EOF'
-import subprocess, json, datetime, os
+import subprocess, json, datetime, os, tempfile, shutil
 
 REPO = os.environ.get('REPO', '')
 now = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -228,13 +230,11 @@ try:
     features = s.get('features', {})
     todo = [f"- {k}: {v.get('title','')}" for k,v in features.items() if v.get('state')=='todo']
     in_prog = [f"- {k}: {v.get('title','')}" for k,v in features.items() if v.get('state') in ('assigned','in_review')]
-    done_items = [k for k,v in features.items() if v.get('state')=='done']
     queue_text = ('**In progress:**\n' + '\n'.join(in_prog) + '\n' if in_prog else '') + \
                  ('**Todo:**\n' + '\n'.join(todo) if todo else '**Queue empty**')
     next_item = todo[0].lstrip('- ').split(':')[0] if todo else 'none'
 except:
     queue_text = '(unavailable)'
-    done_items = []
     next_item = 'unknown'
 
 # CI status
@@ -264,18 +264,30 @@ handoff = f"""## Session Handoff — {now}
 Session: {os.environ.get('MY_SESSION_ID','unknown')} | otherness@{os.environ.get('OTHERNESS_VERSION','unknown')}
 """
 
-os.makedirs('.otherness', exist_ok=True)
-with open('.otherness/handoff.md', 'w') as f: f.write(handoff)
-print(f"[SDM] Handoff written → .otherness/handoff.md (next_item={next_item})")
+# Write to _state branch via worktree (same pattern as state.json writes)
+state_wt = os.path.join(tempfile.gettempdir(), 'otherness-handoff-' + str(os.getpid()))
+try:
+    subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
+    subprocess.run(['git','worktree','add','--no-checkout',state_wt,'origin/_state'],
+                   capture_output=True, check=True)
+    handoff_path = os.path.join(state_wt, '.otherness', 'handoff.md')
+    os.makedirs(os.path.dirname(handoff_path), exist_ok=True)
+    with open(handoff_path, 'w') as f: f.write(handoff)
+    subprocess.run(['git','-C',state_wt,'add','.otherness/handoff.md'], capture_output=True)
+    subprocess.run(['git','-C',state_wt,'commit','-m',f'handoff {now}'], capture_output=True)
+    r = subprocess.run(['git','-C',state_wt,'push','origin','HEAD:_state'], capture_output=True)
+    if r.returncode == 0:
+        print(f'[SDM] Handoff written to _state branch (next_item={next_item})')
+    else:
+        print(f'[SDM] Handoff push failed (non-fatal): {r.stderr.decode()[:100]}')
+except Exception as e:
+    print(f'[SDM] Handoff write error (non-fatal): {e}')
+finally:
+    try:
+        subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
+    except: pass
+    subprocess.run(['git','worktree','prune'], capture_output=True)
 EOF
-
-# Commit handoff to main (pull-rebase-retry — low-risk doc commit)
-git add .otherness/handoff.md
-git commit -m "chore(sm): session handoff update $(date +%Y-%m-%dT%H:%M:%SZ)" 2>/dev/null || true
-for i in 1 2 3; do
-  git pull --rebase origin main --quiet 2>/dev/null && \
-  git push origin main && break || sleep $((i * 2))
-done
 ```
 
 ---
