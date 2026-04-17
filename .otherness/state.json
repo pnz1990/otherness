@@ -3,8 +3,8 @@
   "mode": "standalone",
   "repo": "pnz1990/otherness",
   "current_queue": [
-    "162",
-    "163"
+    "166",
+    "167"
   ],
   "features": {
     "127-128-129": {
@@ -287,6 +287,24 @@
       "pr_merged": true,
       "pr_number": 165,
       "done_at": "2026-04-17T22:23:46Z"
+    },
+    "166": {
+      "state": "todo",
+      "title": "chore(docs): update progress.md batch 16",
+      "issues": [
+        166
+      ],
+      "risk": "low",
+      "created_at": "2026-04-17T22:27:12Z"
+    },
+    "167": {
+      "state": "todo",
+      "title": "feat(coord): D4 translation for GitHub issue instructions",
+      "issues": [
+        167
+      ],
+      "risk": "medium",
+      "created_at": "2026-04-17T22:27:12Z"
     }
   },
   "engineer_slots": {
