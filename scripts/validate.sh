@@ -56,7 +56,7 @@ print(' '.join(names))
 " 2>/dev/null || echo "")
 
 FOUND=0
-for file in "$AGENTS_DIR"/*.md "$AGENTS_DIR/skills"/*.md; do
+for file in "$AGENTS_DIR"/*.md "$AGENTS_DIR/skills"/*.md "$AGENTS_DIR/phases"/*.md; do
   [ -f "$file" ] || continue
   # PROVENANCE.md is an audit trail log — it legitimately records which project a skill
   # was extracted from. Skip it for hardcoded-path checks (see issue #78).
@@ -112,7 +112,7 @@ if m: print(m.group(1))
     echo "  ERROR: referenced skill file not found: $skill_file"
     MISSING=1
   fi
-done < <(grep "Load skill: read" "$AGENTS_DIR/standalone.md" 2>/dev/null)
+done < <(grep "Load skill: read" "$AGENTS_DIR/standalone.md" "$AGENTS_DIR/phases"/*.md 2>/dev/null)
 [ $MISSING -eq 0 ] && echo "  OK: all skill refs resolve" || exit 1
 
 # 3. Check required files exist
@@ -123,6 +123,11 @@ REQUIRED=(
   "$AGENTS_DIR/onboard.md"
   "$AGENTS_DIR/otherness.learn.md"
   "$AGENTS_DIR/gh-features.md"
+  "$AGENTS_DIR/phases/coord.md"
+  "$AGENTS_DIR/phases/eng.md"
+  "$AGENTS_DIR/phases/qa.md"
+  "$AGENTS_DIR/phases/sm.md"
+  "$AGENTS_DIR/phases/pm.md"
   "$SKILLS_DIR/declaring-designs.md"
   "$SKILLS_DIR/reconciling-implementations.md"
   "$SKILLS_DIR/agent-coding-discipline.md"

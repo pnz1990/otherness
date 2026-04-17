@@ -27,8 +27,8 @@ try:
         if in_projects:
             m = re.match(r'\s+- (.+)', line)
             if m:
-                repo = m.group(1).strip().strip('"\'')
-                # Skip the otherness repo itself as reference — pick a managed project
+                repo = m.group(1).strip()
+                repo = repo.strip('"').strip("'")  # strip quotes — avoid backslash in heredoc                # Skip the otherness repo itself as reference — pick a managed project
                 if not repo.endswith('/otherness'):
                     print(repo)
                     sys.exit(0)

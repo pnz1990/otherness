@@ -49,6 +49,13 @@ maqa:
   # deploys globally to all otherness users.
   autonomous_mode: true
 
+  # Version pinning — pin to a specific otherness release tag for stability.
+  # When set: agent checks out this tag at startup instead of pulling latest.
+  # When empty: agent pulls latest main (current behavior — fine for most users).
+  # To upgrade: run /otherness.upgrade to preview changelog and bump the pin.
+  # Recommended for projects with >1 external contributor or production SLA.
+  agent_version: ""     # e.g. "v1.0.0" — leave empty for latest
+
 # ── CI gate ───────────────────────────────────────────────────────────────────
 ci:
   provider: github-actions            # github-actions | circleci | gitlab | bitbucket
