@@ -56,12 +56,17 @@ with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
   exit 0
 fi
 
-# CI check
-CI_STATUS=$(gh run list --repo $REPO --branch main --limit 5 \
-  --json conclusion,status,name,createdAt \
-  --jq '[.[] | {conclusion,status,name,createdAt}]' 2>/dev/null || echo "[]")
+# CI check — dispatched by CI_PROVIDER
+_CI_PROVIDER="${CI_PROVIDER:-github-actions}"
+FAILED=""
 
-FAILED=$(echo "$CI_STATUS" | python3 -c "
+case "$_CI_PROVIDER" in
+  github-actions)
+    CI_STATUS=$(gh run list --repo $REPO --branch main --limit 5 \
+      --json conclusion,status,name,createdAt \
+      --jq '[.[] | {conclusion,status,name,createdAt}]' 2>/dev/null || echo "[]")
+
+    FAILED=$(echo "$CI_STATUS" | python3 -c "
 import json, sys, datetime
 runs = json.load(sys.stdin)
 for r in runs:
@@ -75,6 +80,49 @@ for r in runs:
             if mins > 30: print(f'HUNG: {r[\"name\"]} ({mins:.0f}m)'); exit()
         except: pass
 " 2>/dev/null)
+    ;;
+
+  circleci)
+    # Requires CIRCLE_TOKEN env var; warns and skips gate if unset
+    if [ -z "$CIRCLE_TOKEN" ]; then
+      echo "[COORD] ⚠️  CI_PROVIDER=circleci but CIRCLE_TOKEN not set — skipping CI gate"
+    else
+      CI_JSON=$(curl -s -H "Circle-Token: $CIRCLE_TOKEN" \
+        "https://circleci.com/api/v2/project/gh/${REPO}/pipeline?branch=main" 2>/dev/null \
+        || echo '{}')
+      FAILED=$(echo "$CI_JSON" | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+for p in d.get('items', []):
+    state = p.get('state', '')
+    if state == 'errored': print(f'CircleCI pipeline {p.get(\"id\",\"\")} errored'); exit()
+" 2>/dev/null)
+    fi
+    ;;
+
+  gitlab)
+    # Requires GITLAB_TOKEN and GITLAB_URL env vars; warns and skips gate if unset
+    if [ -z "$GITLAB_TOKEN" ] || [ -z "$GITLAB_URL" ]; then
+      echo "[COORD] ⚠️  CI_PROVIDER=gitlab but GITLAB_TOKEN/GITLAB_URL not set — skipping CI gate"
+    else
+      ENCODED_REPO=$(python3 -c "import urllib.parse,os; print(urllib.parse.quote_plus(os.environ.get('REPO','')))")
+      CI_JSON=$(curl -s -H "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+        "${GITLAB_URL}/api/v4/projects/${ENCODED_REPO}/pipelines?ref=main&per_page=5" 2>/dev/null \
+        || echo '[]')
+      FAILED=$(echo "$CI_JSON" | python3 -c "
+import json, sys
+pipelines = json.load(sys.stdin)
+for p in pipelines:
+    if p.get('status') in ('failed', 'canceled'):
+        print(f'GitLab pipeline {p.get(\"id\",\"\")} {p.get(\"status\",\"\")}'); exit()
+" 2>/dev/null)
+    fi
+    ;;
+
+  *)
+    echo "[COORD] ⚠️  Unknown CI_PROVIDER='$_CI_PROVIDER' — skipping CI gate (known: github-actions, circleci, gitlab)"
+    ;;
+esac
 
 if [ -n "$FAILED" ]; then
   echo "[COORD] 🔴 CI BLOCKING: $FAILED — fix before new work"

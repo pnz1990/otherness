@@ -220,6 +220,17 @@ for line in open('otherness-config.yaml'):
         if m: print(m.group(1)); break
 " 2>/dev/null || echo "true")
 
+CI_PROVIDER=$(python3 -c "
+import re
+section = None
+for line in open('otherness-config.yaml'):
+    s = re.match(r'^(\w[\w_]*):', line)
+    if s: section = s.group(1)
+    if section == 'ci':
+        m = re.match(r'^\s+provider:\s*(\S+)', line)
+        if m: print(m.group(1)); break
+" 2>/dev/null || echo "github-actions")
+
 # Session identity — unique per session, stable for its lifetime
 MY_SESSION_ID="sess-$(python3 -c 'import os; print(os.urandom(4).hex())' 2>/dev/null || echo "$(date +%s | tail -c 9)")"
 
@@ -304,7 +315,7 @@ print(report_issue)
 ROTATE_EOF
 )
 
-export REPO REPO_NAME REPORT_ISSUE PR_LABEL BUILD_COMMAND TEST_COMMAND LINT_COMMAND JOB_FAMILY AUTONOMOUS_MODE MY_SESSION_ID OTHERNESS_VERSION
+export REPO REPO_NAME REPORT_ISSUE PR_LABEL BUILD_COMMAND TEST_COMMAND LINT_COMMAND JOB_FAMILY AUTONOMOUS_MODE MY_SESSION_ID OTHERNESS_VERSION CI_PROVIDER
 
 echo "[STANDALONE | $MY_SESSION_ID | otherness@$OTHERNESS_VERSION] Project: $REPO | Role: $JOB_FAMILY | Autonomous: $AUTONOMOUS_MODE | Report: #$REPORT_ISSUE"
 ```
