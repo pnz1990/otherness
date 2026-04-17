@@ -30,13 +30,20 @@
       "done_at": "2026-04-17T16:53:58Z"
     },
     "126": {
-      "state": "todo",
+      "state": "done",
       "title": "session handoff \u2014 save conversation context",
       "issues": [
         126
       ],
       "risk": "medium",
-      "created_at": "2026-04-17T16:47:47Z"
+      "created_at": "2026-04-17T16:47:47Z",
+      "assigned_to": "sess-126",
+      "assigned_at": "2026-04-17T16:55:07Z",
+      "branch": "feat/126",
+      "worktree": "../otherness.126",
+      "pr_merged": true,
+      "pr_number": 131,
+      "done_at": "2026-04-17T16:57:58Z"
     },
     "121": {
       "state": "todo",
