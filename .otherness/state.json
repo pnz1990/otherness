@@ -70,13 +70,16 @@
       "done_at": "2026-04-17T17:07:54Z"
     },
     "114": {
-      "state": "todo",
+      "state": "done",
       "title": "CI abstraction \u2014 CircleCI/GitLab support",
       "issues": [
         114
       ],
       "risk": "high",
-      "created_at": "2026-04-17T16:47:47Z"
+      "created_at": "2026-04-17T16:47:47Z",
+      "pr_merged": true,
+      "pr_number": 134,
+      "done_at": "2026-04-17T17:11:25Z"
     },
     "119": {
       "state": "todo",
