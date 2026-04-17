@@ -58,3 +58,4 @@
 | 2026-04-17 | 16 | 2 | 0 | 0 | 11 | 2 | ~4 | Batch 16: #166 progress.md, #167 D4 for issue comments (CRITICAL) — D4 doc 1 deferred item |
 | 2026-04-17 | 17 | 2 | 0 | 0 | 12 | 2 | ~4 | Batch 17: #170 difficulty-ledger + SM trigger, #171 cross-project mining (self-review fixed WRONG) |
 | 2026-04-17 | 18 | 2 | 0 | 0 | 12 | 2 | ~3 | Batch 18: #174 skills README, #175 PM cross-project proposals (CRITICAL self-review) |
+| 2026-04-17 | 19 | 2 | 0 | 0 | 12 | 2 | ~3 | Batch 19: #178 fix test.sh __file__ bug (integration check works), #179 skill confidence (CRITICAL) |
