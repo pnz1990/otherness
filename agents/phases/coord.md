@@ -226,8 +226,13 @@ except:
 def is_done(d):
     d_lower = d.lower().strip()
     if d_lower in done_titles: return True
-    key = d.split('`')[1] if '`' in d else d[:40].lower()
-    return key.lower() in merged_prs
+    # Check merged PR titles: require the full item description (first 60 chars, stripped)
+    # to appear in a PR title. Substring matching on short keys caused false positives.
+    desc_key = d_lower[:60]
+    for pr_title in merged_prs.splitlines():
+        if desc_key in pr_title.strip():
+            return True
+    return False
 
 # PRIMARY: read 🔲 Future items from docs/design/
 design_items = []
