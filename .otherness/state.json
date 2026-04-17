@@ -110,14 +110,15 @@
       "pr_url": "https://github.com/pnz1990/otherness/pull/139"
     },
     "137": {
-      "state": "todo",
+      "state": "in_review",
       "title": "feat(sm): auto-open kind/chore on metric regression",
       "issue": 137,
       "areas": [
         "agent-loop"
       ],
       "risk_tier": "MEDIUM",
-      "depends_on": []
+      "depends_on": [],
+      "pr_number": 140
     },
     "138": {
       "state": "done",
@@ -143,11 +144,6 @@
     "STANDALONE": {
       "last_seen": null,
       "cycle": 0
-    },
-    "sess-83315ede": {
-      "last_seen": "2026-04-17T17:36:38Z",
-      "item": "136",
-      "cycle": 1
     }
   },
   "handoff": null,
