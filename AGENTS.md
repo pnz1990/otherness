@@ -53,18 +53,30 @@ otherness is a collection of **markdown instruction files** read by OpenCode (th
 ```
 ~/.otherness/                  ← the repo root (git clone at this path)
   agents/
-    standalone.md              ← full autonomous team loop
-    bounded-standalone.md      ← scoped concurrent agent
+    standalone.md              ← thin orchestrator: state mgmt, startup, loop skeleton, hard rules
+    bounded-standalone.md      ← scoped agent — 50 lines wrapping standalone.md
     onboard.md                 ← existing project onboarding
     otherness.learn.md         ← learning agent — internalize from open-source
     otherness.arch-audit.md    ← architectural audit agent
     gh-features.md             ← GitHub API reference
+    phases/                    ← phase implementations (loaded by standalone.md)
+      coord.md                 ← Phase 1: heartbeat, rate-limit, queue-gen lock, stale watchdog, claim
+      eng.md                   ← Phase 2: spec/plan/tasks (speckit integration), implement, memory
+      qa.md                    ← Phase 3: adversarial review, spec conformance, merge, archive
+      sm.md                    ← Phase 4: triage, stale recovery, metrics, cross-project learning
+      pm.md                    ← Phase 5: product validation, roadmap health, competitive check
     skills/                    ← reusable skill files
       declaring-designs.md     ← spec quality standard
       reconciling-implementations.md  ← QA checklist
       agent-coding-discipline.md      ← surgical changes, verifiable goals
       autonomous-workflow-patterns.md ← workflow design patterns
       architectural-audit.md   ← four-lens audit methodology
+      contribution-hygiene.md  ← PR and commit discipline
+      agent-responsibility.md  ← judgment and responsibility patterns
+      role-based-agent-identity.md    ← role identity patterns
+      ephemeral-pr-artifacts.md       ← PR operational patterns
+      explicit-anti-patterns.md       ← anti-pattern documentation
+      triage-discipline.md            ← SM triage process
       PROVENANCE.md            ← learning session audit trail
       README.md                ← skill index
   boundaries/
@@ -108,12 +120,12 @@ This is the most important section. Every PR must be classified before merge.
 
 | Tier | Files | Risk | Merge gate |
 |---|---|---|---|
-| **CRITICAL** | `agents/standalone.md`, `agents/bounded-standalone.md` | Deploys to ALL projects immediately. A broken instruction can stall every otherness user's next session. | **[NEEDS HUMAN] review required before merge. No autonomous merge.** |
-| **HIGH** | `agents/onboard.md`, `agents/otherness.learn.md`, `otherness-config-template.yaml`, `onboarding-*.md` | Affects new project setup or the learning loop. Regressions affect onboarding experience. | QA must verify against the reference project. Autonomous merge permitted if tests pass. |
-| **MEDIUM** | `agents/skills/*.md`, `agents/gh-features.md`, `boundaries/` | Additive knowledge. Regressions are low-impact (agent ignores bad skill content gracefully). | Standard QA cycle. Autonomous merge. |
+| **CRITICAL** | `agents/standalone.md`, `agents/bounded-standalone.md`, `agents/phases/*.md` | Deploys to ALL projects immediately. A broken instruction can stall every otherness user's next session. | **[NEEDS HUMAN] review required before merge. No autonomous merge.** |
+| **HIGH** | `agents/onboard.md`, `agents/otherness.learn.md`, `otherness-config-template.yaml`, `onboarding-*.md` | Affects new project setup or the learning loop. | QA must verify against the reference project. Autonomous merge permitted if tests pass. |
+| **MEDIUM** | `agents/skills/*.md`, `agents/gh-features.md`, `boundaries/` | Additive knowledge. Regressions are low-impact. | Standard QA cycle. Autonomous merge. |
 | **LOW** | `docs/`, `README.md`, `AGENTS.md`, `scripts/` | Documentation and scaffolding. No runtime impact. | Autonomous merge. |
 
-**CRITICAL tier rule**: Any PR touching `agents/standalone.md` or `agents/bounded-standalone.md` must post `[NEEDS HUMAN: critical-tier-change]` on the PR and NOT be merged autonomously. Leave it for human review.
+**CRITICAL tier rule**: Any PR touching `agents/standalone.md`, `agents/bounded-standalone.md`, or `agents/phases/*.md` must post `[NEEDS HUMAN: critical-tier-change]` on the PR and NOT be merged autonomously. Leave it for human review.
 
 ---
 
@@ -123,9 +135,9 @@ otherness has no unit tests. Its correctness can only be validated by running it
 
 `scripts/validate.sh` (BUILD_COMMAND) performs these structural checks:
 
-1. **No hardcoded project paths** — agent and skill files must not reference specific projects (other than otherness itself) in executable instruction context. PROVENANCE.md and HTML comment provenance metadata are exempt.
-2. **Skill references resolve** — every `Load skill: read ...` reference in `standalone.md` points to an existing file on disk or in the repo.
-3. **Required files present** — all agent files, skill files, docs, and command files listed in the required set exist.
+1. **No hardcoded project paths** — agent, phase, and skill files must not reference specific projects in executable instruction context. PROVENANCE.md and HTML comment provenance metadata are exempt.
+2. **Skill references resolve** — every `Load skill: read ...` reference in `standalone.md` and `agents/phases/*.md` points to an existing file on disk or in the repo.
+3. **Required files present** — all agent files, phase files, skill files, docs, and command files listed in the required set exist.
 4. **Self-update present** — `standalone.md` contains the `git -C ~/.otherness pull` self-update block.
 
 `scripts/test.sh` (TEST_COMMAND) runs all 4 validate checks plus:
