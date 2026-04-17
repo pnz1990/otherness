@@ -417,22 +417,36 @@
       "done_at": "2026-04-17T23:01:58Z"
     },
     "182": {
-      "state": "todo",
+      "state": "done",
       "title": "fix(tooling): validate.sh step counters /4 \u2192 /5",
       "issues": [
         182
       ],
       "risk": "low",
-      "created_at": "2026-04-17T23:04:51Z"
+      "created_at": "2026-04-17T23:04:51Z",
+      "assigned_to": "sess-518cc5ec",
+      "assigned_at": "2026-04-17T23:05:46Z",
+      "branch": "feat/182",
+      "worktree": "../otherness.182",
+      "pr_merged": true,
+      "pr_number": 184,
+      "done_at": "2026-04-17T23:07:45Z"
     },
     "183": {
-      "state": "todo",
+      "state": "done",
       "title": "chore(docs): metrics.md trend notes batches 6-19",
       "issues": [
         183
       ],
       "risk": "low",
-      "created_at": "2026-04-17T23:04:51Z"
+      "created_at": "2026-04-17T23:04:51Z",
+      "assigned_to": "sess-518cc5ec",
+      "assigned_at": "2026-04-17T23:07:57Z",
+      "branch": "feat/183",
+      "worktree": "../otherness.183",
+      "pr_merged": true,
+      "pr_number": 185,
+      "done_at": "2026-04-17T23:10:24Z"
     }
   },
   "engineer_slots": {
@@ -454,6 +468,6 @@
   },
   "handoff": null,
   "queue_generated_at": "2026-04-17T16:47:47Z",
-  "sm_cycle_count": 10,
-  "pm_cycle_count": 9
+  "sm_cycle_count": 11,
+  "pm_cycle_count": 10
 }
