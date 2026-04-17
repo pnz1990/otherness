@@ -3,7 +3,7 @@
   "mode": "standalone",
   "repo": "pnz1990/otherness",
   "current_queue": [
-    "190"
+    "192"
   ],
   "features": {
     "127-128-129": {
@@ -494,6 +494,15 @@
       "pr_merged": true,
       "pr_number": 191,
       "done_at": "2026-04-17T23:23:43Z"
+    },
+    "192": {
+      "state": "todo",
+      "title": "fix(docs): metrics.md data rows and trend notes intermixed",
+      "issues": [
+        192
+      ],
+      "risk": "low",
+      "created_at": "2026-04-17T23:26:09Z"
     }
   },
   "engineer_slots": {
