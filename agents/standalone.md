@@ -220,15 +220,99 @@ for line in open('otherness-config.yaml'):
         if m: print(m.group(1)); break
 " 2>/dev/null || echo "true")
 
-export REPO REPO_NAME REPORT_ISSUE PR_LABEL BUILD_COMMAND TEST_COMMAND LINT_COMMAND JOB_FAMILY AUTONOMOUS_MODE
+# Session identity — unique per session, stable for its lifetime
+MY_SESSION_ID="sess-$(python3 -c 'import os; print(os.urandom(4).hex())' 2>/dev/null || echo "$(date +%s | tail -c 9)")"
 
-echo "[STANDALONE] Project: $REPO | Role: $JOB_FAMILY | Autonomous: $AUTONOMOUS_MODE | Report: #$REPORT_ISSUE"
+# Otherness version — for correlating behaviour to agent release
+OTHERNESS_VERSION=$(git -C ~/.otherness describe --tags --always 2>/dev/null \
+  || git -C ~/.otherness rev-parse --short HEAD 2>/dev/null \
+  || echo "unknown")
+
+# Daily report rotation: check if REPORT_ISSUE was created on a previous UTC day;
+# if so, close it and open a fresh one (history preserved).
+REPORT_ISSUE=$(python3 - <<'ROTATE_EOF'
+import subprocess, json, datetime, re, os, sys
+
+# Read base report_issue: state.json > AGENTS.md > otherness-config.yaml
+report_issue = None
+try:
+    r = subprocess.run(['git','show','origin/_state:.otherness/state.json'],
+                       capture_output=True, text=True)
+    if r.returncode == 0:
+        s = json.loads(r.stdout)
+        report_issue = str(s.get('report_issue', '')).strip() or None
+except: pass
+
+if not report_issue:
+    try:
+        for line in open('AGENTS.md'):
+            m = re.match(r'^REPORT_ISSUE:\s*(\S+)', line.strip())
+            if m: report_issue = m.group(1); break
+    except: pass
+
+if not report_issue:
+    try:
+        for line in open('otherness-config.yaml'):
+            m = re.match(r'^\s+report_issue:\s*(\S+)', line)
+            if m: report_issue = m.group(1); break
+    except: pass
+
+if not report_issue:
+    report_issue = '1'
+
+# Check creation date of current report issue
+REPO = os.environ.get('REPO', '')
+PR_LABEL = os.environ.get('PR_LABEL', 'otherness')
+try:
+    r = subprocess.run(['gh','issue','view',report_issue,'--repo',REPO,
+                        '--json','createdAt','--jq','.createdAt'],
+                       capture_output=True, text=True)
+    if r.returncode == 0:
+        created = r.stdout.strip().strip('"')
+        created_date = datetime.datetime.fromisoformat(created.replace('Z','+00:00')).date()
+        today = datetime.datetime.now(datetime.timezone.utc).date()
+        if created_date < today:
+            today_str = today.strftime('%Y-%m-%d')
+            # Create new issue
+            new_title = f'📊 Autonomous Team Reports — {today_str}'
+            cr = subprocess.run(['gh','issue','create','--repo',REPO,
+                                 '--title',new_title,
+                                 '--label',PR_LABEL,
+                                 '--body',f'Daily autonomous team report. Continued from #{report_issue}.'],
+                                capture_output=True, text=True)
+            if cr.returncode == 0:
+                new_url = cr.stdout.strip()
+                new_num = new_url.split('/')[-1]
+                # Close old issue with pointer to new
+                subprocess.run(['gh','issue','comment',report_issue,'--repo',REPO,
+                                '--body',f'[ROTATE] Day boundary reached. Continuing in #{new_num}: {new_url}'],
+                               capture_output=True)
+                subprocess.run(['gh','issue','close',report_issue,'--repo',REPO,
+                                '--comment',f'Daily rotation complete. New report: #{new_num}'],
+                               capture_output=True)
+                # Persist new report_issue to state.json
+                try:
+                    with open('.otherness/state.json') as f: s = json.load(f)
+                    s['report_issue'] = int(new_num)
+                    with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
+                except: pass
+                print(new_num)
+                sys.exit(0)
+except: pass
+
+print(report_issue)
+ROTATE_EOF
+)
+
+export REPO REPO_NAME REPORT_ISSUE PR_LABEL BUILD_COMMAND TEST_COMMAND LINT_COMMAND JOB_FAMILY AUTONOMOUS_MODE MY_SESSION_ID OTHERNESS_VERSION
+
+echo "[STANDALONE | $MY_SESSION_ID | otherness@$OTHERNESS_VERSION] Project: $REPO | Role: $JOB_FAMILY | Autonomous: $AUTONOMOUS_MODE | Report: #$REPORT_ISSUE"
 ```
 
 Post startup comment:
 ```bash
 gh issue comment $REPORT_ISSUE --repo $REPO \
-  --body "[STANDALONE] Session started. Repo: \`$REPO\`. Role: $JOB_FAMILY." 2>/dev/null
+  --body "[STANDALONE | $MY_SESSION_ID | otherness@$OTHERNESS_VERSION] Session started. Repo: \`$REPO\`. Role: $JOB_FAMILY." 2>/dev/null
 ```
 
 ---

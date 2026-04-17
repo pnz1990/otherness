@@ -52,7 +52,7 @@ with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
   rm -f .otherness/stop-after-current
   export STATE_MSG="graceful stop"
   # run STATE MANAGEMENT write block
-  gh issue comment $REPORT_ISSUE --repo $REPO --body "[STANDALONE] Stopped cleanly." 2>/dev/null
+  gh issue comment $REPORT_ISSUE --repo $REPO --body "[STANDALONE | ${MY_SESSION_ID:-sess-unknown} | otherness@${OTHERNESS_VERSION:-unknown}] Stopped cleanly." 2>/dev/null
   exit 0
 fi
 
@@ -97,7 +97,7 @@ except: print(0)
 " 2>/dev/null || echo "0")
   if [ "${HOURS_RED:-0}" -ge 24 ]; then
     gh issue comment $REPORT_ISSUE --repo $REPO \
-      --body "[STANDALONE] [NEEDS HUMAN] CI has been red on main for ${HOURS_RED}h. Failing job: $FAILED." 2>/dev/null
+      --body "[STANDALONE | ${MY_SESSION_ID:-sess-unknown} | otherness@${OTHERNESS_VERSION:-unknown}] [NEEDS HUMAN] CI has been red on main for ${HOURS_RED}h. Failing job: $FAILED." 2>/dev/null
   fi
 fi
 ```
@@ -208,7 +208,7 @@ PYEOF
 
     git push origin --delete "$QUEUE_LOCK_BRANCH" 2>/dev/null || true
     gh issue comment $REPORT_ISSUE --repo $REPO \
-      --body "[COORD] Queue generated." 2>/dev/null
+      --body "[🎯 COORD | ${MY_SESSION_ID:-sess-unknown} | otherness@${OTHERNESS_VERSION:-unknown}] Queue generated." 2>/dev/null
   fi
 fi
 ```
@@ -356,7 +356,7 @@ except: print(999)
       [ -d "$LEARN_WT" ] && git worktree remove "$LEARN_WT" --force 2>/dev/null
       git worktree add "$LEARN_WT" "$LEARN_BRANCH"
       gh issue comment $REPORT_ISSUE --repo $REPO \
-        --body "[STANDALONE] Autonomous learn session triggered (${DAYS_SINCE_LEARN}d since last)." 2>/dev/null
+        --body "[STANDALONE | ${MY_SESSION_ID:-sess-unknown} | otherness@${OTHERNESS_VERSION:-unknown}] Autonomous learn session triggered (${DAYS_SINCE_LEARN}d since last)." 2>/dev/null
       # [AI-STEP] Navigate to $LEARN_WT, read and follow ~/.otherness/agents/otherness.learn.md
       # After learn PR open and CI green: merge and clean up
       gh pr merge "$LEARN_BRANCH" --repo "$REPO" --squash --delete-branch 2>/dev/null || true
@@ -372,11 +372,11 @@ fi
 MY_BRANCH="feat/$ITEM_ID"
 REPO_NAME=$(basename $(git rev-parse --show-toplevel))
 MY_WORKTREE="../${REPO_NAME}.${ITEM_ID}"
-MY_SESSION_ID="STANDALONE-${ITEM_ID}"
+# MY_SESSION_ID is set at startup (sess-XXXX) — preserve it; don't overwrite with item-scoped ID
 
 if git push origin "HEAD:refs/heads/$MY_BRANCH" 2>/dev/null; then
   echo "[COORD] ✅ Claimed $ITEM_ID"
-  export ITEM_ID MY_BRANCH MY_WORKTREE MY_SESSION_ID
+  export ITEM_ID MY_BRANCH MY_WORKTREE
 
   [ -d "$MY_WORKTREE" ] && git worktree remove "$MY_WORKTREE" --force 2>/dev/null
   git worktree add "$MY_WORKTREE" "$MY_BRANCH"
@@ -405,7 +405,7 @@ PYEOF
 
   ISSUE_NUM=$(echo $ITEM_ID | grep -oE '[0-9]+' | head -1)
   gh issue comment $ISSUE_NUM --repo $REPO \
-    --body "[$MY_SESSION_ID] Starting implementation. Branch: \`$MY_BRANCH\`" 2>/dev/null
+    --body "[$MY_SESSION_ID | otherness@${OTHERNESS_VERSION:-unknown}] Starting implementation. Branch: \`$MY_BRANCH\`" 2>/dev/null
 
 else
   echo "[COORD] ⚡ $ITEM_ID already claimed — picking another."
