@@ -150,7 +150,7 @@
       "done_at": "2026-04-17T21:31:25Z"
     },
     "147": {
-      "state": "assigned",
+      "state": "done",
       "title": "chore(docs): update progress.md \u2014 Stage 4 complete, Stage 5 pending human trigger",
       "issues": [
         147
@@ -160,7 +160,10 @@
       "assigned_to": "sess-518cc5ec",
       "assigned_at": "2026-04-17T21:36:52Z",
       "branch": "feat/147",
-      "worktree": "../otherness.147"
+      "worktree": "../otherness.147",
+      "pr_merged": true,
+      "pr_number": 150,
+      "done_at": "2026-04-17T21:39:42Z"
     },
     "148": {
       "state": "todo",
