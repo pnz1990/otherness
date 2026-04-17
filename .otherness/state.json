@@ -92,6 +92,36 @@
       "pr_merged": true,
       "pr_number": 135,
       "done_at": "2026-04-17T17:14:24Z"
+    },
+    "136": {
+      "state": "todo",
+      "title": "feat(pm): stagnation detection using metrics",
+      "issue": 136,
+      "areas": [
+        "agent-loop"
+      ],
+      "risk_tier": "MEDIUM",
+      "depends_on": []
+    },
+    "137": {
+      "state": "todo",
+      "title": "feat(sm): auto-open kind/chore on metric regression",
+      "issue": 137,
+      "areas": [
+        "agent-loop"
+      ],
+      "risk_tier": "MEDIUM",
+      "depends_on": []
+    },
+    "138": {
+      "state": "todo",
+      "title": "chore(docs): update progress.md \u2014 Stages 0-3 complete",
+      "issue": 138,
+      "areas": [
+        "docs"
+      ],
+      "risk_tier": "LOW",
+      "depends_on": []
     }
   },
   "engineer_slots": {
