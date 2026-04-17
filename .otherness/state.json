@@ -46,13 +46,16 @@
       "done_at": "2026-04-17T16:57:58Z"
     },
     "121": {
-      "state": "todo",
+      "state": "done",
       "title": "spec as source of truth \u2014 spec.md before code, QA drift check",
       "issues": [
         121
       ],
       "risk": "critical",
-      "created_at": "2026-04-17T16:47:47Z"
+      "created_at": "2026-04-17T16:47:47Z",
+      "pr_merged": true,
+      "pr_number": 132,
+      "done_at": "2026-04-17T17:02:20Z"
     },
     "115": {
       "state": "todo",
