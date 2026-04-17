@@ -55,3 +55,4 @@
 | 2026-04-17 | 13 | 3 | 0 | 0 | 11 | 3 | ~3 | Batch 13: #152 Stage 5 design doc, #153 validate.sh check 5 (Design ref lint), #154 D4 translation artifact (CRITICAL self-review) |
 | 2026-04-17 | 14 | 2 | 0 | 0 | 11 | 2 | ~4 | Batch 14: #158 Stage 5 guard, #159 QA customer doc MISS check (both CRITICAL tier self-review) |
 | 2026-04-17 | 15 | 2 | 0 | 0 | 11 | 2 | ~5 | Batch 15: #162 is_done filter fix (CRITICAL, self-review found WRONG/fixed), #163 onboard design doc stubs — DDDD doc now 0 Future items |
+| 2026-04-17 | 16 | 2 | 0 | 0 | 11 | 2 | ~4 | Batch 16: #166 progress.md, #167 D4 for issue comments (CRITICAL) — D4 doc 1 deferred item |
