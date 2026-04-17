@@ -3,8 +3,8 @@
   "mode": "standalone",
   "repo": "pnz1990/otherness",
   "current_queue": [
-    "166",
-    "167"
+    "170",
+    "171"
   ],
   "features": {
     "127-128-129": {
@@ -319,6 +319,24 @@
       "pr_merged": true,
       "pr_number": 169,
       "done_at": "2026-04-17T22:33:26Z"
+    },
+    "170": {
+      "state": "todo",
+      "title": "feat(sm): difficulty-ledger.md \u2014 hard case tracking",
+      "issues": [
+        170
+      ],
+      "risk": "medium",
+      "created_at": "2026-04-17T22:35:25Z"
+    },
+    "171": {
+      "state": "todo",
+      "title": "feat(sm): cross-project pattern mining \u2014 needs-human issues",
+      "issues": [
+        171
+      ],
+      "risk": "medium",
+      "created_at": "2026-04-17T22:35:25Z"
     }
   },
   "engineer_slots": {
