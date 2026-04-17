@@ -315,6 +315,15 @@ gh issue comment $REPORT_ISSUE --repo $REPO \
   --body "[STANDALONE | $MY_SESSION_ID | otherness@$OTHERNESS_VERSION] Session started. Repo: \`$REPO\`. Role: $JOB_FAMILY." 2>/dev/null
 ```
 
+Read session handoff if present:
+```bash
+if [ -f ".otherness/handoff.md" ]; then
+  echo "[STANDALONE] Reading session handoff from previous session:"
+  cat .otherness/handoff.md
+  echo "[STANDALONE] Handoff read — proceeding from last state."
+fi
+```
+
 ---
 
 ## RESUME CHECK

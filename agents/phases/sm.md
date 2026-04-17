@@ -116,7 +116,85 @@ with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
 
 ---
 
-## 4d. Post SDM review to report issue
+## 4d. Write session handoff
+
+```bash
+# Write .otherness/handoff.md — next session reads this at startup
+python3 - <<'EOF'
+import subprocess, json, datetime, os
+
+REPO = os.environ.get('REPO', '')
+now = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+
+# Merged PRs (last 10)
+try:
+    merged = subprocess.check_output(
+        ['gh','pr','list','--repo',REPO,'--state','merged','--limit','10',
+         '--json','number,title,mergedAt',
+         '--jq','.[] | "- PR #\(.number) \(.title) (\(.mergedAt[:10]))"'],
+        text=True).strip()
+except:
+    merged = '(unavailable)'
+
+# Queue from state.json
+try:
+    with open('.otherness/state.json') as f: s = json.load(f)
+    features = s.get('features', {})
+    todo = [f"- {k}: {v.get('title','')}" for k,v in features.items() if v.get('state')=='todo']
+    in_prog = [f"- {k}: {v.get('title','')}" for k,v in features.items() if v.get('state') in ('assigned','in_review')]
+    done_items = [k for k,v in features.items() if v.get('state')=='done']
+    queue_text = ('**In progress:**\n' + '\n'.join(in_prog) + '\n' if in_prog else '') + \
+                 ('**Todo:**\n' + '\n'.join(todo) if todo else '**Queue empty**')
+    next_item = todo[0].lstrip('- ').split(':')[0] if todo else 'none'
+except:
+    queue_text = '(unavailable)'
+    done_items = []
+    next_item = 'unknown'
+
+# CI status
+try:
+    ci = subprocess.check_output(
+        ['gh','run','list','--repo',REPO,'--branch','main','--limit','1',
+         '--json','conclusion,status','--jq','.[0] | (.conclusion // .status)'],
+        text=True).strip()
+except:
+    ci = 'unknown'
+
+handoff = f"""## Session Handoff — {now}
+
+### Recent merges (last 10)
+{merged}
+
+### Queue
+{queue_text}
+
+### CI status (main)
+{ci}
+
+### Next item
+{next_item}
+
+### Notes
+Session: {os.environ.get('MY_SESSION_ID','unknown')} | otherness@{os.environ.get('OTHERNESS_VERSION','unknown')}
+"""
+
+os.makedirs('.otherness', exist_ok=True)
+with open('.otherness/handoff.md', 'w') as f: f.write(handoff)
+print(f"[SDM] Handoff written → .otherness/handoff.md (next_item={next_item})")
+EOF
+
+# Commit handoff to main (pull-rebase-retry — low-risk doc commit)
+git add .otherness/handoff.md
+git commit -m "chore(sm): session handoff update $(date +%Y-%m-%dT%H:%M:%SZ)" 2>/dev/null || true
+for i in 1 2 3; do
+  git pull --rebase origin main --quiet 2>/dev/null && \
+  git push origin main && break || sleep $((i * 2))
+done
+```
+
+---
+
+## 4e. Post SDM review to report issue
 
 ```bash
 gh issue comment $REPORT_ISSUE --repo $REPO \
