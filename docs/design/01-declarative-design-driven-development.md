@@ -35,13 +35,13 @@ mark what is present vs future.
 - ✅ Design doc updated in same PR as feature — `🔲 → ✅` markers move on merge (PR #144, 2026-04-17)
 - ✅ COORD reads design doc Future items as primary queue source — roadmap is fallback (PR #144, 2026-04-17)
 - ✅ PM validates design-doc coverage each cycle — opens kind/docs issues for gaps (PR #145, 2026-04-17)
+- ✅ Design doc for Stage 5 (Versioned Release Model) — created `docs/design/03-versioned-release.md` (PR #152, 2026-04-17)
 
 ## Future (🔲)
 
 - 🔲 `/otherness.onboard` generates design doc drafts inferred from codebase — marked ⚠️ Inferred (O7 — deferred: requires onboarding agent update)
 - 🔲 Customer doc requirement enforced by QA — QA blocks PR if `docs/<feature>.md` missing for user-visible features (O6 — deferred: "user-visible" is hard to determine programmatically)
 - 🔲 CI lint for `## Design reference` presence in spec files — static check catches missing design reference before review (deferred: lint is structural; prose quality is not machine-checkable)
-- 🔲 Design doc for Stage 5 (Versioned Release Model) — create `docs/design/03-versioned-release.md` when Stage 5 triggers
 
 ---
 
