@@ -2,8 +2,72 @@
   "version": "1.3",
   "mode": "standalone",
   "repo": "pnz1990/otherness",
-  "current_queue": null,
-  "features": {},
+  "current_queue": [
+    "127-128-129",
+    "126",
+    "121",
+    "115",
+    "114",
+    "119"
+  ],
+  "features": {
+    "127-128-129": {
+      "state": "todo",
+      "title": "report improvements: daily rotation + agent identity + otherness version",
+      "issues": [
+        127,
+        128,
+        129
+      ],
+      "risk": "critical",
+      "created_at": "2026-04-17T16:47:47Z"
+    },
+    "126": {
+      "state": "todo",
+      "title": "session handoff \u2014 save conversation context",
+      "issues": [
+        126
+      ],
+      "risk": "medium",
+      "created_at": "2026-04-17T16:47:47Z"
+    },
+    "121": {
+      "state": "todo",
+      "title": "spec as source of truth \u2014 spec.md before code, QA drift check",
+      "issues": [
+        121
+      ],
+      "risk": "critical",
+      "created_at": "2026-04-17T16:47:47Z"
+    },
+    "115": {
+      "state": "todo",
+      "title": "complete version pinning",
+      "issues": [
+        115
+      ],
+      "risk": "high",
+      "created_at": "2026-04-17T16:47:47Z"
+    },
+    "114": {
+      "state": "todo",
+      "title": "CI abstraction \u2014 CircleCI/GitLab support",
+      "issues": [
+        114
+      ],
+      "risk": "high",
+      "created_at": "2026-04-17T16:47:47Z"
+    },
+    "119": {
+      "state": "todo",
+      "title": "intent-based queue and capability profiles",
+      "issues": [
+        119
+      ],
+      "risk": "medium",
+      "created_at": "2026-04-17T16:47:47Z"
+    }
+  },
   "engineer_slots": {
     "ENGINEER-1": null,
     "ENGINEER-2": null,
@@ -16,5 +80,6 @@
       "cycle": 0
     }
   },
-  "handoff": null
+  "handoff": null,
+  "queue_generated_at": "2026-04-17T16:47:47Z"
 }
