@@ -82,13 +82,16 @@
       "done_at": "2026-04-17T17:11:25Z"
     },
     "119": {
-      "state": "todo",
+      "state": "done",
       "title": "intent-based queue and capability profiles",
       "issues": [
         119
       ],
       "risk": "medium",
-      "created_at": "2026-04-17T16:47:47Z"
+      "created_at": "2026-04-17T16:47:47Z",
+      "pr_merged": true,
+      "pr_number": 135,
+      "done_at": "2026-04-17T17:14:24Z"
     }
   },
   "engineer_slots": {
