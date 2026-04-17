@@ -46,7 +46,7 @@ not domain-specific content.
 
 ---
 
-## Idea 3: Difficulty ledger
+## ✅ Idea 3: Difficulty ledger — IMPLEMENTED (PR #172, 2026-04-17)
 
 **What**: A file `~/.otherness/agents/skills/difficulty-ledger.md` the agent appends to
 whenever: (a) a task takes >3 QA cycles, (b) a `[NEEDS HUMAN]` occurs, (c) same bug class
@@ -76,7 +76,7 @@ project. Discard anything referencing a specific project name, domain, or codeba
 
 ---
 
-## Idea 5: PM phase proposes cross-project otherness improvements
+## ✅ Idea 5: PM phase proposes cross-project otherness improvements — IMPLEMENTED (PR #177, 2026-04-17)
 
 **What**: Every N PM cycles, PM phase looks across all monitored projects and asks: "What
 improvement to the agent loop, if made, would unblock the most projects simultaneously?"
@@ -89,7 +89,7 @@ diverse failure signals = better proposals. A genuine closed feedback loop.
 
 ---
 
-## Idea 6: Skill confidence scoring and deprecation
+## ✅ Idea 6: Skill confidence scoring and deprecation — IMPLEMENTED (PR #181, 2026-04-17)
 
 **What**: SM phase, once per N batches, checks each skill file: referenced recently? cited
 in a PR? contradicted by a newer skill? Low-confidence skills get flagged; contradicted ones
@@ -147,7 +147,7 @@ parallel session count exceeds ~10 or when state corruption is observed in produ
 
 ---
 
-## Idea 8: Cross-project learning loop (was GitHub issue #120)
+## ✅ Idea 8: Cross-project learning loop — IMPLEMENTED (PR #173, 2026-04-17)
 
 > Note: This overlaps significantly with Ideas 1 and 4 above. Issue #120 is the GitHub
 > version of the same concept — closed to avoid duplication.
