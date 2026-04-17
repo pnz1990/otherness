@@ -28,7 +28,11 @@ The versioning model:
 
 *(Stage 5 has not started. Nothing is Present yet.)*
 
-## Future (🔲)
+## Planned (🔲 — Stage 5 trigger required)
+
+> ⚠️ These items are NOT queued by COORD until Stage 5 is explicitly triggered.
+> Trigger criteria: >10 repos using otherness, OR CRITICAL tier regression in production, OR community request.
+> See `docs/aide/progress.md §Stage 5 trigger criteria` for current status.
 
 - 🔲 Git tags as releases — each stable release is tagged `vMAJOR.MINOR.PATCH` on the otherness repo
 - 🔲 `agent_version` field in otherness-config.yaml — semver string; empty/absent = `main` (current behavior preserved)
