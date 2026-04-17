@@ -92,11 +92,25 @@ with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
 
 ```bash
 if [ $((${PM_CYCLE:-0} % 10)) -eq 0 ] && [ "${PM_CYCLE:-0}" -gt 0 ]; then
-  echo "[PM] Running competitive analysis..."
-  # [AI-STEP] Check otherness against the category it belongs to.
-  # Read docs/future-ideas.md for potential improvements.
-  # Check speckit release notes for new patterns worth adopting.
-  # If a gap is found that would make otherness measurably better: open an issue.
+  echo "[PM] Running cross-project improvement check..."
+  # [AI-STEP] Cross-project improvement proposals (Idea 5 from docs/future-ideas.md):
+  # 1. Read monitor.projects from otherness-config.yaml
+  # 2. For each project:
+  #    - Check open [needs-human] issues: gh issue list --repo <proj> --label needs-human --state open
+  #    - Check CI status: gh run list --repo <proj> --branch main --limit 1 --json conclusion
+  #    - Check recent metrics (if accessible): look for todo_shipped = 0 in _state metrics
+  # 3. Find common blockers across ≥2 projects:
+  #    - Both have needs-human open → pattern: "unresolved escalation backlog"
+  #    - Both have CI red → pattern: "CI reliability gap"
+  #    - Both have 0 velocity → pattern: "queue generation or claiming issue"
+  # 4. For each common blocker: open an issue on $REPO proposing the improvement.
+  #    Title: "improvement(loop): <abstract pattern> affecting ≥2 managed projects"
+  #    Body: abstract description (no project names) + suggested fix direction
+  #    Labels: otherness,kind/enhancement,area/agent-loop
+  # 5. Also check docs/future-ideas.md for ideas ready to implement.
+  #    If an idea has a complexity tag of 'small' or 'xs' and hasn't been opened as an issue:
+  #    open it now with a [PM proposal] prefix.
+  # If only 1 project in monitor: log "[PM] Need ≥2 projects for cross-project analysis."
 fi
 ```
 
