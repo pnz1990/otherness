@@ -377,11 +377,12 @@ gh issue comment $REPORT_ISSUE --repo $REPO \
   --body "[STANDALONE | $MY_SESSION_ID | otherness@$OTHERNESS_VERSION] Session started. Repo: \`$REPO\`. Role: $JOB_FAMILY." 2>/dev/null
 ```
 
-Read session handoff if present:
+Read session handoff if present (from _state branch — works on any machine):
 ```bash
-if [ -f ".otherness/handoff.md" ]; then
-  echo "[STANDALONE] Reading session handoff from previous session:"
-  cat .otherness/handoff.md
+HANDOFF=$(git show origin/_state:.otherness/handoff.md 2>/dev/null)
+if [ -n "$HANDOFF" ]; then
+  echo "[STANDALONE] Reading session handoff from _state branch:"
+  echo "$HANDOFF"
   echo "[STANDALONE] Handoff read — proceeding from last state."
 fi
 ```
