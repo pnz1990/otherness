@@ -18,6 +18,8 @@ Skills are **additive only** — never delete content from a skill file (see con
 | `ephemeral-pr-artifacts.md` | Opening a CRITICAL tier PR or any complex PR needing reviewer context | Phase 2f (ENG — before gh pr create) |
 | `explicit-anti-patterns.md` | Writing any agent instruction file, or during QA review | Phase 3 (QA) or Phase 4 (SM) when updating agent files |
 | `triage-discipline.md` | Running the SM phase review | Phase 4 (SM — every batch) |
+| `architectural-audit.md` | Running a comprehensive codebase audit | `/otherness.arch-audit` command |
+| `difficulty-ledger.md` | Consulting before implementing — "have I seen this failure class?" | Phase 2 (ENG — before spec) |
 
 ## Skill summaries
 
@@ -63,6 +65,12 @@ Anti-pattern documentation patterns from LiteLLM. Covers: the COMMON PITFALLS se
 
 ### `triage-discipline.md`
 Triage process patterns from AutoGen. Covers: structured SM triage with explicit per-category queues (issues, PRs, discussions, security); awaiting-response label lifecycle (clear needs-human when blocker resolved); breaking change detection in versioning. Load during Phase 4 (SM) every batch.
+
+### `architectural-audit.md`
+Four-lens architectural audit methodology. The four lenses: drift (design vs implementation), unused primitives, structural redundancy, missing reactivity. Adversarial stance — assume there are findings, look for counter-evidence. Output format: issues list + doc PR (no code changes). Common false positives. Load when running `/otherness.arch-audit`.
+
+### `difficulty-ledger.md`
+Running log of hard cases encountered — not a skill file per se but a knowledge base. Consulted before implementing to ask "have I seen this failure class before?" Appended by the SM phase when needs_human > 0, velocity stalls, or slow merges occur. Entries are abstract (no project names).
 
 ## `PROVENANCE.md`
 Audit trail of `/otherness.learn` sessions. Records what was learned, from which repo, on what
