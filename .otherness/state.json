@@ -3,9 +3,9 @@
   "mode": "standalone",
   "repo": "pnz1990/otherness",
   "current_queue": [
-    "146",
-    "147",
-    "148"
+    "152",
+    "153",
+    "154"
   ],
   "features": {
     "127-128-129": {
@@ -180,6 +180,33 @@
       "pr_merged": true,
       "pr_number": 151,
       "done_at": "2026-04-17T21:44:41Z"
+    },
+    "152": {
+      "state": "todo",
+      "title": "docs(design): create design doc 03 for Stage 5 \u2014 Versioned Release Model",
+      "issues": [
+        152
+      ],
+      "risk": "low",
+      "created_at": "2026-04-17T21:48:23Z"
+    },
+    "153": {
+      "state": "todo",
+      "title": "feat(tooling): validate.sh CI lint for ## Design reference in spec files",
+      "issues": [
+        153
+      ],
+      "risk": "low",
+      "created_at": "2026-04-17T21:48:23Z"
+    },
+    "154": {
+      "state": "todo",
+      "title": "feat(eng): persist D4 translation artifact in .specify/specs/ITEM_ID/translation.md",
+      "issues": [
+        154
+      ],
+      "risk": "medium",
+      "created_at": "2026-04-17T21:48:23Z"
     }
   },
   "engineer_slots": {
