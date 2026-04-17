@@ -120,14 +120,17 @@
       "depends_on": []
     },
     "138": {
-      "state": "todo",
+      "state": "done",
       "title": "chore(docs): update progress.md \u2014 Stages 0-3 complete",
       "issue": 138,
       "areas": [
         "docs"
       ],
       "risk_tier": "LOW",
-      "depends_on": []
+      "depends_on": [],
+      "pr_merged": true,
+      "pr_number": 141,
+      "done_at": "2026-04-17T17:53:27Z"
     }
   },
   "engineer_slots": {
