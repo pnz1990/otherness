@@ -2,9 +2,42 @@
 
 _in memory of mankind_
 
-You write the vision. otherness writes the code, reviews it, ships it, and keeps going — without you in the loop. No stand-ups, no PR reviews, no release ceremonies. Just a GitHub repo advancing on its own.
+<!-- D4 logo goes here -->
+
+**D4** — Declarative Design-Driven Development.
+
+You declare the vision. The design follows. The implementation follows the design. Repeat.
+
+otherness writes the code, reviews it, ships it, and keeps going — without you in the loop. No stand-ups, no PR reviews, no release ceremonies. Just a GitHub repo advancing on its own.
 
 We are not there yet. But every session gets closer.
+
+---
+
+## The D4 model
+
+Every feature on every project follows the same hierarchy. No exceptions.
+
+```
+vision.md          you write this once
+    ↓
+roadmap.md         stages of delivery
+    ↓
+docs/design/       how each area works — written before implementation
+    ↓
+spec.md            one item, one PR — references its design doc
+    ↓
+code               the implementation, nothing more
+    ↓
+design doc update  🔲 Future → ✅ Present, in the same PR
+```
+
+The agent enforces this structurally:
+- QA blocks any PR whose spec is missing a `## Design reference`
+- The coordinator reads `🔲 Future` items in design docs as its primary work queue
+- The PM flags any roadmap stage that has no `docs/design/` file
+
+The result: every line of code is traceable to a design that existed before it was written.
 
 ---
 
