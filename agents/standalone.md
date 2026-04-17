@@ -428,6 +428,12 @@ Proceeding in 60s unless you correct the translation.
 Then wait 60 seconds. If the human corrects the translation, update it and repost. If not,
 proceed using the D4 artifact as the work order — not the original instruction.
 
+Before proceeding, save the translation to `.specify/specs/$ITEM_ID/translation.md`:
+```bash
+mkdir -p ".specify/specs/$ITEM_ID"
+# [AI-STEP] Write the full [📋 D4 TRANSLATION] block verbatim to translation.md
+```
+
 ### Rules
 
 - **Never silently infer and act.** The translation is always posted for IMPERATIVE instructions.
