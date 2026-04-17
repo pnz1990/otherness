@@ -94,7 +94,7 @@
       "done_at": "2026-04-17T17:14:24Z"
     },
     "136": {
-      "state": "assigned",
+      "state": "in_review",
       "title": "feat(pm): stagnation detection using metrics",
       "issue": 136,
       "areas": [
@@ -105,7 +105,9 @@
       "assigned_to": "sess-83315ede",
       "assigned_at": "2026-04-17T17:36:38Z",
       "branch": "feat/136",
-      "worktree": "../.otherness.136"
+      "worktree": "../.otherness.136",
+      "pr_number": 139,
+      "pr_url": "https://github.com/pnz1990/otherness/pull/139"
     },
     "137": {
       "state": "todo",
@@ -146,5 +148,6 @@
     }
   },
   "handoff": null,
-  "queue_generated_at": "2026-04-17T16:47:47Z"
+  "queue_generated_at": "2026-04-17T16:47:47Z",
+  "sm_cycle_count": 1
 }
