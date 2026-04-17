@@ -208,8 +208,8 @@ if [ $((${BATCH_COUNT:-0} % 5)) -eq 0 ] && [ "${BATCH_COUNT:-0}" -gt 0 ]; then
   #      **Situation**: <abstract description — no project names>
   #      **What resolved it**: <resolution pattern>
   #      **Guard**: <preventive check for future>
-  # 5. If the pattern represents an entirely new failure class not yet in any skill file:
-  #    gh issue create --repo pnz1990/otherness --title "skill: <pattern>" --label otherness
+   # 5. If the pattern represents an entirely new failure class not yet in any skill file:
+   #    gh issue create --repo $REPO --title "skill: <pattern>" --label otherness
   # If only 1 project or no patterns found: log "[SM] No cross-project patterns found."
 fi
 
