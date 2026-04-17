@@ -321,22 +321,36 @@
       "done_at": "2026-04-17T22:33:26Z"
     },
     "170": {
-      "state": "todo",
+      "state": "done",
       "title": "feat(sm): difficulty-ledger.md \u2014 hard case tracking",
       "issues": [
         170
       ],
       "risk": "medium",
-      "created_at": "2026-04-17T22:35:25Z"
+      "created_at": "2026-04-17T22:35:25Z",
+      "assigned_to": "sess-518cc5ec",
+      "assigned_at": "2026-04-17T22:36:20Z",
+      "branch": "feat/170",
+      "worktree": "../otherness.170",
+      "pr_merged": true,
+      "pr_number": 172,
+      "done_at": "2026-04-17T22:39:41Z"
     },
     "171": {
-      "state": "todo",
+      "state": "done",
       "title": "feat(sm): cross-project pattern mining \u2014 needs-human issues",
       "issues": [
         171
       ],
       "risk": "medium",
-      "created_at": "2026-04-17T22:35:25Z"
+      "created_at": "2026-04-17T22:35:25Z",
+      "assigned_to": "sess-518cc5ec",
+      "assigned_at": "2026-04-17T22:39:55Z",
+      "branch": "feat/171",
+      "worktree": "../otherness.171",
+      "pr_merged": true,
+      "pr_number": 173,
+      "done_at": "2026-04-17T22:43:19Z"
     }
   },
   "engineer_slots": {
@@ -358,6 +372,6 @@
   },
   "handoff": null,
   "queue_generated_at": "2026-04-17T16:47:47Z",
-  "sm_cycle_count": 7,
-  "pm_cycle_count": 6
+  "sm_cycle_count": 8,
+  "pm_cycle_count": 7
 }
