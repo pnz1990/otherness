@@ -3,7 +3,7 @@
   "mode": "standalone",
   "repo": "pnz1990/otherness",
   "current_queue": [
-    "192"
+    "194"
   ],
   "features": {
     "127-128-129": {
@@ -510,6 +510,15 @@
       "pr_merged": true,
       "pr_number": 193,
       "done_at": "2026-04-17T23:29:26Z"
+    },
+    "194": {
+      "state": "todo",
+      "title": "chore(docs): update future-ideas.md implementation order",
+      "issues": [
+        194
+      ],
+      "risk": "low",
+      "created_at": "2026-04-17T23:31:52Z"
     }
   },
   "engineer_slots": {
