@@ -4,36 +4,34 @@
 
 ## Current State
 
-- **Active queue**: none (Stage 0 bootstrapping just completed manually)
-- **Completed stages**: none via the agent loop (manual bootstrap only)
-- **In-flight items**: none
+- **Active queue**: Stage 4 items in progress (#136 PR #139 awaiting human review, #137 PR #140 awaiting human review)
+- **Completed stages**: 0, 1, 2, 3 (via autonomous loop)
+- **Current stage**: 4 — Self-Improvement Metrics
+- **Batch**: 10 (2026-04-17)
 
 ## Stage Completion
 
 | Stage | Name | Status | Notes |
 |---|---|---|---|
-| 0 | Scaffolding — self-onboarding infrastructure | 🔄 In Progress | Manual bootstrap done; CI and scripts remain |
-| 1 | Agent Loop Hardening | 📋 Planned | Depends on Stage 0 |
-| 2 | Skills Expansion | 📋 Planned | Depends on Stage 0 |
-| 3 | Onboarding Quality | 📋 Planned | Depends on Stage 0 |
-| 4 | Self-Improvement Metrics | 📋 Planned | Depends on Stage 1 |
-| 5 | Versioned Release Model | 📋 Planned | Triggered by external criteria, not timeline |
+| 0 | Scaffolding — self-onboarding infrastructure | ✅ Complete | All scripts, CI, commands, _state, labels deployed |
+| 1 | Agent Loop Hardening | ✅ Complete | PR #16: 4 edge cases fixed; state write race, worktree, queue-gen lock, CI gate |
+| 2 | Skills Expansion | ✅ Complete | 11 skills; 5+ learn sessions; PROVENANCE.md updated |
+| 3 | Onboarding Quality | ✅ Complete | onboard.md audited and fixed; all gaps closed |
+| 4 | Self-Improvement Metrics | 🔄 In Progress | metrics.md live; SM §4b updates; PM stagnation detection (#136 #137 open for review) |
+| 5 | Versioned Release Model | 📋 Planned | Triggered by external criteria (>10 repos, CRITICAL regression, or community request) |
 
-## What was bootstrapped manually (2026-04-14)
+## Stage 4 remaining items
 
-- `AGENTS.md` — project context with change risk tiers, anti-patterns, product validation
-- `otherness-config.yaml` — project config
-- `docs/aide/vision.md` — what otherness is and why
-- `docs/aide/roadmap.md` — 5 stages of improvement
-- `docs/aide/definition-of-done.md` — 5 journeys
-- `.specify/memory/constitution.md` — 6 behavioral rules
-- `.opencode/command/otherness.*.md` — all 8 commands deployed
-- `_state` branch with seeded `state.json`
-- GitHub report issue #2 and all labels
+- PR #139: feat(pm): stagnation detection — CRITICAL tier, awaiting human merge
+- PR #140: feat(sm): metric regression auto-open — CRITICAL tier, awaiting human merge
+- Issue #138: chore(docs): update progress.md — done (this PR)
 
-## What the agent must complete in Stage 0
+## Key milestones reached (all via autonomous loop)
 
-- `scripts/validate.sh` — BUILD_COMMAND
-- `scripts/test.sh` — TEST_COMMAND
-- `scripts/lint.sh` — LINT_COMMAND
-- `.github/workflows/ci.yml` — CI running validate + lint on every PR
+| Date | Milestone |
+|---|---|
+| 2026-04-14 | Stage 0 complete: scripts/validate.sh, test.sh, lint.sh, CI all pass |
+| 2026-04-14 | Stage 1 complete: all agent loop edge cases documented and fixed |
+| 2026-04-14 | Stage 2 complete: 10→11 skills from autonomous learn sessions |
+| 2026-04-16 | Stage 3 complete: onboard.md produces complete docs/aide/ without manual edits |
+| 2026-04-17 | Stage 4 in progress: metrics.md live since Batch 1; regression detection PRs open |
