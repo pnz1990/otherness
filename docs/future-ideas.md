@@ -104,12 +104,20 @@ Higher-quality skills → better ENG/QA decisions.
 
 ## Implementation order (if we ever build these)
 
-1. **Idea 1** (learn from `[NEEDS HUMAN]`) — highest leverage, smallest implementation
-2. **Idea 3** (difficulty ledger) — small addition to existing phases, immediate value
-3. **Idea 2** (cross-project SM mining) — medium complexity, requires fleet access in SM
-4. **Idea 4** (internal portfolio learn) — variant of existing `/otherness.learn`, moderate work
-5. **Idea 5** (PM cross-project proposals) — needs PM phase to have fleet visibility
-6. **Idea 6** (skill confidence) — maintenance tooling, low urgency
+> **Status as of 2026-04-17**: 6/9 ideas implemented. Items below updated to reflect current state.
+
+1. ✅ **Idea 1** (learn from `[NEEDS HUMAN]`) — COVERED by SM §4c (PR #173)
+2. ✅ **Idea 3** (difficulty ledger) — DONE (PR #172)
+3. ✅ **Idea 2** (cross-project SM mining) — COVERED by SM §4c (PR #173)
+4. **Idea 4** (internal portfolio learn) — NEXT UP: triggers at sm_cycle_count=30 (currently 14)
+5. ✅ **Idea 5** (PM cross-project proposals) — DONE (PR #177)
+6. ✅ **Idea 6** (skill confidence) — DONE (PR #181)
+7. **Idea 8** ✅ — COVERED by SM §4c (PR #173)
+
+**Remaining (deferred/large)**:
+- **Idea 4**: At sm_cycle=30. Variant of `/otherness.learn` using own portfolio PRs. Scheduled.
+- **Idea 7**: Event-sourced state — large architectural change. Deferred until state corruption observed.
+- **Idea 9**: otherness as a service — requires cloud infrastructure. Deferred until >10 repos.
 
 ## The math
 
