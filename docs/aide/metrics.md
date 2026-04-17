@@ -56,3 +56,4 @@
 | 2026-04-17 | 14 | 2 | 0 | 0 | 11 | 2 | ~4 | Batch 14: #158 Stage 5 guard, #159 QA customer doc MISS check (both CRITICAL tier self-review) |
 | 2026-04-17 | 15 | 2 | 0 | 0 | 11 | 2 | ~5 | Batch 15: #162 is_done filter fix (CRITICAL, self-review found WRONG/fixed), #163 onboard design doc stubs — DDDD doc now 0 Future items |
 | 2026-04-17 | 16 | 2 | 0 | 0 | 11 | 2 | ~4 | Batch 16: #166 progress.md, #167 D4 for issue comments (CRITICAL) — D4 doc 1 deferred item |
+| 2026-04-17 | 17 | 2 | 0 | 0 | 12 | 2 | ~4 | Batch 17: #170 difficulty-ledger + SM trigger, #171 cross-project mining (self-review fixed WRONG) |
