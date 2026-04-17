@@ -135,13 +135,17 @@
       "done_at": "2026-04-17T17:53:27Z"
     },
     "146": {
-      "state": "todo",
+      "state": "assigned",
       "title": "fix(dod): Journey 2 FAILING \u2014 alibi _state stalled >72h, needs restart",
       "issues": [
         146
       ],
       "risk": "low",
-      "created_at": "2026-04-17T21:26:20Z"
+      "created_at": "2026-04-17T21:26:20Z",
+      "assigned_to": "sess-518cc5ec",
+      "assigned_at": "2026-04-17T21:27:24Z",
+      "branch": "feat/146",
+      "worktree": "../otherness.146"
     },
     "147": {
       "state": "todo",
@@ -172,6 +176,11 @@
     "STANDALONE": {
       "last_seen": null,
       "cycle": 0
+    },
+    "sess-518cc5ec": {
+      "last_seen": "2026-04-17T21:27:24Z",
+      "item": "146",
+      "cycle": 1
     }
   },
   "handoff": null,
