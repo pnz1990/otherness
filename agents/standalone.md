@@ -389,6 +389,91 @@ fi
 
 ---
 
+## D4 INSTRUCTION INTERPRETATION
+
+**Before entering the loop, check whether the human has sent a direct instruction in
+this conversation.** If they have, apply the D4 translation protocol before acting.
+
+This fires once at session start, not on every loop iteration.
+
+### Classification
+
+Classify the instruction into one of three categories:
+
+**DECLARATIVE** — the human expressed an intent in design terms ("the vision should say X",
+"add this to the roadmap", "update the design doc for Y"). Proceed directly — it is already
+in the right form. Create or update the D4 artifact they described, then enter the loop.
+
+**IMPERATIVE** — the human expressed a direct action ("add X", "fix Y", "make Z do W",
+"update the readme"). Translate to D4 first. Post the translation. Wait 60s. Then act on
+the translation, not the original instruction.
+
+**INFRA** — pure maintenance with no user-visible behavior change (fix broken CI, clean
+stale branches, update a pinned dependency). No translation needed. Proceed directly.
+
+### Translation format (for IMPERATIVE instructions)
+
+Post this before doing any implementation work:
+
+```
+[📋 D4 TRANSLATION]
+Heard:     "<instruction verbatim>"
+Intent:    <one sentence — what the human actually wants, stated as an outcome>
+D4 layer:  <vision | roadmap | design doc | spec>
+Artifact:  <what would be written — exact text of the design doc entry, vision update, etc.>
+Question:  <one question if genuinely ambiguous — omit if clear>
+Proceeding in 60s unless you correct the translation.
+```
+
+Then wait 60 seconds. If the human corrects the translation, update it and repost. If not,
+proceed using the D4 artifact as the work order — not the original instruction.
+
+### Rules
+
+- **Never silently infer and act.** The translation is always posted for IMPERATIVE instructions.
+- **Act on the artifact, not the instruction.** After translation: create/update the design doc
+  `🔲 Future` item, write the spec referencing it (per eng.md §2b), then implement.
+- **One clarifying question maximum.** Only ask if the translation would be materially different
+  depending on the answer. Do not interrogate the human.
+- **Surface missing design docs.** If the instruction implies a feature area with no
+  `docs/design/` file, create that file first (per eng.md §2b O1). The design doc is part
+  of the work.
+- **Surface scope.** If the instruction implies work outside the current roadmap stage, say so
+  before proceeding. Do not silently expand scope.
+
+### Examples
+
+Imperative: "add a --verbose flag to the CLI"
+```
+[📋 D4 TRANSLATION]
+Heard:     "add a --verbose flag to the CLI"
+Intent:    Improve debuggability by exposing internal state on request
+D4 layer:  design doc → spec
+Artifact:  docs/design/03-cli.md §Future:
+           🔲 --verbose: emit reconciler decisions to stderr. Useful for stuck promotions.
+Proceeding in 60s unless you correct the translation.
+```
+
+Imperative: "update the readme with the D4 logo"
+```
+[📋 D4 TRANSLATION]
+Heard:     "update the readme with the D4 logo"
+Intent:    Brand the project with the D4 identity in the primary entry point
+D4 layer:  vision (README is the customer-facing expression of vision.md)
+Artifact:  README.md: add D4 logo image, update tagline to lead with D4 motto
+Proceeding in 60s unless you correct the translation.
+```
+
+Ambiguous: "we need better error messages"
+```
+[📋 D4 TRANSLATION]
+Heard:     "we need better error messages"
+Intent:    unclear
+Question:  Which surface — CLI output, web UI error states, or controller logs?
+```
+
+---
+
 ## RESUME CHECK
 
 ```bash
