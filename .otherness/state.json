@@ -3,8 +3,8 @@
   "mode": "standalone",
   "repo": "pnz1990/otherness",
   "current_queue": [
-    "170",
-    "171"
+    "174",
+    "175"
   ],
   "features": {
     "127-128-129": {
@@ -351,6 +351,24 @@
       "pr_merged": true,
       "pr_number": 173,
       "done_at": "2026-04-17T22:43:19Z"
+    },
+    "174": {
+      "state": "todo",
+      "title": "chore(docs): update skills README (2 missing entries)",
+      "issues": [
+        174
+      ],
+      "risk": "low",
+      "created_at": "2026-04-17T22:45:42Z"
+    },
+    "175": {
+      "state": "todo",
+      "title": "feat(pm): cross-project improvement proposals",
+      "issues": [
+        175
+      ],
+      "risk": "medium",
+      "created_at": "2026-04-17T22:45:42Z"
     }
   },
   "engineer_slots": {
