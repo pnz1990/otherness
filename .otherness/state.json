@@ -3,8 +3,8 @@
   "mode": "standalone",
   "repo": "pnz1990/otherness",
   "current_queue": [
-    "178",
-    "179"
+    "182",
+    "183"
   ],
   "features": {
     "127-128-129": {
@@ -415,6 +415,24 @@
       "pr_merged": true,
       "pr_number": 181,
       "done_at": "2026-04-17T23:01:58Z"
+    },
+    "182": {
+      "state": "todo",
+      "title": "fix(tooling): validate.sh step counters /4 \u2192 /5",
+      "issues": [
+        182
+      ],
+      "risk": "low",
+      "created_at": "2026-04-17T23:04:51Z"
+    },
+    "183": {
+      "state": "todo",
+      "title": "chore(docs): metrics.md trend notes batches 6-19",
+      "issues": [
+        183
+      ],
+      "risk": "low",
+      "created_at": "2026-04-17T23:04:51Z"
     }
   },
   "engineer_slots": {
