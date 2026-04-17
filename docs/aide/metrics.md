@@ -50,3 +50,4 @@
 | 2026-04-16 | 8 | 6 | 0 | 0 | 11 | 6 | ~8 | Stage 3 complete: #92 README, #95 labels+report, #96 REPORT_ISSUE→AGENTS.md, #97 doc fix, #91 README table |
 | 2026-04-16 | 9 | 4 | 0 | 0 | 11 | 5 | ~10 | External-user readiness sprint: #103 cmd deploy, #104 autonomous_mode default, #105 queue generator, #106 RECOVERY.md |
 | 2026-04-17 | 10 | 1 | 0 | 0 | 11 | 1 | ~5 | Batch 10: Stage 4 queue generated; #138 docs update merged (#141); PRs #139 #140 CRITICAL awaiting human |
+| 2026-04-17 | 11 | 1 | 0 | 0 | 11 | 1 | ~6 | Batch 11: Stale issues #136 #137 #138 closed; DoD Journey 2 fixed (alibi stall documented, [NEEDS HUMAN] posted); new queue #147 #148 generated |
