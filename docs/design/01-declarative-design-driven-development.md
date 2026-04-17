@@ -38,10 +38,11 @@ mark what is present vs future.
 - ✅ Design doc for Stage 5 (Versioned Release Model) — created `docs/design/03-versioned-release.md` (PR #152, 2026-04-17)
 - ✅ CI lint for `## Design reference` presence in spec files — validate.sh check 5 (PR #153, 2026-04-17)
 - ✅ Customer doc requirement checked by QA — MISS finding (follow-up issue) when non-N/A design ref has no customer doc (PR #159, 2026-04-17)
+- ✅ `/otherness.onboard` generates design doc stubs — Step 4b creates 2-4 inferred docs, marked ⚠️ Inferred (PR #163, 2026-04-17)
 
 ## Future (🔲)
 
-- 🔲 `/otherness.onboard` generates design doc drafts inferred from codebase — marked ⚠️ Inferred (O7 — deferred: requires onboarding agent update)
+*(No remaining Future items — all DDDD obligations are now Present or explicitly deferred in Zone 3.)*
 
 ---
 
