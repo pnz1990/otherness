@@ -449,22 +449,36 @@
       "done_at": "2026-04-17T23:10:24Z"
     },
     "186": {
-      "state": "todo",
+      "state": "done",
       "title": "chore(docs): update PROVENANCE.md \u2014 session improvements",
       "issues": [
         186
       ],
       "risk": "low",
-      "created_at": "2026-04-17T23:12:44Z"
+      "created_at": "2026-04-17T23:12:44Z",
+      "assigned_to": "sess-518cc5ec",
+      "assigned_at": "2026-04-17T23:13:36Z",
+      "branch": "feat/186",
+      "worktree": "../otherness.186",
+      "pr_merged": true,
+      "pr_number": 188,
+      "done_at": "2026-04-17T23:16:15Z"
     },
     "187": {
-      "state": "todo",
+      "state": "done",
       "title": "chore(docs): update future-ideas.md \u2014 mark implemented ideas",
       "issues": [
         187
       ],
       "risk": "low",
-      "created_at": "2026-04-17T23:12:44Z"
+      "created_at": "2026-04-17T23:12:44Z",
+      "assigned_to": "sess-518cc5ec",
+      "assigned_at": "2026-04-17T23:16:30Z",
+      "branch": "feat/187",
+      "worktree": "../otherness.187",
+      "pr_merged": true,
+      "pr_number": 189,
+      "done_at": "2026-04-17T23:18:41Z"
     }
   },
   "engineer_slots": {
@@ -486,6 +500,6 @@
   },
   "handoff": null,
   "queue_generated_at": "2026-04-17T16:47:47Z",
-  "sm_cycle_count": 11,
-  "pm_cycle_count": 10
+  "sm_cycle_count": 12,
+  "pm_cycle_count": 11
 }
