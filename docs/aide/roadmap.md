@@ -136,3 +136,49 @@ is validated.
 
 ### Dependencies
 Stage 4 (metrics infrastructure must exist), `scripts/simulate.py` (done)
+
+---
+
+## Stage 7: Perpetual Autonomous Validation
+
+**Goal:** `/otherness.run` is perpetually self-sustaining. It always knows what to
+do next, always knows whether it is on track, and surfaces to the human only when
+it genuinely cannot determine either without external judgment. The system derives
+its own validation criteria from its own design docs and simulation. "Done" is not
+declared — it is derived.
+
+This is not a feature added to otherness. It is the completion of what otherness
+was always trying to become.
+
+### Deliverables
+- PM §5g: simulation health score — GREEN / AMBER / RED computed from real vs
+  simulated completion rate and arch_convergence; not declared, derived
+- PM self-correction on AMBER — automatically queues one `/otherness.learn` cycle;
+  does not escalate to human yet
+- Dynamic definition-of-done — PM §5b extends static journeys with criteria
+  derived from current design doc Present/Future ratio
+- Perpetual loop trigger — standalone.md STOP CONDITION: all journeys GREEN AND
+  health score GREEN AND no unstarted Future items → standby; otherwise restart
+- Self-generating validation criteria — PM derives candidate journeys from shipped
+  Present items; proposes to human once; added permanently after confirmation
+- Standby mode — when all criteria met, system checks daily for new Future items
+  from vibe-vision sessions or self-generating proposals; restarts on finding any
+
+### What "perpetual" means
+The human does not restart the loop. The human does not define success.
+The human does not monitor batches. The human re-enters only when:
+1. Health score RED for 3 consecutive batches (genuine stall)
+2. The system has a vision fork it cannot resolve (design decision required)
+3. The system is in standby and the human has new intent to express
+
+Between those moments: the system runs, ships, calibrates, self-corrects,
+and advances the project on its own.
+
+### The threshold for "Stage 7 is working"
+The system completes 10 consecutive batches without human intervention,
+self-corrects at least one AMBER signal autonomously, and correctly enters
+standby when no Future items remain — then restarts when new ones are added
+via a vibe-vision session.
+
+### Dependencies
+Stage 6 (simulation calibration must be active)
