@@ -260,7 +260,7 @@ if os.path.isdir(design_dir):
             m = re.search(r'^## Future.*?\n(.*?)(?=^## |\Z)', content,
                           re.MULTILINE | re.DOTALL)
             if m:
-                items = re.findall(r'^- 🔲 (.+)', m.group(1), re.MULTILINE)
+                items = re.findall(r'^- 🔲 (?!.*🚫)(.+)', m.group(1), re.MULTILINE)
                 for item in items:
                     desc = re.sub(r'\s*—.*$', '', item).strip()
                     if not is_done(desc):

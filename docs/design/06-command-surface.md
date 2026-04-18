@@ -55,7 +55,8 @@ operation. They should be documented as internal/advanced.
 - ✅ Deprecate `otherness.cross-agent-monitor.md` — command deleted; validate.sh updated (PR #220, 2026-04-17)
 - ✅ Update `otherness.status.md` — reads _state branch before local file (this PR, 2026-04-17)
 - ✅ Update `otherness.setup.md` — removed stale .maqa migration; added D4 artifact stubs (this PR, 2026-04-17)
-- ✅ Update `otherness.upgrade.md` — derives otherness repo from git remote; no hardcoded slug (this PR, 2026-04-17)
+- ✅ Update `otherness.upgrade.md` — derives otherness repo from git remote; no hardcoded slug (PR #221, 2026-04-17)
+- ✅ Update README command table — PRIMARY/SETUP/INTERNAL taxonomy; vibe-vision first; cross-agent-monitor removed (PR #209, 2026-04-17)
 
 ## Future (🔲)
 

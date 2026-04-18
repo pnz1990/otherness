@@ -29,7 +29,7 @@ generically, for any project using otherness.
 
 ## Present (✅)
 
-*(Nothing implemented yet — this is the design doc for a new capability.)*
+- ✅ Deprecated marker `🚫` — COORD queue-gen skips `🔲` items containing `🚫` (PR #209, 2026-04-17)
 
 ## Future (🔲)
 
@@ -40,7 +40,7 @@ generically, for any project using otherness.
 - 🔲 Design doc freshness metric — track when each `docs/design/` file was last updated
   vs when the most recent PR touching its feature area merged. If a file has not been
   touched in N days but feature-area PRs merged, flag as potentially stale.
-- 🔲 Deprecated marker for design doc items — a `🚫 Deprecated` marker for Present or
+- 🔲 Cross-check README/AGENTS.md claims against code — PM phase §5f extension.
   Future items that were removed or replaced. Prevents Future items from lingering in
   COORD queue after the feature area was abandoned. COORD skips items marked 🚫.
 - 🔲 Cross-check README/AGENTS.md claims against code — PM phase §5f extension: for any

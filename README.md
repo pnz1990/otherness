@@ -77,19 +77,29 @@ That's it. The agent reads `AGENTS.md` and `docs/aide/`, generates a queue from 
 
 ---
 
-**Utility commands** (run once, not in a loop):
+### PRIMARY — your regular loop
 
 | Command | Purpose |
 |---|---|
-| `/otherness.setup` | One-time project init — creates config, deploys all commands |
-| `/otherness.onboard` | Existing project — reads the codebase, generates `docs/aide/` drafts, seeds state |
-| `/otherness.run` | Start the autonomous team loop (coordinator → engineer → QA → SM → PM → repeat) |
+| `/otherness.vibe-vision` | Shape what the product becomes — co-author vision through dialogue |
+| `/otherness.run` | Start the autonomous team (coordinator → engineer → QA → SM → PM → repeat) |
 | `/otherness.run.bounded` | Scoped agent with declared boundaries — run multiple concurrently |
-| `/otherness.status [--fleet]` | What the agent is working on, CI state, open blockers; `--fleet` for all monitored projects |
-| `/otherness.learn [repo ...]` | Study open-source projects and internalize patterns into skills |
-| `/otherness.upgrade` | Check for updates to internal dependencies |
-| `/otherness.arch-audit` | Architectural audit — checks docs vs source, finds drift and structural issues |
-| `/otherness.cross-agent-monitor` | Cross-project health monitor — heartbeat, velocity, blockers across all monitored repos |
+| `/otherness.status [--fleet]` | What's in flight, CI state, open blockers; `--fleet` for all monitored projects |
+
+### SETUP — run once or rarely
+
+| Command | Purpose |
+|---|---|
+| `/otherness.setup` | One-time project init — creates config, deploys commands, creates D4 stubs |
+| `/otherness.onboard` | Existing project — reads codebase, generates `docs/aide/` drafts, seeds state |
+| `/otherness.upgrade` | Manage agent version pinning |
+
+### INTERNAL — advanced / agent self-improvement
+
+| Command | Purpose |
+|---|---|
+| `/otherness.arch-audit` | Adversarial audit — docs vs source, four-lens structural analysis |
+| `/otherness.learn [repo ...]` | Study open-source repos, internalize patterns into skills |
 
 ---
 
