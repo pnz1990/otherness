@@ -140,11 +140,11 @@ The message names the correct command. The human knows exactly what to do.
 - ✅ `validate.sh` check 6: every agent file has a `## MODE` block — already enforced since PR #226 (check was already shipping; duplicate Future entry removed)
 - ✅ Layer 1: `## D4 ENFORCEMENT` section added to `onboarding-new-project.md` AGENTS.md template; `d4_enforcement: true` added to `otherness-config-template.yaml` (PR #262, 2026-04-18)
 - ✅ `vibe-vision.md` hard rule: explicit session termination rule added to HARD RULES — session ends after D4 artifacts land on main, no implementation/issues/specs (PR #267, 2026-04-18)
+- ✅ `otherness.onboard` mode: MODE: VISION (writes docs/aide/ + .otherness/ exception for state bootstrap; does not write agents/ or scripts/) — accurately reflects actual behavior (PR #268, 2026-04-18)
 
 ## Future (🔲)
 
-- 🔲 `otherness.onboard` mode: READ-ONLY for CODE zone, VISION for DOCS zone —
-  onboarding generates docs/aide/ stubs only, no code changes
+*(All D4 enforcement layers now implemented. Future extensions should be opened as new issues.)*
 
 ---
 
