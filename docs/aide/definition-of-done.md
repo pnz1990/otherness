@@ -139,6 +139,52 @@ cd ~/.otherness
 
 ---
 
+## Journey 6: `/otherness.vibe-vision` produces valid D4 artifacts
+
+**The user story**: A human runs `/otherness.vibe-vision`, has a dialogue with the agent, and the resulting design doc stubs are immediately usable by the autonomous execution team — COORD picks them up and generates queue issues on next startup.
+
+### Exact steps that must work
+
+```bash
+# After a vibe-vision session completes:
+
+# 1. At least one design doc stub was created (or updated with new Future items)
+ls docs/design/*.md 2>/dev/null | wc -l
+# Must be ≥ 1 file after session
+
+# 2. The design doc stubs contain machine-readable Future items
+python3 -c "
+import re, os
+design_dir = 'docs/design'
+total = 0
+for f in os.listdir(design_dir):
+    if f.endswith('.md'):
+        content = open(f'{design_dir}/{f}').read()
+        m = re.search(r'^## Future.*?\n(.*?)(?=^## |\Z)', content, re.MULTILINE | re.DOTALL)
+        if m:
+            items = re.findall(r'^- 🔲 (?!.*🚫)(.+)', m.group(1), re.MULTILINE)
+            total += len(items)
+print(f'{total} machine-readable Future items')
+"
+# Must be ≥ 1
+
+# 3. COORD queue generation finds those items on next startup
+# (Verified by watching the next /otherness.run session claim an item from the new design doc)
+
+# 4. vibe-vision command file is deployed
+ls ~/.otherness/.opencode/command/otherness.vibe-vision.md
+# Must exist
+```
+
+### Pass criteria
+
+- [ ] At least one `docs/design/*.md` file exists after a vibe-vision session
+- [ ] At least one `🔲 Future` item in the correct format exists in a design doc stub
+- [ ] COORD queue generation (next /otherness.run) finds and queues at least one item from the new design doc
+- [ ] `/otherness.vibe-vision` command file exists in `.opencode/command/`
+
+---
+
 ## Journey Status
 
 | Journey | Status | Last checked | Notes |
@@ -148,3 +194,4 @@ cd ~/.otherness
 | 3: Self-improvement happening | ✅ Passing | 2026-04-17 | PR merged 2026-04-17; 11 skills; PROVENANCE last entry 2026-04-15 |
 | 4: CRITICAL tier protection | ✅ Passing | 2026-04-17 | No open CRITICAL PRs without needs-human; self-review protocol working |
 | 5: Starts cleanly on fresh clone | ✅ Passing | 2026-04-17 | 9 command files present; state seeds correctly |
+| 6: vibe-vision produces valid D4 artifacts | 🔲 Not validated | 2026-04-18 | Journey 6 added. Requires a live vibe-vision session to validate. |
