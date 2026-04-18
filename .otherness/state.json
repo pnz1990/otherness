@@ -43,6 +43,22 @@
       ],
       "priority": "medium",
       "size": "l"
+    },
+    "215": {
+      "title": "deprecate cross-agent-monitor",
+      "state": "done",
+      "pr_number": 220,
+      "done_at": "2026-04-18T03:36:57Z"
+    },
+    "219": {
+      "title": "fix(docs): README command table \u2014 D4 taxonomy, remove cross-agent-monitor, add vibe-vision first",
+      "state": "todo",
+      "source": "design-doc-06",
+      "areas": [
+        "area/docs"
+      ],
+      "priority": "low",
+      "size": "s"
     }
   },
   "session_heartbeats": {}
