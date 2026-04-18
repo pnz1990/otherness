@@ -146,12 +146,14 @@
     },
     "214": {
       "title": "feat: implement /otherness.vibe-vision \u2014 validate and wire",
-      "state": "todo",
+      "state": "done",
       "priority": "medium",
       "size": "l",
       "areas": [
         "area/agent-loop"
-      ]
+      ],
+      "pr_merged": true,
+      "done_at": "2026-04-18T19:58:01Z"
     },
     "224": {
       "title": "feat(ci): guard-ci.sh + CI workflow \u2014 Layer 3 D4 enforcement",
@@ -206,6 +208,6 @@
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 20,
-  "pm_cycle_count": 2
+  "sm_cycle_count": 21,
+  "pm_cycle_count": 3
 }
