@@ -131,7 +131,7 @@
     },
     "208": {
       "title": "feat(pm): PM \u00a75f periodic doc health scan",
-      "state": "assigned",
+      "state": "in_review",
       "priority": "medium",
       "size": "m",
       "areas": [
@@ -140,7 +140,9 @@
       "assigned_to": "sess-83781955",
       "assigned_at": "2026-04-18T19:49:11Z",
       "branch": "feat/208",
-      "worktree": "../otherness.208"
+      "worktree": "../otherness.208",
+      "pr_number": 246,
+      "pr_url": "https://github.com/pnz1990/otherness/pull/246"
     },
     "214": {
       "title": "feat: implement /otherness.vibe-vision \u2014 validate and wire",
@@ -204,6 +206,6 @@
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 19,
-  "pm_cycle_count": 1
+  "sm_cycle_count": 20,
+  "pm_cycle_count": 2
 }
