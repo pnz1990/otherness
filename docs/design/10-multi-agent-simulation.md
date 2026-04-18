@@ -503,11 +503,10 @@ This is the primary falsification apparatus for the model itself.
 
 ## Present (✅)
 
-*(Not yet implemented.)*
+- ✅ `scripts/simulate.py` — full three-force simulation, O1–O6 satisfied, --falsify mode verified (PR #225, 2026-04-17)
 
 ## Future (🔲)
 
-- 🔲 Implement `scripts/simulate.py` — full simulation per this spec
 - 🔲 Run baseline: N=1,2,4,8,16 agents, 200 cycles, 50 runs each — record results
 - 🔲 Falsification runs: remove each force independently, measure effect
 - 🔲 Calibrate parameters against real otherness batch data (metrics.md) — do the
