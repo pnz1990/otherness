@@ -32,9 +32,12 @@ fi
 ## Step 2 — Available releases (changelog preview)
 
 ```bash
+OTHERNESS_REPO=$(git -C ~/.otherness remote get-url origin 2>/dev/null \
+  | sed 's|.*github.com[:/]||;s|\.git$||')
+
 echo ""
-echo "=== Available releases ==="
-gh release list --repo pnz1990/otherness --limit 10 \
+echo "=== Available releases (from $OTHERNESS_REPO) ==="
+gh release list --repo "$OTHERNESS_REPO" --limit 10 \
   --json tagName,name,publishedAt \
   --jq '.[] | "\(.tagName)  \(.name)  (\(.publishedAt[:10]))"' 2>/dev/null \
   || echo "(no releases found — repo may be unpinned-only)"
@@ -51,7 +54,9 @@ If the operator asks about a specific version:
 
 ```bash
 # Replace TAG with the version of interest
-gh release view TAG --repo pnz1990/otherness 2>/dev/null
+OTHERNESS_REPO=$(git -C ~/.otherness remote get-url origin 2>/dev/null \
+  | sed 's|.*github.com[:/]||;s|\.git$||')
+gh release view TAG --repo "$OTHERNESS_REPO" 2>/dev/null
 ```
 
 ## Step 4 — Pin to a version

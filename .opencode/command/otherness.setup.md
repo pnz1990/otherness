@@ -106,17 +106,6 @@ else
 fi
 ```
 
-## Step 4b — Migrate .maqa/ → .otherness/ (upgrade from older otherness versions)
-
-```bash
-if [ -d ".maqa" ] && [ ! -d ".otherness" ]; then
-  mv .maqa .otherness
-  echo "Migrated .maqa/ → .otherness/"
-elif [ -d ".maqa" ] && [ -d ".otherness" ]; then
-  echo "Both .maqa/ and .otherness/ exist — .otherness/ takes precedence. Remove .maqa/ when confirmed."
-fi
-```
-
 ## Step 5 — Ensure .otherness/state.json exists
 
 ```bash
@@ -192,8 +181,45 @@ else
 fi
 ```
 
+## Step 7 — Initialize D4 artifacts (vision and roadmap stubs)
+
+The autonomous team reads `docs/aide/vision.md` and `docs/aide/roadmap.md` at every
+startup. Create stubs now if they don't exist so the project is D4-ready from the start.
+
+```bash
+mkdir -p docs/aide
+
+if [ ! -f docs/aide/vision.md ]; then
+  cat > docs/aide/vision.md << 'STUB'
+# Vision
+
+> Fill this in before running /otherness.run.
+> What is this project? What problem does it solve? Who is it for?
+> Write 2–4 sentences. This is the north star for everything that gets built.
+STUB
+  echo "Created docs/aide/vision.md (stub — edit before running /otherness.run)"
+else
+  echo "docs/aide/vision.md already exists — skipping."
+fi
+
+if [ ! -f docs/aide/roadmap.md ]; then
+  cat > docs/aide/roadmap.md << 'STUB'
+# Roadmap
+
+## Stage 1: Foundation
+> Describe your first delivery milestone here.
+> What should be working at the end of Stage 1?
+STUB
+  echo "Created docs/aide/roadmap.md (stub — edit before running /otherness.run)"
+else
+  echo "docs/aide/roadmap.md already exists — skipping."
+fi
+```
+
 ## Done
 
 Edit `otherness-config.yaml` to set your `BUILD_COMMAND`, `TEST_COMMAND`, `LINT_COMMAND`, and other project-specific values. If your project has a UI, add `project.job_family: FEE`; for platform/infrastructure projects use `SysDE`; backend-only projects can omit the field (defaults to `SDE`).
+
+**Before running `/otherness.run`**: edit `docs/aide/vision.md` to describe your project. This is the most important thing — the autonomous team reads it on every startup.
 
 Then run `/otherness.run` to start the autonomous team.
