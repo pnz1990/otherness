@@ -105,3 +105,5 @@
 | 2026-04-18 | 37 | 0 | 1 | 0 | 12 | 1 | ~3 | Batch 37: #263 SM §4g codebase hygiene scan (CRITICAL). 2 stale queue items closed. 6 CRITICAL PRs queued. |
 
 | 2026-04-18 | 38 | 2 | 0 | 0 | 12 | 2 | ~2 | Batch 38: #264 doc 06 drift fix, #265 Layer 1 D4 + config template. Queue empty. |
+
+| 2026-04-18 | 39 | 1 | 0 | 0 | 12 | 0 | ~2 | Batch 39: #266 doc 10+11 drift cleanup (sim items marked shipped). Queue empty — generating new queue. |
