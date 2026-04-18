@@ -223,3 +223,71 @@ EOF
 gh issue comment $REPORT_ISSUE --repo $REPO \
   --body "[📋 PM | ${MY_SESSION_ID:-sess-unknown} | otherness@${OTHERNESS_VERSION:-unknown}] Product review complete." 2>/dev/null
 ```
+
+---
+
+## 5f. Documentation health scan + freshness check (runs every N_PM_CYCLES)
+
+Verify `docs/design/` files reflect reality: Present items have PR references,
+Future items haven't been silently shipped, design docs aren't going stale.
+Opens `kind/docs` issues for each gap. No file writes — issues only.
+
+```bash
+if [ $((${PM_CYCLE:-0} % ${N_PM_CYCLES:-3})) -eq 0 ]; then
+  echo "[PM §5f] Running documentation health scan..."
+
+  # [AI-STEP]
+  # Step 0: Graceful fallback if no design docs exist.
+  #   if [ ! -d "docs/design" ] || [ -z "$(ls docs/design/*.md 2>/dev/null)" ]; then
+  #     echo "[PM §5f] No design docs found — skipping."; skip
+  #   fi
+  #
+  # Step 1: Fetch merged PR titles once (reused across all steps).
+  #   MERGED_TITLES=$(gh pr list --repo $REPO --state merged --limit 200 \
+  #     --json title --jq '.[].title' 2>/dev/null | tr '[:upper:]' '[:lower:]')
+  #
+  # Step 2: For each docs/design/*.md file (duplicate-suppressed — open_if_absent):
+  #
+  #   2a. Check ✅ Present items for (PR #N) references.
+  #     present_items = re.findall(r'^- ✅ (.+)', content, re.MULTILINE)
+  #     for item in present_items:
+  #       if not re.search(r'\(PR #\d+', item):
+  #         title = f"docs: {fname} Present item missing PR reference: {item[:60]}"
+  #         open_if_absent(title, "kind/docs,otherness")
+  #
+  #   2b. Check 🔲 Future items not silently shipped.
+  #     future_items = re.findall(r'^- 🔲 (?!.*🚫)(.+)', content, re.MULTILINE)
+  #     for item in future_items:
+  #       desc_key = item[:60].lower().strip()
+  #       if any(desc_key in pr for pr in MERGED_TITLES.splitlines()):
+  #         title = f"docs: {fname} Future item may be shipped but not marked Present: {item[:60]}"
+  #         open_if_absent(title, "kind/docs,otherness")
+  #
+  # Step 3: Duplicate suppression helper.
+  #   def open_if_absent(title, labels):
+  #     r = subprocess.run(['gh','issue','list','--repo',REPO,'--state','open',
+  #                         '--search',title[:60],'--json','number','--jq','length'],
+  #                        capture_output=True, text=True)
+  #     if int(r.stdout.strip() or '0') == 0:
+  #       subprocess.run(['gh','issue','create','--repo',REPO,
+  #                       '--title',title,'--label',labels,'--body',
+  #                       f'PM §5f health scan finding: {title}'], capture_output=True)
+  #
+  # Step 4: Post summary comment.
+  #   gh issue comment $REPORT_ISSUE --repo $REPO \
+  #     --body "[📋 PM §5f | $MY_SESSION_ID] Health scan complete. <N> issues opened."
+  #
+  # Step 5: Design doc freshness check (stale docs = no updates in >60 days).
+  #   STALE_DAYS=60
+  #   NOW=$(date +%s)
+  #   for each docs/design/*.md file:
+  #     LAST_MODIFIED=$(git log -1 --format=%ct -- "docs/design/$fname" 2>/dev/null || echo "")
+  #     if [ -z "$LAST_MODIFIED" ]: skip (no git history)
+  #     AGE_DAYS=$(( (NOW - LAST_MODIFIED) / 86400 ))
+  #     if [ AGE_DAYS -gt STALE_DAYS ]:
+  #       title = "docs: design doc $fname may be stale — no updates in ${AGE_DAYS} days"
+  #       open_if_absent(title, "kind/docs,otherness,priority/low")
+
+  echo "[PM §5f] Documentation health scan complete."
+fi
+```
