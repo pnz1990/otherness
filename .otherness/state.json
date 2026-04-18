@@ -333,6 +333,41 @@
       "branch": "feat/271",
       "worktree": "../otherness.271",
       "pr_number": 276
+    },
+    "277": {
+      "state": "in_review",
+      "title": "feat: PM \u00a75g: simulation health score",
+      "design_doc": "12-perpetual-validation.md",
+      "depends_on": [],
+      "assigned_to": "sess-83781955",
+      "assigned_at": "2026-04-18T20:59:36Z",
+      "branch": "feat/277",
+      "worktree": "../otherness.277",
+      "pr_number": 282
+    },
+    "278": {
+      "state": "todo",
+      "title": "feat: PM self-correction on AMBER",
+      "design_doc": "12-perpetual-validation.md",
+      "depends_on": []
+    },
+    "279": {
+      "state": "todo",
+      "title": "feat: Dynamic definition-of-done",
+      "design_doc": "12-perpetual-validation.md",
+      "depends_on": []
+    },
+    "280": {
+      "state": "todo",
+      "title": "feat: Perpetual loop trigger",
+      "design_doc": "12-perpetual-validation.md",
+      "depends_on": []
+    },
+    "281": {
+      "state": "todo",
+      "title": "feat: Self-generating validation criteria",
+      "design_doc": "12-perpetual-validation.md",
+      "depends_on": []
     }
   },
   "engineer_slots": {
@@ -349,6 +384,6 @@
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 31,
-  "pm_cycle_count": 13
+  "sm_cycle_count": 32,
+  "pm_cycle_count": 14
 }
