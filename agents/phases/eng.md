@@ -47,6 +47,7 @@ fi
 ## 2b. SPEC-FIRST: find or create the design doc, then write the spec
 
 Load skill: `~/.otherness/agents/skills/declaring-designs.md` before writing the spec.
+Load skill: `~/.otherness/agents/skills/difficulty-ledger.md` — check if this is a known hard case before speccing.
 
 **Step 0 — Identify the design doc for this feature area (MANDATORY).**
 
