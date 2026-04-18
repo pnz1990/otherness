@@ -136,14 +136,12 @@ The message names the correct command. The human knows exactly what to do.
 
 - ✅ Layer 0: `## MODE` block added to all 12 agent files; validate.sh check 6 enforces it (PR #226, 2026-04-17)
 - ✅ Layer 2: `scripts/guard.sh` — pre-flight zone check, all 5 MODE/zone combinations verified (PR #223, 2026-04-17)
+- ✅ Layer 3: `scripts/guard-ci.sh` + CI workflow step — blocks feat/* branches from creating new DOCS zone files, blocks vision/* branches from modifying CODE zone files; chore/* exempt; runs on every PR (PR #224, 2026-04-18)
 
 ## Future (🔲)
 
 - 🔲 Layer 1: add `## D4 ENFORCEMENT` section to `AGENTS.md` template and
   `otherness-config-template.yaml` — project-level zone declaration
-- 🔲 Layer 3: `scripts/guard-ci.sh` + CI workflow addition — branch + changed-file
-- 🔲 Layer 3: `scripts/guard-ci.sh` + CI workflow addition — branch + changed-file
-  check on every PR
 - 🔲 `validate.sh` check 6: every agent file has a `## MODE` block with a valid
   declaration (READ-ONLY | IMPLEMENT | VISION)
 - 🔲 `vibe-vision.md` hard rule: session ends after artifacts are on main — no
