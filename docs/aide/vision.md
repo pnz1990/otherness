@@ -79,6 +79,33 @@ is not conceptual diversity. The only mechanism that breaks architectural monocu
 today is `/otherness.learn` importing genuinely foreign patterns. This is the most
 important investment for the system's long-term compounding.
 
+## The simulation as anchor
+
+The simulation (`scripts/simulate.py`) is not a research artifact. It is the
+instrument by which otherness understands itself and calibrates its behavior.
+
+The relationship between simulation and reality works in two directions:
+
+**Reality calibrates simulation.** otherness's batch history (`docs/aide/metrics.md`)
+is used to find simulation parameters that match observed behavior. When the
+simulation's completion rate matches real PRs per batch, the parameters mean
+something. Those calibrated parameters ship as defaults to every project via
+`~/.otherness`.
+
+**Simulation anchors reality.** Once calibrated, the simulation predicts what
+healthy behavior looks like for a given project. When real behavior diverges from
+simulation — when actual Type B rate drops below the simulated floor, when
+arch_convergence signals frame-lock — the SM phase surfaces this as a signal
+requiring human attention. The simulation is the early-warning system.
+
+This is how the system knows when it's stuck before the human notices.
+This is how every project using otherness benefits from what otherness learned
+on itself. This is the propagation chain: observation → calibration → defaults →
+inheritance → per-project re-calibration → fleet intelligence.
+
+The simulation becomes the anchor not when it runs — it already runs. It becomes
+the anchor when its output changes how agents behave. That is Stage 6.
+
 ## What "done" looks like
 
 otherness is never done. It is a living system that improves continuously. The benchmark for "good enough to stop manually maintaining":
@@ -87,3 +114,4 @@ otherness is never done. It is a living system that improves continuously. The b
 2. Reference projects continue advancing without human intervention
 3. `/otherness.learn` discovers and internalizes at least one new pattern per month autonomously
 4. The PM validation scenarios all pass: reference projects alive, skills growing, docs matching behavior
+5. The simulation runs automatically, stays calibrated against real batch data, and its arch-convergence signal has correctly predicted at least one genuine stall — surfaced to the human before they noticed it themselves

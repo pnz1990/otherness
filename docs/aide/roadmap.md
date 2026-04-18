@@ -106,3 +106,33 @@ This stage is only entered when triggered by: >10 repos using otherness, OR a CR
 
 ### Dependencies
 Stage 4, AND explicit human decision to proceed
+
+---
+
+## Stage 6: Simulation-Anchored Self-Improvement
+
+**Goal:** The simulation runs automatically, stays calibrated against real batch data,
+and its output actively shapes agent behavior across all projects using otherness.
+The system knows when it's stuck before the human notices.
+
+This stage makes otherness self-diagnosing at scale.
+
+### Deliverables
+- `scripts/calibrate.py` — reads `docs/aide/metrics.md`, runs parameter grid search,
+  writes `scripts/sim-params.json` with empirically calibrated defaults
+- SM phase §4d — runs calibration every 10 batches; commits `sim-params.json` to
+  `_state`; reads arch-convergence signal; opens needs-human issue if > threshold
+- Phase 1 propagation — calibrated `sim-params.json` ships via `git -C ~/.otherness pull`
+  to every project as default parameters
+- Phase 2 per-project calibration — after ≥10 project batches, SM re-calibrates
+  against project-specific `metrics.md`; stores in `_state` as override
+- PM validation scenario 6 — verify simulation is running, calibrated, and has
+  produced at least one arch-convergence signal in the last 30 days
+
+### The threshold for "Stage 6 is working"
+The simulation correctly predicted a genuine behavioral stall and surfaced it
+to the human before they noticed it themselves. Once this happens once, Stage 6
+is validated.
+
+### Dependencies
+Stage 4 (metrics infrastructure must exist), `scripts/simulate.py` (done)
