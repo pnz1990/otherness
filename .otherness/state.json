@@ -125,7 +125,7 @@
       "priority": "high",
       "size": "m",
       "pr_merged": true,
-      "done_at": "2026-04-18T17:42:15Z",
+      "done_at": "2026-04-18T17:43:22Z",
       "pr_number": 237
     },
     "231": {
@@ -138,7 +138,7 @@
       "priority": "high",
       "size": "s",
       "pr_merged": true,
-      "done_at": "2026-04-18T17:42:15Z",
+      "done_at": "2026-04-18T17:43:22Z",
       "pr_number": 236
     },
     "232": {
@@ -151,7 +151,7 @@
       "priority": "medium",
       "size": "s",
       "pr_merged": true,
-      "done_at": "2026-04-18T17:42:15Z",
+      "done_at": "2026-04-18T17:43:22Z",
       "pr_number": 233
     }
   },
