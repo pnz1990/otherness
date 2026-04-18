@@ -60,10 +60,7 @@ operation. They should be documented as internal/advanced.
 
 ## Future (🔲)
 
-- 🔲 Update README command table — reflect canonical type taxonomy (PRIMARY / SETUP / INTERNAL),
-  cross-agent-monitor from primary command list, add vibe-vision as the first entry
-- 🔲 `otherness.setup.md` — add D4 artifact initialization: create docs/aide/vision.md
-  stub, docs/aide/roadmap.md stub during setup so the project starts in D4 mode
+*(All planned command surface items have been shipped.)*
 
 ---
 
