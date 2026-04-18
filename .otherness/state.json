@@ -26,13 +26,16 @@
     },
     "209": {
       "title": "feat(coord): \ud83d\udeab Deprecated marker \u2014 COORD skips deprecated Future items",
-      "state": "todo",
+      "state": "done",
       "source": "design-doc-04",
       "areas": [
         "area/agent-loop"
       ],
       "priority": "medium",
-      "size": "s"
+      "size": "s",
+      "pr_merged": true,
+      "done_at": "2026-04-18T17:06:37Z",
+      "pr_number": 228
     },
     "214": {
       "title": "feat: implement /otherness.vibe-vision \u2014 validate and wire command",
@@ -52,33 +55,42 @@
     },
     "219": {
       "title": "fix(docs): README command table \u2014 D4 taxonomy, remove cross-agent-monitor, add vibe-vision first",
-      "state": "todo",
+      "state": "done",
       "source": "design-doc-06",
       "areas": [
         "area/docs"
       ],
       "priority": "low",
-      "size": "s"
+      "size": "s",
+      "pr_merged": true,
+      "done_at": "2026-04-18T17:06:37Z",
+      "pr_number": 228
     },
     "222": {
       "title": "feat(agents): add ## MODE block \u2014 Layer 0 D4 enforcement",
-      "state": "todo",
+      "state": "done",
       "source": "design-doc-07",
       "areas": [
         "area/agent-loop"
       ],
       "priority": "high",
-      "size": "m"
+      "size": "m",
+      "pr_merged": true,
+      "done_at": "2026-04-18T17:06:37Z",
+      "pr_number": 226
     },
     "223": {
       "title": "feat(scripts): scripts/guard.sh \u2014 Layer 2 D4 zone check",
-      "state": "todo",
+      "state": "done",
       "source": "design-doc-07",
       "areas": [
         "area/tooling"
       ],
       "priority": "high",
-      "size": "s"
+      "size": "s",
+      "pr_merged": true,
+      "done_at": "2026-04-18T17:06:37Z",
+      "pr_number": 227
     },
     "224": {
       "title": "feat(ci): guard-ci.sh + CI workflow \u2014 Layer 3 D4 enforcement",
@@ -92,13 +104,16 @@
     },
     "225": {
       "title": "feat(scripts): scripts/simulate.py \u2014 multi-agent simulation",
-      "state": "todo",
+      "state": "done",
       "source": "design-doc-10",
       "areas": [
         "area/tooling"
       ],
       "priority": "medium",
-      "size": "l"
+      "size": "l",
+      "pr_merged": true,
+      "done_at": "2026-04-18T17:06:37Z",
+      "pr_number": 229
     }
   },
   "engineer_slots": {
