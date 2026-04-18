@@ -52,6 +52,8 @@
 | 2026-04-17 | 26 | 6 | 0 | 0 | 12 | 6 | ~4 | Batch 26: arch-audit fixes #210 #211 #212 #213 #206 + design docs 04 D4 intake |
 
 | 2026-04-17 | 27 | 20 | 0 | 0 | 12 | 5 | ~3 | Batch 27: D4 enforcement Layer 0+2, simulate.py, deprecated marker, README taxonomy |
+
+| 2026-04-18 | 28 | 7 | 0 | 0 | 12 | 4 | ~3 | Batch 28: sim improvements #230 #231 #232 + vision.md empirical grounding |
 ---
 
 ## Trend Notes
