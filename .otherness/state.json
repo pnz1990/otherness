@@ -313,16 +313,26 @@
       "pr_number": 274
     },
     "270": {
-      "state": "todo",
+      "state": "in_review",
       "title": "feat: Phase 2a: per-project calibration",
       "design_doc": "11-simulation-feedback-loop.md",
-      "depends_on": []
+      "depends_on": [],
+      "assigned_to": "sess-83781955",
+      "assigned_at": "2026-04-18T20:51:13Z",
+      "branch": "feat/270",
+      "worktree": "../otherness.270",
+      "pr_number": 275
     },
     "271": {
-      "state": "todo",
+      "state": "in_review",
       "title": "feat: Phase 2c: simulation results in _state",
       "design_doc": "11-simulation-feedback-loop.md",
-      "depends_on": []
+      "depends_on": [],
+      "assigned_to": "sess-83781955",
+      "assigned_at": "2026-04-18T20:54:25Z",
+      "branch": "feat/271",
+      "worktree": "../otherness.271",
+      "pr_number": 276
     }
   },
   "engineer_slots": {
@@ -339,6 +349,6 @@
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 30,
-  "pm_cycle_count": 12
+  "sm_cycle_count": 31,
+  "pm_cycle_count": 13
 }
