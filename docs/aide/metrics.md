@@ -107,3 +107,5 @@
 | 2026-04-18 | 38 | 2 | 0 | 0 | 12 | 2 | ~2 | Batch 38: #264 doc 06 drift fix, #265 Layer 1 D4 + config template. Queue empty. |
 
 | 2026-04-18 | 39 | 1 | 0 | 0 | 12 | 0 | ~2 | Batch 39: #266 doc 10+11 drift cleanup (sim items marked shipped). Queue empty — generating new queue. |
+
+| 2026-04-18 | 40 | 3 | 0 | 0 | 12 | 2 | ~2 | Batch 40: #272 vibe-vision hard rule, #273 onboard mode. Design doc 07 complete — all D4 layers shipped. |
