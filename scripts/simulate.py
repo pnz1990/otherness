@@ -35,7 +35,9 @@ class SimConfig:
     # Force 1: decay after each ship
     decay_rate: float = 0.92
     # Force 2: skill growth lift
-    skill_boldness_coefficient: float = 0.02
+    skill_boldness_coefficient: float = (
+        0.015  # log(1+skills) * coef — diminishing returns
+    )
     # Force 3: Type B failure jump
     jump_multiplier: float = 1.6
     jump_base: float = 0.15
@@ -183,9 +185,14 @@ def run_simulation(cfg: SimConfig) -> List[CycleMetrics]:
                 if not cfg.disable_force1:
                     agent.boldness *= cfg.decay_rate
 
-                # Force 2: skill lift (unless disabled)
+                # Force 2: skill lift with diminishing returns (unless disabled)
+                # log(1 + skill_count) models real capability: each new skill adds less
+                # than the last. Without this, boldness trivially converges to 1.0
+                # regardless of Type B events — which removes the compounding incentive.
                 if not cfg.disable_force2:
-                    agent.boldness += agent.skill_count * cfg.skill_boldness_coefficient
+                    agent.boldness += (
+                        math.log(1 + agent.skill_count) * cfg.skill_boldness_coefficient
+                    )
 
                 # Clamp
                 agent.boldness = max(0.05, min(1.0, agent.boldness))
