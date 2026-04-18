@@ -99,3 +99,5 @@
 | 2026-04-18 | 34 | 0 | 1 | 0 | 12 | 1 | ~3 | Batch 34: #255 coord §1c design ref template (CRITICAL, needs-human). Queue: 3 todo items generated. |
 
 | 2026-04-18 | 35 | 0 | 1 | 0 | 12 | 1 | ~3 | Batch 35: #256 PM §5f doc health scan + freshness metric (CRITICAL, needs-human) |
+
+| 2026-04-18 | 36 | 0 | 1 | 0 | 12 | 1 | ~3 | Batch 36: #257 PM §5g README/AGENTS.md claims cross-check (CRITICAL, needs-human). Queue empty. |
