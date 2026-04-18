@@ -4,16 +4,20 @@ description: "One-shot onboarding agent. Reads an existing codebase and generate
 tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
-## MODE: READ-ONLY
+## MODE: VISION
 
-This agent reads files and produces output. It does not write, edit, create,
-or delete any file in any zone.
+This agent may write to the DOCS zone only.
+DOCS zone: `docs/aide/`, `docs/design/`, `docs/*.md`.
 
-If asked to implement, fix, or change code or docs: stop and redirect.
+Exception: this agent may also write to `.otherness/` for state bootstrap
+(`.otherness/state.json`). This is the only CODE-adjacent write permitted.
+The agent does NOT write to `agents/`, `scripts/`, or any other CODE zone path.
+
+If asked to implement features, fix code, or change agent files: stop and redirect.
 
 ```
-[🚫 D4 GATE] This session is READ-ONLY.
-To implement changes:        /otherness.run
+[🚫 D4 GATE] This session (otherness.onboard) writes docs/aide/ and state bootstrap only.
+To implement features:       /otherness.run
 To update vision or design:  /otherness.vibe-vision
 ```
 
