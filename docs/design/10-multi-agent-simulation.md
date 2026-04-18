@@ -508,85 +508,13 @@ This is the primary falsification apparatus for the model itself.
 - ✅ Falsification runs: all three forces isolated (2026-04-17, see §Results)
 - ✅ Diminishing returns on skill growth — `log(1+skill_count)`, coefficient 0.015 (PR #233, 2026-04-17)
 - ✅ External signal injection — `--learn-interval N` parameter, foreign skills flagged ≥10000 (PR #231, 2026-04-17)
-
-## Results (2026-04-17)
-
-Parameters: N=4, 100 cycles, 5 runs, seed=42, human_engagement=0.7
-
-### Force isolation
-
-| Condition | Initial boldness | Final boldness | Curve |
-|---|---|---|---|
-| Baseline (all 3 forces) | 0.65 | 0.9955 | MONOTONIC_GROWTH |
-| Force 1 off (no decay) | 0.66 | 0.9955 | OSCILLATING |
-| **Force 2 off (no skill growth)** | **0.61** | **0.2144** | **CONVERGENCE_TO_ZERO** |
-| Force 3 off (no Type B jumps) | 0.51 | 0.9985 | MONOTONIC_GROWTH |
-
-**Finding 1 — Skill growth (Force 2) is existential.**
-Removing it causes convergence to zero. Removing either other force barely changes the
-outcome. The skills library is not enrichment — it is the survival mechanism.
-
-**Finding 2 — Type B failures (Force 3) accelerate early growth only.**
-Without Force 3: same final ceiling (0.9985), reached more slowly (initial 0.51 vs 0.65).
-Type B failures matter most in cycles 1–40. After that, skill growth dominates.
-
-**Finding 3 — Decay (Force 1) is neutral at 100 cycles.**
-Removing it produces identical final boldness. Decay is correctly counteracted by
-skill growth in the current parameter regime.
-
-### Human engagement effect
-
-| Engagement rate | Final boldness | Curve |
-|---|---|---|
-| 0.0 (never) | 0.9955 | MONOTONIC_GROWTH |
-| 0.3 | 0.9970 | MONOTONIC_GROWTH |
-| 0.7 | 0.9955 | MONOTONIC_GROWTH |
-| 1.0 (always) | 0.9940 | OSCILLATING |
-
-**Finding 4 — High human engagement slightly reduces final boldness.**
-The system reaches near-identical boldness regardless of engagement rate. At
-engagement=1.0 the curve becomes oscillating and the ceiling is marginally lower.
-Implication: human re-entry is not a growth driver — it's a recovery mechanism for
-genuine stalls. Inflection point thresholds should be set conservatively high.
-
-### N agents comparison
-
-All N values (1, 2, 4, 8, 16) reached final boldness 0.99+. Skill diversity stayed
-at 1.0 across all N at 100 cycles. The predicted monoculture dynamic did not appear.
-
-**Finding 5 — The monoculture hypothesis is not testable with the current model.**
-Skill diversity stays at 1.0 because new skills are generated faster than monoculture
-pressure absorbs them. But real monoculture in otherness is architectural — all agents
-share `standalone.md` and reason from the same framework regardless of skill set.
-The simulation has no variable for conceptual convergence. This is a model gap.
-
-### Model gaps identified
-
-1. **Architectural monoculture**: all agents share the same reasoning framework
-   (`standalone.md`). Skill diversity ≠ conceptual diversity. The model cannot
-   distinguish "agents with different skills" from "agents with different worldviews."
-2. **External signal injection**: `/otherness.learn` periodically imports foreign
-   architectural patterns — this is the only mechanism that breaks conceptual
-   monoculture. The simulation has no representation of this.
-3. **Ceiling artifact**: all runs converge to ~0.99 boldness because the sigmoid
-   success function and skill growth are not properly bounded at high skill counts.
-   The model needs a diminishing-returns curve on skill growth.
+- ✅ Add architectural convergence variable — `mean_arch_convergence` tracks structural monoculture; decays when agents propose same type (PR #237, 2026-04-17)
+- ✅ Calibrate parameters against real metrics.md batch data — `scripts/calibrate.py` runs simulation against real batch history, commits sim-params.json (PR #240, 2026-04-18)
+- ✅ `scripts/vision.md` empirical grounding section — SM §4d reads arch_convergence alarm, triggers [NEEDS HUMAN] if > 0.7 (PR #241, 2026-04-18)
 
 ## Future (🔲)
 
-- 🔲 Add architectural convergence variable — separate from skill diversity; decays
-  when agents propose items of the same structural type for N consecutive cycles;
-  models the real monoculture risk that skill diversity cannot capture
-- 🔲 Add external signal injection event — periodic `/otherness.learn`-equivalent
-  that resets architectural convergence for one agent; measure effect on long-run
-  boldness ceiling and monoculture onset
-- 🔲 Fix skill growth ceiling — add diminishing returns curve so boldness cannot
-  trivially reach 1.0 via pure skill accumulation; the ceiling should require
-  genuine Type B events to sustain
-- 🔲 Calibrate parameters against real metrics.md batch data — do simulated
-  completion rates and Type B rates match observed values?
-- 🔲 Add vision.md empirical grounding section — what the simulation proved about
-  how otherness actually works
+*(All planned simulation items have been shipped. Future extensions should be opened as new kind/enhancement issues.)*
 
 ---
 

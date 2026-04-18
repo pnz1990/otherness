@@ -37,26 +37,17 @@ You don't need Phase 2 to start. Phase 2 emerges from Phase 1 running long enoug
 ## Present (✅)
 
 - ✅ Phase 1a: `scripts/calibrate.py` — grid search, writes `scripts/sim-params.json` (PR #240, 2026-04-18)
-- ✅ Phase 1b: SM §4d — calibration every 10 batches, arch-convergence alarm at >0.7 (PR #239, 2026-04-18)
+- ✅ Phase 1b: SM §4d — calibration every 10 batches, arch-convergence alarm at >0.7, sim-params.json updated (PR #239, 2026-04-18)
+- ✅ Phase 2b: arch-convergence signal in SM — SM §4d reads mean_arch_convergence; opens [NEEDS HUMAN] if >0.7 for 2 consecutive batches (PR #239, 2026-04-18)
 
 ## Future (🔲)
 
-- 🔲 Phase 1b: SM §4d — run calibrate.py every 10 batches; commit sim-params.json to
-  _state; check arch_convergence signal; open needs-human if > 0.7
-  `scripts/sim-params.json` (the calibrated defaults)
-- 🔲 Phase 1b: SM phase runs `scripts/calibrate.py` every 10 batches — updates
-  `sim-params.json` committed to `_state` branch; propagates to every project
-  on next `git -C ~/.otherness pull`
 - 🔲 Phase 1c: SM uses simulation output to trigger `/otherness.learn` — if real
   Type B rate drops below simulated floor for 3 consecutive batches, SM fires
   a `/otherness.learn` cycle automatically
 - 🔲 Phase 2a: per-project calibration — when a project's `_state` contains ≥10
   batches of metrics, SM runs calibration against that project's data instead
   of otherness defaults; stores project-specific `sim-params.json` in `_state`
-- 🔲 Phase 2b: arch-convergence signal in SM — SM reads mean_arch_convergence from
-  latest simulation run; if > 0.7 for 2 consecutive batches, SM opens a
-  `[NEEDS HUMAN]` issue: "architectural monoculture detected — consider running
-  /otherness.learn or /otherness.vibe-vision to inject new direction"
 - 🔲 Phase 2c: simulation results in `_state` — each SM calibration run commits
   results to `_state` as `.otherness/sim-results.json`; PM phase reads it for
   the product validation scenario
