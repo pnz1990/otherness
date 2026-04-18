@@ -119,3 +119,5 @@
 | 2026-04-18 | 44 | 0 | 5 | 0 | 12 | 5 | ~2 | Batch 44: #283-#286 doc 12 items (PM §5g+AMBER, Dynamic DoD, Perpetual loop, Self-gen criteria). 14 CRITICAL PRs queued. |
 
 | 2026-04-18 | 45 | 0 | 0 | 0 | 12 | 0 | — | Batch 45: standby. Queue empty. All items in CRITICAL review (#245-#286). 14 PRs needs-human. State.json restored. |
+
+| 2026-04-18 | 51 | 2 | 0 | 0 | 12 | 0 | — | Batch 51: PRs #256 #286 merged (freshness metric, perpetual loop). 12 CRITICAL PRs remaining. |
