@@ -506,7 +506,8 @@ This is the primary falsification apparatus for the model itself.
 - ✅ `scripts/simulate.py` — full three-force simulation, O1–O6 satisfied (PR #229, 2026-04-17)
 - ✅ Baseline run: N=1,2,4,8,16 — 100 cycles, 5 runs (2026-04-17, see §Results)
 - ✅ Falsification runs: all three forces isolated (2026-04-17, see §Results)
-- ✅ Diminishing returns on skill growth — `log(1+skill_count)`, coefficient 0.01 (PR #232, 2026-04-17)
+- ✅ Diminishing returns on skill growth — `log(1+skill_count)`, coefficient 0.015 (PR #233, 2026-04-17)
+- ✅ External signal injection — `--learn-interval N` parameter, foreign skills flagged ≥10000 (PR #231, 2026-04-17)
 
 ## Results (2026-04-17)
 
