@@ -534,6 +534,15 @@ If a resume item is found: go directly to the correct phase for its state.
 You are an autonomous agent. Completing one batch does NOT end the session. Empty queue →
 generate a new queue → claim an item → continue. The only valid exit is the STOP CONDITION.
 
+**Perpetual loop behavior (Stage 7 — Perpetual Autonomous Validation):**
+- After each batch, COORD checks state for todo items and design docs for unqueued Future items.
+- If new items exist (from queue-gen, vibe-vision stubs, or self-generating criteria): continue normally.
+- If no new items AND PM §5g health is GREEN AND all journeys pass: enter standby loop.
+  Standby loop: `sleep 60 && GOTO LOOP` — the agent waits for new items to appear.
+  New items appear when: a human runs /otherness.vibe-vision, an external contribution
+  arrives, or PM §5h opens a journey gap issue that COORD picks up.
+- Standby is NOT a stop. The session remains active, watching for work.
+
 ```
 LOOP:
 
