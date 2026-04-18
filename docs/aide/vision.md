@@ -51,6 +51,34 @@ The target: otherness improves itself faster than humans can improve it manually
 - Self-improvement: active as of 2026-04-14
 - Global deployment model (Option A): a CRITICAL tier regression affects all users immediately. Mitigated by the human review gate on CRITICAL files. Future Option B (versioned releases) documented in AGENTS.md for when the user base grows.
 
+## What the simulation proved (2026-04-17)
+
+`scripts/simulate.py` models N parallel agents with three-force boldness dynamics.
+Running the falsification suite produced four findings that are now architectural facts,
+not hypotheses:
+
+**The skills library is the only force that matters long-term.** Remove skill growth
+and the system converges to near-zero boldness regardless of how many agents run or
+how often the human re-enters. Every other force — decay, Type B jumps, human
+engagement — is secondary. A session that ships work but doesn't add to `agents/skills/`
+is burning fuel without building the engine.
+
+**Human re-entry is a recovery mechanism, not a growth driver.** The system reaches
+the same boldness ceiling at engagement=0.0 as at engagement=0.7. At engagement=1.0
+it actually performs slightly worse. The human should re-enter rarely — only when the
+system has genuinely stalled, not on a schedule.
+
+**Type B failures (disproved predictions) matter most in cycles 1–40.** After that,
+skill growth dominates and the long-run ceiling is the same with or without them.
+Adversarial review is most valuable early in a project's life. Front-load it.
+
+**Monoculture is architectural, not skill-based.** The simulation could not surface
+the predicted monoculture dynamic because all agents share `standalone.md` — the same
+reasoning framework — regardless of how diverse their skill sets are. Skill diversity
+is not conceptual diversity. The only mechanism that breaks architectural monoculture
+today is `/otherness.learn` importing genuinely foreign patterns. This is the most
+important investment for the system's long-term compounding.
+
 ## What "done" looks like
 
 otherness is never done. It is a living system that improves continuously. The benchmark for "good enough to stop manually maintaining":
