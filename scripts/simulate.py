@@ -80,6 +80,10 @@ class AgentState:
     type_b_count: int = 0
     type_a_count: int = 0
     ships: int = 0
+    arch_convergence: float = (
+        0.0  # 0.0=exploring diverse space, 1.0=stuck in one bucket
+    )
+    last_item_bucket: int = -1  # which boldness bucket was last attempted (-1=none)
 
 
 @dataclass
@@ -108,6 +112,7 @@ class CycleMetrics:
     type_b_rate: float  # Type B events this cycle / n_agents
     completion_rate: float  # ships this cycle / n_agents
     anomaly_density: float  # cumulative anomalies / (t+1)
+    mean_arch_convergence: float = 0.0  # mean architectural convergence across agents
 
 
 # ---------------------------------------------------------------------------
@@ -164,6 +169,17 @@ def run_simulation(cfg: SimConfig):
         type_b_this_cycle = 0
 
         for agent in state.agents:
+            # --- Architectural convergence: track which boldness bucket this agent works in ---
+            # Bucket 0=low(<0.4) 1=medium(0.4-0.7) 2=high(>0.7)
+            current_bucket = (
+                0 if agent.boldness < 0.4 else (1 if agent.boldness < 0.7 else 2)
+            )
+            if agent.last_item_bucket == current_bucket:
+                agent.arch_convergence = min(1.0, agent.arch_convergence + 0.05)
+            else:
+                agent.arch_convergence = max(0.0, agent.arch_convergence - 0.02)
+            agent.last_item_bucket = current_bucket
+
             # --- Execution attempt ---
             # Success probability based on skill match
             shared_overlap = sum(
@@ -220,6 +236,11 @@ def run_simulation(cfg: SimConfig):
                     type_b_this_cycle += 1
                     state.anomaly_count += 1
 
+                    # Type B breaks architectural convergence — agent found something
+                    # outside its current frame, reset convergence tracking
+                    agent.arch_convergence = max(0.0, agent.arch_convergence - 0.30)
+                    agent.last_item_bucket = -1  # reset bucket tracking
+
                     # Force 3: boldness jump (unless disabled)
                     if not cfg.disable_force3:
                         agent.boldness = (
@@ -270,6 +291,10 @@ def run_simulation(cfg: SimConfig):
                     target.skill_count += 1
             # Boldness lift: external pattern opens new possibility space
             target.boldness = min(1.0, target.boldness + 0.15)
+            # External signal resets architectural convergence — agent now has a
+            # genuinely different frame to work from (O5)
+            target.arch_convergence = 0.0
+            target.last_item_bucket = -1
 
         # --- Human inflection point check ---
         anomaly_density = state.anomaly_count / (t + 1)
@@ -294,6 +319,9 @@ def run_simulation(cfg: SimConfig):
         tb_rate = type_b_this_cycle / len(state.agents)
         comp_rate = ships_this_cycle / len(state.agents)
         a_density = state.anomaly_count / (t + 1)
+        mean_arch_conv = sum(a.arch_convergence for a in state.agents) / len(
+            state.agents
+        )
 
         metrics.append(
             CycleMetrics(
@@ -303,6 +331,7 @@ def run_simulation(cfg: SimConfig):
                 type_b_rate=round(tb_rate, 4),
                 completion_rate=round(comp_rate, 4),
                 anomaly_density=round(a_density, 4),
+                mean_arch_convergence=round(mean_arch_conv, 4),
             )
         )
 
@@ -333,6 +362,9 @@ def average_metrics(all_runs: List[List[CycleMetrics]]) -> List[CycleMetrics]:
             ),
             anomaly_density=round(
                 sum(r[t].anomaly_density for r in all_runs) / n_runs, 4
+            ),
+            mean_arch_convergence=round(
+                sum(r[t].mean_arch_convergence for r in all_runs) / n_runs, 4
             ),
         )
         averaged.append(avg)
@@ -433,13 +465,14 @@ def ascii_chart(
 def print_csv(metrics: List[CycleMetrics], n_agents: int, file=sys.stdout) -> None:
     print(
         "cycle,n_agents,vision_boldness,skill_diversity,"
-        "type_b_rate,completion_rate,anomaly_density",
+        "type_b_rate,completion_rate,anomaly_density,mean_arch_convergence",
         file=file,
     )
     for m in metrics:
         print(
             f"{m.t},{n_agents},{m.vision_boldness},{m.skill_diversity},"
-            f"{m.type_b_rate},{m.completion_rate},{m.anomaly_density}",
+            f"{m.type_b_rate},{m.completion_rate},{m.anomaly_density},"
+            f"{m.mean_arch_convergence}",
             file=file,
         )
 
