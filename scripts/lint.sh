@@ -10,7 +10,7 @@ echo "=== otherness lint ==="
 
 ERRORS=0
 
-for file in "$AGENTS_DIR"/*.md "$AGENTS_DIR/skills"/*.md; do
+for file in "$AGENTS_DIR"/*.md "$AGENTS_DIR/skills"/*.md "$AGENTS_DIR/phases"/*.md; do
   [ -f "$file" ] || continue
   filename=$(basename "$file")
 
