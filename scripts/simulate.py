@@ -59,6 +59,12 @@ class SimConfig:
     disable_force2: bool = False  # skill growth
     disable_force3: bool = False  # Type B jumps
 
+    # External signal injection (models /otherness.learn breaking architectural monoculture)
+    # Every learn_interval cycles, one random agent receives a foreign skill.
+    # 0 = disabled (default).
+    learn_interval: int = 0
+    foreign_skill_start: int = 10000  # foreign skill IDs start here — distinguishable
+
 
 # ---------------------------------------------------------------------------
 # State
@@ -85,6 +91,8 @@ class SystemState:
     inflection_points_fired: int = 0
     inflection_points_declined: int = 0
     next_skill_id: int = 100
+    external_signals_fired: int = 0  # total /otherness.learn-equivalent events
+    next_foreign_skill_id: int = 10000
 
 
 # ---------------------------------------------------------------------------
@@ -130,8 +138,8 @@ def _skill_diversity(agents: List[AgentState]) -> float:
     return 1.0 - (shared_all / len(all_skills))
 
 
-def run_simulation(cfg: SimConfig) -> List[CycleMetrics]:
-    """Run one simulation instance; return per-cycle metrics."""
+def run_simulation(cfg: SimConfig):
+    """Run one simulation instance; return (per-cycle metrics, final SystemState)."""
     rng = random.Random(cfg.seed)
 
     # Initialise system
@@ -241,6 +249,28 @@ def run_simulation(cfg: SimConfig) -> List[CycleMetrics]:
                 if rng.random() < cfg.monoculture_rate:
                     state.shared_skill_ids.append(s)
 
+        # --- External signal injection (/otherness.learn equivalent) ---
+        # Every learn_interval cycles, one random agent receives a foreign pattern:
+        # a skill from outside the current shared vocabulary + a boldness lift.
+        # This models /otherness.learn importing genuinely novel architectural patterns.
+        if cfg.learn_interval > 0 and t > 0 and t % cfg.learn_interval == 0:
+            target = rng.choice(state.agents)
+            # Foreign skill: well outside current skill space (ID >= 10000)
+            foreign_skill = state.next_foreign_skill_id
+            state.next_foreign_skill_id += 1
+            target.local_skill_ids.append(foreign_skill)
+            target.skill_count += 1
+            state.external_signals_fired += 1
+            # Also grant one shared-space skill — the foreign pattern helps the agent
+            # execute current work differently, not just expand the possibility space
+            if state.shared_skill_ids:
+                useful_skill = rng.choice(state.shared_skill_ids)
+                if useful_skill not in target.local_skill_ids:
+                    target.local_skill_ids.append(useful_skill)
+                    target.skill_count += 1
+            # Boldness lift: external pattern opens new possibility space
+            target.boldness = min(1.0, target.boldness + 0.15)
+
         # --- Human inflection point check ---
         anomaly_density = state.anomaly_count / (t + 1)
         mean_boldness = sum(a.boldness for a in state.agents) / len(state.agents)
@@ -276,7 +306,7 @@ def run_simulation(cfg: SimConfig) -> List[CycleMetrics]:
             )
         )
 
-    return metrics
+    return metrics, state
 
 
 # ---------------------------------------------------------------------------
@@ -420,6 +450,12 @@ def print_summary(results_by_n: dict, cfg: SimConfig) -> None:
         f"Cycles: {cfg.n_cycles} | Runs per N: {cfg.n_runs} | "
         f"Human engagement: {cfg.human_engagement_rate}"
     )
+    if cfg.learn_interval > 0:
+        signals_per_run = cfg.n_cycles // cfg.learn_interval
+        print(
+            f"External signal injection: every {cfg.learn_interval} cycles "
+            f"(~{signals_per_run} signals/run — models /otherness.learn)"
+        )
     if cfg.disable_force1 or cfg.disable_force2 or cfg.disable_force3:
         disabled = []
         if cfg.disable_force1:
@@ -488,6 +524,12 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--human-engagement", type=float, default=0.7)
     parser.add_argument(
+        "--learn-interval",
+        type=int,
+        default=0,
+        help="External signal injection every N cycles (0=disabled)",
+    )
+    parser.add_argument(
         "--falsify",
         choices=["force1", "force2", "force3"],
         help="Remove one force and measure the effect",
@@ -511,6 +553,7 @@ def main() -> None:
         disable_force1=(args.falsify == "force1"),
         disable_force2=(args.falsify == "force2"),
         disable_force3=(args.falsify == "force3"),
+        learn_interval=args.learn_interval,
     )
 
     agent_counts = [1, 2, 4, 8, 16] if args.optimal_n else [cfg.n_agents]
@@ -520,12 +563,20 @@ def main() -> None:
     for n in agent_counts:
         cfg.n_agents = n
         all_runs = []
+        total_signals = 0
         for run_idx in range(cfg.n_runs):
             cfg.seed = args.seed + run_idx
-            metrics = run_simulation(cfg)
+            metrics, final_state = run_simulation(cfg)
             all_runs.append(metrics)
+            total_signals += final_state.external_signals_fired
         averaged = average_metrics(all_runs)
         results_by_n[n] = averaged
+        if cfg.learn_interval > 0:
+            print(
+                f"N={n}: {total_signals} external signals fired across {cfg.n_runs} runs "
+                f"(mean {total_signals / cfg.n_runs:.1f}/run)",
+                file=sys.stderr,
+            )
         print(f"N={n}: done ({cfg.n_runs} runs)", file=sys.stderr)
 
     # CSV output
