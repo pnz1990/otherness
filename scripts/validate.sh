@@ -149,6 +149,8 @@ REQUIRED=(
   "$(cd "$(dirname "$0")/.." && pwd)/.opencode/command/otherness.arch-audit.md"
   "$(cd "$(dirname "$0")/.." && pwd)/.opencode/command/otherness.vibe-vision.md"
   "$(cd "$(dirname "$0")/.." && pwd)/agents/vibe-vision.md"
+  "$(cd "$(dirname "$0")/.." && pwd)/scripts/calibrate.py"
+  "$(cd "$(dirname "$0")/.." && pwd)/scripts/sim-params.json"
 )
 MISSING_FILES=0
 for f in "${REQUIRED[@]}"; do
