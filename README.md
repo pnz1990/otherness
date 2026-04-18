@@ -188,7 +188,6 @@ Session 1: /otherness.run.bounded
            AGENT_ID=STANDALONE-REFACTOR
            SCOPE=Fix logic leaks in the health and auth packages
            ALLOWED_AREAS=area/health,area/auth
-           ALLOWED_MILESTONES=v1.1.0
            ALLOWED_PACKAGES=pkg/health,pkg/auth
            DENY_PACKAGES=cmd/myapp,api/v1
 
@@ -197,12 +196,13 @@ Session 2: /otherness.run.bounded
            AGENT_ID=STANDALONE-CLI
            SCOPE=CLI commands and output formatting
            ALLOWED_AREAS=area/cli
-           ALLOWED_MILESTONES=v1.1.0
            ALLOWED_PACKAGES=cmd/myapp
            DENY_PACKAGES=pkg/core
 ```
 
-Each session posts hourly updates to its own `[AGENT_NAME] Progress Log` GitHub issue.
+Supported BOUNDARY parameters: `AGENT_NAME` (required), `AGENT_ID`, `SCOPE` (required), `ALLOWED_AREAS`, `ALLOWED_PACKAGES`, `DENY_PACKAGES`.
+
+Each session uses `$AGENT_NAME` as its badge on all issue comments and PRs.
 
 ---
 
@@ -210,13 +210,15 @@ Each session posts hourly updates to its own `[AGENT_NAME] Progress Log` GitHub 
 
 | What you want | Where |
 |---|---|
-| What's being worked on | Projects → Sprint board |
-| Full backlog | Projects → Backlog |
-| Release progress | GitHub Milestones |
-| What shipped | GitHub Releases |
-| Agent reports | Issue #REPORT_ISSUE |
-| Per-agent progress | Each agent's Progress Log issue |
+| What's being worked on | `_state` branch → `state.json` features (in_progress items) |
+| Full backlog | GitHub issues (open, labeled `otherness`) |
+| Agent reports | Issue #REPORT_ISSUE (comment stream from all phases) |
 | Blocking decisions | Issues labeled `needs-human` |
+| CI status | GitHub Actions (main branch runs) |
+
+> **Note**: GitHub Projects board, Milestones, and Releases integration are not enabled by default.
+> `github_projects` fields in `otherness-config.yaml` must be configured to activate Projects board sync.
+> Milestones and Releases are not currently written by any agent phase.
 
 ---
 

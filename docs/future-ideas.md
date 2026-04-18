@@ -109,7 +109,7 @@ Higher-quality skills → better ENG/QA decisions.
 1. ✅ **Idea 1** (learn from `[NEEDS HUMAN]`) — COVERED by SM §4c (PR #173)
 2. ✅ **Idea 3** (difficulty ledger) — DONE (PR #172)
 3. ✅ **Idea 2** (cross-project SM mining) — COVERED by SM §4c (PR #173)
-4. **Idea 4** (internal portfolio learn) — NEXT UP: triggers at sm_cycle_count=30 (currently 14)
+4. **Idea 4** (internal portfolio learn) — NEXT UP: triggers at sm_cycle_count=30 (currently 16)
 5. ✅ **Idea 5** (PM cross-project proposals) — DONE (PR #177)
 6. ✅ **Idea 6** (skill confidence) — DONE (PR #181)
 7. **Idea 8** ✅ — COVERED by SM §4c (PR #173)
