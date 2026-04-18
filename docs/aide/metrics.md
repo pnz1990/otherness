@@ -93,3 +93,5 @@
 **Next target**: Idea 4 (internal portfolio learn) triggers at sm_cycle_count=30 (currently 13). Journey 2 fix requires human to restart otherness on alibi.
 
 | 2026-04-18 | 32 | 1 | 0 | 0 | 12 | 1 | ~3 | Batch 32: #247 /otherness.vibe-vision validate+wire (Journey 6, design doc 05 complete) |
+
+| 2026-04-18 | 33 | 1 | 0 | 0 | 12 | 1 | ~3 | Batch 33: #249 scripts/guard-ci.sh + CI step — Layer 3 D4 enforcement complete |
