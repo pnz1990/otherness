@@ -197,10 +197,15 @@
       "depends_on": []
     },
     "251": {
-      "state": "todo",
+      "state": "in_review",
       "title": "feat: Issue body must identify design doc Future item",
       "design_doc": "01-declarative-design-driven-development.md",
-      "depends_on": []
+      "depends_on": [],
+      "assigned_to": "sess-83781955",
+      "assigned_at": "2026-04-18T20:06:46Z",
+      "branch": "feat/251",
+      "worktree": "../otherness.251",
+      "pr_number": 255
     },
     "252": {
       "state": "todo",
@@ -240,6 +245,6 @@
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 22,
-  "pm_cycle_count": 4
+  "sm_cycle_count": 23,
+  "pm_cycle_count": 5
 }
