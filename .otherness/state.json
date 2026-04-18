@@ -1,0 +1,49 @@
+{
+  "version": "1.3",
+  "report_issue": 2,
+  "sm_cycle_count": 17,
+  "pm_cycle_count": 0,
+  "features": {
+    "207": {
+      "title": "feat(coord): enforce D4 classification at issue intake",
+      "state": "todo",
+      "source": "design-doc-01",
+      "areas": [
+        "area/agent-loop"
+      ],
+      "priority": "medium",
+      "size": "s"
+    },
+    "208": {
+      "title": "feat(pm): PM \u00a75f periodic doc health scan",
+      "state": "todo",
+      "source": "design-doc-04",
+      "areas": [
+        "area/agent-loop"
+      ],
+      "priority": "medium",
+      "size": "m"
+    },
+    "209": {
+      "title": "feat(coord): \ud83d\udeab Deprecated marker \u2014 COORD skips deprecated Future items",
+      "state": "todo",
+      "source": "design-doc-04",
+      "areas": [
+        "area/agent-loop"
+      ],
+      "priority": "medium",
+      "size": "s"
+    },
+    "214": {
+      "title": "feat: implement /otherness.vibe-vision \u2014 validate and wire command",
+      "state": "todo",
+      "source": "design-doc-05",
+      "areas": [
+        "area/agent-loop"
+      ],
+      "priority": "medium",
+      "size": "l"
+    }
+  },
+  "session_heartbeats": {}
+}
