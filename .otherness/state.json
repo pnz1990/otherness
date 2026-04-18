@@ -542,6 +542,83 @@
       "pr_merged": true,
       "pr_number": 197,
       "done_at": "2026-04-17T23:41:49Z"
+    },
+    "198": {
+      "title": "fix(coord): stale watchdog uses REPO slug not origin \u2014 item locks never released",
+      "state": "todo",
+      "source": "arch-audit",
+      "areas": [
+        "area/agent-loop"
+      ],
+      "priority": "high",
+      "size": "xs",
+      "created_at": "2026-04-18T02:21:09Z"
+    },
+    "199": {
+      "title": "fix(coord): duplicate \u00a71c section labels in coord.md",
+      "state": "todo",
+      "source": "arch-audit",
+      "areas": [
+        "area/agent-loop"
+      ],
+      "priority": "high",
+      "size": "xs",
+      "created_at": "2026-04-18T02:21:09Z"
+    },
+    "202": {
+      "title": "fix(tooling): lint.sh misses agents/phases/*.md \u2014 CRITICAL tier files not covered",
+      "state": "todo",
+      "source": "arch-audit",
+      "areas": [
+        "area/tooling"
+      ],
+      "priority": "medium",
+      "size": "xs",
+      "created_at": "2026-04-18T02:21:09Z"
+    },
+    "204": {
+      "title": "fix(eng): difficulty-ledger.md never loaded in eng phase",
+      "state": "todo",
+      "source": "arch-audit",
+      "areas": [
+        "area/agent-loop"
+      ],
+      "priority": "medium",
+      "size": "xs",
+      "created_at": "2026-04-18T02:21:09Z"
+    },
+    "207": {
+      "title": "feat(coord): enforce D4 classification at issue intake",
+      "state": "todo",
+      "source": "design-doc-01",
+      "areas": [
+        "area/agent-loop"
+      ],
+      "priority": "medium",
+      "size": "s",
+      "created_at": "2026-04-18T02:21:09Z"
+    },
+    "208": {
+      "title": "feat(pm): PM \u00a75f periodic doc health scan",
+      "state": "todo",
+      "source": "design-doc-04",
+      "areas": [
+        "area/agent-loop"
+      ],
+      "priority": "medium",
+      "size": "m",
+      "created_at": "2026-04-18T02:21:09Z"
+    },
+    "209": {
+      "title": "feat(coord): \ud83d\udeab Deprecated marker \u2014 COORD skips deprecated Future items",
+      "state": "todo",
+      "source": "design-doc-04",
+      "areas": [
+        "area/agent-loop"
+      ],
+      "priority": "medium",
+      "size": "s",
+      "created_at": "2026-04-18T02:21:09Z"
     }
   },
   "engineer_slots": {
