@@ -1,0 +1,12 @@
+{
+  "decay_rate": 0.9,
+  "jump_multiplier": 1.3,
+  "skill_boldness_coefficient": 0.018,
+  "calibrated_at": "2026-04-18T17:58:24Z",
+  "source": "otherness-metrics",
+  "n_batches": 26,
+  "rmse": 0.292433,
+  "observed_completion_rate": 1.1558,
+  "observed_nh_rate": 0.0321,
+  "skills_growth_per_batch": 0.2692
+}
