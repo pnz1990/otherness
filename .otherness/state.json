@@ -346,28 +346,48 @@
       "pr_number": 282
     },
     "278": {
-      "state": "todo",
+      "state": "in_review",
       "title": "feat: PM self-correction on AMBER",
       "design_doc": "12-perpetual-validation.md",
-      "depends_on": []
+      "depends_on": [],
+      "assigned_to": "sess-83781955",
+      "assigned_at": "2026-04-18T21:04:25Z",
+      "branch": "feat/278",
+      "worktree": "../otherness.278",
+      "pr_number": 283
     },
     "279": {
-      "state": "todo",
+      "state": "in_review",
       "title": "feat: Dynamic definition-of-done",
       "design_doc": "12-perpetual-validation.md",
-      "depends_on": []
+      "depends_on": [],
+      "assigned_to": "sess-83781955",
+      "assigned_at": "2026-04-18T21:07:15Z",
+      "branch": "feat/279",
+      "worktree": "../otherness.279",
+      "pr_number": 284
     },
     "280": {
-      "state": "todo",
+      "state": "in_review",
       "title": "feat: Perpetual loop trigger",
       "design_doc": "12-perpetual-validation.md",
-      "depends_on": []
+      "depends_on": [],
+      "assigned_to": "sess-83781955",
+      "assigned_at": "2026-04-18T21:09:27Z",
+      "branch": "feat/280",
+      "worktree": "../otherness.280",
+      "pr_number": 286
     },
     "281": {
-      "state": "todo",
+      "state": "in_review",
       "title": "feat: Self-generating validation criteria",
       "design_doc": "12-perpetual-validation.md",
-      "depends_on": []
+      "depends_on": [],
+      "assigned_to": "sess-83781955",
+      "assigned_at": "2026-04-18T21:09:24Z",
+      "branch": "feat/281",
+      "worktree": "../otherness.281",
+      "pr_number": 285
     }
   },
   "engineer_slots": {
@@ -384,6 +404,6 @@
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 32,
-  "pm_cycle_count": 14
+  "sm_cycle_count": 33,
+  "pm_cycle_count": 15
 }
