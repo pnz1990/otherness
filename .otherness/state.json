@@ -116,7 +116,7 @@
     },
     "207": {
       "title": "feat(coord): D4 classification at issue intake",
-      "state": "assigned",
+      "state": "in_review",
       "priority": "medium",
       "size": "s",
       "areas": [
@@ -125,7 +125,9 @@
       "assigned_to": "sess-83781955",
       "assigned_at": "2026-04-18T19:39:44Z",
       "branch": "feat/207",
-      "worktree": "../otherness.207"
+      "worktree": "../otherness.207",
+      "pr_number": 245,
+      "pr_url": "https://github.com/pnz1990/otherness/pull/245"
     },
     "208": {
       "title": "feat(pm): PM \u00a75f periodic doc health scan",
