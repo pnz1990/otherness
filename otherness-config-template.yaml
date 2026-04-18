@@ -56,6 +56,13 @@ maqa:
   # Recommended for projects with >1 external contributor or production SLA.
   agent_version: ""     # e.g. "v1.0.0" — leave empty for latest
 
+  # D4 zone enforcement — enforces declarative design-driven development.
+  # When true: guard.sh is called before file writes; guard-ci.sh runs in CI;
+  # feat/* branches cannot create new docs/aide/ or docs/design/ files;
+  # vision/* branches cannot modify code files.
+  # Disable only if your project does not use the D4 hierarchy (legacy projects).
+  d4_enforcement: true
+
 # ── CI gate ───────────────────────────────────────────────────────────────────
 ci:
   provider: github-actions            # github-actions | circleci | gitlab | bitbucket

@@ -127,6 +127,19 @@ All issues must have labels from each of these groups:
 - `AGENTS.md`
 - `.specify/memory/constitution.md`
 - `.specify/memory/sdlc.md`
+
+## D4 ENFORCEMENT
+
+This project enforces D4. Agents may only act within their declared mode.
+
+| Zone | Permitted by |
+|---|---|
+| CODE (implementation) | /otherness.run only |
+| DOCS (vision/design) | /otherness.vibe-vision only |
+| Everything else | READ-ONLY |
+
+Any agent that attempts to act outside its mode must stop and print:
+  [🚫 D4 GATE] <zone> writes require <command>. Current session: <mode>.
 ```
 
 ---
