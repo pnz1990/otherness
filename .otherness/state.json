@@ -189,6 +189,36 @@
       "pr_merged": true,
       "done_at": "2026-04-18T18:03:30Z",
       "pr_number": 241
+    },
+    "250": {
+      "state": "todo",
+      "title": "feat: D4 enforced at issue intake",
+      "design_doc": "01-declarative-design-driven-development.md",
+      "depends_on": []
+    },
+    "251": {
+      "state": "todo",
+      "title": "feat: Issue body must identify design doc Future item",
+      "design_doc": "01-declarative-design-driven-development.md",
+      "depends_on": []
+    },
+    "252": {
+      "state": "todo",
+      "title": "feat: PM \u00a75f: periodic doc health scan",
+      "design_doc": "04-documentation-health.md",
+      "depends_on": []
+    },
+    "253": {
+      "state": "todo",
+      "title": "feat: Design doc freshness metric",
+      "design_doc": "04-documentation-health.md",
+      "depends_on": []
+    },
+    "254": {
+      "state": "todo",
+      "title": "feat: Cross-check README/AGENTS.md claims against code",
+      "design_doc": "04-documentation-health.md",
+      "depends_on": []
     }
   },
   "engineer_slots": {
