@@ -114,6 +114,36 @@
       "pr_merged": true,
       "done_at": "2026-04-18T17:06:37Z",
       "pr_number": 229
+    },
+    "230": {
+      "title": "feat(simulate): architectural convergence variable",
+      "state": "todo",
+      "source": "sim-results",
+      "areas": [
+        "area/tooling"
+      ],
+      "priority": "high",
+      "size": "m"
+    },
+    "231": {
+      "title": "feat(simulate): external signal injection for /otherness.learn",
+      "state": "todo",
+      "source": "sim-results",
+      "areas": [
+        "area/tooling"
+      ],
+      "priority": "high",
+      "size": "s"
+    },
+    "232": {
+      "title": "fix(simulate): diminishing returns on skill growth",
+      "state": "todo",
+      "source": "sim-results",
+      "areas": [
+        "area/tooling"
+      ],
+      "priority": "medium",
+      "size": "s"
     }
   },
   "engineer_slots": {
