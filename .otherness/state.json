@@ -402,13 +402,13 @@
       "cycle": 0
     },
     "sess-83781955": {
-      "last_seen": "2026-04-18T21:19:39Z",
-      "item": "coord-standby",
-      "cycle": 51
+      "last_seen": "2026-04-18T21:21:26Z",
+      "item": "standby-46",
+      "cycle": 55
     }
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 34,
-  "pm_cycle_count": 16
+  "sm_cycle_count": 35,
+  "pm_cycle_count": 17
 }
