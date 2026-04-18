@@ -302,10 +302,15 @@
       "done_at": "2026-04-18T20:46:04Z"
     },
     "269": {
-      "state": "todo",
+      "state": "in_review",
       "title": "feat: Phase 1c: SM uses simulation output to trigger /otherness.learn",
       "design_doc": "11-simulation-feedback-loop.md",
-      "depends_on": []
+      "depends_on": [],
+      "assigned_to": "sess-83781955",
+      "assigned_at": "2026-04-18T20:47:27Z",
+      "branch": "feat/269",
+      "worktree": "../otherness.269",
+      "pr_number": 274
     },
     "270": {
       "state": "todo",
@@ -334,6 +339,6 @@
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 29,
-  "pm_cycle_count": 11
+  "sm_cycle_count": 30,
+  "pm_cycle_count": 12
 }
