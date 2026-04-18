@@ -191,10 +191,12 @@
       "pr_number": 241
     },
     "250": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: D4 enforced at issue intake",
       "design_doc": "01-declarative-design-driven-development.md",
-      "depends_on": []
+      "depends_on": [],
+      "done_at": "2026-04-18T20:11:01Z",
+      "note": "Duplicate \u2014 covered by in-review PR"
     },
     "251": {
       "state": "in_review",
@@ -208,10 +210,12 @@
       "pr_number": 255
     },
     "252": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: PM \u00a75f: periodic doc health scan",
       "design_doc": "04-documentation-health.md",
-      "depends_on": []
+      "depends_on": [],
+      "done_at": "2026-04-18T20:11:01Z",
+      "note": "Duplicate \u2014 covered by in-review PR"
     },
     "253": {
       "state": "todo",
@@ -236,11 +240,6 @@
     "STANDALONE": {
       "last_seen": null,
       "cycle": 0
-    },
-    "sess-83781955": {
-      "last_seen": "2026-04-18T19:49:11Z",
-      "item": "208",
-      "cycle": 2
     }
   },
   "handoff": null,
