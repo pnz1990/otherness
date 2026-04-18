@@ -139,11 +139,10 @@ The message names the correct command. The human knows exactly what to do.
 - ✅ Layer 3: `scripts/guard-ci.sh` + CI workflow step — blocks feat/* branches from creating new DOCS zone files, blocks vision/* branches from modifying CODE zone files; chore/* exempt; runs on every PR (PR #224, 2026-04-18)
 - ✅ `validate.sh` check 6: every agent file has a `## MODE` block — already enforced since PR #226 (check was already shipping; duplicate Future entry removed)
 - ✅ Layer 1: `## D4 ENFORCEMENT` section added to `onboarding-new-project.md` AGENTS.md template; `d4_enforcement: true` added to `otherness-config-template.yaml` (PR #262, 2026-04-18)
+- ✅ `vibe-vision.md` hard rule: explicit session termination rule added to HARD RULES — session ends after D4 artifacts land on main, no implementation/issues/specs (PR #267, 2026-04-18)
 
 ## Future (🔲)
 
-- 🔲 `vibe-vision.md` hard rule: session ends after artifacts are on main — no
-  implementation, no issue creation, no spec writing
 - 🔲 `otherness.onboard` mode: READ-ONLY for CODE zone, VISION for DOCS zone —
   onboarding generates docs/aide/ stubs only, no code changes
 

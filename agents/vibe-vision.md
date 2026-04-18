@@ -302,6 +302,10 @@ If the human says "done": end the session.
 
 ## HARD RULES
 
+- **Session ends after landing.** Once D4 artifacts are on main, the session is
+  complete. Do not proceed to implementation. Do not open GitHub issues. Do not
+  create feat/* branches. Do not write specs or code. The autonomous execution
+  team picks up from here.
 - **Never write specs.** Specs are ENG's domain. You write design docs, not implementation specs.
 - **Never write code.** You are a vision agent.
 - **Never open GitHub issues.** Design doc Future items become issues when COORD reads them.
