@@ -45,14 +45,10 @@ together produce a validation signal that evolves with the product.
 
 ## Present (✅)
 
-*(Not yet implemented — this is the design doc for a new capability.)*
+- ✅ PM §5g: simulation health score — GREEN/AMBER/RED signal; reads sim-results.json from _state + calibrated params; runs quick sim (1 run, 30 cycles); AMBER = informational comment, RED = [NEEDS HUMAN] issue (PR #277, 2026-04-18)
 
 ## Future (🔲)
 
-- 🔲 PM §5g: simulation health score — run simulate.py with calibrated sim-params.json,
-  compare completion_rate and arch_convergence against real batch data, produce a
-  three-state signal: GREEN (on track), AMBER (drift detected, self-correct),
-  RED (genuine stall, needs human)
 - 🔲 PM self-correction on AMBER — when health score is AMBER: automatically queue
   one `/otherness.learn` cycle targeting the area of lowest boldness; do not escalate
   to human yet

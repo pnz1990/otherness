@@ -226,6 +226,50 @@ gh issue comment $REPORT_ISSUE --repo $REPO \
 
 ---
 
+## 5g. Simulation health score (GREEN / AMBER / RED) — runs every N_PM_CYCLES
+
+Run a quick simulation pass with calibrated parameters and compare against real
+batch data. Produce a health signal. AMBER is self-correcting; RED escalates.
+
+```bash
+if [ $((${PM_CYCLE:-0} % ${N_PM_CYCLES:-3})) -eq 0 ]; then
+  echo "[PM §5g] Running simulation health check..."
+
+  # [AI-STEP]
+  # Step 0: Graceful fallback — check sim-results.json and metrics.md exist.
+  #   SIM_RESULTS=$(git show origin/_state:.otherness/sim-results.json 2>/dev/null || echo "")
+  #   if [ -z "$SIM_RESULTS" ]: echo "[PM §5g] No sim-results found — skipping."; exit
+  #   METRICS_ROWS=$(grep -c '^\|\s*[0-9][0-9][0-9][0-9]-' docs/aide/metrics.md 2>/dev/null || echo 0)
+  #   if [ "$METRICS_ROWS" -lt 3 ]: echo "[PM §5g] Insufficient batch history — skipping."; exit
+  #
+  # Step 1: Read real completion rate from last 3 batches.
+  #   avg_shipped = mean(todo_shipped[-3:])  # from metrics.md
+  #   avg_needs_human = mean(needs_human[-3:])  # from metrics.md
+  #
+  # Step 2: Run quick simulation with calibrated params (1 run, 30 cycles).
+  #   Load sim_params from SIM_RESULTS.
+  #   Run: python3 -c "
+  #     import sys; sys.path.insert(0,'scripts')
+  #     from simulate import SimConfig, run_simulation
+  #     cfg = SimConfig(n_agents=4, n_cycles=30, seed=42, **sim_params_subset)
+  #     metrics, _ = run_simulation(cfg)
+  #     print(metrics[-1].mean_arch_convergence, metrics[-1].mean_boldness)
+  #   "
+  #
+  # Step 3: Determine health signal.
+  #   GREEN: arch_convergence < 0.5 AND real_shipped >= 1 in last batch
+  #   AMBER: (arch_convergence 0.5-0.7) OR (real_shipped = 0 in last 1-2 batches)
+  #   RED:   arch_convergence > 0.7 OR (real_shipped = 0 for ≥2 consecutive batches)
+  #
+  # Step 4: Post signal.
+  #   GREEN: log "[PM §5g] Health: GREEN"
+  #   AMBER: post comment on REPORT_ISSUE: "[PM §5g] Health: AMBER — <reason>. Self-correcting."
+  #   RED:   post comment + open [NEEDS HUMAN] issue: "[PM §5g] Health: RED — <reason>"
+
+  echo "[PM §5g] Simulation health check complete."
+fi
+```
+
 ## 5f. Documentation health scan + freshness check (runs every N_PM_CYCLES)
 
 Verify `docs/design/` files reflect reality: Present items have PR references,
