@@ -333,7 +333,7 @@ for item_id, d in list(s.get('features', {}).items()):
         print(f"[COORD] Stale: {item_id} assigned {age_h:.1f}h ago, heartbeat {hb_age_h:.1f}h ago — resetting to todo")
         branch = d.get('branch', f'feat/{item_id}')
         # Delete remote branch (releases lock)
-        subprocess.run(['git','push',REPO,'--delete',branch.replace('refs/heads/','')],
+        subprocess.run(['git','push','origin','--delete',branch.replace('refs/heads/','')],
                        capture_output=True)
         d['state'] = 'todo'
         d['assigned_to'] = None
