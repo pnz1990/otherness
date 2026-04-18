@@ -166,7 +166,60 @@ fi
 
 ---
 
-## 1b. Queue generation (with distributed lock)
+## 1b. Vision check — self-seeding gate
+
+Before generating a queue, verify the project has a vision. A project running
+without `docs/aide/vision.md` is executing without direction — the D4 loop
+cannot function correctly. Surface this once, then proceed.
+
+```bash
+if [ ! -f "docs/aide/vision.md" ] || [ ! -s "docs/aide/vision.md" ]; then
+  echo "[COORD] ⚠️  No docs/aide/vision.md found — project has no vision seeded."
+
+  # Check if we've already opened a needs-human issue for this
+  EXISTING_VISION_ISSUE=$(gh issue list --repo "$REPO" --state open \
+    --label "needs-human" \
+    --json number,title \
+    --jq '.[] | select(.title | contains("no vision")) | .number' 2>/dev/null | head -1)
+
+  if [ -z "$EXISTING_VISION_ISSUE" ]; then
+    gh issue create --repo "$REPO" \
+      --title "[NEEDS HUMAN] This project has no vision — run /otherness.vibe-vision first" \
+      --label "needs-human,area/onboarding" \
+      --body "## No docs/aide/vision.md found
+
+This project is running \`/otherness.run\` without a seeded vision. The D4 loop
+requires a vision to function correctly — COORD reads design docs to generate
+queues, and design docs must be grounded in a vision.
+
+## What to do
+
+Run \`/otherness.vibe-vision\` in a new session. It will guide you through a
+short dialogue to define what this project is and what it should become. The
+output will be \`docs/aide/vision.md\`, \`docs/aide/roadmap.md\`, and initial
+design doc stubs that \`/otherness.run\` can immediately execute from.
+
+If this is an existing project: run \`/otherness.onboard\` first to read the
+codebase and generate vision stubs automatically.
+
+## What happens next
+
+After running vibe-vision or onboard, re-run \`/otherness.run\`. COORD will find
+the vision, read the design docs, generate a queue, and execute autonomously." 2>/dev/null \
+      && echo "[COORD] needs-human issue opened — project needs vision before continuing." \
+      || echo "[COORD] Could not open issue (gh not configured?)."
+  else
+    echo "[COORD] needs-human issue #$EXISTING_VISION_ISSUE already open — skipping."
+  fi
+
+  echo "[COORD] Proceeding with empty queue until vision is seeded."
+  # Do not exit — let the session complete gracefully with an empty queue
+fi
+```
+
+---
+
+## 1c. Queue generation (with distributed lock)
 
 If queue is null or empty, acquire the queue-gen lock and generate.
 
