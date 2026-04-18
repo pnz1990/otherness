@@ -400,10 +400,15 @@
     "STANDALONE": {
       "last_seen": null,
       "cycle": 0
+    },
+    "sess-83781955": {
+      "last_seen": "2026-04-18T21:19:39Z",
+      "item": "coord-standby",
+      "cycle": 51
     }
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 33,
-  "pm_cycle_count": 15
+  "sm_cycle_count": 34,
+  "pm_cycle_count": 16
 }
