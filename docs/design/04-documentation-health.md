@@ -40,12 +40,18 @@ generically, for any project using otherness.
 - 🔲 Design doc freshness metric — track when each `docs/design/` file was last updated
   vs when the most recent PR touching its feature area merged. If a file has not been
   touched in N days but feature-area PRs merged, flag as potentially stale.
-- 🔲 Cross-check README/AGENTS.md claims against code — PM phase §5f extension.
-  Future items that were removed or replaced. Prevents Future items from lingering in
-  COORD queue after the feature area was abandoned. COORD skips items marked 🚫.
 - 🔲 Cross-check README/AGENTS.md claims against code — PM phase §5f extension: for any
   claim in README or AGENTS.md that references a specific file, function, or mechanism,
   verify it still exists. Flag false claims as `kind/docs priority/high` issues.
+- 🔲 Codebase hygiene scan — SM phase periodic scan: for each non-trivial file in the
+  project codebase, check whether it corresponds to a Present or Future item in any
+  `docs/design/` file. Files with no design doc coverage are flagged as `kind/chore`
+  issues: "unaccounted-for code — document in a design doc or remove." Human confirms.
+  Nothing deleted autonomously. Scan runs every 20 batches.
+- 🔲 Self-seeding check in COORD startup — when `docs/aide/vision.md` is absent,
+  COORD opens a `[NEEDS HUMAN]` issue instead of silently proceeding without vision:
+  "This project has no vision.md. Run /otherness.vibe-vision to seed the vision,
+  then re-run /otherness.run." Prevents the execution loop from running blind.
 
 ---
 

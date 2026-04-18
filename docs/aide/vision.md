@@ -42,6 +42,8 @@ The target: otherness improves itself faster than humans can improve it manually
 
 **Branch-push as the distributed lock.** Parallel sessions don't collide because git's server-side ref update is atomic. No coordinator, no lock file, no heartbeat election needed.
 
+**The codebase reflects only what is Present or Future.** Every file, function, and configuration in a project managed by otherness must correspond to either a ✅ Present item in a design doc (it was built intentionally and is documented) or a 🔲 Future item (it is being built toward). Code that exists with no corresponding design doc entry is a defect — not a style issue, a correctness issue. The SM phase surfaces unaccounted-for code as candidates for removal or documentation. Nothing is deleted autonomously; the human decides. But the accumulation of undocumented code is treated as drift from the design, and drift is always surfaced.
+
 **State on `_state` branch, code on `main`.** This prevents merge conflicts between parallel sessions doing code work and state writes simultaneously.
 
 ## Current state
