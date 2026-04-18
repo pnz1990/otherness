@@ -229,10 +229,15 @@
       "pr_number": 256
     },
     "254": {
-      "state": "todo",
+      "state": "in_review",
       "title": "feat: Cross-check README/AGENTS.md claims against code",
       "design_doc": "04-documentation-health.md",
-      "depends_on": []
+      "depends_on": [],
+      "assigned_to": "sess-83781955",
+      "assigned_at": "2026-04-18T20:16:07Z",
+      "branch": "feat/254",
+      "worktree": "../otherness.254",
+      "pr_number": 257
     }
   },
   "engineer_slots": {
@@ -254,6 +259,6 @@
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 24,
-  "pm_cycle_count": 6
+  "sm_cycle_count": 25,
+  "pm_cycle_count": 7
 }
