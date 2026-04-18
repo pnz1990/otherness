@@ -30,6 +30,7 @@ generically, for any project using otherness.
 ## Present (✅)
 
 - ✅ Deprecated marker `🚫` — COORD queue-gen skips `🔲` items containing `🚫` (PR #209, 2026-04-17)
+- ✅ PM §5f health scan + design doc freshness metric — Step 5 in §5f checks git log age per design doc; stale docs (>60 days, no updates) get kind/docs priority/low issue; duplicate-suppressed; graceful fallback when no git history (PR #253, 2026-04-18)
 
 ## Future (🔲)
 
@@ -37,9 +38,6 @@ generically, for any project using otherness.
   items are actually implemented (grep for shipped PR references or code), verify Future
   items are not silently shipped (check merged PR titles), flag items with no PR reference
   and no code evidence as "unverified Present". Opens `kind/docs` issues per gap.
-- 🔲 Design doc freshness metric — track when each `docs/design/` file was last updated
-  vs when the most recent PR touching its feature area merged. If a file has not been
-  touched in N days but feature-area PRs merged, flag as potentially stale.
 - 🔲 Cross-check README/AGENTS.md claims against code — PM phase §5f extension: for any
   claim in README or AGENTS.md that references a specific file, function, or mechanism,
   verify it still exists. Flag false claims as `kind/docs priority/high` issues.
