@@ -116,12 +116,16 @@
     },
     "207": {
       "title": "feat(coord): D4 classification at issue intake",
-      "state": "todo",
+      "state": "assigned",
       "priority": "medium",
       "size": "s",
       "areas": [
         "area/agent-loop"
-      ]
+      ],
+      "assigned_to": "sess-83781955",
+      "assigned_at": "2026-04-18T19:39:44Z",
+      "branch": "feat/207",
+      "worktree": "../otherness.207"
     },
     "208": {
       "title": "feat(pm): PM \u00a75f periodic doc health scan",
@@ -185,6 +189,11 @@
     "STANDALONE": {
       "last_seen": null,
       "cycle": 0
+    },
+    "sess-83781955": {
+      "last_seen": "2026-04-18T19:39:44Z",
+      "item": "207",
+      "cycle": 1
     }
   },
   "handoff": null,
