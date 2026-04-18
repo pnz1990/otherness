@@ -54,6 +54,8 @@
 | 2026-04-17 | 27 | 20 | 0 | 0 | 12 | 5 | ~3 | Batch 27: D4 enforcement Layer 0+2, simulate.py, deprecated marker, README taxonomy |
 
 | 2026-04-18 | 28 | 7 | 0 | 0 | 12 | 4 | ~3 | Batch 28: sim improvements #230 #231 #232 + vision.md empirical grounding |
+
+| 2026-04-18 | 29 | 2 | 0 | 0 | 12 | 2 | ~3 | Batch 29: calibrate.py + SM §4d — Stage 6 Phase 1 operational |
 ---
 
 ## Trend Notes
