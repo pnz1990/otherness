@@ -45,7 +45,7 @@ together produce a validation signal that evolves with the product.
 
 ## Present (✅)
 
-*(Not yet implemented — this is the design doc for a new capability.)*
+- ✅ Perpetual loop trigger — standalone.md THE LOOP section now documents standby behavior explicitly: empty queue + GREEN health → standby (sleep 60 && continue), not exit; new items from vibe-vision or PM §5h restart the active loop automatically (PR #280, 2026-04-18)
 
 ## Future (🔲)
 
