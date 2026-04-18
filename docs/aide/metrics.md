@@ -95,3 +95,5 @@
 | 2026-04-18 | 32 | 1 | 0 | 0 | 12 | 1 | ~3 | Batch 32: #247 /otherness.vibe-vision validate+wire (Journey 6, design doc 05 complete) |
 
 | 2026-04-18 | 33 | 1 | 0 | 0 | 12 | 1 | ~3 | Batch 33: #249 scripts/guard-ci.sh + CI step — Layer 3 D4 enforcement complete |
+
+| 2026-04-18 | 34 | 0 | 1 | 0 | 12 | 1 | ~3 | Batch 34: #255 coord §1c design ref template (CRITICAL, needs-human). Queue: 3 todo items generated. |
