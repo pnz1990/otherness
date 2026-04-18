@@ -134,12 +134,10 @@ The message names the correct command. The human knows exactly what to do.
 
 ## Present (✅)
 
-*(Not yet implemented — this is the design doc for a new capability.)*
+- ✅ Layer 0: `## MODE` block added to all 12 agent files; validate.sh check 6 enforces it (PR #222, 2026-04-17)
 
 ## Future (🔲)
 
-- 🔲 Layer 0: add `## MODE` block to every agent file — declare READ-ONLY, IMPLEMENT,
-  or VISION; agent refuses out-of-zone writes before acting
 - 🔲 Layer 1: add `## D4 ENFORCEMENT` section to `AGENTS.md` template and
   `otherness-config-template.yaml` — project-level zone declaration
 - 🔲 Layer 2: `scripts/guard.sh` — pre-flight zone check script, callable from any

@@ -4,6 +4,20 @@ description: "Cross-project health monitor. Checks all otherness-managed project
 tools: Bash, Read
 ---
 
+## MODE: READ-ONLY
+
+This agent reads files and produces output. It does not write, edit, create,
+or delete any file in any zone.
+
+If asked to implement, fix, or change code or docs: stop and redirect.
+
+```
+[🚫 D4 GATE] This session is READ-ONLY.
+To implement changes:        /otherness.run
+To update vision or design:  /otherness.vibe-vision
+```
+
+
 > **Self-update first.**
 ```bash
 git -C ~/.otherness pull --quiet 2>/dev/null || true

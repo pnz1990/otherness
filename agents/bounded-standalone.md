@@ -4,6 +4,20 @@ description: "Bounded standalone agent. Scope-constrained version of standalone.
 tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
+## MODE: IMPLEMENT
+
+This agent may write to the CODE zone only.
+CODE zone: all files outside `docs/`, `docs/aide/`, and `docs/design/`.
+
+If a task requires writing to `docs/aide/` or `docs/design/`: stop and redirect.
+
+```
+[🚫 D4 GATE] Blocked. docs/ writes require /otherness.vibe-vision.
+This session (/otherness.run) cannot modify vision or design docs.
+Shape the vision first, then the team will implement.
+```
+
+
 > **These instructions live at `~/.otherness/agents/` and are auto-updated on startup.**
 
 > **Working directory**: Run from the **main repo directory**.

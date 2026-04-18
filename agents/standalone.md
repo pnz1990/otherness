@@ -5,6 +5,20 @@ tools: Bash, Read, Write, Edit, Glob, Grep
 agent_version: ""
 ---
 
+## MODE: IMPLEMENT
+
+This agent may write to the CODE zone only.
+CODE zone: all files outside `docs/`, `docs/aide/`, and `docs/design/`.
+
+If a task requires writing to `docs/aide/` or `docs/design/`: stop and redirect.
+
+```
+[🚫 D4 GATE] Blocked. docs/ writes require /otherness.vibe-vision.
+This session (/otherness.run) cannot modify vision or design docs.
+Shape the vision first, then the team will implement.
+```
+
+
 > **These instructions live at `~/.otherness/agents/` and are auto-updated on every startup.**
 > Never edit locally — push changes to your otherness fork.
 
