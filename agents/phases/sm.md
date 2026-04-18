@@ -260,7 +260,82 @@ fi
 
 ---
 
-## 4d. Write session handoff
+## 4d. Simulation calibration (every 10 batches)
+
+Run `scripts/calibrate.py` every 10 batches to keep simulation parameters
+anchored to real observed behavior. Check the arch-convergence signal and
+escalate to human if architectural monoculture is detected.
+
+```bash
+SM_CYCLE=$(python3 -c "
+import json
+try:
+    s = json.load(open('.otherness/state.json'))
+    print(s.get('sm_cycle_count', 0))
+except: print(0)
+" 2>/dev/null || echo "0")
+
+if [ $((SM_CYCLE % 10)) -eq 0 ] && [ "$SM_CYCLE" -gt 0 ]; then
+    echo "[SM §4d] Running simulation calibration (sm_cycle=$SM_CYCLE)..."
+    if python3 scripts/calibrate.py --runs 3 --cycles 50 2>/dev/null; then
+        echo "[SM §4d] Calibration complete — sim-params.json updated."
+
+        # Read arch_convergence from latest sim-params.json
+        ARCH_CONV=$(python3 -c "
+import json, os
+try:
+    p = json.load(open('scripts/sim-params.json'))
+    # Run a quick simulation to get current arch_convergence
+    import sys; sys.path.insert(0,'.')
+    from scripts.simulate import SimConfig, run_simulation
+    cfg = SimConfig(
+        n_agents=4, n_cycles=50, seed=42,
+        decay_rate=p.get('decay_rate', 0.92),
+        jump_multiplier=p.get('jump_multiplier', 1.6),
+        skill_boldness_coefficient=p.get('skill_boldness_coefficient', 0.015),
+    )
+    m, s = run_simulation(cfg)
+    print(f'{m[-1].mean_arch_convergence:.3f}')
+except Exception as e:
+    print('0.0')
+" 2>/dev/null || echo "0.0")
+
+        echo "[SM §4d] Current arch_convergence: $ARCH_CONV"
+
+        # Arch-convergence alarm: > 0.7 = architectural monoculture
+        ALARM=$(python3 -c "print('true' if float('$ARCH_CONV') > 0.7 else 'false')" 2>/dev/null || echo "false")
+        if [ "$ALARM" = "true" ]; then
+            echo "[SM §4d] ⚠ Architectural monoculture detected (arch_convergence=$ARCH_CONV > 0.7)"
+            gh issue create --repo "$REPO" \
+              --title "[NEEDS HUMAN] Architectural monoculture detected (arch_convergence=$ARCH_CONV)" \
+              --label "needs-human,area/agent-loop" \
+              --body "## Simulation calibration signal
+
+The SM phase simulation calibration (sm_cycle=$SM_CYCLE) detected mean_arch_convergence > 0.7.
+
+This means agents are proposing items of the same structural type repeatedly — a sign
+of architectural frame-lock rather than genuine exploration.
+
+**arch_convergence:** $ARCH_CONV (threshold: 0.7)
+
+## Recommended actions (choose one)
+- Run \`/otherness.learn\` to inject novel patterns from external repos
+- Run \`/otherness.vibe-vision\` to introduce new architectural direction
+- Review the last 5 shipped items — are they all the same type of change?
+
+The system will not take autonomous action. This is for your awareness." 2>/dev/null \
+              && echo "[SM §4d] needs-human issue opened." \
+              || echo "[SM §4d] Could not open needs-human issue."
+        fi
+    else
+        echo "[SM §4d] Calibration skipped (calibrate.py not available or failed)."
+    fi
+else
+    echo "[SM §4d] Calibration skipped (sm_cycle=$SM_CYCLE, next at $((((SM_CYCLE / 10) + 1) * 10)))."
+fi
+```
+
+## 4e. Write session handoff
 
 ```bash
 # Write handoff to the _state branch — NOT to main working tree.
@@ -350,7 +425,7 @@ EOF
 
 ---
 
-## 4e. Post SDM review to report issue
+## 4f. Post SDM review to report issue
 
 ```bash
 gh issue comment $REPORT_ISSUE --repo $REPO \

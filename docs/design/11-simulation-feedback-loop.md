@@ -36,9 +36,8 @@ You don't need Phase 2 to start. Phase 2 emerges from Phase 1 running long enoug
 
 ## Present (✅)
 
-- ✅ Phase 1a: `scripts/calibrate.py` — grid search over 80 parameter combos, writes
-  `scripts/sim-params.json`; first calibration run against 26 otherness batches
-  produced decay_rate=0.90, jump_multiplier=1.3, coef=0.018, RMSE=0.29 (PR #238, 2026-04-18)
+- ✅ Phase 1a: `scripts/calibrate.py` — grid search, writes `scripts/sim-params.json` (PR #240, 2026-04-18)
+- ✅ Phase 1b: SM §4d — calibration every 10 batches, arch-convergence alarm at >0.7 (PR #239, 2026-04-18)
 
 ## Future (🔲)
 
