@@ -218,7 +218,7 @@
       "note": "Duplicate \u2014 covered by in-review PR"
     },
     "253": {
-      "state": "in_review",
+      "state": "done",
       "title": "feat: Design doc freshness metric",
       "design_doc": "04-documentation-health.md",
       "depends_on": [],
@@ -226,7 +226,9 @@
       "assigned_at": "2026-04-18T20:11:27Z",
       "branch": "feat/253",
       "worktree": "../otherness.253",
-      "pr_number": 256
+      "pr_number": 256,
+      "pr_merged": true,
+      "done_at": "2026-04-18T21:28:40Z"
     },
     "254": {
       "state": "in_review",
@@ -368,7 +370,7 @@
       "pr_number": 284
     },
     "280": {
-      "state": "in_review",
+      "state": "done",
       "title": "feat: Perpetual loop trigger",
       "design_doc": "12-perpetual-validation.md",
       "depends_on": [],
@@ -376,7 +378,9 @@
       "assigned_at": "2026-04-18T21:09:27Z",
       "branch": "feat/280",
       "worktree": "../otherness.280",
-      "pr_number": 286
+      "pr_number": 286,
+      "pr_merged": true,
+      "done_at": "2026-04-18T21:28:40Z"
     },
     "281": {
       "state": "in_review",
@@ -409,6 +413,6 @@
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 39,
-  "pm_cycle_count": 21
+  "sm_cycle_count": 41,
+  "pm_cycle_count": 23
 }
