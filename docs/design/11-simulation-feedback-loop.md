@@ -39,16 +39,13 @@ You don't need Phase 2 to start. Phase 2 emerges from Phase 1 running long enoug
 - ✅ Phase 1a: `scripts/calibrate.py` — grid search, writes `scripts/sim-params.json` (PR #240, 2026-04-18)
 - ✅ Phase 1b: SM §4d — calibration every 10 batches, arch-convergence alarm at >0.7, sim-params.json updated (PR #239, 2026-04-18)
 - ✅ Phase 2b: arch-convergence signal in SM — SM §4d reads mean_arch_convergence; opens [NEEDS HUMAN] if >0.7 for 2 consecutive batches (PR #239, 2026-04-18)
+- ✅ Phase 1c: SM §4d-learn — auto-trigger /otherness.learn when Type B rate < sim floor for 3 consecutive batches (PR #269, 2026-04-18)
+- ✅ Phase 2a: per-project calibration — SM §4d checks metrics.md row count; if ≥10: uses --metrics arg (PR #270, 2026-04-18)
+- ✅ Phase 2c: sim-results.json written to _state after each calibration; PM §5b reads it for sim health in validation report (PR #271, 2026-04-18)
 
 ## Future (🔲)
 
-- 🔲 Phase 1c: SM uses simulation output to trigger `/otherness.learn` — if real
-  Type B rate drops below simulated floor for 3 consecutive batches, SM fires
-  a `/otherness.learn` cycle automatically
-- 🔲 Phase 2a: per-project calibration — when a project's `_state` contains ≥10
-  batches of metrics, SM runs calibration against that project's data instead
-  of otherness defaults; stores project-specific `sim-params.json` in `_state`
-- 🔲 Phase 2c: simulation results in `_state` — each SM calibration run commits
+*(All planned simulation feedback loop phases shipped. Future extensions should be opened as new issues.)*
   results to `_state` as `.otherness/sim-results.json`; PM phase reads it for
   the product validation scenario
 

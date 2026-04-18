@@ -90,6 +90,15 @@ if [ $((${PM_CYCLE:-0} % ${N_PM_CYCLES:-3})) -eq 0 ] && [ "${PM_CYCLE:-0}" -gt 0
   # For each: run the exact commands listed. Record pass/fail.
   # Open bug issues for failures. Open docs issues for output mismatches.
   # Post validation report on REPORT_ISSUE.
+  #
+  # Phase 2c: also include simulation health in validation report.
+  # Read .otherness/sim-results.json from _state branch (if it exists):
+  #   SIM_RESULTS=$(git show origin/_state:.otherness/sim-results.json 2>/dev/null || echo "")
+  #   if [ -n "$SIM_RESULTS" ]: parse sim-results.json and include in report:
+  #     calibrated_at, best_rmse, source → summary line in PM report
+  #   If rmse > 0.3: note "simulation calibration quality LOW — consider more batches"
+  #   If rmse <= 0.3: note "simulation calibration quality OK"
+  # If sim-results.json not found: log "[PM] No sim-results found — skipping sim health."
 fi
 
 python3 -c "
