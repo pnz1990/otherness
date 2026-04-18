@@ -282,6 +282,42 @@
       "depends_on": [],
       "pr_merged": true,
       "done_at": "2026-04-18T20:33:49Z"
+    },
+    "267": {
+      "state": "done",
+      "pr_merged": true,
+      "done_at": "2026-04-18T20:43:07Z",
+      "title": "feat: vibe-vision.md hard rule: session ends after artifacts are on main"
+    },
+    "268": {
+      "state": "done",
+      "title": "feat: otherness.onboard mode: READ-ONLY for CODE zone, VISION for DOCS zone",
+      "design_doc": "07-d4-enforcement.md",
+      "depends_on": [],
+      "assigned_to": "sess-83781955",
+      "assigned_at": "2026-04-18T20:43:47Z",
+      "branch": "feat/268",
+      "worktree": "../otherness.268",
+      "pr_merged": true,
+      "done_at": "2026-04-18T20:46:04Z"
+    },
+    "269": {
+      "state": "todo",
+      "title": "feat: Phase 1c: SM uses simulation output to trigger /otherness.learn",
+      "design_doc": "11-simulation-feedback-loop.md",
+      "depends_on": []
+    },
+    "270": {
+      "state": "todo",
+      "title": "feat: Phase 2a: per-project calibration",
+      "design_doc": "11-simulation-feedback-loop.md",
+      "depends_on": []
+    },
+    "271": {
+      "state": "todo",
+      "title": "feat: Phase 2c: simulation results in _state",
+      "design_doc": "11-simulation-feedback-loop.md",
+      "depends_on": []
     }
   },
   "engineer_slots": {
@@ -298,6 +334,6 @@
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 28,
-  "pm_cycle_count": 10
+  "sm_cycle_count": 29,
+  "pm_cycle_count": 11
 }
