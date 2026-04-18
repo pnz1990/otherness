@@ -131,12 +131,16 @@
     },
     "208": {
       "title": "feat(pm): PM \u00a75f periodic doc health scan",
-      "state": "todo",
+      "state": "assigned",
       "priority": "medium",
       "size": "m",
       "areas": [
         "area/agent-loop"
-      ]
+      ],
+      "assigned_to": "sess-83781955",
+      "assigned_at": "2026-04-18T19:49:11Z",
+      "branch": "feat/208",
+      "worktree": "../otherness.208"
     },
     "214": {
       "title": "feat: implement /otherness.vibe-vision \u2014 validate and wire",
@@ -193,9 +197,9 @@
       "cycle": 0
     },
     "sess-83781955": {
-      "last_seen": "2026-04-18T19:39:44Z",
-      "item": "207",
-      "cycle": 1
+      "last_seen": "2026-04-18T19:49:11Z",
+      "item": "208",
+      "cycle": 2
     }
   },
   "handoff": null,
