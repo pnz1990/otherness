@@ -343,13 +343,34 @@ else:
 PYEOF
 
     # [AI-STEP] For each ITEM line above:
-    # 1. Check for an existing open issue with the same title (avoid duplicates)
-    # 2. If the item came from a design doc: issue body must reference that design doc
-    # 3. If the item came from roadmap (no design doc): issue body should note that
-    #    a docs/design/ file should be created as part of this item
-    # Create max 5 issues. Prefer size/s or size/xs.
-    # Format:
-    # gh issue create --repo $REPO --title "..." --label "..." --body "..."
+    # 1. Check for an existing open issue with the same title (avoid duplicates).
+    #    gh issue list --repo $REPO --state open --search "<title>" --json number --jq 'length'
+    #    Skip if result > 0.
+    #
+    # 2. Build the issue body. Design reference is REQUIRED in the body (same format as spec.md):
+    #
+    #    If item came from a design doc ([from <filename>] in the ITEM line):
+    #      ## Design reference
+    #      - **Design doc**: `docs/design/<filename>`
+    #      - **Section**: `§ Future`
+    #      - **Implements**: <item description> (🔲 → ✅)
+    #
+    #      ## Summary
+    #      <one paragraph describing what this item implements and why>
+    #
+    #    If item came from roadmap (no design doc):
+    #      ## Design reference
+    #      - N/A — roadmap item with no docs/design/ file yet.
+    #      - **Note**: Creating a `docs/design/<area>.md` file should be part of this item's work
+    #        (see eng.md §2b O1). The design doc gate: no spec before design doc.
+    #
+    #      ## Summary
+    #      <one paragraph>
+    #
+    # 3. Create max 5 issues. Prefer size/s or size/xs labels.
+    #    gh issue create --repo $REPO --title "feat(<area>): <desc>" \
+    #      --label "otherness,kind/enhancement,area/<area>,size/s,priority/medium" \
+    #      --body "<body from step 2>"
 
     # Write state, release lock, post summary
     export STATE_MSG="[COORD] queue generated"
