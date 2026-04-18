@@ -101,3 +101,5 @@
 | 2026-04-18 | 35 | 0 | 1 | 0 | 12 | 1 | ~3 | Batch 35: #256 PM §5f doc health scan + freshness metric (CRITICAL, needs-human) |
 
 | 2026-04-18 | 36 | 0 | 1 | 0 | 12 | 1 | ~3 | Batch 36: #257 PM §5g README/AGENTS.md claims cross-check (CRITICAL, needs-human). Queue empty. |
+
+| 2026-04-18 | 37 | 0 | 1 | 0 | 12 | 1 | ~3 | Batch 37: #263 SM §4g codebase hygiene scan (CRITICAL). 2 stale queue items closed. 6 CRITICAL PRs queued. |
