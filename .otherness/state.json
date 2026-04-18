@@ -152,21 +152,27 @@
     },
     "238": {
       "title": "feat(scripts): calibrate.py \u2014 sim calibration against batch history",
-      "state": "todo",
+      "state": "done",
       "priority": "high",
       "size": "m",
       "areas": [
         "area/tooling"
-      ]
+      ],
+      "pr_merged": true,
+      "done_at": "2026-04-18T18:03:30Z",
+      "pr_number": 240
     },
     "239": {
       "title": "feat(sm): SM \u00a74d simulation calibration + arch-convergence alarm",
-      "state": "todo",
+      "state": "done",
       "priority": "high",
       "size": "m",
       "areas": [
         "area/agent-loop"
-      ]
+      ],
+      "pr_merged": true,
+      "done_at": "2026-04-18T18:03:30Z",
+      "pr_number": 241
     }
   },
   "engineer_slots": {
@@ -183,6 +189,6 @@
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 17,
+  "sm_cycle_count": 18,
   "pm_cycle_count": 0
 }
