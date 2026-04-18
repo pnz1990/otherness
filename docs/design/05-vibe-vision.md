@@ -38,18 +38,15 @@ translation, structuring, and artifact writing.
 
 ## Present (✅)
 
-*(Not yet implemented — this is the design doc for a new capability.)*
+- ✅ `/otherness.vibe-vision` command — interactive vision authoring session deployed to `.opencode/command/otherness.vibe-vision.md` (PR #214, 2026-04-18)
+- ✅ Structured dialogue protocol — listen, reflect, validate loop in `agents/vibe-vision.md` (PR #214, 2026-04-18)
+- ✅ Artifact cascade — validated dialogue output flows into vision.md → roadmap.md → docs/design/ stubs → docs/<feature>.md user docs (PR #214, 2026-04-18)
+- ✅ Human validation gate — agent proposes each artifact, human confirms before landing on main (PR #214, 2026-04-18)
+- ✅ `otherness.run` pickup — design doc stubs from vibe-vision contain Future items that COORD reads as queue inputs (PR #214, 2026-04-18)
 
 ## Future (🔲)
 
-- 🔲 `/otherness.vibe-vision` command — interactive vision authoring session
-- 🔲 Structured dialogue protocol — listen, reflect, validate loop before writing
-- 🔲 Artifact cascade — validated dialogue output flows into vision.md → roadmap.md
-  → docs/design/ stubs → docs/<feature>.md user docs, in that order
-- 🔲 Human validation gate — agent proposes each artifact, human confirms before it
-  lands on main (PR or direct push with human approval comment)
-- 🔲 `otherness.run` pickup — design doc stubs from vibe-vision contain Future items
-  that COORD immediately reads as queue inputs on next startup
+*(All planned items shipped. Future extensions should be opened as new kind/enhancement issues.)*
 
 ---
 
