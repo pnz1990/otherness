@@ -109,3 +109,5 @@
 | 2026-04-18 | 39 | 1 | 0 | 0 | 12 | 0 | ~2 | Batch 39: #266 doc 10+11 drift cleanup (sim items marked shipped). Queue empty — generating new queue. |
 
 | 2026-04-18 | 40 | 3 | 0 | 0 | 12 | 2 | ~2 | Batch 40: #272 vibe-vision hard rule, #273 onboard mode. Design doc 07 complete — all D4 layers shipped. |
+
+| 2026-04-18 | 41 | 0 | 1 | 0 | 12 | 1 | ~3 | Batch 41: #274 SM §4d-learn auto-learn trigger (CRITICAL). 7 CRITICAL PRs awaiting human. |
