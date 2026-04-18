@@ -17,7 +17,9 @@ Skip if `FLEET_MODE=true`.
 
 ```bash
 if [ "$FLEET_MODE" != "true" ]; then
-
+# Always read from _state branch first — local file may be stale or empty
+git fetch origin _state --quiet 2>/dev/null || true
+git show origin/_state:.otherness/state.json > .otherness/state.json 2>/dev/null || true
 python3 - << 'EOF'
 import json, datetime, os
 

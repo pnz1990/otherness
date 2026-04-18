@@ -51,22 +51,15 @@ operation. They should be documented as internal/advanced.
 
 ## Present (✅)
 
-- ✅ Command surface audit — all 10 commands measured against taxonomy; verdicts documented in §Audit findings (this PR, 2026-04-17)
-- ✅ Deprecate `otherness.cross-agent-monitor.md` — command deleted; validate.sh updated (PR #215, 2026-04-17)
+- ✅ Command surface audit — all 10 commands measured against taxonomy; verdicts documented in §Audit findings (PR #220, 2026-04-17)
+- ✅ Deprecate `otherness.cross-agent-monitor.md` — command deleted; validate.sh updated (PR #220, 2026-04-17)
+- ✅ Update `otherness.status.md` — reads _state branch before local file (this PR, 2026-04-17)
+- ✅ Update `otherness.setup.md` — removed stale .maqa migration; added D4 artifact stubs (this PR, 2026-04-17)
+- ✅ Update `otherness.upgrade.md` — derives otherness repo from git remote; no hardcoded slug (this PR, 2026-04-17)
 
 ## Future (🔲)
 
-- 🔲 Command surface audit — each existing command measured against this design doc's
-  taxonomy and criteria; findings documented with KEEP / UPDATE / DEPRECATE verdict
-- 🔲 Update `otherness.status.md` — description and behavior need D4 alignment
-  (currently reads from local state.json only; _state branch is the source of truth)
-- 🔲 Update `otherness.setup.md` — Step 4b `.maqa/` migration is stale infrastructure
-  noise; also missing D4 artifact initialization (docs/aide/ stubs)
-- 🔲 Update `otherness.upgrade.md` — hardcodes `pnz1990/otherness` as the releases
-  source; should read from otherness-config.yaml or derive from ~/.otherness remote
-- 🔲 Deprecate `otherness.cross-agent-monitor.md` — functionality fully covered by
-  `otherness.status --fleet`; running as a separate command is redundant
-- 🔲 Update README command table — reflect canonical type taxonomy, remove
+- 🔲 Update README command table — reflect canonical type taxonomy (PRIMARY / SETUP / INTERNAL),
   cross-agent-monitor from primary command list, add vibe-vision as the first entry
 - 🔲 `otherness.setup.md` — add D4 artifact initialization: create docs/aide/vision.md
   stub, docs/aide/roadmap.md stub during setup so the project starts in D4 mode
