@@ -58,6 +58,8 @@
 | 2026-04-18 | 29 | 2 | 0 | 0 | 12 | 2 | ~3 | Batch 29: calibrate.py + SM §4d — Stage 6 Phase 1 operational |
 
 | 2026-04-18 | 30 | 0 | 1 | 0 | 12 | 1 | ~3 | Batch 30: #245 D4 at issue intake (coord §1e) — CRITICAL tier, needs-human, awaiting human review |
+
+| 2026-04-18 | 31 | 0 | 1 | 0 | 12 | 1 | ~3 | Batch 31: #246 PM §5f doc health scan (CRITICAL tier, needs-human, awaiting human review) |
 ---
 
 ## Trend Notes
