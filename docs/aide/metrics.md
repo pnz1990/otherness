@@ -115,3 +115,5 @@
 | 2026-04-18 | 42 | 0 | 2 | 0 | 12 | 2 | ~3 | Batch 42: #275 Phase 2a per-project cal, #276 Phase 2c sim-results. Design doc 11 complete. 9 CRITICAL queued. |
 
 | 2026-04-18 | 43 | 0 | 1 | 0 | 12 | 1 | ~3 | Batch 43: #282 PM §5g sim health score (CRITICAL). 10 CRITICAL PRs awaiting human. Doc 12 started. |
+
+| 2026-04-18 | 44 | 0 | 5 | 0 | 12 | 5 | ~2 | Batch 44: #283-#286 doc 12 items (PM §5g+AMBER, Dynamic DoD, Perpetual loop, Self-gen criteria). 14 CRITICAL PRs queued. |
