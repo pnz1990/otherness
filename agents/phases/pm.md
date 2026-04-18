@@ -226,6 +226,7 @@ gh issue comment $REPORT_ISSUE --repo $REPO \
 
 ---
 
+<<<<<<< HEAD
 ## 5f. Documentation health scan + freshness check (runs every N_PM_CYCLES)
 
 Verify `docs/design/` files reflect reality: Present items have PR references,
@@ -289,5 +290,125 @@ if [ $((${PM_CYCLE:-0} % ${N_PM_CYCLES:-3})) -eq 0 ]; then
   #       open_if_absent(title, "kind/docs,otherness,priority/low")
 
   echo "[PM §5f] Documentation health scan complete."
+=======
+## 5g. Simulation health score + self-correction (runs every N_PM_CYCLES)
+
+Produce GREEN/AMBER/RED health signal. AMBER auto-triggers /otherness.learn.
+
+```bash
+if [ $((${PM_CYCLE:-0} % ${N_PM_CYCLES:-3})) -eq 0 ]; then
+  echo "[PM §5g] Running simulation health check..."
+
+  # [AI-STEP]
+  # Step 0: Graceful fallback.
+  #   SIM_RESULTS=$(git show origin/_state:.otherness/sim-results.json 2>/dev/null || echo "")
+  #   METRICS_ROWS=$(grep -c '^\|\s*[0-9][0-9][0-9][0-9]-' docs/aide/metrics.md 2>/dev/null || echo 0)
+  #   If either absent or METRICS_ROWS < 3: echo "[PM §5g] Skipping — insufficient data."; exit
+  #
+  # Step 1: Read real completion rate from last 3 batches (metrics.md).
+  #   avg_shipped = mean(todo_shipped[-3:])
+  #
+  # Step 2: Run quick sim (1 run, 30 cycles) with calibrated params from sim-results.json.
+  #   Get arch_convergence from sim output.
+  #
+  # Step 3: Determine health signal.
+  #   GREEN: arch_conv < 0.5 AND last_batch_shipped >= 1
+  #   AMBER: arch_conv 0.5-0.7 OR last_batch_shipped = 0 in last 1-2 batches
+  #   RED:   arch_conv > 0.7 OR last_batch_shipped = 0 for >= 2 consecutive batches
+  #
+  # Step 4: Act on signal.
+  #   GREEN: log "[PM §5g] Health: GREEN"; no action.
+  #   AMBER:
+  #     Post comment on REPORT_ISSUE: "[PM §5g] Health: AMBER — <reason>. Self-correcting."
+  #     Self-correction: find design doc with highest Future/total ratio (lowest boldness area).
+  #     LEARN_BRANCH="feat/learn-$(date +%Y%m%d)"
+  #     Check if branch exists: git ls-remote --heads origin $LEARN_BRANCH
+  #     If branch already exists: skip (learn in progress from SM).
+  #     If not: create branch, worktree, read and follow ~/.otherness/agents/otherness.learn.md,
+  #       merge after CI green, clean up.
+  #   RED:
+  #     Post [NEEDS HUMAN] issue: "PM §5g Health: RED — <reason>. Requires investigation."
+  #     gh issue create --repo $REPO --title "[NEEDS HUMAN] PM §5g: RED health signal — <reason>"
+  #       --label "needs-human,area/agent-loop" --body "<full report>"
+
+  echo "[PM §5g] Simulation health check complete."
+fi
+```
+
+---
+
+## 5h. Self-generating validation criteria (runs every N_PM_CYCLES)
+
+Scan shipped Present items for gaps in definition-of-done.md journeys.
+
+```bash
+if [ $((${PM_CYCLE:-0} % ${N_PM_CYCLES:-3})) -eq 0 ]; then
+  echo "[PM §5h] Scanning for validation criteria gaps..."
+
+  # [AI-STEP]
+  # Step 0: Read definition-of-done.md content. If absent: skip.
+  #   DOD_CONTENT=$(cat docs/aide/definition-of-done.md 2>/dev/null || echo "")
+  #   if [ -z "$DOD_CONTENT" ]: echo "[PM §5h] No definition-of-done.md — skipping."; exit
+  #
+  # Step 1: For each docs/design/*.md file, read ✅ Present items.
+  #   present_items = re.findall(r'^- ✅ (.+)', content, re.MULTILINE)
+  #
+  # Step 2: For each Present item, check if its description (first 40 chars)
+  #   appears in definition-of-done.md (case-insensitive substring).
+  #   If not found: this is a validation gap.
+  #   title = f"docs: definition-of-done.md missing journey for: {item_desc[:60]}"
+  #   open_if_absent(title, "kind/docs,otherness,priority/low")
+  #
+  # Step 3: Duplicate suppression (open_if_absent pattern).
+  #
+  # Step 4: Post count: "[PM §5h] Validation gaps found: <N>."
+
+  echo "[PM §5h] Self-generating validation criteria check complete."
+fi
+```
+
+---
+
+## 5i. README/AGENTS.md claims cross-check (runs every N_PM_CYCLES)
+
+Verify machine-checkable claims in README.md and AGENTS.md still hold.
+Opens `kind/docs priority/high` issues for false claims.
+
+```bash
+if [ $((${PM_CYCLE:-0} % ${N_PM_CYCLES:-3})) -eq 0 ]; then
+  echo "[PM §5g] Cross-checking README/AGENTS.md claims..."
+
+  # [AI-STEP]
+  # Step 1: File existence claims — command files in .opencode/command/.
+  #   For each command listed in the README.md command table
+  #   (lines matching /^\| `\/otherness\.\w+`/):
+  #   Extract the command name (e.g. /otherness.run → otherness.run.md).
+  #   Verify: os.path.exists(f".opencode/command/{cmd_file}")
+  #   If missing: open kind/docs priority/high issue:
+  #     "docs: README lists /otherness.<name> but .opencode/command/<name>.md is missing"
+  #
+  # Step 2: File existence claims — Package Layout section in AGENTS.md.
+  #   Find the Package Layout fenced code block in AGENTS.md.
+  #   For each line matching /^\s+\S+\.md/ (markdown files listed):
+  #   Verify the file exists relative to the repo root.
+  #   If missing: open kind/docs issue: "docs: AGENTS.md Package Layout lists <file> but it does not exist"
+  #   (Lower priority than step 1 — use priority/medium)
+  #
+  # Step 3: validate.sh step count claim.
+  #   Count actual steps: grep -c 'echo "\[' scripts/validate.sh
+  #   Find claimed count in AGENTS.md (look for "validate.sh performs" or "[N/N]" pattern).
+  #   If mismatch: open kind/docs issue: "docs: validate.sh step count mismatch (README claims N, actual M)"
+  #
+  # Step 4: BUILD_COMMAND/TEST_COMMAND/LINT_COMMAND scripts exist.
+  #   Read BUILD_COMMAND, TEST_COMMAND, LINT_COMMAND from AGENTS.md.
+  #   For each: if it references a local script (starts with "bash scripts/"), verify the script exists.
+  #   If missing: open kind/docs priority/high issue.
+  #
+  # Step 5: Duplicate suppression.
+  #   Use open_if_absent pattern (same as §5f):
+  #     gh issue list --repo $REPO --state open --search "<title[:60]>" --json number --jq length
+  #     Open only if count == 0.
+
+  echo "[PM §5g] README/AGENTS.md claims cross-check complete."
 fi
 ```
