@@ -4,26 +4,6 @@
   "repo": "pnz1990/otherness",
   "current_queue": null,
   "features": {
-    "207": {
-      "title": "feat(coord): enforce D4 classification at issue intake",
-      "state": "todo",
-      "source": "design-doc-01",
-      "areas": [
-        "area/agent-loop"
-      ],
-      "priority": "medium",
-      "size": "s"
-    },
-    "208": {
-      "title": "feat(pm): PM \u00a75f periodic doc health scan",
-      "state": "todo",
-      "source": "design-doc-04",
-      "areas": [
-        "area/agent-loop"
-      ],
-      "priority": "medium",
-      "size": "m"
-    },
     "209": {
       "title": "feat(coord): \ud83d\udeab Deprecated marker \u2014 COORD skips deprecated Future items",
       "state": "done",
@@ -36,16 +16,6 @@
       "pr_merged": true,
       "done_at": "2026-04-18T17:06:37Z",
       "pr_number": 228
-    },
-    "214": {
-      "title": "feat: implement /otherness.vibe-vision \u2014 validate and wire command",
-      "state": "todo",
-      "source": "design-doc-05",
-      "areas": [
-        "area/agent-loop"
-      ],
-      "priority": "medium",
-      "size": "l"
     },
     "215": {
       "title": "deprecate cross-agent-monitor",
@@ -91,16 +61,6 @@
       "pr_merged": true,
       "done_at": "2026-04-18T17:06:37Z",
       "pr_number": 227
-    },
-    "224": {
-      "title": "feat(ci): guard-ci.sh + CI workflow \u2014 Layer 3 D4 enforcement",
-      "state": "todo",
-      "source": "design-doc-07",
-      "areas": [
-        "area/tooling"
-      ],
-      "priority": "medium",
-      "size": "s"
     },
     "225": {
       "title": "feat(scripts): scripts/simulate.py \u2014 multi-agent simulation",
@@ -153,6 +113,60 @@
       "pr_merged": true,
       "done_at": "2026-04-18T17:43:22Z",
       "pr_number": 233
+    },
+    "207": {
+      "title": "feat(coord): D4 classification at issue intake",
+      "state": "todo",
+      "priority": "medium",
+      "size": "s",
+      "areas": [
+        "area/agent-loop"
+      ]
+    },
+    "208": {
+      "title": "feat(pm): PM \u00a75f periodic doc health scan",
+      "state": "todo",
+      "priority": "medium",
+      "size": "m",
+      "areas": [
+        "area/agent-loop"
+      ]
+    },
+    "214": {
+      "title": "feat: implement /otherness.vibe-vision \u2014 validate and wire",
+      "state": "todo",
+      "priority": "medium",
+      "size": "l",
+      "areas": [
+        "area/agent-loop"
+      ]
+    },
+    "224": {
+      "title": "feat(ci): guard-ci.sh + CI workflow \u2014 Layer 3 D4 enforcement",
+      "state": "todo",
+      "priority": "medium",
+      "size": "s",
+      "areas": [
+        "area/tooling"
+      ]
+    },
+    "238": {
+      "title": "feat(scripts): calibrate.py \u2014 sim calibration against batch history",
+      "state": "todo",
+      "priority": "high",
+      "size": "m",
+      "areas": [
+        "area/tooling"
+      ]
+    },
+    "239": {
+      "title": "feat(sm): SM \u00a74d simulation calibration + arch-convergence alarm",
+      "state": "todo",
+      "priority": "high",
+      "size": "m",
+      "areas": [
+        "area/agent-loop"
+      ]
     }
   },
   "engineer_slots": {
