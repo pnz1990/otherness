@@ -273,10 +273,12 @@
       "depends_on": []
     },
     "262": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Layer 1: add ## D4 ENFORCEMENT section to AGENTS.md template",
       "design_doc": "07-d4-enforcement.md",
-      "depends_on": []
+      "depends_on": [],
+      "pr_merged": true,
+      "done_at": "2026-04-18T20:33:49Z"
     }
   },
   "engineer_slots": {
@@ -298,6 +300,6 @@
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 26,
-  "pm_cycle_count": 8
+  "sm_cycle_count": 27,
+  "pm_cycle_count": 9
 }
