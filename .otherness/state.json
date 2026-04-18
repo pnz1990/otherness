@@ -267,10 +267,13 @@
       "note": "Already shipped by PR #209. Doc 06 has duplicate Future entry (doc drift)."
     },
     "261": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: `otherness.setup.md`",
       "design_doc": "06-command-surface.md",
-      "depends_on": []
+      "depends_on": [],
+      "done_at": "2026-04-18T20:35:21Z",
+      "pr_merged": true,
+      "note": "Shipped by PR #264 (doc 06 drift fix). Original item was stale duplicate."
     },
     "262": {
       "state": "done",
@@ -291,11 +294,6 @@
     "STANDALONE": {
       "last_seen": null,
       "cycle": 0
-    },
-    "sess-83781955": {
-      "last_seen": "2026-04-18T20:20:17Z",
-      "item": "coord",
-      "cycle": 15
     }
   },
   "handoff": null,
