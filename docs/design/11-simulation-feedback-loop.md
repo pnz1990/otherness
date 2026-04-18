@@ -39,12 +39,10 @@ You don't need Phase 2 to start. Phase 2 emerges from Phase 1 running long enoug
 - ✅ Phase 1a: `scripts/calibrate.py` — grid search, writes `scripts/sim-params.json` (PR #240, 2026-04-18)
 - ✅ Phase 1b: SM §4d — calibration every 10 batches, arch-convergence alarm at >0.7, sim-params.json updated (PR #239, 2026-04-18)
 - ✅ Phase 2b: arch-convergence signal in SM — SM §4d reads mean_arch_convergence; opens [NEEDS HUMAN] if >0.7 for 2 consecutive batches (PR #239, 2026-04-18)
+- ✅ Phase 1c: SM §4d-learn — checks Type B rate (needs_human proxy) vs simulated floor every 10 cycles; auto-triggers /otherness.learn if rate < floor for 3 consecutive batches and no escalations; duplicate-suppressed (PR #269, 2026-04-18)
 
 ## Future (🔲)
 
-- 🔲 Phase 1c: SM uses simulation output to trigger `/otherness.learn` — if real
-  Type B rate drops below simulated floor for 3 consecutive batches, SM fires
-  a `/otherness.learn` cycle automatically
 - 🔲 Phase 2a: per-project calibration — when a project's `_state` contains ≥10
   batches of metrics, SM runs calibration against that project's data instead
   of otherness defaults; stores project-specific `sim-params.json` in `_state`

@@ -331,7 +331,43 @@ The system will not take autonomous action. This is for your awareness." 2>/dev/
         echo "[SM §4d] Calibration skipped (calibrate.py not available or failed)."
     fi
 else
-    echo "[SM §4d] Calibration skipped (sm_cycle=$SM_CYCLE, next at $((((SM_CYCLE / 10) + 1) * 10)))."
+     echo "[SM §4d] Calibration skipped (sm_cycle=$SM_CYCLE, next at $((((SM_CYCLE / 10) + 1) * 10)))."
+fi
+
+# Phase 1c: Automatic /otherness.learn trigger (every 10 cycles, same cadence as calibration)
+if [ $((SM_CYCLE % 10)) -eq 0 ] && [ "${SM_CYCLE:-0}" -gt 0 ]; then
+  echo "[SM §4d-learn] Checking learn trigger..."
+
+  # [AI-STEP]
+  # Step 1: Read last 3 rows from docs/aide/metrics.md.
+  #   Parse 'needs_human' column (col 4, 1-indexed from date). Keep last 3 rows.
+  #
+  # Step 2: Check if needs_human = 0 for all 3 batches.
+  #   If any row has needs_human > 0: log "[SM §4d-learn] Skipping — escalations present." exit.
+  #
+  # Step 3: Compare real Type B rate (proxy: needs_human avg over last 10 batches)
+  #   against simulated floor from scripts/sim-params.json (default 0.1 if missing).
+  #   sim_floor = sim_params.get('expected_type_b_rate', 0.1)
+  #   If real_rate >= sim_floor: log "[SM §4d-learn] Type B rate OK — no learn trigger."; exit.
+  #
+  # Step 4: If real_rate < sim_floor for 3 consecutive batches AND no escalations:
+  #   LEARN_BRANCH="feat/learn-$(date +%Y%m%d)"
+  #   Check if branch exists: git ls-remote --heads origin $LEARN_BRANCH
+  #   If exists: log "[SM §4d-learn] Learn branch already exists — skipping."; exit.
+  #
+  #   Create branch and worktree:
+  #   git push origin "HEAD:refs/heads/$LEARN_BRANCH"
+  #   LEARN_WT="../${REPO_NAME}.learn-$(date +%Y%m%d)"
+  #   git worktree add "$LEARN_WT" "$LEARN_BRANCH"
+  #
+  #   Post notice:
+  #   gh issue comment $REPORT_ISSUE --repo $REPO \
+  #     --body "[🔄 SM §4d-learn | $MY_SESSION_ID] Auto-learn triggered (Type B deficit: real=${real_rate:.2f} < floor=${sim_floor:.2f}). Starting /otherness.learn."
+  #
+  #   Read and follow ~/.otherness/agents/otherness.learn.md from $LEARN_WT.
+  #   After learn PR open and CI green: merge and clean up (same pattern as coord.md learn scheduling).
+
+  echo "[SM §4d-learn] Learn trigger check complete."
 fi
 ```
 
