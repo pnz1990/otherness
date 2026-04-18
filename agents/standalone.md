@@ -573,7 +573,7 @@ Losers wait up to 90s then re-read `_state`. Winner deletes lock after writing q
 
 ### Lock 2: Item claiming (`refs/heads/feat/<item-id>`)
 Before working on an item, push `feat/<item-id>`. Winner owns it.
-Loser picks a different item. See coord.md §1c.
+Loser picks a different item. See coord.md §1e.
 
 ---
 

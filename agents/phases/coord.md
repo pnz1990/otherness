@@ -297,7 +297,7 @@ fi
 
 ---
 
-## 1c. Stale item watchdog (SM sub-task — run every coord cycle)
+## 1d. Stale item watchdog (SM sub-task — run every coord cycle)
 
 Reset items stuck in `assigned` with no live heartbeat for >2 hours. Delete the stale branch lock.
 
@@ -366,7 +366,7 @@ EOF
 
 ---
 
-## 1c. Claim next item (branch-lock protocol)
+## 1e. Claim next item (branch-lock protocol)
 
 Re-read state from `_state` first — always use canonical IDs from the queue-gen winner.
 
