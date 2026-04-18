@@ -42,7 +42,16 @@ mark what is present vs future.
 
 ## Future (🔲)
 
-*(No remaining Future items — all DDDD obligations are now Present or explicitly deferred in Zone 3.)*
+- 🔲 D4 enforced at issue intake — when ENG claims an issue, it must classify the issue
+  title/body as IMPERATIVE/DECLARATIVE/INFRA before speccing, same as session-start D4.
+  Currently the coord.md D4 check only catches human comments added after claiming, not
+  the original issue itself. Issues created by external contributors or by older
+  queue-gen without D4 awareness bypass the translation step entirely.
+- 🔲 Issue body must identify design doc Future item — the GitHub issue that sources work
+  should reference which `docs/design/` file and 🔲 Future item it implements. Currently
+  only spec.md requires `## Design reference`; the issue that precedes the spec does not.
+  COORD queue-gen already names the source file (e.g. `[from 04-documentation-health.md]`)
+  but does not enforce that the issue body contains the reference.
 
 ---
 
