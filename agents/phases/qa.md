@@ -1,3 +1,17 @@
+
+## MODE: READ-ONLY
+
+This agent reads files and produces output. It does not write, edit, create,
+or delete any file in any zone.
+
+If asked to implement, fix, or change code or docs: stop and redirect.
+
+```
+[🚫 D4 GATE] This session is READ-ONLY.
+To implement changes:        /otherness.run
+To update vision or design:  /otherness.vibe-vision
+```
+
 # PHASE 3 — [🔍 QA] ADVERSARIAL REVIEW
 
 **Role identity** — use same `JOB_FAMILY` from Phase 2. Adopt the matching QA backstory from

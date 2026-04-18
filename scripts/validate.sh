@@ -184,5 +184,19 @@ else
   [ $MISSING_REF -eq 0 ] && echo "  OK: all spec files have ## Design reference" || exit 1
 fi
 
+# 6. Check every agent file has a ## MODE block
+echo "[6/6] Checking agent files for ## MODE block..."
+MISSING_MODE=0
+for agent_file in "$AGENTS_DIR"/*.md "$AGENTS_DIR/phases"/*.md; do
+  [ -f "$agent_file" ] || continue
+  fname=$(basename "$agent_file")
+  [ "$fname" = "gh-features.md" ] && continue  # reference doc, not an agent
+  if ! grep -q "^## MODE:" "$agent_file" 2>/dev/null; then
+    echo "  ERROR: agent file missing ## MODE block: $agent_file"
+    MISSING_MODE=1
+  fi
+done
+[ $MISSING_MODE -eq 0 ] && echo "  OK: all agent files have ## MODE block" || exit 1
+
 echo ""
 echo "=== validate: PASSED ==="
