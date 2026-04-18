@@ -148,6 +148,8 @@ REQUIRED=(
   "$(cd "$(dirname "$0")/.." && pwd)/.opencode/command/otherness.learn.md"
   "$(cd "$(dirname "$0")/.." && pwd)/.opencode/command/otherness.arch-audit.md"
   "$(cd "$(dirname "$0")/.." && pwd)/.opencode/command/otherness.cross-agent-monitor.md"
+  "$(cd "$(dirname "$0")/.." && pwd)/.opencode/command/otherness.vibe-vision.md"
+  "$(cd "$(dirname "$0")/.." && pwd)/agents/vibe-vision.md"
 )
 MISSING_FILES=0
 for f in "${REQUIRED[@]}"; do
