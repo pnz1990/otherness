@@ -39,14 +39,9 @@ mark what is present vs future.
 - ✅ CI lint for `## Design reference` presence in spec files — validate.sh check 5 (PR #153, 2026-04-17)
 - ✅ Customer doc requirement checked by QA — MISS finding (follow-up issue) when non-N/A design ref has no customer doc (PR #159, 2026-04-17)
 - ✅ `/otherness.onboard` generates design doc stubs — Step 4b creates 2-4 inferred docs, marked ⚠️ Inferred (PR #163, 2026-04-17)
+- ✅ D4 enforced at issue intake — coord.md §1e classifies issue title/body as IMPERATIVE/DECLARATIVE/INFRA before ENG specs; IMPERATIVE titles trigger translation comment + 60s wait; design-doc-sourced issues (conventional-commit title) proceed directly (PR #207, 2026-04-18)
 
 ## Future (🔲)
-
-- 🔲 D4 enforced at issue intake — when ENG claims an issue, it must classify the issue
-  title/body as IMPERATIVE/DECLARATIVE/INFRA before speccing, same as session-start D4.
-  Currently the coord.md D4 check only catches human comments added after claiming, not
-  the original issue itself. Issues created by external contributors or by older
-  queue-gen without D4 awareness bypass the translation step entirely.
 - 🔲 Issue body must identify design doc Future item — the GitHub issue that sources work
   should reference which `docs/design/` file and 🔲 Future item it implements. Currently
   only spec.md requires `## Design reference`; the issue that precedes the spec does not.
