@@ -316,6 +316,10 @@ except:
 
 def is_done(d):
     d_lower = d.lower().strip()
+    # Strip ⚠️ Inferred / ⚠️ Observed prefix so deduplication works against PR titles
+    # e.g. "⚠️ Inferred: competitive gap foo" → "competitive gap foo"
+    import re as _re
+    d_lower = _re.sub(r'^⚠️\s*(inferred|observed):\s*', '', d_lower)
     if d_lower in done_titles: return True
     # Check merged PR titles: require the full item description (first 60 chars, stripped)
     # to appear in a PR title. Substring matching on short keys caused false positives.
