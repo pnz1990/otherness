@@ -116,7 +116,7 @@
     },
     "207": {
       "title": "feat(coord): D4 classification at issue intake",
-      "state": "in_review",
+      "state": "done",
       "priority": "medium",
       "size": "s",
       "areas": [
@@ -127,11 +127,13 @@
       "branch": "feat/207",
       "worktree": "../otherness.207",
       "pr_number": 245,
-      "pr_url": "https://github.com/pnz1990/otherness/pull/245"
+      "pr_url": "https://github.com/pnz1990/otherness/pull/245",
+      "pr_merged": true,
+      "done_at": "2026-04-19T03:20:41Z"
     },
     "208": {
       "title": "feat(pm): PM \u00a75f periodic doc health scan",
-      "state": "in_review",
+      "state": "done",
       "priority": "medium",
       "size": "m",
       "areas": [
@@ -142,7 +144,9 @@
       "branch": "feat/208",
       "worktree": "../otherness.208",
       "pr_number": 246,
-      "pr_url": "https://github.com/pnz1990/otherness/pull/246"
+      "pr_url": "https://github.com/pnz1990/otherness/pull/246",
+      "pr_merged": true,
+      "done_at": "2026-04-19T03:20:41Z"
     },
     "214": {
       "title": "feat: implement /otherness.vibe-vision \u2014 validate and wire",
@@ -199,7 +203,7 @@
       "note": "Duplicate \u2014 covered by in-review PR"
     },
     "251": {
-      "state": "in_review",
+      "state": "done",
       "title": "feat: Issue body must identify design doc Future item",
       "design_doc": "01-declarative-design-driven-development.md",
       "depends_on": [],
@@ -207,7 +211,9 @@
       "assigned_at": "2026-04-18T20:06:46Z",
       "branch": "feat/251",
       "worktree": "../otherness.251",
-      "pr_number": 255
+      "pr_number": 255,
+      "pr_merged": true,
+      "done_at": "2026-04-19T03:20:41Z"
     },
     "252": {
       "state": "done",
@@ -231,7 +237,7 @@
       "done_at": "2026-04-18T21:28:40Z"
     },
     "254": {
-      "state": "in_review",
+      "state": "done",
       "title": "feat: Cross-check README/AGENTS.md claims against code",
       "design_doc": "04-documentation-health.md",
       "depends_on": [],
@@ -239,10 +245,12 @@
       "assigned_at": "2026-04-18T20:16:07Z",
       "branch": "feat/254",
       "worktree": "../otherness.254",
-      "pr_number": 257
+      "pr_number": 257,
+      "pr_merged": true,
+      "done_at": "2026-04-19T03:20:41Z"
     },
     "258": {
-      "state": "in_review",
+      "state": "done",
       "title": "feat: Codebase hygiene scan",
       "design_doc": "04-documentation-health.md",
       "depends_on": [],
@@ -250,7 +258,9 @@
       "assigned_at": "2026-04-18T20:24:01Z",
       "branch": "feat/258",
       "worktree": "../otherness.258",
-      "pr_number": 263
+      "pr_number": 263,
+      "pr_merged": true,
+      "done_at": "2026-04-19T03:20:41Z"
     },
     "259": {
       "state": "done",
@@ -304,7 +314,7 @@
       "done_at": "2026-04-18T20:46:04Z"
     },
     "269": {
-      "state": "in_review",
+      "state": "done",
       "title": "feat: Phase 1c: SM uses simulation output to trigger /otherness.learn",
       "design_doc": "11-simulation-feedback-loop.md",
       "depends_on": [],
@@ -312,10 +322,12 @@
       "assigned_at": "2026-04-18T20:47:27Z",
       "branch": "feat/269",
       "worktree": "../otherness.269",
-      "pr_number": 274
+      "pr_number": 274,
+      "pr_merged": true,
+      "done_at": "2026-04-19T03:20:41Z"
     },
     "270": {
-      "state": "in_review",
+      "state": "done",
       "title": "feat: Phase 2a: per-project calibration",
       "design_doc": "11-simulation-feedback-loop.md",
       "depends_on": [],
@@ -323,10 +335,12 @@
       "assigned_at": "2026-04-18T20:51:13Z",
       "branch": "feat/270",
       "worktree": "../otherness.270",
-      "pr_number": 275
+      "pr_number": 275,
+      "pr_merged": true,
+      "done_at": "2026-04-19T03:20:41Z"
     },
     "271": {
-      "state": "in_review",
+      "state": "done",
       "title": "feat: Phase 2c: simulation results in _state",
       "design_doc": "11-simulation-feedback-loop.md",
       "depends_on": [],
@@ -334,10 +348,12 @@
       "assigned_at": "2026-04-18T20:54:25Z",
       "branch": "feat/271",
       "worktree": "../otherness.271",
-      "pr_number": 276
+      "pr_number": 276,
+      "pr_merged": true,
+      "done_at": "2026-04-19T03:20:41Z"
     },
     "277": {
-      "state": "in_review",
+      "state": "done",
       "title": "feat: PM \u00a75g: simulation health score",
       "design_doc": "12-perpetual-validation.md",
       "depends_on": [],
@@ -345,10 +361,13 @@
       "assigned_at": "2026-04-18T20:59:36Z",
       "branch": "feat/277",
       "worktree": "../otherness.277",
-      "pr_number": 282
+      "pr_number": 282,
+      "pr_merged": true,
+      "done_at": "2026-04-19T03:20:58Z",
+      "note": "Superseded by item 278 PR #283"
     },
     "278": {
-      "state": "in_review",
+      "state": "done",
       "title": "feat: PM self-correction on AMBER",
       "design_doc": "12-perpetual-validation.md",
       "depends_on": [],
@@ -356,10 +375,12 @@
       "assigned_at": "2026-04-18T21:04:25Z",
       "branch": "feat/278",
       "worktree": "../otherness.278",
-      "pr_number": 283
+      "pr_number": 283,
+      "pr_merged": true,
+      "done_at": "2026-04-19T03:20:41Z"
     },
     "279": {
-      "state": "in_review",
+      "state": "done",
       "title": "feat: Dynamic definition-of-done",
       "design_doc": "12-perpetual-validation.md",
       "depends_on": [],
@@ -367,7 +388,9 @@
       "assigned_at": "2026-04-18T21:07:15Z",
       "branch": "feat/279",
       "worktree": "../otherness.279",
-      "pr_number": 284
+      "pr_number": 284,
+      "pr_merged": true,
+      "done_at": "2026-04-19T03:20:41Z"
     },
     "280": {
       "state": "done",
@@ -383,7 +406,7 @@
       "done_at": "2026-04-18T21:28:40Z"
     },
     "281": {
-      "state": "in_review",
+      "state": "done",
       "title": "feat: Self-generating validation criteria",
       "design_doc": "12-perpetual-validation.md",
       "depends_on": [],
@@ -391,7 +414,9 @@
       "assigned_at": "2026-04-18T21:09:24Z",
       "branch": "feat/281",
       "worktree": "../otherness.281",
-      "pr_number": 285
+      "pr_number": 285,
+      "pr_merged": true,
+      "done_at": "2026-04-19T03:20:41Z"
     }
   },
   "engineer_slots": {
@@ -409,10 +434,15 @@
       "last_seen": "2026-04-18T21:35:09Z",
       "item": "standby-60",
       "cycle": 60
+    },
+    "sess-ebfc00f8": {
+      "last_seen": "2026-04-19T03:21:19Z",
+      "item": "complete",
+      "cycle": 100
     }
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 50,
+  "sm_cycle_count": 51,
   "pm_cycle_count": 23
 }
