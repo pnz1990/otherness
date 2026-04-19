@@ -26,6 +26,23 @@ jobs:
           git clone --quiet --depth 1 https://github.com/pnz1990/otherness.git ~/.otherness
           echo "[otherness] Agent files installed at ~/.otherness ($(git -C ~/.otherness describe --tags --always))"
 
+      - name: Sync otherness command files
+        run: |
+          mkdir -p .opencode/command
+          # Two-way sync: add new otherness.* commands, remove stale ones
+          SYNCED=0
+          for src in ~/.otherness/.opencode/command/otherness.*.md; do
+            [ -f "$src" ] || continue
+            fname=$(basename "$src"); dest=".opencode/command/$fname"
+            if ! cmp -s "$src" "$dest" 2>/dev/null; then cp "$src" "$dest"; SYNCED=1; fi
+          done
+          for dest in .opencode/command/otherness.*.md; do
+            [ -f "$dest" ] || continue
+            fname=$(basename "$dest")
+            if [ ! -f ~/.otherness/.opencode/command/"$fname" ]; then rm "$dest"; SYNCED=1; fi
+          done
+          [ $SYNCED -eq 1 ] && echo "[otherness] Command files synced." || echo "[otherness] Commands already current."
+
       - name: Install gh CLI (if not present)
         run: |
           if ! command -v gh &>/dev/null; then

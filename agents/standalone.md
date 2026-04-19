@@ -47,6 +47,25 @@ else
   git -C ~/.otherness pull --quiet 2>/dev/null || true
   echo "[STANDALONE] Agent files up to date (latest)."
 fi
+
+# Sync command files from ~/.otherness — two-way: add new, remove stale.
+# otherness.* files are owned by otherness. Non-otherness.* files are never touched.
+if [ -d ~/.otherness/.opencode/command ] && [ -d .opencode/command ]; then
+  _SYNCED=0
+  # Add or update
+  for _src in ~/.otherness/.opencode/command/otherness.*.md; do
+    [ -f "$_src" ] || continue
+    _fname=$(basename "$_src"); _dest=".opencode/command/$_fname"
+    if ! cmp -s "$_src" "$_dest" 2>/dev/null; then cp "$_src" "$_dest"; _SYNCED=1; fi
+  done
+  # Remove stale
+  for _dest in .opencode/command/otherness.*.md; do
+    [ -f "$_dest" ] || continue
+    _fname=$(basename "$_dest")
+    if [ ! -f ~/.otherness/.opencode/command/"$_fname" ]; then rm "$_dest"; _SYNCED=1; fi
+  done
+  [ $_SYNCED -eq 1 ] && echo "[STANDALONE] Command files synced from ~/.otherness."
+fi
 ```
 
 You are the STANDALONE AGENT — an entire autonomous team in one session.
