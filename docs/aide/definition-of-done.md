@@ -185,13 +185,50 @@ ls ~/.otherness/.opencode/command/otherness.vibe-vision.md
 
 ---
 
+## Journey 7: Eternal loop — health signal, not stop condition
+
+**The user story**: The system runs 10 consecutive batches without saying "final run" or "complete." It reports health signals. It enters standby correctly. It wakes when new vision is added without human restart instruction.
+
+### Exact steps that must work
+
+```bash
+# 1. Verify health signal format in last 10 batch completion posts
+gh issue view 2 --repo pnz1990/otherness --json comments \
+  --jq '[.comments[-10:][].body | select(contains("Health:"))] | length'
+# Must be ≥ 10 (10 batches used health signal format, not "final run")
+
+# 2. Verify no "final run" or "complete" language in last 10 posts
+gh issue view 2 --repo pnz1990/otherness --json comments \
+  --jq '[.comments[-10:][].body | select(contains("final run") or contains("system is complete"))] | length'
+# Must be 0
+
+# 3. Verify system entered standby when queue was empty
+gh issue view 2 --repo pnz1990/otherness --json comments \
+  --jq '[.comments[-20:][].body | select(contains("Standby"))] | length'
+# Must be ≥ 1 (at least one standby entry)
+
+# 4. Verify system woke from standby when new design doc items were added
+# (validated by checking queue generated items after a vibe-vision session)
+```
+
+### Pass criteria
+
+- [ ] Last 10 batch completion posts use health signal format (GREEN/AMBER/RED)
+- [ ] Zero occurrences of "final run" or "system is complete" in last 10 posts
+- [ ] At least one standby entry in the last 20 posts
+- [ ] System woke from standby and generated a queue after new design doc items arrived (from vibe-vision or competitive observation)
+- [ ] Journey 2 (reference project) stayed GREEN for 7 consecutive days
+
+---
+
 ## Journey Status
 
 | Journey | Status | Last checked | Notes |
 |---|---|---|---|
-| 1: Build and validate itself | ✅ Passing | 2026-04-17 | validate.sh, lint.sh, test.sh all exit 0 |
-| 2: Runs correctly on reference project | ❌ Failing | 2026-04-17 | alibi `_state` last commit 2026-04-14 (>72h). `features: {}` empty — no session has run. [NEEDS HUMAN: restart otherness on alibi] |
-| 3: Self-improvement happening | ✅ Passing | 2026-04-17 | PR merged 2026-04-17; 11 skills; PROVENANCE last entry 2026-04-15 |
-| 4: CRITICAL tier protection | ✅ Passing | 2026-04-17 | No open CRITICAL PRs without needs-human; self-review protocol working |
-| 5: Starts cleanly on fresh clone | ✅ Passing | 2026-04-17 | 9 command files present; state seeds correctly |
-| 6: vibe-vision produces valid D4 artifacts | 🔲 Not validated | 2026-04-18 | Journey 6 added. Requires a live vibe-vision session to validate. |
+| 1: Build and validate itself | ✅ Passing | 2026-04-19 | validate.sh, lint.sh, test.sh all exit 0 |
+| 2: Runs correctly on reference project | ❌ Failing | 2026-04-19 | alibi `_state` last commit 2026-04-14 (5d ago). PM §5 should detect this and post [NEEDS HUMAN] once. See docs/design/16. [NEEDS HUMAN: restart otherness on alibi] |
+| 3: Self-improvement happening | ✅ Passing | 2026-04-19 | 21+ PRs merged 2026-04-18/19; 11+ skills; Stage 8 design docs added |
+| 4: CRITICAL tier protection | ✅ Passing | 2026-04-19 | CRITICAL-A/B tier split deployed; autonomous merge protocol in qa.md §3e |
+| 5: Starts cleanly on fresh clone | ✅ Passing | 2026-04-19 | 9 command files; state seeds correctly; validate.sh PASSED |
+| 6: vibe-vision produces valid D4 artifacts | ✅ Passing | 2026-04-19 | This session produced 4 design docs (14-17) + roadmap Stage 8 + DoD update. COORD will pick up 🔲 items on next run. |
+| 7: Eternal loop health signal | 🔲 Not validated | 2026-04-19 | Stage 8 design docs written. Requires implementation: health signal format, spatial coordination, vision age check. |

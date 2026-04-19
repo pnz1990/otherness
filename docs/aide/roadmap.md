@@ -2,7 +2,52 @@
 
 > Based on: docs/aide/vision.md
 
-The build order is: tooling first, then agent loop improvements, then the self-improvement flywheel.
+The build order is: tooling first, then agent loop improvements, then the self-improvement flywheel, then the eternal loop.
+
+---
+
+## Stage 8: Eternal Loop — Towards an Ever-Evolving Vision
+
+**Goal:** The system runs indefinitely. It never declares itself done. It never
+freezes. When the queue is empty, it waits. When new vision arrives — from the
+human, from competitive observation, from its own self-scanning — it wakes and
+builds. The human's only required role is to add vision. Everything else is autonomous.
+
+This stage closes the gap between "the system works" and "the system is alive."
+
+### Deliverables
+
+**14 — Stop condition and health signal framing** (`docs/design/14-eternal-loop-stop-condition.md`)
+- standalone.md: remove "final run" framing; replace with health signal reporting
+- Phase 4 SM: batch completion posts health signal format (GREEN/AMBER/RED + journeys + queue)
+- HARD RULES: "Never say 'final run' or 'complete'. Report health signal only."
+
+**15 — Multi-session spatial coordination** (`docs/design/15-multi-session-spatial-coordination.md`)
+- state.json: `file_spaces` field written at claim time
+- coord.md §1e: collision detection before claiming
+- coord.md §1c: queue generation spreads items across file spaces
+- stale watchdog clears expired file_space declarations
+
+**16 — Journey 2 reference project health** (`docs/design/16-journey-2-reference-project.md`)
+- PM §5: detect Journey 2 failure, open [NEEDS HUMAN] issue once per stall
+- PM §5g: Journey 2 stall → AMBER after 24h, RED after 72h
+- definition-of-done.md: Journey 2 gains automated check command
+
+**17 — Vision evolution cadence** (`docs/design/17-vision-evolution-cadence.md`)
+- PM §5: vision age check — suggest vibe-vision when queue empty >30 days
+- PM §5c: competitive observations written as `⚠️ Inferred` design doc stubs
+- PM §5h: emergent patterns from ✅ Present become `⚠️ Observed` stubs
+
+### The threshold for "Stage 8 is working"
+
+1. The agent completes 10 consecutive batches without saying "final run" or "complete"
+2. When the queue empties, the system enters standby and posts a GREEN health signal
+3. When a new vibe-vision session adds Future items, the system wakes from standby and begins a new batch — without human instruction
+4. Journey 2 (alibi) stays GREEN for 7 consecutive days — the reference project health gate works
+5. At least one competitive observation generates a new design doc stub that COORD picks up as a queue item
+
+### Dependencies
+Stage 7 (Perpetual Autonomous Validation — architecture in place, needs full validation)
 
 ---
 
