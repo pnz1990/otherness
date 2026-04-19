@@ -116,7 +116,7 @@
     },
     "207": {
       "title": "feat(coord): D4 classification at issue intake",
-      "state": "done",
+      "state": "in_review",
       "priority": "medium",
       "size": "s",
       "areas": [
@@ -127,13 +127,11 @@
       "branch": "feat/207",
       "worktree": "../otherness.207",
       "pr_number": 245,
-      "pr_url": "https://github.com/pnz1990/otherness/pull/245",
-      "pr_merged": true,
-      "done_at": "2026-04-19T03:20:41Z"
+      "pr_url": "https://github.com/pnz1990/otherness/pull/245"
     },
     "208": {
       "title": "feat(pm): PM \u00a75f periodic doc health scan",
-      "state": "done",
+      "state": "in_review",
       "priority": "medium",
       "size": "m",
       "areas": [
@@ -144,9 +142,7 @@
       "branch": "feat/208",
       "worktree": "../otherness.208",
       "pr_number": 246,
-      "pr_url": "https://github.com/pnz1990/otherness/pull/246",
-      "pr_merged": true,
-      "done_at": "2026-04-19T03:20:41Z"
+      "pr_url": "https://github.com/pnz1990/otherness/pull/246"
     },
     "214": {
       "title": "feat: implement /otherness.vibe-vision \u2014 validate and wire",
@@ -203,7 +199,7 @@
       "note": "Duplicate \u2014 covered by in-review PR"
     },
     "251": {
-      "state": "done",
+      "state": "in_review",
       "title": "feat: Issue body must identify design doc Future item",
       "design_doc": "01-declarative-design-driven-development.md",
       "depends_on": [],
@@ -211,9 +207,7 @@
       "assigned_at": "2026-04-18T20:06:46Z",
       "branch": "feat/251",
       "worktree": "../otherness.251",
-      "pr_number": 255,
-      "pr_merged": true,
-      "done_at": "2026-04-19T03:20:41Z"
+      "pr_number": 255
     },
     "252": {
       "state": "done",
@@ -237,7 +231,7 @@
       "done_at": "2026-04-18T21:28:40Z"
     },
     "254": {
-      "state": "done",
+      "state": "in_review",
       "title": "feat: Cross-check README/AGENTS.md claims against code",
       "design_doc": "04-documentation-health.md",
       "depends_on": [],
@@ -245,12 +239,10 @@
       "assigned_at": "2026-04-18T20:16:07Z",
       "branch": "feat/254",
       "worktree": "../otherness.254",
-      "pr_number": 257,
-      "pr_merged": true,
-      "done_at": "2026-04-19T03:20:41Z"
+      "pr_number": 257
     },
     "258": {
-      "state": "done",
+      "state": "in_review",
       "title": "feat: Codebase hygiene scan",
       "design_doc": "04-documentation-health.md",
       "depends_on": [],
@@ -258,9 +250,7 @@
       "assigned_at": "2026-04-18T20:24:01Z",
       "branch": "feat/258",
       "worktree": "../otherness.258",
-      "pr_number": 263,
-      "pr_merged": true,
-      "done_at": "2026-04-19T03:20:41Z"
+      "pr_number": 263
     },
     "259": {
       "state": "done",
@@ -314,7 +304,7 @@
       "done_at": "2026-04-18T20:46:04Z"
     },
     "269": {
-      "state": "done",
+      "state": "in_review",
       "title": "feat: Phase 1c: SM uses simulation output to trigger /otherness.learn",
       "design_doc": "11-simulation-feedback-loop.md",
       "depends_on": [],
@@ -322,40 +312,32 @@
       "assigned_at": "2026-04-18T20:47:27Z",
       "branch": "feat/269",
       "worktree": "../otherness.269",
-      "pr_number": 274,
-      "pr_merged": true,
-      "done_at": "2026-04-19T03:20:41Z"
+      "pr_number": 274
     },
     "270": {
-      "state": "done",
+      "state": "in_review",
       "title": "feat: Phase 2a: per-project calibration",
       "design_doc": "11-simulation-feedback-loop.md",
       "depends_on": [],
-      "assigned_to": "sess-314eab12",
-      "assigned_at": "2026-04-19T03:28:35Z",
+      "assigned_to": "sess-83781955",
+      "assigned_at": "2026-04-18T20:51:13Z",
       "branch": "feat/270",
       "worktree": "../otherness.270",
-      "pr_number": 275,
-      "pr_merged": true,
-      "note": "Integration cherry-pick lost content in conflict resolution \u2014 needs proper implementation",
-      "done_at": "2026-04-19T03:34:13Z"
+      "pr_number": 275
     },
     "271": {
-      "state": "done",
+      "state": "in_review",
       "title": "feat: Phase 2c: simulation results in _state",
       "design_doc": "11-simulation-feedback-loop.md",
       "depends_on": [],
-      "assigned_to": "sess-314eab12",
-      "assigned_at": "2026-04-19T03:30:20Z",
+      "assigned_to": "sess-83781955",
+      "assigned_at": "2026-04-18T20:54:25Z",
       "branch": "feat/271",
       "worktree": "../otherness.271",
-      "pr_number": 276,
-      "pr_merged": true,
-      "note": "Integration cherry-pick lost content in conflict resolution \u2014 needs proper implementation",
-      "done_at": "2026-04-19T03:34:13Z"
+      "pr_number": 276
     },
     "277": {
-      "state": "done",
+      "state": "in_review",
       "title": "feat: PM \u00a75g: simulation health score",
       "design_doc": "12-perpetual-validation.md",
       "depends_on": [],
@@ -363,13 +345,10 @@
       "assigned_at": "2026-04-18T20:59:36Z",
       "branch": "feat/277",
       "worktree": "../otherness.277",
-      "pr_number": 282,
-      "pr_merged": true,
-      "done_at": "2026-04-19T03:20:58Z",
-      "note": "Superseded by item 278 PR #283"
+      "pr_number": 282
     },
     "278": {
-      "state": "done",
+      "state": "in_review",
       "title": "feat: PM self-correction on AMBER",
       "design_doc": "12-perpetual-validation.md",
       "depends_on": [],
@@ -377,12 +356,10 @@
       "assigned_at": "2026-04-18T21:04:25Z",
       "branch": "feat/278",
       "worktree": "../otherness.278",
-      "pr_number": 283,
-      "pr_merged": true,
-      "done_at": "2026-04-19T03:20:41Z"
+      "pr_number": 283
     },
     "279": {
-      "state": "done",
+      "state": "in_review",
       "title": "feat: Dynamic definition-of-done",
       "design_doc": "12-perpetual-validation.md",
       "depends_on": [],
@@ -390,9 +367,7 @@
       "assigned_at": "2026-04-18T21:07:15Z",
       "branch": "feat/279",
       "worktree": "../otherness.279",
-      "pr_number": 284,
-      "pr_merged": true,
-      "done_at": "2026-04-19T03:20:41Z"
+      "pr_number": 284
     },
     "280": {
       "state": "done",
@@ -408,7 +383,7 @@
       "done_at": "2026-04-18T21:28:40Z"
     },
     "281": {
-      "state": "done",
+      "state": "in_review",
       "title": "feat: Self-generating validation criteria",
       "design_doc": "12-perpetual-validation.md",
       "depends_on": [],
@@ -416,164 +391,49 @@
       "assigned_at": "2026-04-18T21:09:24Z",
       "branch": "feat/281",
       "worktree": "../otherness.281",
-      "pr_number": 285,
-      "pr_merged": true,
-      "done_at": "2026-04-19T03:20:41Z"
+      "pr_number": 285
     },
-    "292": {
+    "313": {
       "state": "done",
-      "title": "feat: standalone.md: replace 'final run' framing with health signal",
-      "design_doc": "14-eternal-loop-stop-condition.md",
+      "title": "feat: agents/autonomous-vision.md \u2014 new MODE: VISION agent, no dialogue",
+      "design_doc": "18-autonomous-vision-synthesis.md",
       "depends_on": [],
-      "assigned_to": "sess-a5ad9de5",
-      "assigned_at": "2026-04-19T04:16:13Z",
-      "branch": "feat/health-signal-framing",
+      "assigned_to": "sess-3aa126c5",
+      "assigned_at": "2026-04-19T05:17:31Z",
+      "branch": "feat/313",
+      "worktree": "../otherness.313",
       "pr_merged": true,
-      "done_at": "2026-04-19T04:19:44Z",
-      "pr_number": 297
+      "done_at": "2026-04-19T05:21:00Z"
     },
-    "293": {
+    "314": {
       "state": "done",
-      "title": "feat: standalone.md HARD RULES: add rule \u2014 never say 'final run'",
-      "design_doc": "14-eternal-loop-stop-condition.md",
+      "title": "feat: SM phase trigger for autonomous vision synthesis",
+      "design_doc": "18-autonomous-vision-synthesis.md",
       "depends_on": [],
-      "assigned_to": "sess-a5ad9de5",
-      "assigned_at": "2026-04-19T04:16:13Z",
-      "branch": "feat/health-signal-framing",
+      "assigned_to": "sess-3aa126c5",
+      "assigned_at": "2026-04-19T05:07:41Z",
+      "branch": "feat/314",
       "pr_merged": true,
-      "done_at": "2026-04-19T04:19:44Z",
-      "pr_number": 297
+      "done_at": "2026-04-19T05:21:00Z"
     },
-    "294": {
+    "315": {
       "state": "done",
-      "title": "feat: Phase 4 SM: batch completion post uses health signal format",
-      "design_doc": "14-eternal-loop-stop-condition.md",
+      "title": "feat: PM \u00a75m \u26a0\ufe0f Inferred ratio check",
+      "design_doc": "18-autonomous-vision-synthesis.md",
       "depends_on": [],
-      "assigned_to": "sess-a5ad9de5",
-      "assigned_at": "2026-04-19T04:16:13Z",
-      "branch": "feat/health-signal-framing",
+      "assigned_to": "sess-3aa126c5",
+      "assigned_at": "2026-04-19T05:07:41Z",
+      "branch": "feat/315",
       "pr_merged": true,
-      "done_at": "2026-04-19T04:19:44Z",
-      "pr_number": 297
+      "done_at": "2026-04-19T05:21:00Z"
     },
-    "295": {
-      "state": "blocked",
-      "title": "feat: definition-of-done.md: Journey table Health column GREEN/AMBER/RED",
-      "design_doc": "14-eternal-loop-stop-condition.md",
-      "depends_on": [],
-      "note": "DOCS zone (docs/aide/definition-of-done.md) \u2014 requires /otherness.vibe-vision"
-    },
-    "296": {
+    "316": {
       "state": "done",
-      "title": "feat: state.json: add file_spaces field to feature entries at claim time",
-      "design_doc": "15-multi-session-spatial-coordination.md",
+      "title": "feat: COORD queue gen treats \u26a0\ufe0f Inferred identically to Future",
+      "design_doc": "18-autonomous-vision-synthesis.md",
       "depends_on": [],
-      "assigned_to": "sess-a5ad9de5",
-      "assigned_at": "2026-04-19T04:20:06Z",
-      "branch": "feat/296",
-      "worktree": "../otherness.296",
       "pr_merged": true,
-      "done_at": "2026-04-19T04:24:37Z",
-      "pr_number": 298
-    },
-    "299": {
-      "state": "done",
-      "title": "feat: coord.md \u00a71c spatially diverse queue generation",
-      "design_doc": "15-multi-session-spatial-coordination.md",
-      "depends_on": [],
-      "assigned_to": "sess-a5ad9de5",
-      "assigned_at": "2026-04-19T04:29:03Z",
-      "branch": "feat/coord-spatial-diverse",
-      "pr_merged": true,
-      "done_at": "2026-04-19T04:32:26Z"
-    },
-    "300": {
-      "state": "done",
-      "title": "feat: AREA_TO_SPACES extract to otherness-config.yaml",
-      "design_doc": "15-multi-session-spatial-coordination.md",
-      "depends_on": [],
-      "assigned_to": "sess-a5ad9de5",
-      "assigned_at": "2026-04-19T04:29:04Z",
-      "branch": "feat/coord-spatial-diverse",
-      "pr_merged": true,
-      "done_at": "2026-04-19T04:32:26Z"
-    },
-    "301": {
-      "state": "done",
-      "title": "feat: PM \u00a75 reference project health check",
-      "design_doc": "16-journey-2-reference-project.md",
-      "depends_on": [],
-      "assigned_to": "sess-a5ad9de5",
-      "assigned_at": "2026-04-19T04:26:32Z",
-      "branch": "feat/301",
-      "pr_merged": true,
-      "done_at": "2026-04-19T04:28:43Z"
-    },
-    "302": {
-      "state": "done",
-      "title": "feat: PM \u00a75g Journey 2 failure AMBER/RED escalation",
-      "design_doc": "16-journey-2-reference-project.md",
-      "depends_on": [],
-      "assigned_to": "sess-a5ad9de5",
-      "assigned_at": "2026-04-19T04:32:44Z",
-      "branch": "feat/journey2-escalation",
-      "pr_merged": true,
-      "done_at": "2026-04-19T04:36:10Z"
-    },
-    "303": {
-      "state": "done",
-      "title": "feat: test.sh check 5b returns specific failure reason",
-      "design_doc": "16-journey-2-reference-project.md",
-      "depends_on": [],
-      "assigned_to": "sess-a5ad9de5",
-      "assigned_at": "2026-04-19T04:32:44Z",
-      "branch": "feat/journey2-escalation",
-      "pr_merged": true,
-      "done_at": "2026-04-19T04:36:10Z"
-    },
-    "307": {
-      "state": "done",
-      "title": "feat: PM \u00a75 vision age check \u2014 suggest vibe-vision when queue empty >30d",
-      "design_doc": "17-vision-evolution-cadence.md",
-      "depends_on": [],
-      "assigned_to": "sess-a5ad9de5",
-      "assigned_at": "2026-04-19T04:37:45Z",
-      "branch": "feat/vision-evolution",
-      "pr_merged": true,
-      "done_at": "2026-04-19T04:42:03Z"
-    },
-    "308": {
-      "state": "done",
-      "title": "feat: PM \u00a75c competitive findings as \u26a0\ufe0f Inferred design doc stubs",
-      "design_doc": "17-vision-evolution-cadence.md",
-      "depends_on": [],
-      "assigned_to": "sess-a5ad9de5",
-      "assigned_at": "2026-04-19T04:37:45Z",
-      "branch": "feat/vision-evolution",
-      "pr_merged": true,
-      "done_at": "2026-04-19T04:42:03Z"
-    },
-    "309": {
-      "state": "done",
-      "title": "feat: PM \u00a75h extension detect emergent patterns in Present items",
-      "design_doc": "17-vision-evolution-cadence.md",
-      "depends_on": [],
-      "assigned_to": "sess-a5ad9de5",
-      "assigned_at": "2026-04-19T04:37:45Z",
-      "branch": "feat/vision-evolution",
-      "pr_merged": true,
-      "done_at": "2026-04-19T04:42:03Z"
-    },
-    "310": {
-      "state": "done",
-      "title": "feat: docs/design \u26a0\ufe0f Inferred and \u26a0\ufe0f Observed marker conventions",
-      "design_doc": "17-vision-evolution-cadence.md",
-      "depends_on": [],
-      "assigned_to": "sess-a5ad9de5",
-      "assigned_at": "2026-04-19T04:37:45Z",
-      "branch": "feat/vision-evolution",
-      "pr_merged": true,
-      "done_at": "2026-04-19T04:42:03Z"
+      "done_at": "2026-04-19T05:21:00Z"
     }
   },
   "engineer_slots": {
@@ -591,20 +451,10 @@
       "last_seen": "2026-04-18T21:35:09Z",
       "item": "standby-60",
       "cycle": 60
-    },
-    "sess-ebfc00f8": {
-      "last_seen": "2026-04-19T03:21:19Z",
-      "item": "complete",
-      "cycle": 100
-    },
-    "sess-314eab12": {
-      "last_seen": "2026-04-19T03:35:00Z",
-      "item": "complete",
-      "cycle": 10
     }
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 58,
-  "pm_cycle_count": 30
+  "sm_cycle_count": 51,
+  "pm_cycle_count": 24
 }
