@@ -387,14 +387,32 @@ PYEOF
     #      - N/A — roadmap item with no docs/design/ file yet.
     #      - **Note**: Creating a `docs/design/<area>.md` file should be part of this item's work
     #        (see eng.md §2b O1). The design doc gate: no spec before design doc.
-    #
-    #      ## Summary
-    #      <one paragraph>
-    #
-    # 3. Create max 5 issues. Prefer size/s or size/xs labels.
-    #    gh issue create --repo $REPO --title "feat(<area>): <desc>" \
-    #      --label "otherness,kind/enhancement,area/<area>,size/s,priority/medium" \
-    #      --body "<body from step 2>"
+     #
+     #      ## Summary
+     #      <one paragraph>
+     #
+     # 3. Spatial diversity preference: before creating issues, sort new_items to prefer
+     #    items from different area labels. This reduces parallel session file collisions.
+     #    [AI-STEP]
+     #    AREA_TO_SPACES_CONFIG = python3 read from otherness-config.yaml maqa.area_file_spaces if present
+     #    seen_areas = set()
+     #    sorted_items = []
+     #    # First pass: one item per area
+     #    for item in new_items:
+     #        area = <derive from item labels or design doc name>
+     #        if area not in seen_areas:
+     #            sorted_items.append(item)
+     #            seen_areas.add(area)
+     #    # Second pass: remaining items (same area — no deadlock)
+     #    for item in new_items:
+     #        if item not in sorted_items:
+     #            sorted_items.append(item)
+     #    new_items = sorted_items
+     #
+     # 4. Create max 5 issues from sorted_items. Prefer size/s or size/xs labels.
+     #    gh issue create --repo $REPO --title "feat(<area>): <desc>" \
+     #      --label "otherness,kind/enhancement,area/<area>,size/s,priority/medium" \
+     #      --body "<body from step 2>"
 
     # Write state, release lock, post summary
     export STATE_MSG="[COORD] queue generated"
