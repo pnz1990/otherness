@@ -27,6 +27,22 @@ Shape the vision first, then the team will implement.
 ```bash
 git -C ~/.otherness pull --quiet 2>/dev/null || true
 echo "[BOUNDED] Agent files up to date."
+
+# Sync command files from ~/.otherness — two-way: add new, remove stale.
+if [ -d ~/.otherness/.opencode/command ] && [ -d .opencode/command ]; then
+  _SYNCED=0
+  for _src in ~/.otherness/.opencode/command/otherness.*.md; do
+    [ -f "$_src" ] || continue
+    _fname=$(basename "$_src"); _dest=".opencode/command/$_fname"
+    if ! cmp -s "$_src" "$_dest" 2>/dev/null; then cp "$_src" "$_dest"; _SYNCED=1; fi
+  done
+  for _dest in .opencode/command/otherness.*.md; do
+    [ -f "$_dest" ] || continue
+    _fname=$(basename "$_dest")
+    if [ ! -f ~/.otherness/.opencode/command/"$_fname" ]; then rm "$_dest"; _SYNCED=1; fi
+  done
+  [ $_SYNCED -eq 1 ] && echo "[BOUNDED] Command files synced from ~/.otherness."
+fi
 ```
 
 ## Step 2 — Parse boundary from prompt or BOUNDARY file

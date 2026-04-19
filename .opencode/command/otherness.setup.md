@@ -84,23 +84,37 @@ fi
 ## Step 4 — Deploy otherness command files into this project
 
 OpenCode reads slash commands from `.opencode/command/` in the current project directory.
-Copy the command files from `~/.otherness` so `/otherness.run`, `/otherness.onboard`, etc. work.
+Sync the command files from `~/.otherness` — two-way: add new commands, remove stale ones.
+Non-`otherness.*` files are never touched (project-custom commands stay intact).
 
 ```bash
 if [ -d ~/.otherness/.opencode/command ]; then
   mkdir -p .opencode/command
-  # Copy all otherness.*.md commands — skip any that already exist (don't overwrite customisations)
+  _SYNCED=0
+
+  # Add or update all otherness.* commands
   for src in ~/.otherness/.opencode/command/otherness.*.md; do
-    fname=$(basename "$src")
-    dest=".opencode/command/$fname"
-    if [ ! -f "$dest" ]; then
+    [ -f "$src" ] || continue
+    fname=$(basename "$src"); dest=".opencode/command/$fname"
+    if ! cmp -s "$src" "$dest" 2>/dev/null; then
       cp "$src" "$dest"
-      echo "  Deployed: $fname"
-    else
-      echo "  Already present (skipped): $fname"
+      echo "  Synced: $fname"
+      _SYNCED=1
     fi
   done
-  echo "Commands deployed to .opencode/command/"
+
+  # Remove stale otherness.* commands no longer in ~/.otherness
+  for dest in .opencode/command/otherness.*.md; do
+    [ -f "$dest" ] || continue
+    fname=$(basename "$dest")
+    if [ ! -f ~/.otherness/.opencode/command/"$fname" ]; then
+      rm "$dest"
+      echo "  Removed stale: $fname"
+      _SYNCED=1
+    fi
+  done
+
+  [ $_SYNCED -eq 1 ] && echo "Commands synced in .opencode/command/" || echo "Commands already up to date."
 else
   echo "WARNING: ~/.otherness/.opencode/command not found. Clone otherness first (Step 3)."
 fi
