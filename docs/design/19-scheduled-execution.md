@@ -147,8 +147,8 @@ escalate permissions beyond what the workflow grants.
 - ✅ `otherness-config-template.yaml`: `schedule` section added, commented by default with full setup instructions (PR #321-323, 2026-04-19)
 
 ## Future (🔲)
-- 🔲 `scripts/validate.sh`: check that scheduled workflow file exists if `schedule.cron` is set in config
-- 🔲 `/otherness.setup` and `/otherness.onboard`: add step to deploy the scheduled workflow during project setup
+- ✅ `scripts/validate.sh`: checks that `.github/workflows/otherness-scheduled.yml` exists when `schedule.cron` is configured; fails with clear message if missing (PR #324-325, 2026-04-19)
+- ✅ `/otherness.setup`: "activate scheduled loop" section added to Done instructions (PR #324-325, 2026-04-19)
 
 ---
 
