@@ -79,12 +79,11 @@ escalation handles future stalls.
 ## Present (✅)
 
 - ✅ PM §5j: reference project health check — reads ref project from config, checks _state age >72h, opens [NEEDS HUMAN] issue once per stall (duplicate-suppressed) (PR #301, 2026-04-19)
+- ✅ PM §5j Step 3b: AMBER/RED escalation — Journey 2 stall >72h maps to AMBER; >7d maps to RED; propagates to PM §5g overall health signal (PR #302-303, 2026-04-19)
+- ✅ test.sh check 5b: outputs STALE_REASON with specific stall duration + exports JOURNEY2_STALE_HOURS for PM consumption (PR #302-303, 2026-04-19)
 
 ## Future (🔲)
 
-- 🔲 PM §5: reference project health check — detect when Journey 2 is failing, open [NEEDS HUMAN] issue once
-- 🔲 PM §5g: Journey 2 failure maps to AMBER after 24h, RED after 72h
-- 🔲 test.sh: check 5b returns the specific reason for failure (not just pass/fail) for better PM reporting
 - 🔲 definition-of-done.md: Journey 2 gains automated check command using the existing test.sh check 5b
 
 ---
