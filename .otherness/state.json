@@ -393,47 +393,51 @@
       "worktree": "../otherness.281",
       "pr_number": 285
     },
-    "313": {
-      "state": "done",
-      "title": "feat: agents/autonomous-vision.md \u2014 new MODE: VISION agent, no dialogue",
-      "design_doc": "18-autonomous-vision-synthesis.md",
+    "321": {
+      "title": "feat: .github/workflows/otherness-scheduled.yml",
+      "design_doc": "19-scheduled-execution.md",
       "depends_on": [],
-      "assigned_to": "sess-3aa126c5",
-      "assigned_at": "2026-04-19T05:17:31Z",
-      "branch": "feat/313",
-      "worktree": "../otherness.313",
+      "state": "done",
       "pr_merged": true,
-      "done_at": "2026-04-19T05:21:00Z"
+      "done_at": "2026-04-19T05:47:34Z"
     },
-    "314": {
-      "state": "done",
-      "title": "feat: SM phase trigger for autonomous vision synthesis",
-      "design_doc": "18-autonomous-vision-synthesis.md",
+    "322": {
+      "title": "feat: otherness-config.yaml schedule fields",
+      "design_doc": "19-scheduled-execution.md",
       "depends_on": [],
-      "assigned_to": "sess-3aa126c5",
-      "assigned_at": "2026-04-19T05:07:41Z",
-      "branch": "feat/314",
+      "state": "done",
       "pr_merged": true,
-      "done_at": "2026-04-19T05:21:00Z"
+      "done_at": "2026-04-19T05:47:34Z"
     },
-    "315": {
-      "state": "done",
-      "title": "feat: PM \u00a75m \u26a0\ufe0f Inferred ratio check",
-      "design_doc": "18-autonomous-vision-synthesis.md",
+    "323": {
+      "title": "feat: otherness-config-template.yaml schedule section",
+      "design_doc": "19-scheduled-execution.md",
       "depends_on": [],
-      "assigned_to": "sess-3aa126c5",
-      "assigned_at": "2026-04-19T05:07:41Z",
-      "branch": "feat/315",
+      "state": "done",
       "pr_merged": true,
-      "done_at": "2026-04-19T05:21:00Z"
+      "done_at": "2026-04-19T05:47:34Z"
     },
-    "316": {
-      "state": "done",
-      "title": "feat: COORD queue gen treats \u26a0\ufe0f Inferred identically to Future",
-      "design_doc": "18-autonomous-vision-synthesis.md",
+    "324": {
+      "title": "feat: scripts/validate.sh check scheduled workflow exists",
+      "design_doc": "19-scheduled-execution.md",
       "depends_on": [],
+      "state": "done",
+      "assigned_to": "sess-c1ba8f84",
+      "assigned_at": "2026-04-19T05:47:34Z",
+      "branch": "feat/schedule-integration",
       "pr_merged": true,
-      "done_at": "2026-04-19T05:21:00Z"
+      "done_at": "2026-04-19T05:50:52Z"
+    },
+    "325": {
+      "title": "feat: /otherness.setup and /otherness.onboard deploy scheduled workflow",
+      "design_doc": "19-scheduled-execution.md",
+      "depends_on": [],
+      "state": "done",
+      "assigned_to": "sess-c1ba8f84",
+      "assigned_at": "2026-04-19T05:47:34Z",
+      "branch": "feat/schedule-integration",
+      "pr_merged": true,
+      "done_at": "2026-04-19T05:50:52Z"
     }
   },
   "engineer_slots": {
