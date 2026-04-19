@@ -556,14 +556,38 @@ PYEOF
   gh issue comment $ISSUE_NUM --repo $REPO \
     --body "[$MY_SESSION_ID | otherness@${OTHERNESS_VERSION:-unknown}] Starting implementation. Branch: \`$MY_BRANCH\`" 2>/dev/null
 
-  # D4 check — scan recent human comments on the claimed issue for imperative instructions
-  # [AI-STEP] Fetch the last 5 comments on issue $ISSUE_NUM via:
-  #   gh issue view $ISSUE_NUM --repo $REPO --comments --json comments
-  # For each comment NOT starting with a role badge ([🎯 [🔨 [🔍 [🔄 [📋 [sess-):
-  #   Check if it contains imperative language (add, fix, update, change, make, create, remove)
-  #   If yes: post a [📋 D4 TRANSLATION] block on the issue (same format as session-start D4)
-  #   Wait 60s for human correction. Then create a new GitHub issue from the translation.
-  # If no imperative human comments: no-op, proceed to Phase 2.
+  # D4 classification at issue intake — classify the issue title/body before speccing.
+  # [AI-STEP]
+  # Step 1: Read the issue title and body.
+  #   ISSUE_DATA=$(gh issue view $ISSUE_NUM --repo $REPO --json title,body,comments \
+  #     --jq '{title: .title, body: .body, comments: [.comments[-5:][].body]}')
+  #
+  # Step 2: Classify the TITLE.
+  #   - DECLARATIVE: title matches /^(feat|fix|chore|docs|refactor|test|perf|ci|build)\(/ 
+  #     (conventional-commit format), OR title directly references a design doc 🔲 item.
+  #   - INFRA: title is clearly maintenance (bump, fix ci, fix lint, update dep, clean).
+  #   - IMPERATIVE: anything else — imperative verb in title (add, make, update, remove, etc.).
+  #   Title classification overrides body content — a feat(scope): title is DECLARATIVE
+  #   even if the body uses imperative language in examples or "what correct looks like" sections.
+  #
+  # Step 3: If IMPERATIVE (title only — do NOT re-classify DECLARATIVE issues):
+  #   Post a [📋 D4 TRANSLATION] block on the issue:
+  #     gh issue comment $ISSUE_NUM --repo $REPO --body "[📋 D4 TRANSLATION]
+  #   Heard:     \"<issue title verbatim>\"
+  #   Intent:    <one sentence — what this feature area achieves>
+  #   D4 layer:  <vision | roadmap | design doc | spec>
+  #   Artifact:  <exact text of the design doc entry or roadmap item this would create>
+  #   Proceeding in 60s unless you correct the translation."
+  #   Then: sleep 60
+  #
+  # Step 4: Scan the last 5 comments for human instructions not from the agent.
+  #   For each comment NOT starting with a role badge ([🎯 [🔨 [🔍 [🔄 [📋 [sess-):
+  #   If it contains imperative language (add, fix, update, change, make, create, remove):
+  #     Post a [📋 D4 TRANSLATION] block (as above, but for the comment text).
+  #     Wait 60s for human correction. Post the translation as a NEW GitHub issue.
+  #
+  # Step 5: If DECLARATIVE or INFRA (step 2), and no imperative comments (step 4):
+  #   No-op — proceed to Phase 2 immediately.
 
 else
   echo "[COORD] ⚡ $ITEM_ID already claimed — picking another."
