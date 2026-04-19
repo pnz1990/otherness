@@ -84,15 +84,14 @@ spread across the codebase.
 
 ## Present (✅)
 
-*(Not yet implemented.)*
+- ✅ state.json: `file_spaces` field added to feature entries at claim time; cleared on stale reset (PR #296, 2026-04-19)
+- ✅ coord.md §1e: spatial collision detection [AI-STEP] — AREA_TO_SPACES map, candidate vs active file_spaces overlap check before claiming (PR #296, 2026-04-19)
+- ✅ coord.md §1d: stale watchdog clears `file_spaces` when resetting stale assigned items (PR #296, 2026-04-19)
 
 ## Future (🔲)
 
-- 🔲 state.json: add `file_spaces` field to feature entries (written at claim time)
-- 🔲 coord.md §1e: collision detection — read active file_spaces before claiming
-- 🔲 coord.md §1d: stale watchdog clears file_space declarations >2h with no heartbeat
 - 🔲 coord.md §1c: queue generation prefers spatially diverse items when generating batch
-- 🔲 AREA_TO_SPACES: canonical map of area labels to file space patterns (config or hardcoded in coord.md)
+- 🔲 AREA_TO_SPACES: extract to otherness-config.yaml for project-specific customization
 
 ---
 
