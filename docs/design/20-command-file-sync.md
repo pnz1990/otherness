@@ -7,69 +7,76 @@
 
 ## The problem
 
-When otherness adds a new command (like `/otherness.vibe-vision`), existing projects
-never receive it. The initial `/otherness.setup` copies command files with
-`if [ ! -f "$dest" ]` — a "skip if exists" policy that prevents overwriting
-customizations. But it also means new commands added to `~/.otherness` after initial
-setup are silently absent from every existing project.
+When otherness adds a new command (`/otherness.vibe-vision`), existing projects never get it. When otherness removes a command (`otherness.cross-agent-monitor`, `otherness.pause`), existing projects keep the stale file forever. Projects set up once silently drift from the current state of `~/.otherness`.
 
-The symptom: a project set up before `/otherness.vibe-vision` was added will never
-have that command available, unless the operator manually re-runs setup or copies the
-file by hand.
+This is a broken user experience. A person using otherness on multiple projects should never have to think about command file management. Commands should always match the installed version of otherness — the same guarantee speckit gives by bundling commands in its binary.
 
 ---
 
-## The fix: sync on every session startup
+## The model: bundle with the tool update
 
-Command files in `.opencode/command/otherness.*.md` are not project-customized files.
-They are otherness infrastructure — the same across all projects, updated when otherness
-updates. They should be treated the same as `~/.otherness/agents/` files: pulled from
-the source on every session startup.
+Speckit solves this by packaging commands inside the CLI binary. When you upgrade speckit, the commands update automatically. There is no separate "sync commands" step.
 
-The SELF-UPDATE block in `standalone.md` already runs `git -C ~/.otherness pull` on
-every startup. Immediately after, it should sync command files from `~/.otherness`
-into `.opencode/command/`.
+Otherness is a git repo, not a binary. The equivalent guarantee: when `~/.otherness` updates (which happens on every session startup via `git pull`), the project's command files update in the same step. One operation. Zero user action.
 
-### The sync rule
+---
+
+## The fix: full sync in SELF-UPDATE
+
+The `standalone.md` SELF-UPDATE block already runs `git -C ~/.otherness pull` on every session startup. The fix adds one more step immediately after: **a full two-way sync of `otherness.*.md` command files**.
 
 ```bash
 # After git -C ~/.otherness pull:
-# Sync all otherness command files from ~/.otherness into this project's .opencode/command/
-if [ -d ~/.otherness/.opencode/command ]; then
-  mkdir -p .opencode/command
+
+if [ -d ~/.otherness/.opencode/command ] && [ -d .opencode/command ]; then
+  SYNCED=0
+
+  # 1. Add or update: copy all otherness.* commands from ~/.otherness
   for src in ~/.otherness/.opencode/command/otherness.*.md; do
+    [ -f "$src" ] || continue
     fname=$(basename "$src")
     dest=".opencode/command/$fname"
-    # Always overwrite — these are infrastructure files, not project customizations.
-    # If a project needs a custom version, it should use a non-otherness.* filename.
-    cp "$src" "$dest"
+    # Copy only if content differs (avoids dirtying git state unnecessarily)
+    if ! cmp -s "$src" "$dest" 2>/dev/null; then
+      cp "$src" "$dest"
+      SYNCED=1
+    fi
   done
-  echo "[STANDALONE] Command files synced from ~/.otherness"
+
+  # 2. Remove stale: delete any otherness.* commands not in ~/.otherness
+  for dest in .opencode/command/otherness.*.md; do
+    [ -f "$dest" ] || continue
+    fname=$(basename "$dest")
+    if [ ! -f ~/.otherness/.opencode/command/"$fname" ]; then
+      rm "$dest"
+      SYNCED=1
+    fi
+  done
+
+  [ $SYNCED -eq 1 ] && echo "[STANDALONE] Command files synced from ~/.otherness."
 fi
 ```
 
-### The naming convention
-
-`otherness.*.md` filenames in `.opencode/command/` are owned by otherness. They are
-always overwritten on sync. Projects that need a custom version of a command should
-use a different filename (e.g. `run.md` instead of `otherness.run.md`).
-
-Non-otherness command files in `.opencode/command/` are never touched by the sync.
+Two directions. Files added to `~/.otherness` appear in the project. Files removed from `~/.otherness` disappear from the project. Content-diff before copying avoids unnecessary git dirty state.
 
 ---
 
-## What this means for existing projects
+## The naming convention
 
-On the next `/otherness.run` (or scheduled run), the SELF-UPDATE block runs the sync.
-All missing commands appear. All outdated commands update. The human does nothing.
+`otherness.*.md` filenames in `.opencode/command/` are owned by otherness. They sync automatically. Projects that need a custom command should use a non-`otherness.*` filename (`run.md`, `build.md`, etc.) — those are never touched by the sync.
 
 ---
 
-## What this means for `/otherness.upgrade`
+## What this fixes immediately
 
-The upgrade command shows version information and helps with pinning. It should also
-explicitly mention command sync — reassuring the operator that commands are
-automatically kept current. No additional action needed in upgrade for this.
+On the next `/otherness.run` (or scheduled run) on any project:
+- `otherness.vibe-vision.md` appears ✓
+- `otherness.arch-audit.md` appears ✓
+- `otherness.onboard.md` appears ✓
+- `otherness.cross-agent-monitor.md` disappears ✓
+- `otherness.pause.md` disappears ✓
+
+No human action. No re-running setup. No manual file operations.
 
 ---
 
@@ -79,48 +86,49 @@ automatically kept current. No additional action needed in upgrade for this.
 
 ## Future (🔲)
 
-- 🔲 `standalone.md` SELF-UPDATE: add command file sync step after `git -C ~/.otherness pull`
+- 🔲 `standalone.md` SELF-UPDATE: add full two-way command sync (add new + remove stale)
 - 🔲 `bounded-standalone.md`: same sync step
-- 🔲 `/otherness.upgrade`: add note that command files are auto-synced on session startup
-- 🔲 `/otherness.setup`: change copy logic from "skip if exists" to "always overwrite otherness.* files"
+- 🔲 `.opencode/command/otherness.setup.md` Step 4: change "skip if exists" to "always overwrite + remove stale"
+- 🔲 `.github/workflows/otherness-scheduled.yml`: add command sync step after `git clone ~/.otherness` (scheduled runs start from scratch — no .opencode/command/ yet)
 
 ---
 
 ## Zone 1 — Obligations
 
-**O1 — standalone.md SELF-UPDATE syncs command files on every startup.**
-After `git -C ~/.otherness pull`, all `otherness.*.md` files from
-`~/.otherness/.opencode/command/` are copied to `.opencode/command/` in the project.
-Existing files are overwritten. Non-otherness files are never touched.
+**O1 — standalone.md SELF-UPDATE performs a full two-way sync after every pull.**
+Add: copy all `otherness.*.md` from `~/.otherness` if content differs. Remove any
+`otherness.*.md` in the project that no longer exist in `~/.otherness`.
 
-**O2 — The sync is silent on success, logged on failure.**
-`echo "[STANDALONE] Command files synced"` only if files were actually updated.
-No output if nothing changed.
+**O2 — The sync is silent when nothing changed, logs one line when it updates.**
+`echo "[STANDALONE] Command files synced from ~/.otherness."` only when at least one
+file was added, updated, or removed.
 
-**O3 — `/otherness.setup` Step 4 changes from "skip if exists" to "always overwrite".**
-The initial setup should also always install the latest version of each command,
-not skip if an older version is present.
+**O3 — Non-`otherness.*` files in `.opencode/command/` are never touched.**
 
-**O4 — Projects can customize commands using non-`otherness.*` filenames.**
-This is the convention that preserves project autonomy while enabling automatic sync.
+**O4 — The scheduled workflow syncs commands after cloning `~/.otherness`.**
+The scheduled runner starts with a fresh checkout that has no `.opencode/command/`
+from `~/.otherness`. It must mkdir and copy after the clone step.
+
+**O5 — `/otherness.setup` Step 4 is updated to match this logic.**
+The initial setup should also perform the full sync (overwrite + remove stale) rather
+than the old "skip if exists" behavior.
 
 ---
 
 ## Zone 2 — Implementer's judgment
 
-- Whether to diff before copying (avoid unnecessary file changes triggering git dirty state):
-  copy only if content differs. Use `cmp -s "$src" "$dest" || cp "$src" "$dest"` pattern.
-- Whether to commit the updated command files automatically: no. The session works with
-  the files in the working tree. If the operator wants to commit them, they can. The
-  files are in `.gitignore` or tracked — either way the sync works.
-- CRITICAL-A or CRITICAL-B for standalone.md change: the sync adds one executable
-  bash block (not an [AI-STEP] comment). CRITICAL-A. 5-check self-review before merge.
+- CRITICAL-A classification: standalone.md adds executable bash (not [AI-STEP] comments).
+  5-check self-review. Autonomous merge if all pass.
+- Whether to commit the synced files: no. Working tree sync is sufficient.
+- Whether to log each file individually: no. One summary line is enough.
+- bounded-standalone.md: it wraps standalone.md, so the SELF-UPDATE block there
+  needs the same sync step.
 
 ---
 
 ## Zone 3 — Scoped out
 
-- Syncing non-command files from ~/.otherness into projects (agents/ are already
-  global via git pull, not per-project copies)
-- Two-way sync (projects never push back to ~/.otherness)
-- Versioned command files (all projects get the same version as ~/.otherness)
+- Syncing non-command files (agents/ syncs globally via git pull, not per-project)
+- Two-way sync pushing project customizations back to ~/.otherness
+- Versioned command files per project (all projects get the same version as ~/.otherness)
+
