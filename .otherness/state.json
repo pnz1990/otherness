@@ -419,6 +419,36 @@
       "pr_number": 285,
       "pr_merged": true,
       "done_at": "2026-04-19T03:20:41Z"
+    },
+    "292": {
+      "state": "todo",
+      "title": "feat: standalone.md: replace 'final run' framing with health signal",
+      "design_doc": "14-eternal-loop-stop-condition.md",
+      "depends_on": []
+    },
+    "293": {
+      "state": "todo",
+      "title": "feat: standalone.md HARD RULES: add rule \u2014 never say 'final run'",
+      "design_doc": "14-eternal-loop-stop-condition.md",
+      "depends_on": []
+    },
+    "294": {
+      "state": "todo",
+      "title": "feat: Phase 4 SM: batch completion post uses health signal format",
+      "design_doc": "14-eternal-loop-stop-condition.md",
+      "depends_on": []
+    },
+    "295": {
+      "state": "todo",
+      "title": "feat: definition-of-done.md: Journey table Health column GREEN/AMBER/RED",
+      "design_doc": "14-eternal-loop-stop-condition.md",
+      "depends_on": []
+    },
+    "296": {
+      "state": "todo",
+      "title": "feat: state.json: add file_spaces field to feature entries at claim time",
+      "design_doc": "15-multi-session-spatial-coordination.md",
+      "depends_on": []
     }
   },
   "engineer_slots": {
