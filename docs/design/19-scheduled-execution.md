@@ -1,6 +1,6 @@
 # 19: Scheduled Execution — The Loop That Never Needs You to Press Play
 
-> Status: Active | Created: 2026-04-19
+> Status: Active | Created: 2026-04-19 | Updated: 2026-04-19
 > Applies to: otherness itself and all managed projects
 
 ---
@@ -24,14 +24,151 @@ with the `/otherness.run` prompt, and exits. The next cron trigger does the same
 
 The loop runs every N hours. No human required.
 
+---
+
+## Credential model
+
+**The workflow uses Bedrock via OIDC — no stored API keys.**
+
+AWS credentials are obtained at runtime by assuming an IAM role via GitHub's OIDC
+token. No `ANTHROPIC_API_KEY` or `AWS_ACCESS_KEY_ID` is stored anywhere. The IAM
+role (`github-bedrock-key`) is scoped to the `pnz1990/*` GitHub org and grants only
+`bedrock:InvokeModel` and related read permissions.
+
+This is required for Amazon internal accounts (Isengard). Long-lived IAM user keys
+in Isengard accounts trigger the Amazon key rotation campaign and generate security
+findings. OIDC is the policy-compliant mechanism.
+
 ```yaml
-# .github/workflows/otherness-scheduled.yml
+- name: Configure AWS credentials (Bedrock via OIDC)
+  uses: aws-actions/configure-aws-credentials@v4
+  with:
+    role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+    role-session-name: otherness-bedrock
+    aws-region: us-east-1
+```
+
+**Three secrets are required per repo:**
+
+| Secret | Value | Purpose |
+|--------|-------|---------|
+| `AWS_ROLE_ARN` | `arn:aws:iam::569190534191:role/github-bedrock-key` | OIDC role for Bedrock |
+| `AWS_ACCOUNT_ID` | `569190534191` | Account reference |
+| `AWS_DEFAULT_REGION` | `us-east-1` | Bedrock region |
+
+Run `scripts/setup-github-bedrock-key.sh --update-secrets owner/repo` to push all
+three to a new project repo.
+
+---
+
+## GitHub token model
+
+**The workflow uses a PAT (`GH_TOKEN`), not `GITHUB_TOKEN`.**
+
+`GITHUB_TOKEN` (the built-in Actions token) intentionally cannot trigger other
+workflows when it pushes commits. This means: the agent merges a PR, the CI workflow
+does not run, the agent thinks CI passed because nothing ran. That is a silent failure.
+
+A PAT stored as `GH_TOKEN` does not have this restriction. Pushes from a PAT trigger
+other workflows normally.
+
+The PAT must have `repo` and `workflow` scopes.
+
+The workflow uses `GH_TOKEN` for:
+- `actions/checkout` `token:` — so pushes from the checkout trigger CI
+- `gh auth login` — so the `gh` CLI uses the full PAT
+- `GITHUB_TOKEN` env override in the OpenCode step — so all GitHub API calls use the PAT
+
+```yaml
+- uses: actions/checkout@v4
+  with:
+    token: ${{ secrets.GH_TOKEN }}
+
+- name: Authenticate gh CLI
+  env:
+    GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  run: |
+    echo "$GH_TOKEN" | gh auth login --with-token
+    gh auth setup-git
+
+- name: Run otherness
+  uses: anomalyco/opencode/github@latest
+  env:
+    GH_TOKEN:     ${{ secrets.GH_TOKEN }}
+    GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+```
+
+---
+
+## Required job permissions
+
+```yaml
+permissions:
+  id-token: write        # AWS OIDC token exchange
+  contents: write        # push commits, create/merge branches
+  pull-requests: write   # open/update/merge PRs, post review comments
+  issues: write          # create/label/close issues, post comments
+  actions: write         # trigger other workflows programmatically
+  statuses: write        # post commit statuses
+```
+
+`id-token: write` is required for OIDC. Without it, the `configure-aws-credentials`
+step fails with a permissions error. All others are required for the agent to operate
+its full loop.
+
+---
+
+## Git identity
+
+The workflow sets a bot identity so commits are clearly machine-generated:
+
+```yaml
+- name: Configure git identity
+  run: |
+    git config --global user.name  "otherness[bot]"
+    git config --global user.email "otherness[bot]@users.noreply.github.com"
+```
+
+---
+
+## Per-project cron configuration
+
+The cadence is set in two places that must stay in sync:
+
+1. **The workflow file** — the `cron:` value under `on.schedule`
+2. **`otherness-config.yaml`** — the `schedule.cron` field (read by the agent to
+   report cadence in health signals)
+
+```yaml
+# otherness-config.yaml
+schedule:
+  cron: "0 * * * *"    # every hour — kardinal-promoter
+  model: amazon-bedrock/global.anthropic.claude-sonnet-4-6
+```
+
+Reference cadences:
+
+| Project type | Cron | Rationale |
+|---|---|---|
+| Active development | `0 * * * *` | Every hour — kardinal-promoter |
+| Self-improvement | `0 */6 * * *` | Every 6 hours — otherness itself |
+| Standby / low-churn | `0 */12 * * *` | Every 12 hours |
+
+The cron in the workflow file is the authoritative source. `otherness-config.yaml`
+is informational (used by the agent for reporting). If they disagree, the workflow
+file wins.
+
+---
+
+## The full workflow template
+
+```yaml
 name: otherness scheduled run
 
 on:
   schedule:
-    - cron: "0 */6 * * *"  # every 6 hours
-  workflow_dispatch:         # manual trigger for testing
+    - cron: "0 */6 * * *"   # override per project
+  workflow_dispatch:
 
 jobs:
   otherness:
@@ -41,19 +178,52 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
+      actions: write
+      statuses: write
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: false
+          token: ${{ secrets.GH_TOKEN }}
 
-      - name: Self-update otherness agent files
-        run: git clone --quiet https://github.com/pnz1990/otherness.git ~/.otherness
+      - name: Configure git identity
+        run: |
+          git config --global user.name  "otherness[bot]"
+          git config --global user.email "otherness[bot]@users.noreply.github.com"
+
+      - name: Install otherness agent files
+        run: git clone --quiet --depth 1 https://github.com/pnz1990/otherness.git ~/.otherness
+
+      - name: Sync otherness command files
+        run: |
+          mkdir -p .opencode/command
+          for src in ~/.otherness/.opencode/command/otherness.*.md; do
+            [ -f "$src" ] || continue
+            fname=$(basename "$src"); dest=".opencode/command/$fname"
+            if ! cmp -s "$src" "$dest" 2>/dev/null; then cp "$src" "$dest"; fi
+          done
+
+      - name: Configure AWS credentials (Bedrock via OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: otherness-bedrock
+          aws-region: us-east-1
+
+      - name: Authenticate gh CLI
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          echo "$GH_TOKEN" | gh auth login --with-token
+          gh auth setup-git
 
       - name: Run otherness
         uses: anomalyco/opencode/github@latest
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AWS_REGION:   us-east-1
+          GH_TOKEN:     ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
           model: amazon-bedrock/global.anthropic.claude-sonnet-4-6
           prompt: |
@@ -89,111 +259,78 @@ batch. The next session reads it and resumes cleanly. The distributed lock proto
 
 ---
 
-## The cadence
+## Deploying to a new managed project
 
-| Cadence | What it means |
-|---|---|
-| Every 6 hours | 4 runs/day. Each run completes 1–3 batches depending on item complexity. |
-| `workflow_dispatch` | Manual trigger for testing or immediate execution. |
-| On push to main | Not triggered on push — the loop is autonomous, not CI. |
+1. Run `scripts/setup-github-bedrock-key.sh --update-secrets owner/repo` — pushes
+   `AWS_ROLE_ARN`, `AWS_ACCOUNT_ID`, `AWS_DEFAULT_REGION`
+2. Add `GH_TOKEN` secret to the repo (PAT with `repo` + `workflow` scopes)
+3. Copy `.github/workflows/otherness-scheduled.yml` from the otherness template;
+   set the `cron:` value for the project's desired cadence
+4. Update `otherness-config.yaml` `schedule.cron` to match
+5. Trigger `workflow_dispatch` once to verify the run completes before relying on cron
 
-6 hours is conservative. A project with a healthy queue can run every 4 hours.
-A project in standby (empty queue, autonomous vision synthesis waiting) can run every
-12 hours.
-
-The cadence is configurable in `otherness-config.yaml`:
-
-```yaml
-schedule:
-  cron: "0 */6 * * *"   # default: every 6 hours
-  model: amazon-bedrock/global.anthropic.claude-sonnet-4-6
-```
-
----
-
-## What this unlocks
-
-When this workflow is deployed:
-
-1. Human pushes vision via `/otherness.vibe-vision` → design doc stubs land on main
-2. Next scheduled run picks up the new Future items → COORD queues them
-3. Batches run → items ship → health signal GREEN
-4. Queue empties → SM §4h fires → autonomous-vision.md synthesizes new items
-5. Next scheduled run picks up synthesized items → batches run
-6. The loop never stops
-
-The human receives batch reports on the report issue. They can add vision any time.
-They redirect when needed. But they do not press play.
-
----
-
-## Security model
-
-The workflow uses:
-- `ANTHROPIC_API_KEY` (or equivalent) as a GitHub Actions secret
-- `GITHUB_TOKEN` (built-in) for repo operations — no PAT needed
-- `contents: write` + `pull-requests: write` + `issues: write` permissions
-
-The agent runs inside GitHub's own infrastructure. It cannot access secrets not
-explicitly granted to the workflow. It cannot write to other repos. It cannot
-escalate permissions beyond what the workflow grants.
+See `docs/design/13-scheduled-execution.md` on each managed project for the
+project-specific deployment record.
 
 ---
 
 ## Present (✅)
 
-- ✅ `.github/workflows/otherness-scheduled.yml` — cron (0 */6 * * *) + workflow_dispatch; uses `anomalyco/opencode/github@latest` with standard `/otherness.run` prompt; permissions: contents/pull-requests/issues write (PR #321-323, 2026-04-19)
-- ✅ `otherness-config.yaml`: `schedule.cron`, `schedule.model`, `schedule.api_key_secret` fields added (PR #321-323, 2026-04-19)
-- ✅ `otherness-config-template.yaml`: `schedule` section added, commented by default with full setup instructions (PR #321-323, 2026-04-19)
+- ✅ `.github/workflows/otherness-scheduled.yml` — cron (0 */6 * * *) + workflow_dispatch; Bedrock via OIDC; GH_TOKEN PAT for push/PR/trigger; all required permissions (2026-04-19)
+- ✅ `otherness-config.yaml` — `schedule.cron`, `schedule.model`, `schedule.api_key_secret` fields (2026-04-19)
+- ✅ `otherness-config-template.yaml` — `schedule` section with setup instructions (2026-04-19)
+- ✅ `scripts/validate.sh` — checks scheduled workflow exists when `schedule.cron` is set (2026-04-19)
+- ✅ `scripts/setup-github-bedrock-key.sh` — idempotent OIDC setup: creates provider, IAM role, Bedrock policy, pushes secrets to GitHub (2026-04-19)
+- ✅ IAM OIDC provider `token.actions.githubusercontent.com` in account 569190534191 — trust scoped to `pnz1990/*` (2026-04-19)
+- ✅ IAM role `github-bedrock-key` — OIDC trust for `pnz1990/*`, inline `BedrockInvoke` policy (2026-04-19)
+- ✅ kardinal-promoter deployed — hourly cron, all secrets set, PR #828 (2026-04-19)
 
 ## Future (🔲)
-- ✅ `scripts/validate.sh`: checks that `.github/workflows/otherness-scheduled.yml` exists when `schedule.cron` is configured; fails with clear message if missing (PR #324-325, 2026-04-19)
-- ✅ `/otherness.setup`: "activate scheduled loop" section added to Done instructions (PR #324-325, 2026-04-19)
+
+- 🔲 `/otherness.setup` and `/otherness.onboard`: add "activate scheduled loop" section that runs `setup-github-bedrock-key.sh` and copies the workflow template automatically — currently requires manual steps
+- 🔲 `scripts/validate.sh`: verify `GH_TOKEN` secret exists on the repo when `schedule.cron` is configured (currently only checks for the workflow file)
+- 🔲 Token expiry detection: if `GH_TOKEN` PAT expires, the workflow fails silently on push; add a preflight step that validates the token has required scopes and posts a `[NEEDS HUMAN]` issue on failure
 
 ---
 
 ## Zone 1 — Obligations
 
-**O1 — The scheduled workflow uses `anomalyco/opencode/github@latest`.**
-Not a custom bash script. The OpenCode GitHub Action is the correct primitive — it
-handles authentication, checkout, and agent execution. The prompt is the same
-`standalone.md` invocation used in manual sessions.
+**O1 — Use Bedrock OIDC, never stored AWS keys.**
+Long-lived IAM user keys in Isengard-managed accounts are a policy violation.
+OIDC is the only compliant mechanism. `setup-github-bedrock-key.sh` is the
+authoritative setup tool. Do not create IAM users with access keys for this purpose.
 
-**O2 — The workflow grants `contents: write`, `pull-requests: write`, `issues: write`.**
-The agent needs to create branches, merge PRs, and post comments. These permissions
-are required. They are scoped to the repository only.
+**O2 — Use `GH_TOKEN` PAT, not `GITHUB_TOKEN`, for checkout and gh CLI.**
+`GITHUB_TOKEN` pushes do not trigger other workflows. The agent's CI loop depends
+on CI running after merges. Using `GITHUB_TOKEN` breaks the CI gate silently.
 
-**O3 — The `ANTHROPIC_API_KEY` (or model provider key) is stored as a GitHub Actions secret.**
-Never in the workflow file. Never in otherness-config.yaml. The secret name is
-documented in otherness-config.yaml under `schedule.api_key_secret`.
+**O3 — All six permissions must be granted.**
+`id-token`, `contents`, `pull-requests`, `issues`, `actions`, `statuses` — all write.
+Removing any one breaks a specific agent capability. The set is minimal and correct.
 
-**O4 — The session handoff in `_state` is written before each runner terminates.**
-The SM phase already writes a handoff. This obligation is already met by existing
-code. No new implementation needed for this constraint.
+**O4 — `workflow_dispatch` is always included.**
+Manual testing and on-demand runs must be possible without waiting for cron.
 
-**O5 — `workflow_dispatch` is always included alongside the schedule trigger.**
-This allows manual testing and on-demand runs without waiting for the next cron tick.
+**O5 — Cron in workflow file and `schedule.cron` in config must match.**
+The workflow file is authoritative. The config field is used by the agent for
+reporting. Drift between them produces incorrect health signals.
 
 ---
 
 ## Zone 2 — Implementer's judgment
 
-- Model selection: the same model as the manual session. Configured in
-  `otherness-config.yaml` under `schedule.model`. Falls back to the default
-  model if not set.
-- Whether to use `persist-credentials: false`: yes — the agent manages its own git
-  operations through the GITHUB_TOKEN. Persisting credentials from checkout would
-  conflict.
-- Whether to run on push to main: no. The scheduled loop is autonomous. Push-triggered
-  runs would create double-execution when the agent itself merges PRs.
-- Runner type: `ubuntu-latest`. The agent only needs git, gh CLI, and python3 — all
-  available on ubuntu-latest.
+- Runner type: `ubuntu-latest` is correct. No special hardware needed.
+- `fetch-depth: 0` is required so the agent can read full git history for state.
+- Whether to pin `actions/checkout` and `configure-aws-credentials` to SHAs:
+  recommended for production hardening but not required for current usage.
+- Model selection: `amazon-bedrock/global.anthropic.claude-sonnet-4-6` unless
+  `schedule.model` in config overrides it.
 
 ---
 
 ## Zone 3 — Scoped out
 
 - Multi-repo orchestration from a single workflow (each project has its own workflow)
-- Parallel runners (the distributed lock already handles this, but multiple runners
-  consuming tokens unnecessarily is wasteful — single runner per cron tick is correct)
-- Cost management / token budgeting (future: add a token-spent counter to state.json)
+- Parallel runners (the distributed lock handles collision; multiple runners waste tokens)
+- Cost management / token budgeting (future: token-spent counter in state.json)
+- Automatic PAT rotation (out of scope; PATs are long-lived by design here)
