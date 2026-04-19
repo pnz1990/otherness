@@ -144,7 +144,7 @@ The message names the correct command. The human knows exactly what to do.
 
 ## Future (🔲)
 
-*(All D4 enforcement layers now implemented. Future extensions should be opened as new issues.)*
+- 🔲 CRITICAL tier split (CRITICAL-A / CRITICAL-B) — phase file PRs that add only `[AI-STEP]` comment blocks carry different risk than PRs that modify executable loop logic; split the tier so comment-only additions are CRITICAL-B (self-review + autonomous merge) while logic changes remain CRITICAL-A (needs-human). See docs/design/13-autonomous-merge-strategy.md for the full design.
 
 ---
 
