@@ -84,7 +84,7 @@ escalation handles future stalls.
 
 ## Future (🔲)
 
-- 🔲 definition-of-done.md: Journey 2 gains automated check command using the existing test.sh check 5b
+- ✅ definition-of-done.md: Journey 2 has automated check command — reads reference project from config, checks _state age, outputs STALE_REASON (2026-04-19)
 
 ---
 

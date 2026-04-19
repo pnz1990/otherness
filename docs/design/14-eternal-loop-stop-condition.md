@@ -80,7 +80,7 @@ This is objective. It does not imply termination. It does not create false expec
 
 ## Future (🔲)
 
-- 🔲 definition-of-done.md: Journey table gains a "Health" column showing GREEN/AMBER/RED instead of ✅/❌
+- ✅ definition-of-done.md: Journey Status table has Health column (GREEN/AMBER/RED) + Journey 8 (commands always current) added (2026-04-19)
 
 ---
 
