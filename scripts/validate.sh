@@ -200,5 +200,27 @@ for agent_file in "$AGENTS_DIR"/*.md "$AGENTS_DIR/phases"/*.md; do
 done
 [ $MISSING_MODE -eq 0 ] && echo "  OK: all agent files have ## MODE block" || exit 1
 
+# [Optional] Check scheduled workflow exists when schedule.cron is configured
+SCHEDULE_CRON=$(python3 -c "
+import re
+try:
+    for line in open('otherness-config.yaml'):
+        m = re.match(r'^\s+cron:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?', line.strip())
+        if m and m.group(1).strip() not in ('','\"\"',\"''\"):
+            print(m.group(1).strip()); break
+except: pass
+" 2>/dev/null || echo "")
+
+if [ -n "$SCHEDULE_CRON" ]; then
+  WORKFLOW_FILE="$(cd "$(dirname "$0")/.." && pwd)/.github/workflows/otherness-scheduled.yml"
+  if [ ! -f "$WORKFLOW_FILE" ]; then
+    echo "  ERROR: schedule.cron is set ('$SCHEDULE_CRON') but .github/workflows/otherness-scheduled.yml is missing."
+    echo "         Run /otherness.setup or create the workflow file. See docs/design/19-scheduled-execution.md."
+    exit 1
+  else
+    echo "  OK: scheduled workflow present (cron: $SCHEDULE_CRON)"
+  fi
+fi
+
 echo ""
 echo "=== validate: PASSED ==="
