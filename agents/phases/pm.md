@@ -116,7 +116,7 @@ with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
 ```bash
 if [ $((${PM_CYCLE:-0} % 10)) -eq 0 ] && [ "${PM_CYCLE:-0}" -gt 0 ]; then
   echo "[PM] Running cross-project improvement check..."
-  # [AI-STEP] Cross-project improvement proposals (Idea 5 from docs/future-ideas.md):
+  # [AI-STEP] Cross-project improvement proposals:
   # 1. Read monitor.projects from otherness-config.yaml
   # 2. For each project:
   #    - Check open [needs-human] issues: gh issue list --repo <proj> --label needs-human --state open
@@ -133,6 +133,12 @@ if [ $((${PM_CYCLE:-0} % 10)) -eq 0 ] && [ "${PM_CYCLE:-0}" -gt 0 ]; then
   # 5. Also check docs/future-ideas.md for ideas ready to implement.
   #    If an idea has a complexity tag of 'small' or 'xs' and hasn't been opened as an issue:
   #    open it now with a [PM proposal] prefix.
+  # 6. Competitive observation: for each competitor version update found in PM §5 competitive
+  #    scan — write a ⚠️ Inferred stub to docs/design/ if the capability is not covered:
+  #    INFERRED_FILE="docs/design/<area>-competitive-gaps.md"
+  #    If file doesn't exist: create it with standard template + Present (empty) + Future section.
+  #    Append: "- 🔲 ⚠️ Inferred: <capability> — competitor <name> has this, we do not. (PM §5c, <date>)"
+  #    This makes the gap visible to COORD queue gen immediately.
   # If only 1 project in monitor: log "[PM] Need ≥2 projects for cross-project analysis."
 fi
 ```
@@ -349,10 +355,11 @@ fi
 ## 5h. Self-generating validation criteria (runs every N_PM_CYCLES)
 
 Scan shipped Present items for gaps in definition-of-done.md journeys.
+Also detect emergent patterns: Present items with no design doc coverage.
 
 ```bash
 if [ $((${PM_CYCLE:-0} % ${N_PM_CYCLES:-3})) -eq 0 ]; then
-  echo "[PM §5h] Scanning for validation criteria gaps..."
+  echo "[PM §5h] Scanning for validation criteria gaps and emergent patterns..."
 
   # [AI-STEP]
   # Step 0: Read definition-of-done.md content. If absent: skip.
@@ -370,7 +377,18 @@ if [ $((${PM_CYCLE:-0} % ${N_PM_CYCLES:-3})) -eq 0 ]; then
   #
   # Step 3: Duplicate suppression (open_if_absent pattern).
   #
-  # Step 4: Post count: "[PM §5h] Validation gaps found: <N>."
+  # Step 4: Emergent pattern detection (⚠️ Observed — new in this version):
+  #   merged_pr_titles = gh pr list --repo $REPO --state merged --limit 200 --json title
+  #   design_covered_terms = set of words from all docs/design/ Present + Future items
+  #   for pr_title in merged_pr_titles:
+  #     if not any(term in pr_title.lower() for term in design_covered_terms):
+  #       # This PR shipped something with no design doc coverage
+  #       # Candidate for ⚠️ Observed entry
+  #       title = f"docs: ⚠️ Observed — '{pr_title[:50]}' shipped with no design doc coverage"
+  #       open_if_absent(title, "kind/docs,otherness,priority/low")
+  #   Note: only flag PRs merged >14 days ago (recent PRs may still have design docs in draft)
+  #
+  # Step 5: Post count: "[PM §5h] Validation gaps: <N>. Emergent patterns: <M>."
 
   echo "[PM §5h] Self-generating validation criteria check complete."
 fi
@@ -481,5 +499,39 @@ if [ $((${PM_CYCLE:-0} % ${N_PM_CYCLES:-3})) -eq 0 ]; then
    #   echo "[PM §5j] Journey 2 OK: $REF_PROJECT last active ${AGE_H}h ago."
 
   echo "[PM §5j] Reference project health check complete."
+fi
+```
+
+---
+
+## 5k. Vision age check (runs every N_PM_CYCLES)
+
+Suggest /otherness.vibe-vision when the vision hasn't been updated and queue is empty.
+
+```bash
+if [ $((${PM_CYCLE:-0} % ${N_PM_CYCLES:-3})) -eq 0 ]; then
+  echo "[PM §5k] Checking vision age..."
+
+  # [AI-STEP]
+  # Step 1: Check if queue is empty AND design docs have no recent activity.
+  #   TODO_COUNT=$(python3 -c "import json; s=json.load(open('.otherness/state.json')); print(len([d for d in s.get('features',{}).values() if d.get('state')=='todo']))")
+  #   if [ "${TODO_COUNT:-0}" -gt 0 ]: echo "[PM §5k] Queue active — skipping vision age check."; exit
+  #
+  # Step 2: Check last design doc activity (git log on docs/design/).
+  #   LAST_DESIGN_COMMIT=$(git log -1 --format=%ct -- docs/design/ 2>/dev/null || echo "0")
+  #   DESIGN_AGE_DAYS=$(python3 -c "import time; print(int((time.time() - int('$LAST_DESIGN_COMMIT')) / 86400))")
+  #
+  # Step 3: If DESIGN_AGE_DAYS > 30 (queue empty AND no new design activity):
+  #   TITLE="[📋 PM] Vision may need updating — queue has been empty and no new design activity in ${DESIGN_AGE_DAYS}d"
+  #   EXISTING=$(gh issue list --repo $REPO --state open --search "Vision may need updating" --json number --jq 'length')
+  #   if [ "$EXISTING" -eq 0 ]:
+  #     gh issue comment $REPORT_ISSUE --repo $REPO \
+  #       --body "[📋 PM §5k] The vision has not been updated in ${DESIGN_AGE_DAYS}d and the queue is empty.
+  #               Consider running /otherness.vibe-vision to expand the roadmap.
+  #               (This is a suggestion, not a blocker — the loop continues in standby.)"
+  #
+  # Step 4: If DESIGN_AGE_DAYS <= 30: echo "[PM §5k] Vision active (${DESIGN_AGE_DAYS}d ago)."; exit
+
+  echo "[PM §5k] Vision age check complete."
 fi
 ```
