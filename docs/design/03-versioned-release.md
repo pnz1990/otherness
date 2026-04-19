@@ -26,7 +26,10 @@ The versioning model:
 
 ## Present (✅)
 
-*(Stage 5 has not started. Nothing is Present yet.)*
+- ✅ `agent_version` field in otherness-config.yaml — semver string; empty/absent = latest (standalone.md SELF-UPDATE + otherness-config-template.yaml, 2026-04-18)
+- ✅ Self-update respects version pin — standalone.md SELF-UPDATE block: `git checkout <version>` when agent_version set (standalone.md, 2026-04-18)
+- ✅ `/otherness.upgrade` command — `.opencode/command/otherness.upgrade.md` deployed (2026-04-17)
+- ✅ Git tags established — `v0.1.0` tag exists; tagging pattern in use (2026-04-17)
 
 ## Planned (🔲 — Stage 5 trigger required)
 
@@ -34,10 +37,10 @@ The versioning model:
 > Trigger criteria: >10 repos using otherness, OR CRITICAL tier regression in production, OR community request.
 > See `docs/aide/progress.md §Stage 5 trigger criteria` for current status.
 
-- 🔲 Git tags as releases — each stable release is tagged `vMAJOR.MINOR.PATCH` on the otherness repo
-- 🔲 `agent_version` field in otherness-config.yaml — semver string; empty/absent = `main` (current behavior preserved)
-- 🔲 Self-update respects version pin — `git -C ~/.otherness checkout <version>` instead of `pull` when `agent_version` is set
-- 🔲 `/otherness.upgrade` command — shows changelog diff between current and latest tag, asks confirmation before updating the pin
+- ✅ Git tags as releases — v0.1.0 tag exists; MERGED into Present — each stable release is tagged `vMAJOR.MINOR.PATCH` on the otherness repo
+- ✅ `agent_version` field — MERGED into Present — semver string; empty/absent = `main` (current behavior preserved)
+- ✅ Self-update version pin — MERGED into Present — `git -C ~/.otherness checkout <version>` instead of `pull` when `agent_version` is set
+- ✅ `/otherness.upgrade` command — MERGED into Present — shows changelog diff between current and latest tag, asks confirmation before updating the pin
 - 🔲 CHANGELOG.md maintained automatically — each merged PR to main appends an entry (SM phase responsibility)
 
 ---

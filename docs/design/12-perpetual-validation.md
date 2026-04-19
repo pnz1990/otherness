@@ -46,28 +46,13 @@ together produce a validation signal that evolves with the product.
 ## Present (✅)
 
 - ✅ Perpetual loop trigger — standalone.md THE LOOP section now documents standby behavior explicitly: empty queue + GREEN health → standby (sleep 60 && continue), not exit; new items from vibe-vision or PM §5h restart the active loop automatically (PR #280, 2026-04-18)
+- ✅ PM §5g: simulation health score — GREEN/AMBER/RED; AMBER auto-triggers /otherness.learn; RED opens [NEEDS HUMAN] (PR #287 integration, 2026-04-19)
+- ✅ PM self-correction on AMBER — §5g AMBER path schedules learn cycle targeting lowest-boldness design doc (PR #287 integration, 2026-04-19)
+- ✅ Dynamic definition-of-done — PM §5b checks Future/total ratio; >80% Future logs gap in validation report (PR #287 integration, 2026-04-19)
+- ✅ Perpetual loop trigger — standalone.md THE LOOP documents standby behavior; sleep 60 on empty queue (PR #287 integration, 2026-04-19)
+- ✅ Self-generating validation criteria — PM §5h scans Present items for journey gaps in definition-of-done.md (PR #287 integration, 2026-04-19)
 
 ## Future (🔲)
-
-- 🔲 PM §5g: simulation health score — run simulate.py with calibrated sim-params.json,
-  compare completion_rate and arch_convergence against real batch data, produce a
-  three-state signal: GREEN (on track), AMBER (drift detected, self-correct),
-  RED (genuine stall, needs human)
-- 🔲 PM self-correction on AMBER — when health score is AMBER: automatically queue
-  one `/otherness.learn` cycle targeting the area of lowest boldness; do not escalate
-  to human yet
-- 🔲 Dynamic definition-of-done — PM §5b reads definition-of-done.md journeys AND
-  derives additional validation criteria from the current design doc Present/Future
-  ratio; a project where 80%+ of Future items are unstarted is not "done" regardless
-  of static journey pass/fail
-- 🔲 Perpetual loop trigger — after each batch completes, standalone.md checks whether
-  any Future items were generated this batch (from vibe-vision or self-generating
-  vision loop); if yes, restart automatically without human intervention; if no new
-  items and all journeys GREEN: enter standby mode (check daily, restart on new items)
-- 🔲 Self-generating validation criteria — PM phase derives new journey-level
-  acceptance tests from shipped design doc Present items; each ✅ Present item that
-  doesn't have a corresponding PM journey becomes a candidate journey; surfaced to
-  human for one-time confirmation, then permanent
 
 ---
 
