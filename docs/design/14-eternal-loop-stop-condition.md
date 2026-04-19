@@ -74,13 +74,12 @@ This is objective. It does not imply termination. It does not create false expec
 
 ## Present (✅)
 
-*(Not yet implemented — this is the design doc for a new behavior.)*
+- ✅ standalone.md: "final run" framing removed from LOOP section; loop description updated to perpetual language (PR #292-294 batch, 2026-04-19)
+- ✅ standalone.md HARD RULES: "Never report finality" rule added — explicit ban on "final run", "system complete", "the system is ready" (PR #292-294 batch, 2026-04-19)
+- ✅ SM §4f: batch completion post now uses health signal format — Health: GREEN/AMBER/RED | Queue: N todo | Action: Standby/Active (PR #292-294 batch, 2026-04-19)
 
 ## Future (🔲)
 
-- 🔲 standalone.md: replace "final run" / "ready" framing with health signal reporting
-- 🔲 standalone.md HARD RULES: add rule — "Never say 'final run' or 'complete'. Report health signal and queue state only."
-- 🔲 Phase 4 (SM): batch completion post format updated to health signal format
 - 🔲 definition-of-done.md: Journey table gains a "Health" column showing GREEN/AMBER/RED instead of ✅/❌
 
 ---

@@ -552,6 +552,20 @@ EOF
 ## 4f. Post SDM review to report issue
 
 ```bash
+# Compute health signal before posting
+# [AI-STEP]
+# HEALTH="GREEN"
+# CI_STATUS=$(gh run list --repo $REPO --branch main --limit 1 --json conclusion --jq '.[0].conclusion' 2>/dev/null)
+# [ "$CI_STATUS" != "success" ] && HEALTH="AMBER"
+# NEEDS_HUMAN_COUNT=$(gh issue list --repo $REPO --label needs-human --state open --json number --jq 'length' 2>/dev/null || echo 0)
+# [ "${NEEDS_HUMAN_COUNT:-0}" -gt 0 ] && HEALTH="AMBER"
+# JOURNEYS_PASS=$(bash scripts/test.sh 2>/dev/null && echo "✅" || echo "❌")
+# [ "$JOURNEYS_PASS" = "❌" ] && HEALTH="AMBER"
+# TODO_COUNT=$(python3 -c "import json; s=json.load(open('.otherness/state.json')); print(len([d for d in s.get('features',{}).values() if d.get('state')=='todo']))" 2>/dev/null || echo 0)
+# IN_REVIEW=$(python3 -c "import json; s=json.load(open('.otherness/state.json')); print(len([d for d in s.get('features',{}).values() if d.get('state')=='in_review']))" 2>/dev/null || echo 0)
+# ACTION="Active"
+# [ "${TODO_COUNT:-0}" -eq 0 ] && ACTION="Standby"
+
 gh issue comment $REPORT_ISSUE --repo $REPO \
-  --body "[🔄 SDM | ${MY_SESSION_ID:-sess-unknown} | otherness@${OTHERNESS_VERSION:-unknown}] Batch complete. Metrics updated. Triage done." 2>/dev/null
+  --body "[🔄 SDM | ${MY_SESSION_ID:-sess-unknown} | otherness@${OTHERNESS_VERSION:-unknown}] Batch ${SM_CYCLE:-?} complete. Health: ${HEALTH:-GREEN} | Queue: ${TODO_COUNT:-0} todo ${IN_REVIEW:-0} in_review | Action: ${ACTION:-Active}" 2>/dev/null
 ```
