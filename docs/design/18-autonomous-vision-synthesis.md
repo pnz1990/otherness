@@ -137,7 +137,7 @@ This distinction matters because:
 
 ## Future (🔲)
 
-- 🔲 `agents/autonomous-vision.md` — new agent file, MODE: VISION, no dialogue step; reads corpus, synthesizes `🔲 ⚠️ Inferred` items, writes to docs/design/
+- ✅ `agents/autonomous-vision.md` — MODE: VISION, no dialogue; 4-phase batch process: read corpus, synthesize (5 patterns), write 🔲 ⚠️ Inferred items, commit (PR #313, 2026-04-19)
 - ✅ SM phase trigger — SM §4h checks all 4 conditions; creates vision/auto-<date> branch; runs agents/autonomous-vision.md when deployed; records last_auto_vision_cycle in state.json (PR #314, 2026-04-19)
 - 🔲 PM §5m: `⚠️ Inferred` ratio check — if >80% of Future items are `⚠️ Inferred`, post vibe-vision suggestion (human direction is needed)
 
