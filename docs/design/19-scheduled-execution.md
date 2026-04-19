@@ -142,13 +142,11 @@ escalate permissions beyond what the workflow grants.
 
 ## Present (✅)
 
-*(Not yet implemented.)*
+- ✅ `.github/workflows/otherness-scheduled.yml` — cron (0 */6 * * *) + workflow_dispatch; uses `anomalyco/opencode/github@latest` with standard `/otherness.run` prompt; permissions: contents/pull-requests/issues write (PR #321-323, 2026-04-19)
+- ✅ `otherness-config.yaml`: `schedule.cron`, `schedule.model`, `schedule.api_key_secret` fields added (PR #321-323, 2026-04-19)
+- ✅ `otherness-config-template.yaml`: `schedule` section added, commented by default with full setup instructions (PR #321-323, 2026-04-19)
 
 ## Future (🔲)
-
-- 🔲 `.github/workflows/otherness-scheduled.yml` — cron workflow using `anomalyco/opencode/github@latest` with the `/otherness.run` prompt
-- 🔲 `otherness-config.yaml`: `schedule.cron` and `schedule.model` fields for per-project cadence
-- 🔲 `otherness-config-template.yaml`: `schedule` section added
 - 🔲 `scripts/validate.sh`: check that scheduled workflow file exists if `schedule.cron` is set in config
 - 🔲 `/otherness.setup` and `/otherness.onboard`: add step to deploy the scheduled workflow during project setup
 

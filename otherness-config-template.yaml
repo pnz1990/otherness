@@ -148,3 +148,22 @@ monitor:
   #   - owner/your-project-name    # add your managed projects here
   stale_hours: 24    # alert if _state branch older than this many hours
   idle_hours: 4      # alert if no heartbeat within this many hours
+
+# ── Scheduled execution ───────────────────────────────────────────────────────
+# Enables the loop to run automatically via GitHub Actions without human action.
+# When configured: .github/workflows/otherness-scheduled.yml triggers on the cron
+# schedule below, installs otherness, and runs /otherness.run automatically.
+#
+# Setup:
+#   1. Add your LLM provider API key to GitHub repo Secrets:
+#      Settings → Secrets and variables → Actions → New repository secret
+#      Name it to match api_key_secret below (default: ANTHROPIC_API_KEY)
+#   2. The workflow file is created by /otherness.setup automatically.
+#   3. Adjust cron to your preferred cadence.
+#
+# See docs/design/19-scheduled-execution.md for the full design.
+#
+# schedule:
+#   cron: "0 */6 * * *"     # every 6 hours (default). Use https://crontab.guru to customize.
+#   model: ""               # LLM model to use. Defaults to the model in your opencode config.
+#   api_key_secret: "ANTHROPIC_API_KEY"   # GitHub Actions secret name for your LLM API key
