@@ -452,6 +452,8 @@ for item_id, d in list(s.get('features', {}).items()):
         d['assigned_at'] = None
         d['branch'] = None
         d['worktree'] = None
+        # Spatial coordination: clear file_spaces when resetting stale item
+        d['file_spaces'] = []
         changed = True
 
 # Also: recover stale queue-gen lock (held >10 min = crashed mid-generation)
@@ -515,6 +517,31 @@ for id, d in features.items():
     if allowed_areas:
         item_areas = d.get('areas', [])
         if not any(a in item_areas for a in allowed_areas): continue
+    # Spatial collision detection: skip if item's file_spaces overlap with active claims
+    # [AI-STEP]
+    # AREA_TO_SPACES = {
+    #   'area/ui': ['src/components/', 'src/styles/', 'src/hooks/'],
+    #   'area/controller': ['internal/', 'pkg/', 'api/'],
+    #   'area/cli': ['cmd/', 'internal/cli/'],
+    #   'area/docs': ['docs/', 'README.md'],
+    #   'area/release': ['.github/workflows/', 'Makefile'],
+    #   'area/graph': ['internal/graph/', 'scripts/'],
+    #   'area/agent-loop': ['agents/', 'scripts/'],
+    # }
+    # candidate_spaces = []
+    # for label in d.get('labels', []) + [d.get('design_doc','')]:
+    #     candidate_spaces += AREA_TO_SPACES.get(label, [])
+    #
+    # active_spaces = []
+    # for other_id, other_d in features.items():
+    #     if other_d.get('state') in ('assigned', 'in_review') and other_id != id:
+    #         active_spaces += other_d.get('file_spaces', [])
+    #
+    # def overlaps(a, b):
+    #     return any(x.startswith(y) or y.startswith(x) for x in a for y in b)
+    #
+    # if candidate_spaces and active_spaces and overlaps(candidate_spaces, active_spaces):
+    #     continue  # skip — spatial collision
     print(id); break
 " 2>/dev/null)
 
@@ -586,7 +613,22 @@ s['features']['$ITEM_ID'].update({
     'assigned_to': '$MY_SESSION_ID',
     'assigned_at': datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
     'branch': '$MY_BRANCH',
-    'worktree': '$MY_WORKTREE'
+    'worktree': '$MY_WORKTREE',
+    # Spatial coordination: declare file_spaces at claim time
+    # [AI-STEP] Estimate file spaces from item labels and design doc area:
+    # AREA_TO_SPACES = {'area/ui': ['src/components/','src/styles/','src/hooks/'],
+    #   'area/controller': ['internal/','pkg/','api/'],
+    #   'area/cli': ['cmd/','internal/cli/'],
+    #   'area/docs': ['docs/','README.md'],
+    #   'area/release': ['.github/workflows/','Makefile'],
+    #   'area/graph': ['internal/graph/','scripts/'],
+    #   'area/agent-loop': ['agents/','scripts/']}
+    # item_labels = s['features']['$ITEM_ID'].get('labels', [])
+    # file_spaces = []
+    # for lbl in item_labels:
+    #     file_spaces += AREA_TO_SPACES.get(lbl, [])
+    # s['features']['$ITEM_ID']['file_spaces'] = file_spaces
+    'file_spaces': [],  # populated by the [AI-STEP] above at runtime
 })
 s.setdefault('session_heartbeats', {})['$MY_SESSION_ID'] = {
     'last_seen': datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
