@@ -133,14 +133,13 @@ This distinction matters because:
 
 ## Present (✅)
 
-*(Not yet implemented.)*
+- ✅ COORD queue gen: `🔲 ⚠️ Inferred` items matched by existing regex (no change needed); `is_done()` strips `⚠️ Inferred/Observed:` prefix before deduplication (PR #316, 2026-04-19)
 
 ## Future (🔲)
 
 - 🔲 `agents/autonomous-vision.md` — new agent file, MODE: VISION, no dialogue step; reads corpus, synthesizes `🔲 ⚠️ Inferred` items, writes to docs/design/
 - 🔲 SM phase trigger — when queue empty + no pending ⚠️ stubs + GREEN/AMBER health + ≥3 batches since last run: create `vision/auto-<date>` branch, run autonomous-vision agent, merge
 - 🔲 PM §5m: `⚠️ Inferred` ratio check — if >80% of Future items are `⚠️ Inferred`, post vibe-vision suggestion (human direction is needed)
-- 🔲 COORD queue gen: treat `🔲 ⚠️ Inferred` items identically to `🔲 Future` (already works — COORD regex matches both)
 
 ---
 
