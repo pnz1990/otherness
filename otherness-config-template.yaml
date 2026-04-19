@@ -63,6 +63,18 @@ maqa:
   # Disable only if your project does not use the D4 hierarchy (legacy projects).
   d4_enforcement: true
 
+  # Multi-session spatial coordination: maps area labels to file path prefixes.
+  # Parallel sessions skip items whose area overlaps with an active claim's file_spaces.
+  # Uncomment and customize for your project's directory structure.
+  # area_file_spaces:
+  #   area/ui: ["src/components/", "src/styles/", "src/hooks/"]
+  #   area/controller: ["internal/", "pkg/", "api/"]
+  #   area/cli: ["cmd/", "internal/cli/"]
+  #   area/docs: ["docs/", "README.md"]
+  #   area/release: [".github/workflows/", "Makefile"]
+  #   area/graph: ["internal/graph/", "scripts/"]
+  #   area/agent-loop: ["agents/", "scripts/"]
+
 # ── CI gate ───────────────────────────────────────────────────────────────────
 ci:
   provider: github-actions            # github-actions | circleci | gitlab | bitbucket

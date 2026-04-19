@@ -87,11 +87,12 @@ spread across the codebase.
 - ✅ state.json: `file_spaces` field added to feature entries at claim time; cleared on stale reset (PR #296, 2026-04-19)
 - ✅ coord.md §1e: spatial collision detection [AI-STEP] — AREA_TO_SPACES map, candidate vs active file_spaces overlap check before claiming (PR #296, 2026-04-19)
 - ✅ coord.md §1d: stale watchdog clears `file_spaces` when resetting stale assigned items (PR #296, 2026-04-19)
+- ✅ coord.md §1c: queue generation spatial diversity preference [AI-STEP] — sorts items to prefer one per area before creating issues (PR #299-300, 2026-04-19)
+- ✅ AREA_TO_SPACES: configurable in otherness-config-template.yaml as `maqa.area_file_spaces` (PR #299-300, 2026-04-19)
 
 ## Future (🔲)
 
-- 🔲 coord.md §1c: queue generation prefers spatially diverse items when generating batch
-- 🔲 AREA_TO_SPACES: extract to otherness-config.yaml for project-specific customization
+*(All planned spatial coordination items shipped.)*
 
 ---
 
