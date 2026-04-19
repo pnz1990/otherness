@@ -58,3 +58,12 @@ monitor:
     - pnz1990/otherness
   stale_hours: 24
   idle_hours: 4
+
+# ── Scheduled execution ──────────────────────────────────────────────────────
+# Enables the loop to run automatically via GitHub Actions without human action.
+# Set up: add ANTHROPIC_API_KEY (or your provider key) to GitHub repo secrets.
+# See .github/workflows/otherness-scheduled.yml and docs/design/19-scheduled-execution.md
+schedule:
+  cron: "0 */6 * * *"       # every 6 hours — adjust per project cadence
+  model: "amazon-bedrock/global.anthropic.claude-sonnet-4-6"
+  api_key_secret: "ANTHROPIC_API_KEY"   # GitHub Actions secret name containing the API key

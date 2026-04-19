@@ -6,7 +6,31 @@ The build order is: tooling first, then agent loop improvements, then the self-i
 
 ---
 
-## Stage 9: Autonomous Vision Synthesis
+## Stage 10: Scheduled Execution — The Loop That Never Needs You to Press Play
+
+**Goal:** `/otherness.run` executes on a schedule without human action. GitHub Actions
+cron trigger runs the agent every 6 hours. The conversation ending does not stop the loop.
+
+### Deliverables
+
+- `.github/workflows/otherness-scheduled.yml` — cron workflow using
+  `anomalyco/opencode/github@latest` with the `/otherness.run` prompt
+- `otherness-config.yaml`: `schedule.cron` and `schedule.model` fields
+- `otherness-config-template.yaml`: `schedule` section added
+- `scripts/validate.sh`: check scheduled workflow exists if `schedule.cron` set
+- `/otherness.setup` and `/otherness.onboard`: deploy workflow during project setup
+
+### The threshold for "Stage 10 is working"
+
+The human ends a conversation. 6 hours later, a GitHub Actions run completes at least
+one batch autonomously. The `_state` branch shows a new commit from the runner.
+The report issue shows a health signal from a session the human did not start.
+
+### Dependencies
+
+Stage 9 (Autonomous Vision Synthesis — the agent needs something to do when it wakes)
+
+---
 
 **Goal:** The loop never stalls waiting for a human to bring new direction. When the
 queue empties and no human is present, an autonomous vision agent reads the system's

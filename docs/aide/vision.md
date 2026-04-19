@@ -93,12 +93,27 @@ item in the system traces back to either a human decision (plain `🔲`) or a ma
 observation that a human has chosen not to remove (`⚠️ Inferred` that shipped). The
 provenance is always visible.
 
-**The human's role remains unchanged:** Add vision via `/otherness.vibe-vision` when
-there is new intent to express. Review what the system has built. Redirect when the
-direction is wrong. The system fills the silence — not with noise, but with the logical
-continuation of what it already knows.
-
 See docs/design/18-autonomous-vision-synthesis.md for the full design.
+
+## The scheduled execution principle (added 2026-04-19)
+
+When the conversation ends, the loop stops — unless it runs on infrastructure that
+does not depend on a human-initiated session.
+
+**The principle:** The loop runs on a schedule. GitHub Actions cron trigger invokes
+`/otherness.run` every 6 hours. The agent wakes, completes batches, writes a handoff,
+exits. The next trigger fires 6 hours later. The human ending a conversation does not
+stop the loop.
+
+**The mechanism:** `.github/workflows/otherness-scheduled.yml` using
+`anomalyco/opencode/github@latest` with the standard `/otherness.run` prompt. The
+same agent, the same phases, the same distributed lock protocol — running on GitHub's
+infrastructure instead of a human's machine.
+
+**The human's role:** unchanged. Add vision when you have intent. Review what shipped.
+Redirect when needed. The loop runs whether you are present or not.
+
+See docs/design/19-scheduled-execution.md for the full design.
 
 ## What the simulation proved (2026-04-17)
 

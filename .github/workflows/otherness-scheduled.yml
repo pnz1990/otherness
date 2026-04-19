@@ -1,0 +1,63 @@
+name: otherness scheduled run
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"  # every 6 hours — override via otherness-config.yaml schedule.cron
+  workflow_dispatch:          # manual trigger for testing or immediate execution
+
+jobs:
+  otherness:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install otherness agent files
+        run: |
+          git clone --quiet --depth 1 https://github.com/pnz1990/otherness.git ~/.otherness
+          echo "[otherness] Agent files installed at ~/.otherness ($(git -C ~/.otherness describe --tags --always))"
+
+      - name: Install gh CLI (if not present)
+        run: |
+          if ! command -v gh &>/dev/null; then
+            type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+            sudo apt update && sudo apt install gh -y
+          fi
+          gh --version
+
+      - name: Authenticate gh CLI
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh auth setup-git
+
+      - name: Run otherness
+        uses: anomalyco/opencode/github@latest
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          model: amazon-bedrock/global.anthropic.claude-sonnet-4-6
+          prompt: |
+            AGENTS_PATH=$(python3 -c "
+            import re, os
+            section = None
+            for line in open('otherness-config.yaml'):
+                s = re.match(r'^(\w[\w_]*):', line)
+                if s: section = s.group(1)
+                if section == 'maqa':
+                    m = re.match(r'^\s+agents_path:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?', line)
+                    if m: print(os.path.expanduser(m.group(1).strip())); break
+            " 2>/dev/null || echo "$HOME/.otherness/agents")
+
+            Read and follow $AGENTS_PATH/standalone.md.
