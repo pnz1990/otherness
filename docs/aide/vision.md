@@ -72,6 +72,34 @@ comment-only are autonomously merged after self-review. Queue generation stops w
 the in-review backlog exceeds 3 items. These three changes eliminate the bulk of
 observed human dependencies. See docs/design/13-autonomous-merge-strategy.md.
 
+## The perpetual vision principle (added 2026-04-19)
+
+The loop stalls when design docs run out of Future items and no human has run
+`/otherness.vibe-vision` recently. This is not an acceptable steady state — it means
+the system cannot sustain itself between human sessions.
+
+**The principle:** The vision expands autonomously between human sessions. The system
+reads its own knowledge corpus — existing design docs, competitive observations,
+emergent code patterns, simulation output, metrics — and synthesizes new candidate
+Future items. These are marked `⚠️ Inferred` (machine-generated, not human-declared)
+and enter the queue immediately. The human confirms or removes them at their own pace.
+
+**The mechanism:** A new `agents/autonomous-vision.md` agent (MODE: VISION, no dialogue
+step) runs when the queue empties. It writes `🔲 ⚠️ Inferred` items to `docs/design/`.
+COORD queues them. The loop restarts without waiting.
+
+**The constraint:** `⚠️ Inferred` items never become `✅ Present` items silently. Every
+item in the system traces back to either a human decision (plain `🔲`) or a machine
+observation that a human has chosen not to remove (`⚠️ Inferred` that shipped). The
+provenance is always visible.
+
+**The human's role remains unchanged:** Add vision via `/otherness.vibe-vision` when
+there is new intent to express. Review what the system has built. Redirect when the
+direction is wrong. The system fills the silence — not with noise, but with the logical
+continuation of what it already knows.
+
+See docs/design/18-autonomous-vision-synthesis.md for the full design.
+
 ## What the simulation proved (2026-04-17)
 
 `scripts/simulate.py` models N parallel agents with three-force boldness dynamics.

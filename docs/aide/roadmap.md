@@ -2,7 +2,39 @@
 
 > Based on: docs/aide/vision.md
 
-The build order is: tooling first, then agent loop improvements, then the self-improvement flywheel, then the eternal loop.
+The build order is: tooling first, then agent loop improvements, then the self-improvement flywheel, then the eternal loop, then autonomous vision.
+
+---
+
+## Stage 9: Autonomous Vision Synthesis
+
+**Goal:** The loop never stalls waiting for a human to bring new direction. When the
+queue empties and no human is present, an autonomous vision agent reads the system's
+own knowledge corpus and synthesizes new `🔲 ⚠️ Inferred` Future items. The loop
+restarts itself.
+
+The human remains the highest-fidelity source of direction — but between sessions,
+the system maintains its own momentum.
+
+### Deliverables
+
+- `agents/autonomous-vision.md` — MODE: VISION, no dialogue step; reads design docs,
+  ⚠️ stubs, metrics, simulation output; synthesizes `🔲 ⚠️ Inferred` items; writes
+  to `docs/design/` only
+- SM phase trigger — when queue empty + no pending ⚠️ stubs + GREEN/AMBER + ≥3
+  batches since last run: create `vision/auto-<date>` branch, run agent, merge
+- PM §5m: `⚠️ Inferred` ratio check — if >80% of Future items are machine-generated,
+  post vibe-vision suggestion (human direction is needed)
+
+### The threshold for "Stage 9 is working"
+
+The queue empties. No human runs `/otherness.vibe-vision`. Within one SM cycle,
+the autonomous vision agent produces at least 3 `🔲 ⚠️ Inferred` items. COORD picks
+them up. A new batch runs. The loop never entered true standby.
+
+### Dependencies
+
+Stage 8 (Eternal Loop — health signal, spatial coordination, vision evolution cadence)
 
 ---
 
