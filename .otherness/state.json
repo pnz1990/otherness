@@ -475,6 +475,61 @@
       "pr_merged": true,
       "done_at": "2026-04-19T04:24:37Z",
       "pr_number": 298
+    },
+    "299": {
+      "state": "done",
+      "title": "feat: coord.md \u00a71c spatially diverse queue generation",
+      "design_doc": "15-multi-session-spatial-coordination.md",
+      "depends_on": [],
+      "assigned_to": "sess-a5ad9de5",
+      "assigned_at": "2026-04-19T04:29:03Z",
+      "branch": "feat/coord-spatial-diverse",
+      "pr_merged": true,
+      "done_at": "2026-04-19T04:32:26Z"
+    },
+    "300": {
+      "state": "done",
+      "title": "feat: AREA_TO_SPACES extract to otherness-config.yaml",
+      "design_doc": "15-multi-session-spatial-coordination.md",
+      "depends_on": [],
+      "assigned_to": "sess-a5ad9de5",
+      "assigned_at": "2026-04-19T04:29:04Z",
+      "branch": "feat/coord-spatial-diverse",
+      "pr_merged": true,
+      "done_at": "2026-04-19T04:32:26Z"
+    },
+    "301": {
+      "state": "done",
+      "title": "feat: PM \u00a75 reference project health check",
+      "design_doc": "16-journey-2-reference-project.md",
+      "depends_on": [],
+      "assigned_to": "sess-a5ad9de5",
+      "assigned_at": "2026-04-19T04:26:32Z",
+      "branch": "feat/301",
+      "pr_merged": true,
+      "done_at": "2026-04-19T04:28:43Z"
+    },
+    "302": {
+      "state": "done",
+      "title": "feat: PM \u00a75g Journey 2 failure AMBER/RED escalation",
+      "design_doc": "16-journey-2-reference-project.md",
+      "depends_on": [],
+      "assigned_to": "sess-a5ad9de5",
+      "assigned_at": "2026-04-19T04:32:44Z",
+      "branch": "feat/journey2-escalation",
+      "pr_merged": true,
+      "done_at": "2026-04-19T04:36:10Z"
+    },
+    "303": {
+      "state": "done",
+      "title": "feat: test.sh check 5b returns specific failure reason",
+      "design_doc": "16-journey-2-reference-project.md",
+      "depends_on": [],
+      "assigned_to": "sess-a5ad9de5",
+      "assigned_at": "2026-04-19T04:32:44Z",
+      "branch": "feat/journey2-escalation",
+      "pr_merged": true,
+      "done_at": "2026-04-19T04:36:10Z"
     }
   },
   "engineer_slots": {
@@ -506,6 +561,6 @@
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 54,
-  "pm_cycle_count": 26
+  "sm_cycle_count": 57,
+  "pm_cycle_count": 29
 }
