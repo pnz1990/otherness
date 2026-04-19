@@ -459,6 +459,70 @@ fi
 
 ---
 
+## 4h. Autonomous vision trigger (every SM cycle)
+
+When the queue is empty and the system has been stable for ≥3 cycles, run the
+autonomous vision agent to synthesize new ⚠️ Inferred Future items.
+
+```bash
+echo "[SM §4h] Checking autonomous vision trigger..."
+
+# [AI-STEP]
+# Step 1: Check all four conditions.
+#
+#   Condition 1: Queue empty
+#   TODO_COUNT=$(python3 -c "import json; s=json.load(open('.otherness/state.json')); print(len([d for d in s.get('features',{}).values() if d.get('state') in ('todo','in_review')]))")
+#   if [ "${TODO_COUNT:-0}" -gt 0 ]: echo "[SM §4h] Queue not empty (${TODO_COUNT} items) — skipping."; exit
+#
+#   Condition 2: No pending ⚠️ stubs (advisory — skip if complex to check)
+#   PENDING_STUBS=$(python3 -c "
+#     import re, os
+#     total = 0
+#     for f in os.listdir('docs/design'):
+#         if not f.endswith('.md'): continue
+#         content = re.sub(r'\`\`\`.*?\`\`\`', '', open(f'docs/design/{f}').read(), flags=re.DOTALL)
+#         total += len(re.findall(r'^- 🔲 ⚠️', content, re.MULTILINE))
+#     print(total)
+#   " 2>/dev/null || echo "0")
+#   if [ "${PENDING_STUBS:-0}" -gt 5 ]: echo "[SM §4h] ${PENDING_STUBS} pending ⚠️ stubs — skipping (conversion first)."; exit
+#
+#   Condition 3: PM health is GREEN or AMBER (not RED)
+#   # [Read HEALTH signal from last SDM batch completion post or compute inline]
+#   # If RED: echo "[SM §4h] Health RED — skipping autonomous vision."; exit
+#
+#   Condition 4: Rate limit — at least 3 SM cycles since last autonomous vision run
+#   LAST_AUTO=$(python3 -c "import json; s=json.load(open('.otherness/state.json')); print(s.get('last_auto_vision_cycle', 0))")
+#   CYCLES_SINCE=$(python3 -c "print(max(0, int('$SM_CYCLE') - int('$LAST_AUTO')))")
+#   if [ "${CYCLES_SINCE:-0}" -lt 3 ]: echo "[SM §4h] Rate limit: only ${CYCLES_SINCE} cycles since last run (min: 3) — skipping."; exit
+#
+# Step 2: All conditions met. Run autonomous vision agent.
+#   AUTO_BRANCH="vision/auto-$(date +%Y%m%d-%H%M)"
+#   git push origin "HEAD:refs/heads/$AUTO_BRANCH" 2>/dev/null || exit
+#   AUTO_WT="../${REPO_NAME}.auto-vision"
+#   git worktree add "$AUTO_WT" "$AUTO_BRANCH"
+#
+#   # Read and follow agents/autonomous-vision.md from the worktree
+#   # (agents/autonomous-vision.md is created by item 313 — when it exists,
+#   #  the agent runs here; until then, this step is a no-op)
+#   if [ -f "~/.otherness/agents/autonomous-vision.md" ]:
+#     echo "[SM §4h] Running autonomous vision synthesis..."
+#     # [AI-STEP: follow instructions in ~/.otherness/agents/autonomous-vision.md]
+#     # After agent completes: commit any new docs/design/ changes, push, open PR
+#   else
+#     echo "[SM §4h] agents/autonomous-vision.md not yet deployed — skipping synthesis."
+#   fi
+#
+#   git worktree remove "$AUTO_WT" --force 2>/dev/null
+#
+# Step 3: Record cycle in state.json
+#   python3 -c "import json; s=json.load(open('.otherness/state.json')); s['last_auto_vision_cycle']=$SM_CYCLE; open('.otherness/state.json','w').write(__import__('json').dumps(s,indent=2))"
+#   # Write state to _state branch
+
+echo "[SM §4h] Autonomous vision trigger check complete."
+```
+
+---
+
 ## 4e. Write session handoff
 
 ```bash

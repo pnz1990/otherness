@@ -138,8 +138,8 @@ This distinction matters because:
 ## Future (🔲)
 
 - 🔲 `agents/autonomous-vision.md` — new agent file, MODE: VISION, no dialogue step; reads corpus, synthesizes `🔲 ⚠️ Inferred` items, writes to docs/design/
-- 🔲 SM phase trigger — when queue empty + no pending ⚠️ stubs + GREEN/AMBER health + ≥3 batches since last run: create `vision/auto-<date>` branch, run autonomous-vision agent, merge
-- ✅ PM §5m: `⚠️ Inferred` ratio check — if >80% of Future items are ⚠️ Inferred, posts one vibe-vision suggestion per period; informational only (PR #315, 2026-04-19)
+- ✅ SM phase trigger — SM §4h checks all 4 conditions; creates vision/auto-<date> branch; runs agents/autonomous-vision.md when deployed; records last_auto_vision_cycle in state.json (PR #314, 2026-04-19)
+- 🔲 PM §5m: `⚠️ Inferred` ratio check — if >80% of Future items are `⚠️ Inferred`, post vibe-vision suggestion (human direction is needed)
 
 ---
 
