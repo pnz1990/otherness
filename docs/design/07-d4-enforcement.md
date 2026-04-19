@@ -141,10 +141,11 @@ The message names the correct command. The human knows exactly what to do.
 - ✅ Layer 1: `## D4 ENFORCEMENT` section added to `onboarding-new-project.md` AGENTS.md template; `d4_enforcement: true` added to `otherness-config-template.yaml` (PR #262, 2026-04-18)
 - ✅ `vibe-vision.md` hard rule: explicit session termination rule added to HARD RULES — session ends after D4 artifacts land on main, no implementation/issues/specs (PR #267, 2026-04-18)
 - ✅ `otherness.onboard` mode: MODE: VISION (writes docs/aide/ + .otherness/ exception for state bootstrap; does not write agents/ or scripts/) — accurately reflects actual behavior (PR #268, 2026-04-18)
+- ✅ CRITICAL-A/B tier split — standalone.md HARD RULES: git diff classifier separates logic changes (CRITICAL-A, human review) from [AI-STEP]-comment additions (CRITICAL-B, autonomous merge); queue gate at ≥3 in_review (PR #288, 2026-04-19)
 
 ## Future (🔲)
 
-- 🔲 CRITICAL tier split (CRITICAL-A / CRITICAL-B) — phase file PRs that add only `[AI-STEP]` comment blocks carry different risk than PRs that modify executable loop logic; split the tier so comment-only additions are CRITICAL-B (self-review + autonomous merge) while logic changes remain CRITICAL-A (needs-human). See docs/design/13-autonomous-merge-strategy.md for the full design.
+*(All D4 enforcement items implemented. doc 13 governs autonomous merge strategy. Future extensions should be opened as new issues.)*
 
 ---
 
