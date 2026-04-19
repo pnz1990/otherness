@@ -327,30 +327,32 @@
       "done_at": "2026-04-19T03:20:41Z"
     },
     "270": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Phase 2a: per-project calibration",
       "design_doc": "11-simulation-feedback-loop.md",
       "depends_on": [],
-      "assigned_to": "sess-83781955",
-      "assigned_at": "2026-04-18T20:51:13Z",
+      "assigned_to": "sess-314eab12",
+      "assigned_at": "2026-04-19T03:28:35Z",
       "branch": "feat/270",
       "worktree": "../otherness.270",
       "pr_number": 275,
-      "pr_merged": false,
-      "note": "Integration cherry-pick lost content in conflict resolution \u2014 needs proper implementation"
+      "pr_merged": true,
+      "note": "Integration cherry-pick lost content in conflict resolution \u2014 needs proper implementation",
+      "done_at": "2026-04-19T03:34:13Z"
     },
     "271": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Phase 2c: simulation results in _state",
       "design_doc": "11-simulation-feedback-loop.md",
       "depends_on": [],
-      "assigned_to": "sess-83781955",
-      "assigned_at": "2026-04-18T20:54:25Z",
+      "assigned_to": "sess-314eab12",
+      "assigned_at": "2026-04-19T03:30:20Z",
       "branch": "feat/271",
       "worktree": "../otherness.271",
       "pr_number": 276,
-      "pr_merged": false,
-      "note": "Integration cherry-pick lost content in conflict resolution \u2014 needs proper implementation"
+      "pr_merged": true,
+      "note": "Integration cherry-pick lost content in conflict resolution \u2014 needs proper implementation",
+      "done_at": "2026-04-19T03:34:13Z"
     },
     "277": {
       "state": "done",
@@ -439,10 +441,15 @@
       "last_seen": "2026-04-19T03:21:19Z",
       "item": "complete",
       "cycle": 100
+    },
+    "sess-314eab12": {
+      "last_seen": "2026-04-19T03:35:00Z",
+      "item": "complete",
+      "cycle": 10
     }
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 51,
-  "pm_cycle_count": 23
+  "sm_cycle_count": 52,
+  "pm_cycle_count": 24
 }
