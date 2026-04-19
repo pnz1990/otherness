@@ -78,7 +78,7 @@ escalation handles future stalls.
 
 ## Present (✅)
 
-*(Not yet implemented beyond test.sh check 5b.)*
+- ✅ PM §5j: reference project health check — reads ref project from config, checks _state age >72h, opens [NEEDS HUMAN] issue once per stall (duplicate-suppressed) (PR #301, 2026-04-19)
 
 ## Future (🔲)
 

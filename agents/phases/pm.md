@@ -421,3 +421,56 @@ if [ $((${PM_CYCLE:-0} % ${N_PM_CYCLES:-3})) -eq 0 ]; then
   echo "[PM §5g] README/AGENTS.md claims cross-check complete."
 fi
 ```
+
+---
+
+## 5j. Reference project health check (runs every N_PM_CYCLES)
+
+Detect Journey 2 failure. Open [NEEDS HUMAN] issue once per stall.
+
+```bash
+if [ $((${PM_CYCLE:-0} % ${N_PM_CYCLES:-3})) -eq 0 ]; then
+  echo "[PM §5j] Checking reference project health..."
+
+  # [AI-STEP]
+  # Step 1: Read reference project from otherness-config.yaml.
+  #   REF_PROJECT=$(python3 -c "
+  #     import re
+  #     in_monitor = in_projects = False
+  #     for line in open('otherness-config.yaml'):
+  #         if re.match(r'^monitor:',line): in_monitor=True
+  #         if in_monitor and re.match(r'\s+projects:',line): in_projects=True
+  #         if in_projects:
+  #             m=re.match(r'\s+- (.+)',line)
+  #             if m:
+  #                 r=m.group(1).strip()
+  #                 if not r.endswith('/otherness'): print(r); break
+  #   " 2>/dev/null)
+  #   if [ -z "$REF_PROJECT" ]: echo "[PM §5j] No reference project found — skipping."; exit
+  #
+  # Step 2: Check _state branch age.
+  #   LAST_COMMIT=$(gh api "repos/$REF_PROJECT/branches/_state"
+  #     --jq '.commit.commit.committer.date' 2>/dev/null || echo "")
+  #   if [ -z "$LAST_COMMIT" ]: echo "[PM §5j] No _state branch on $REF_PROJECT — skipping."; exit
+  #   AGE_H=$(python3 -c "
+  #     import datetime
+  #     d = datetime.datetime.fromisoformat('$LAST_COMMIT'.replace('Z','+00:00'))
+  #     print(int((datetime.datetime.now(datetime.timezone.utc) - d).total_seconds() / 3600))
+  #   ")
+  #
+  # Step 3: If AGE_H > 72 (Journey 2 failing):
+  #   TITLE="[NEEDS HUMAN] Journey 2: reference project stalled >72h — restart otherness on $REF_PROJECT"
+  #   EXISTING=$(gh issue list --repo $REPO --state open --search "$TITLE" --json number --jq 'length')
+  #   if [ "$EXISTING" -eq 0 ]:
+  #     gh issue create --repo $REPO --title "$TITLE"
+  #       --label "needs-human,area/agent-loop"
+  #       --body "Reference project $REF_PROJECT has not had _state activity in ${AGE_H}h (threshold: 72h).
+  #               Journey 2 is failing. Run /otherness.run on $REF_PROJECT to restart."
+  #   fi
+  #
+  # Step 4: If AGE_H <= 72:
+  #   echo "[PM §5j] Journey 2 OK: $REF_PROJECT last active ${AGE_H}h ago."
+
+  echo "[PM §5j] Reference project health check complete."
+fi
+```
