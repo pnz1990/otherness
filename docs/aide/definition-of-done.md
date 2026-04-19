@@ -30,27 +30,45 @@ bash scripts/test.sh       # must exit 0
 
 **The user story**: otherness runs autonomously on alibi for at least one full batch (claim item → implement → PR → merge) without human intervention.
 
-### Exact steps that must work
+### Automated check (runs in PM §5j every N_PM_CYCLES)
 
 ```bash
-# Verify alibi _state shows recent activity
-gh api repos/pnz1990/alibi/branches/_state \
-  --jq '.commit.commit.committer.date'
-# Must be within 72 hours
+# The canonical check — same logic as scripts/test.sh check 5b
+# Returns: stale age in hours + STALE_REASON if failing
 
-# Verify at least one PR merged recently
-gh pr list --repo pnz1990/alibi --state merged \
-  --json mergedAt --jq '.[0].mergedAt'
-# Must be within 7 days
+REFERENCE_PROJECT=$(python3 -c "
+import re
+in_monitor=in_projects=False
+for line in open('otherness-config.yaml'):
+    if re.match(r'^monitor:',line): in_monitor=True
+    if in_monitor and re.match(r'\s+projects:',line): in_projects=True
+    if in_projects:
+        m=re.match(r'\s+- (.+)',line)
+        if m:
+            r=m.group(1).strip()
+            if not r.endswith('/otherness'): print(r); break
+")
 
-# Verify no stuck [NEEDS HUMAN] blocking the queue
-gh issue list --repo pnz1990/alibi --label needs-human --state open \
-  --json number,title | python3 -c "
-import json,sys
-issues = json.load(sys.stdin)
-stale = [i for i in issues]  # any is a flag
-print(f'{len(stale)} needs-human issues open')
-"
+LAST_COMMIT=$(gh api "repos/$REFERENCE_PROJECT/branches/_state" \
+  --jq '.commit.commit.committer.date' 2>/dev/null || echo "")
+
+AGE_H=$(python3 -c "
+import datetime
+d = '$LAST_COMMIT'
+try:
+    dt = datetime.datetime.fromisoformat(d.replace('Z','+00:00'))
+    now = datetime.datetime.now(datetime.timezone.utc)
+    print(f'{(now - dt).total_seconds() / 3600:.1f}')
+except: print('999')
+")
+
+if python3 -c "exit(0 if float('$AGE_H') <= 72 else 1)"; then
+  echo "Journey 2: PASS — $REFERENCE_PROJECT active ${AGE_H}h ago"
+else
+  DAYS=$(python3 -c "print(f'{float(\"$AGE_H\")/24:.1f}')")
+  echo "Journey 2: FAIL — $REFERENCE_PROJECT _state last commit ${DAYS}d ago"
+  echo "STALE_REASON: $REFERENCE_PROJECT _state last commit ${DAYS}d ago (threshold: 72h)"
+fi
 ```
 
 ### Pass criteria
@@ -185,6 +203,42 @@ ls ~/.otherness/.opencode/command/otherness.vibe-vision.md
 
 ---
 
+## Journey 8: Commands always current
+
+**The user story**: After otherness is updated (new commands added, old ones removed), any project running `/otherness.run` automatically gets the current set of commands — no human action required.
+
+### Automated check
+
+```bash
+# Verify the SELF-UPDATE block syncs commands
+# Run from any otherness-managed project after a session:
+
+# 1. Commands in project match ~/.otherness exactly
+diff <(ls .opencode/command/otherness.*.md 2>/dev/null | xargs -I{} basename {} | sort) \
+     <(ls ~/.otherness/.opencode/command/otherness.*.md 2>/dev/null | xargs -I{} basename {} | sort)
+# Must output nothing (no diff)
+
+# 2. Stale commands are gone
+for f in .opencode/command/otherness.*.md; do
+  fname=$(basename "$f")
+  [ -f ~/.otherness/.opencode/command/"$fname" ] || echo "STALE: $fname"
+done
+# Must output nothing
+
+# 3. SELF-UPDATE block exists in standalone.md
+grep -c "two-way sync\|SYNCED\|cmp -s" ~/.otherness/agents/standalone.md
+# Must be ≥ 3
+```
+
+### Pass criteria
+
+- [ ] `.opencode/command/otherness.*.md` files match `~/.otherness/.opencode/command/otherness.*.md` exactly (no missing, no stale)
+- [ ] `otherness.vibe-vision.md` is present in the project after next `/otherness.run`
+- [ ] `otherness.cross-agent-monitor.md` is absent from the project after next `/otherness.run`
+- [ ] `standalone.md` contains the two-way sync block in SELF-UPDATE
+
+---
+
 ## Journey 7: Eternal loop — health signal, not stop condition
 
 **The user story**: The system runs 10 consecutive batches without saying "final run" or "complete." It reports health signals. It enters standby correctly. It wakes when new vision is added without human restart instruction.
@@ -223,12 +277,13 @@ gh issue view 2 --repo pnz1990/otherness --json comments \
 
 ## Journey Status
 
-| Journey | Status | Last checked | Notes |
-|---|---|---|---|
-| 1: Build and validate itself | ✅ Passing | 2026-04-19 | validate.sh, lint.sh, test.sh all exit 0 |
-| 2: Runs correctly on reference project | ❌ Failing | 2026-04-19 | alibi `_state` last commit 2026-04-14 (5d ago). PM §5 should detect this and post [NEEDS HUMAN] once. See docs/design/16. [NEEDS HUMAN: restart otherness on alibi] |
-| 3: Self-improvement happening | ✅ Passing | 2026-04-19 | 21+ PRs merged 2026-04-18/19; 11+ skills; Stage 8 design docs added |
-| 4: CRITICAL tier protection | ✅ Passing | 2026-04-19 | CRITICAL-A/B tier split deployed; autonomous merge protocol in qa.md §3e |
-| 5: Starts cleanly on fresh clone | ✅ Passing | 2026-04-19 | 9 command files; state seeds correctly; validate.sh PASSED |
-| 6: vibe-vision produces valid D4 artifacts | ✅ Passing | 2026-04-19 | This session produced 4 design docs (14-17) + roadmap Stage 8 + DoD update. COORD will pick up 🔲 items on next run. |
-| 7: Eternal loop health signal | 🔲 Not validated | 2026-04-19 | Stage 8 design docs written. Requires implementation: health signal format, spatial coordination, vision age check. |
+| Journey | Status | Last checked | Health | Notes |
+|---|---|---|---|---|
+| 1: Build and validate itself | ✅ Passing | 2026-04-19 | GREEN | validate.sh, lint.sh, test.sh all exit 0 |
+| 2: Runs correctly on reference project | ❌ Failing | 2026-04-19 | AMBER | alibi `_state` last commit 2026-04-14 (5d). PM §5j should post [NEEDS HUMAN] once. `bash scripts/test.sh` check 5b outputs STALE_REASON. [NEEDS HUMAN: restart otherness on alibi] |
+| 3: Self-improvement happening | ✅ Passing | 2026-04-19 | GREEN | 20+ PRs merged; command sync shipped; Stage 9/10 complete |
+| 4: CRITICAL tier protection | ✅ Passing | 2026-04-19 | GREEN | CRITICAL-A/B tier split; autonomous merge protocol; queue gate |
+| 5: Starts cleanly on fresh clone | ✅ Passing | 2026-04-19 | GREEN | command files now auto-synced via SELF-UPDATE; setup updated |
+| 6: vibe-vision produces valid D4 artifacts | ✅ Passing | 2026-04-19 | GREEN | Multiple sessions produced design docs with 🔲 Future items; COORD picked them up |
+| 7: Eternal loop health signal | ✅ Passing | 2026-04-19 | GREEN | SM §4f now posts Health: GREEN/AMBER/RED; 'Never report finality' rule in HARD RULES; no 'final run' in last 10 posts |
+| 8: Commands always current | ✅ Passing | 2026-04-19 | GREEN | Two-way sync in SELF-UPDATE: adds new, removes stale otherness.* on every session startup (PR #332) |
