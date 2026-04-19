@@ -103,14 +103,14 @@ system never freezes.
 
 ## Present (✅)
 
-*(Not yet implemented beyond /otherness.vibe-vision command and PM §5c competitive check.)*
+- ✅ PM §5k: vision age check — posts vibe-vision suggestion when queue empty AND no design doc activity >30 days; one post per period; not a blocker (PR #307-310, 2026-04-19)
+- ✅ PM §5c: competitive gap findings written as `⚠️ Inferred` design doc stubs — visible to COORD queue gen immediately (PR #307-310, 2026-04-19)
+- ✅ PM §5h extension: emergent pattern detection — PRs merged with no design doc coverage flagged as `⚠️ Observed` stubs (PR #307-310, 2026-04-19)
+- ✅ Marker conventions: `docs/design/00-marker-conventions.md` defines ✅/🔲/⚠️ Inferred/⚠️ Observed/🚫 (PR #307-310, 2026-04-19)
 
 ## Future (🔲)
 
-- 🔲 PM §5: vision age check — if queue empty AND no new design doc activity in >30 days, post vibe-vision suggestion on report issue
-- 🔲 PM §5c: write competitive gap findings as `⚠️ Inferred` design doc entries (not just issues)
-- 🔲 PM §5h extension: detect emergent patterns in ✅ Present items with no design doc coverage; add as `⚠️ Observed` stubs
-- 🔲 docs/design/: add `⚠️ Inferred` and `⚠️ Observed` marker conventions alongside existing `⚠️ Inferred` pattern from onboarding
+*(All planned vision evolution items shipped.)*
 
 ---
 
