@@ -1,35 +1,56 @@
 name: otherness scheduled run
 
+# ── Schedule ──────────────────────────────────────────────────────────────────
+# Override the cron here per project. Default: every 6 hours.
+# kardinal-promoter uses: "0 * * * *"  (every hour)
+# otherness self-improvement: "0 */6 * * *"  (every 6 hours)
 on:
   schedule:
-    - cron: "0 */6 * * *"  # every 6 hours — override via otherness-config.yaml schedule.cron
+    - cron: "0 */6 * * *"
   workflow_dispatch:          # manual trigger for testing or immediate execution
 
 jobs:
   otherness:
     runs-on: ubuntu-latest
+
+    # ── Permissions ────────────────────────────────────────────────────────────
+    # id-token: write  — required for AWS OIDC (Bedrock)
+    # contents: write  — push commits, create branches
+    # pull-requests: write — open/update/merge PRs, post review comments
+    # issues: write    — create/label/close issues, post comments
+    # actions: write   — trigger workflows (needed to kick off CI after push)
+    # statuses: write  — post commit statuses
     permissions:
       id-token: write
       contents: write
       pull-requests: write
       issues: write
+      actions: write
+      statuses: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: false
+          # Use GH_TOKEN (PAT) so pushes from this job can trigger other workflows.
+          # GITHUB_TOKEN pushes are intentionally excluded from triggering workflows
+          # to prevent loops — PAT pushes are not.
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Configure git identity
+        run: |
+          git config --global user.name  "otherness[bot]"
+          git config --global user.email "otherness[bot]@users.noreply.github.com"
 
       - name: Install otherness agent files
         run: |
           git clone --quiet --depth 1 https://github.com/pnz1990/otherness.git ~/.otherness
-          echo "[otherness] Agent files installed at ~/.otherness ($(git -C ~/.otherness describe --tags --always))"
+          echo "[otherness] Agent files installed at ~/.otherness ($(git -C ~/.otherness describe --tags --always 2>/dev/null || git -C ~/.otherness rev-parse --short HEAD))"
 
       - name: Sync otherness command files
         run: |
           mkdir -p .opencode/command
-          # Two-way sync: add new otherness.* commands, remove stale ones
           SYNCED=0
           for src in ~/.otherness/.opencode/command/otherness.*.md; do
             [ -f "$src" ] || continue
@@ -43,26 +64,29 @@ jobs:
           done
           [ $SYNCED -eq 1 ] && echo "[otherness] Command files synced." || echo "[otherness] Commands already current."
 
-      - name: Install gh CLI (if not present)
-        run: |
-          if ! command -v gh &>/dev/null; then
-            type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
-            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-            sudo apt update && sudo apt install gh -y
-          fi
-          gh --version
+      - name: Configure AWS credentials (Bedrock via OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: otherness-bedrock
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
 
       - name: Authenticate gh CLI
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh auth setup-git
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          echo "$GH_TOKEN" | gh auth login --with-token
+          gh auth setup-git
+          gh auth status
 
       - name: Run otherness
         uses: anomalyco/opencode/github@latest
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Bedrock — credentials come from the OIDC role assumed above
+          AWS_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
+          # GitHub — full PAT so agent can push, open PRs, trigger workflows
+          GH_TOKEN:     ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
           model: amazon-bedrock/global.anthropic.claude-sonnet-4-6
           prompt: |
