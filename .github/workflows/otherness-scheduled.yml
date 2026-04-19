@@ -89,6 +89,9 @@ jobs:
           # GitHub — full PAT for push, PR, review, issue, and workflow trigger
           GH_TOKEN:     ${{ secrets.GH_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          # Auto-approve all tool permissions in CI — no interactive TTY available.
+          # Without this, ctx.ask() blocks indefinitely waiting for user approval.
+          OPENCODE_PERMISSION: '{"bash":"allow","read":"allow","edit":"allow","write":"allow","glob":"allow","grep":"allow","list":"allow","external_directory":"allow","webfetch":"allow","task":"allow","todowrite":"allow","skill":"allow"}'
         with:
           model: amazon-bedrock/global.anthropic.claude-sonnet-4-6
           # use_github_token: true — skip the OpenCode App OIDC exchange.
