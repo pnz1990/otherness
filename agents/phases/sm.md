@@ -277,8 +277,43 @@ except: print(0)
 
 if [ $((SM_CYCLE % 10)) -eq 0 ] && [ "$SM_CYCLE" -gt 0 ]; then
     echo "[SM §4d] Running simulation calibration (sm_cycle=$SM_CYCLE)..."
+
+    # Phase 2a: per-project calibration — use local metrics if ≥10 batches available
+    # [AI-STEP]
+    # Check metrics.md row count:
+    #   METRICS_ROWS=$(grep -c '^\|\s*[0-9][0-9][0-9][0-9]-' docs/aide/metrics.md 2>/dev/null || echo 0)
+    # If METRICS_ROWS >= 10:
+    #   Run: python3 scripts/calibrate.py --runs 3 --cycles 50 --metrics docs/aide/metrics.md 2>/dev/null
+    #   echo "[SM §4d] Using project-specific metrics ($METRICS_ROWS batches) for calibration."
+    # Else:
+    #   Run default: python3 scripts/calibrate.py --runs 3 --cycles 50 2>/dev/null
+    #   echo "[SM §4d] Using otherness default calibration (only $METRICS_ROWS batches available)."
+    #
+    # After calibration succeeds (either path), persist sim-params.json to _state branch:
+    #   if [ -f "scripts/sim-params.json" ]; then
+    #     Use worktree pattern (same as state.json writes) to write
+    #     scripts/sim-params.json → .otherness/sim-params.json on _state branch.
+    #     Commit message: "calibration: update sim-params.json (sm_cycle=$SM_CYCLE)"
+    #   fi
+
     if python3 scripts/calibrate.py --runs 3 --cycles 50 2>/dev/null; then
         echo "[SM §4d] Calibration complete — sim-params.json updated."
+
+        # Phase 2c: write sim-results.json to _state branch
+        # [AI-STEP]
+        # After successful calibration:
+        # 1. Read scripts/sim-params.json to get best_rmse and params.
+        # 2. Build sim-results.json:
+        #    results = {
+        #      "calibrated_at": datetime.utcnow().isoformat() + "Z",
+        #      "best_rmse": sim_params.get("rmse", null),
+        #      "source": "project-specific" if METRICS_ROWS >= 10 else "otherness-defaults",
+        #      "params": sim_params
+        #    }
+        # 3. Write to _state branch as .otherness/sim-results.json using worktree pattern.
+        #    (Same pattern as state.json writes — worktree add, write, commit, push, worktree remove)
+        #    Commit message: "calibration: sim-results.json (sm_cycle=$SM_CYCLE)"
+        # 4. Non-fatal: if write fails, log and continue.
 
         # Read arch_convergence from latest sim-params.json
         ARCH_CONV=$(python3 -c "
