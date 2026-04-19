@@ -421,34 +421,60 @@
       "done_at": "2026-04-19T03:20:41Z"
     },
     "292": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: standalone.md: replace 'final run' framing with health signal",
       "design_doc": "14-eternal-loop-stop-condition.md",
-      "depends_on": []
+      "depends_on": [],
+      "assigned_to": "sess-a5ad9de5",
+      "assigned_at": "2026-04-19T04:16:13Z",
+      "branch": "feat/health-signal-framing",
+      "pr_merged": true,
+      "done_at": "2026-04-19T04:19:44Z",
+      "pr_number": 297
     },
     "293": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: standalone.md HARD RULES: add rule \u2014 never say 'final run'",
       "design_doc": "14-eternal-loop-stop-condition.md",
-      "depends_on": []
+      "depends_on": [],
+      "assigned_to": "sess-a5ad9de5",
+      "assigned_at": "2026-04-19T04:16:13Z",
+      "branch": "feat/health-signal-framing",
+      "pr_merged": true,
+      "done_at": "2026-04-19T04:19:44Z",
+      "pr_number": 297
     },
     "294": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Phase 4 SM: batch completion post uses health signal format",
       "design_doc": "14-eternal-loop-stop-condition.md",
-      "depends_on": []
+      "depends_on": [],
+      "assigned_to": "sess-a5ad9de5",
+      "assigned_at": "2026-04-19T04:16:13Z",
+      "branch": "feat/health-signal-framing",
+      "pr_merged": true,
+      "done_at": "2026-04-19T04:19:44Z",
+      "pr_number": 297
     },
     "295": {
-      "state": "todo",
+      "state": "blocked",
       "title": "feat: definition-of-done.md: Journey table Health column GREEN/AMBER/RED",
       "design_doc": "14-eternal-loop-stop-condition.md",
-      "depends_on": []
+      "depends_on": [],
+      "note": "DOCS zone (docs/aide/definition-of-done.md) \u2014 requires /otherness.vibe-vision"
     },
     "296": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: state.json: add file_spaces field to feature entries at claim time",
       "design_doc": "15-multi-session-spatial-coordination.md",
-      "depends_on": []
+      "depends_on": [],
+      "assigned_to": "sess-a5ad9de5",
+      "assigned_at": "2026-04-19T04:20:06Z",
+      "branch": "feat/296",
+      "worktree": "../otherness.296",
+      "pr_merged": true,
+      "done_at": "2026-04-19T04:24:37Z",
+      "pr_number": 298
     }
   },
   "engineer_slots": {
@@ -480,6 +506,6 @@
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 53,
-  "pm_cycle_count": 25
+  "sm_cycle_count": 54,
+  "pm_cycle_count": 26
 }
