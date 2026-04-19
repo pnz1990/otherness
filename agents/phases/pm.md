@@ -458,18 +458,27 @@ if [ $((${PM_CYCLE:-0} % ${N_PM_CYCLES:-3})) -eq 0 ]; then
   #     print(int((datetime.datetime.now(datetime.timezone.utc) - d).total_seconds() / 3600))
   #   ")
   #
-  # Step 3: If AGE_H > 72 (Journey 2 failing):
-  #   TITLE="[NEEDS HUMAN] Journey 2: reference project stalled >72h — restart otherness on $REF_PROJECT"
-  #   EXISTING=$(gh issue list --repo $REPO --state open --search "$TITLE" --json number --jq 'length')
-  #   if [ "$EXISTING" -eq 0 ]:
-  #     gh issue create --repo $REPO --title "$TITLE"
-  #       --label "needs-human,area/agent-loop"
-  #       --body "Reference project $REF_PROJECT has not had _state activity in ${AGE_H}h (threshold: 72h).
-  #               Journey 2 is failing. Run /otherness.run on $REF_PROJECT to restart."
-  #   fi
-  #
-  # Step 4: If AGE_H <= 72:
-  #   echo "[PM §5j] Journey 2 OK: $REF_PROJECT last active ${AGE_H}h ago."
+   # Step 3: If AGE_H > 72 (Journey 2 failing):
+   #   TITLE="[NEEDS HUMAN] Journey 2: reference project stalled >72h — restart otherness on $REF_PROJECT"
+   #   EXISTING=$(gh issue list --repo $REPO --state open --search "$TITLE" --json number --jq 'length')
+   #   if [ "$EXISTING" -eq 0 ]:
+   #     gh issue create --repo $REPO --title "$TITLE"
+   #       --label "needs-human,area/agent-loop"
+   #       --body "Reference project $REF_PROJECT has not had _state activity in ${AGE_H}h (threshold: 72h).
+   #               Journey 2 is failing. Run /otherness.run on $REF_PROJECT to restart."
+   #   fi
+   #
+   # Step 3b: AMBER/RED escalation based on stall duration (for PM §5g health signal):
+   #   If AGE_H > 72 AND AGE_H <= 168 (24–72h mapped to AMBER, >72h is already RED):
+   #     Set JOURNEY2_HEALTH="AMBER" (override if current HEALTH is GREEN)
+   #   If AGE_H > 168 (>7 days):
+   #     Set JOURNEY2_HEALTH="RED"
+   #   PM §5g reads JOURNEY2_HEALTH as an additional signal when computing overall health:
+   #     if JOURNEY2_HEALTH == "RED": overall HEALTH = "RED"
+   #     elif JOURNEY2_HEALTH == "AMBER" and overall HEALTH == "GREEN": overall HEALTH = "AMBER"
+   #
+   # Step 4: If AGE_H <= 72:
+   #   echo "[PM §5j] Journey 2 OK: $REF_PROJECT last active ${AGE_H}h ago."
 
   echo "[PM §5j] Reference project health check complete."
 fi

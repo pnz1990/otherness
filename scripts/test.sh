@@ -81,11 +81,18 @@ THRESHOLD=72
 IS_STALE=$(python3 -c "print('yes' if float('$COMMIT_EPOCH') > $THRESHOLD else 'no')")
 
 if [ "$IS_STALE" = "yes" ]; then
+  STALE_DAYS=$(python3 -c "h=float('$COMMIT_EPOCH'); print(f'{h/24:.1f}')")
   echo "  WARNING: _state branch has not been updated in >72 hours"
-  echo "  otherness may have stalled on $REFERENCE_PROJECT — investigate"
+  echo "  STALE_REASON: $REFERENCE_PROJECT _state last commit ${STALE_DAYS}d ago (${COMMIT_EPOCH}h)"
+  echo "  Journey 2 status: FAILING — reference project stalled"
   echo "  (not failing the test — this is a warning, not a blocking error)"
+  # Export stale reason for PM phase to consume
+  export JOURNEY2_STALE_HOURS="$COMMIT_EPOCH"
+  export JOURNEY2_STALE_REASON="$REFERENCE_PROJECT _state last commit ${STALE_DAYS}d ago"
 else
   echo "  OK: $REFERENCE_PROJECT is alive (last activity ${COMMIT_EPOCH}h ago)"
+  export JOURNEY2_STALE_HOURS="0"
+  export JOURNEY2_STALE_REASON=""
 fi
 
 # [5b] Schema version check — warn (non-fatal) if reference project state is on old schema
