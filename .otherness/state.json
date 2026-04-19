@@ -438,6 +438,50 @@
       "branch": "feat/schedule-integration",
       "pr_merged": true,
       "done_at": "2026-04-19T05:50:52Z"
+    },
+    "328": {
+      "state": "done",
+      "title": "feat: standalone.md SELF-UPDATE two-way command file sync",
+      "design_doc": "20-command-file-sync.md",
+      "depends_on": [],
+      "assigned_to": "sess-5aedff9f",
+      "assigned_at": "2026-04-19T16:41:29Z",
+      "branch": "feat/command-sync",
+      "pr_merged": true,
+      "done_at": "2026-04-19T16:45:41Z"
+    },
+    "329": {
+      "state": "done",
+      "title": "feat: bounded-standalone.md same command sync step",
+      "design_doc": "20-command-file-sync.md",
+      "depends_on": [],
+      "assigned_to": "sess-5aedff9f",
+      "assigned_at": "2026-04-19T16:41:29Z",
+      "branch": "feat/command-sync",
+      "pr_merged": true,
+      "done_at": "2026-04-19T16:45:41Z"
+    },
+    "330": {
+      "state": "done",
+      "title": "feat: otherness.setup.md Step 4 full sync replace skip-if-exists",
+      "design_doc": "20-command-file-sync.md",
+      "depends_on": [],
+      "assigned_to": "sess-5aedff9f",
+      "assigned_at": "2026-04-19T16:41:29Z",
+      "branch": "feat/command-sync",
+      "pr_merged": true,
+      "done_at": "2026-04-19T16:45:41Z"
+    },
+    "331": {
+      "state": "done",
+      "title": "feat: otherness-scheduled.yml add command sync after clone",
+      "design_doc": "20-command-file-sync.md",
+      "depends_on": [],
+      "assigned_to": "sess-5aedff9f",
+      "assigned_at": "2026-04-19T16:41:29Z",
+      "branch": "feat/command-sync",
+      "pr_merged": true,
+      "done_at": "2026-04-19T16:45:41Z"
     }
   },
   "engineer_slots": {
@@ -455,10 +499,15 @@
       "last_seen": "2026-04-18T21:35:09Z",
       "item": "standby-60",
       "cycle": 60
+    },
+    "sess-5aedff9f": {
+      "last_seen": "2026-04-19T16:41:29Z",
+      "item": "328",
+      "cycle": 1
     }
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 51,
+  "sm_cycle_count": 52,
   "pm_cycle_count": 24
 }
