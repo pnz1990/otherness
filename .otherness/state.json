@@ -327,7 +327,7 @@
       "done_at": "2026-04-19T03:20:41Z"
     },
     "270": {
-      "state": "done",
+      "state": "todo",
       "title": "feat: Phase 2a: per-project calibration",
       "design_doc": "11-simulation-feedback-loop.md",
       "depends_on": [],
@@ -336,11 +336,11 @@
       "branch": "feat/270",
       "worktree": "../otherness.270",
       "pr_number": 275,
-      "pr_merged": true,
-      "done_at": "2026-04-19T03:20:41Z"
+      "pr_merged": false,
+      "note": "Integration cherry-pick lost content in conflict resolution \u2014 needs proper implementation"
     },
     "271": {
-      "state": "done",
+      "state": "todo",
       "title": "feat: Phase 2c: simulation results in _state",
       "design_doc": "11-simulation-feedback-loop.md",
       "depends_on": [],
@@ -349,8 +349,8 @@
       "branch": "feat/271",
       "worktree": "../otherness.271",
       "pr_number": 276,
-      "pr_merged": true,
-      "done_at": "2026-04-19T03:20:41Z"
+      "pr_merged": false,
+      "note": "Integration cherry-pick lost content in conflict resolution \u2014 needs proper implementation"
     },
     "277": {
       "state": "done",
