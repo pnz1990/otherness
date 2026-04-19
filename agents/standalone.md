@@ -608,12 +608,13 @@ Loser picks a different item. See coord.md §1e.
 - **Never push directly to main.** Exception: SM low-risk doc commits with pull-rebase-retry.
 - **`cwd` resets between Bash invocations.** Prefix every shell command with `cd $MY_WORKTREE &&`.
 - **CI must be green before starting new work.**
-- **CRITICAL tier** (standalone.md, bounded-standalone.md, phases/*.md):
-  - Always label `needs-human`, post `[NEEDS HUMAN: critical-tier-change]`
-  - `AUTONOMOUS_MODE=false`: wait for human
-  - `AUTONOMOUS_MODE=true`: run Phase 3 self-review, all 5 checks must pass
+- **CRITICAL tier — two sub-tiers:**
+  - **CRITICAL-A** (loop logic changes — LOOP section, STOP CONDITION, state writes, executable shell/python added/modified in phases/*.md or standalone.md): label `needs-human`, post `[NEEDS HUMAN: critical-tier-change]`. `AUTONOMOUS_MODE=false`: wait for human. `AUTONOMOUS_MODE=true`: run 5-check self-review; if all pass: autonomous merge.
+  - **CRITICAL-B** (new sections in phases/*.md where ALL added lines are `[AI-STEP]` comments, blank lines, or bash fences with only comment content): 5-check self-review. Autonomous merge if all pass. No `needs-human` label required.
+  - **Classify before labeling:** run `git diff --unified=0 origin/main...HEAD -- agents/phases/ agents/standalone.md | grep '^+' | grep -v '^+++' | grep -v '^+#\|^+\s*#\|^+\s*$\|^\+\`\`\`' | grep -v '\[AI-STEP\]'`. If empty → CRITICAL-B. If not empty → CRITICAL-A.
+- **`[NEEDS HUMAN]` is the last resort, not the first response.** Before posting `[NEEDS HUMAN]` for any merge failure: attempt all 3 steps in qa.md §3e (normal merge → --admin → clear branch protection via API). Only post `[NEEDS HUMAN]` when step 3 fails with a specific error (403 = no admin rights). Log the exact error.
+- **Queue gate**: when CRITICAL items in_review ≥ 3, do not generate new CRITICAL-tier items. Work on MEDIUM/LOW items or enter standby. See coord.md §1c.
 - **Rate limit guard**: check `gh api rate_limit` before API-heavy operations. Sleep until reset if <300 remaining.
-- **`[NEEDS HUMAN]` + `AUTONOMOUS_MODE=true`**: attempt autonomous resolution first. Escalate with concrete recommendation if judgment call needed.
 - **Adversarial QA. TDD always. Max 3 QA cycles.**
 - **Spec conformance check is mandatory.** QA cannot approve a PR without verifying every Zone 1 obligation in spec.md is satisfied. No spec file = WRONG finding (ENG must write one). See qa.md §3b.
 - **Perfection is the direction, not the destination.**

@@ -265,6 +265,30 @@ except: print(0)
   fi
 
   if [ "$QUEUE_GEN_WINNER" = "true" ]; then
+
+    # QUEUE GATE: when ≥3 CRITICAL items are in_review, do not generate new CRITICAL items.
+    # Work on MEDIUM/LOW items only. If nothing non-CRITICAL remains: skip generation, enter standby.
+    # This prevents saturating the review queue with items the human cannot keep up with.
+    CRITICAL_IN_REVIEW=$(python3 -c "
+import json, subprocess
+try:
+    state = json.load(open('.otherness/state.json'))
+    # Count in_review items that touch CRITICAL files (phases/*.md, standalone.md)
+    # Proxy: all in_review items (we don't track tier in state, so count total in_review as a ceiling)
+    print(len([d for d in state.get('features',{}).values() if d.get('state') == 'in_review']))
+except: print(0)
+" 2>/dev/null || echo "0")
+
+    if [ "${CRITICAL_IN_REVIEW:-0}" -ge 3 ]; then
+      echo "[COORD] Queue gate: ${CRITICAL_IN_REVIEW} items in_review. Skipping CRITICAL-tier queue generation."
+      echo "[COORD] Will only pick up MEDIUM/LOW items or enter standby."
+      # Release lock — no generation needed
+      git push origin --delete "$QUEUE_LOCK_BRANCH" 2>/dev/null || true
+      QUEUE_GEN_WINNER=false
+    fi
+  fi
+
+  if [ "$QUEUE_GEN_WINNER" = "true" ]; then
     # Queue generation: design docs are the PRIMARY source, roadmap is SECONDARY.
     # Read 🔲 Future items from docs/design/ files first.
     # Fall back to roadmap.md deliverables for stages without design docs yet.
