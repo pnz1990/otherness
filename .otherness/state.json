@@ -530,6 +530,50 @@
       "branch": "feat/journey2-escalation",
       "pr_merged": true,
       "done_at": "2026-04-19T04:36:10Z"
+    },
+    "307": {
+      "state": "done",
+      "title": "feat: PM \u00a75 vision age check \u2014 suggest vibe-vision when queue empty >30d",
+      "design_doc": "17-vision-evolution-cadence.md",
+      "depends_on": [],
+      "assigned_to": "sess-a5ad9de5",
+      "assigned_at": "2026-04-19T04:37:45Z",
+      "branch": "feat/vision-evolution",
+      "pr_merged": true,
+      "done_at": "2026-04-19T04:42:03Z"
+    },
+    "308": {
+      "state": "done",
+      "title": "feat: PM \u00a75c competitive findings as \u26a0\ufe0f Inferred design doc stubs",
+      "design_doc": "17-vision-evolution-cadence.md",
+      "depends_on": [],
+      "assigned_to": "sess-a5ad9de5",
+      "assigned_at": "2026-04-19T04:37:45Z",
+      "branch": "feat/vision-evolution",
+      "pr_merged": true,
+      "done_at": "2026-04-19T04:42:03Z"
+    },
+    "309": {
+      "state": "done",
+      "title": "feat: PM \u00a75h extension detect emergent patterns in Present items",
+      "design_doc": "17-vision-evolution-cadence.md",
+      "depends_on": [],
+      "assigned_to": "sess-a5ad9de5",
+      "assigned_at": "2026-04-19T04:37:45Z",
+      "branch": "feat/vision-evolution",
+      "pr_merged": true,
+      "done_at": "2026-04-19T04:42:03Z"
+    },
+    "310": {
+      "state": "done",
+      "title": "feat: docs/design \u26a0\ufe0f Inferred and \u26a0\ufe0f Observed marker conventions",
+      "design_doc": "17-vision-evolution-cadence.md",
+      "depends_on": [],
+      "assigned_to": "sess-a5ad9de5",
+      "assigned_at": "2026-04-19T04:37:45Z",
+      "branch": "feat/vision-evolution",
+      "pr_merged": true,
+      "done_at": "2026-04-19T04:42:03Z"
     }
   },
   "engineer_slots": {
@@ -561,6 +605,6 @@
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 57,
-  "pm_cycle_count": 29
+  "sm_cycle_count": 58,
+  "pm_cycle_count": 30
 }
