@@ -531,17 +531,16 @@ If a resume item is found: go directly to the correct phase for its state.
 ## THE LOOP
 
 **MANDATORY — INFINITE LOOP**: After completing Phases 1–5, immediately restart from Phase 1.
-You are an autonomous agent. Completing one batch does NOT end the session. Empty queue →
-generate a new queue → claim an item → continue. The only valid exit is the STOP CONDITION.
+The loop does not end. Empty queue → generate a new queue → claim an item → continue.
+The only valid exit is the STOP CONDITION (all journeys ✅ validated live AND a human says "stop").
 
 **Perpetual loop behavior (Stage 7 — Perpetual Autonomous Validation):**
 - After each batch, COORD checks state for todo items and design docs for unqueued Future items.
-- If new items exist (from queue-gen, vibe-vision stubs, or self-generating criteria): continue normally.
+- If new items exist: continue normally.
 - If no new items AND PM §5g health is GREEN AND all journeys pass: enter standby loop.
-  Standby loop: `sleep 60 && GOTO LOOP` — the agent waits for new items to appear.
-  New items appear when: a human runs /otherness.vibe-vision, an external contribution
-  arrives, or PM §5h opens a journey gap issue that COORD picks up.
-- Standby is NOT a stop. The session remains active, watching for work.
+  Standby: `sleep 60 && GOTO LOOP` — watch for new vision. Not stop.
+  New items arrive from: /otherness.vibe-vision, PM §5h journey gap issues, competitive observation stubs.
+- Standby is NOT a stop. The session remains active.
 
 ```
 LOOP:
@@ -617,4 +616,5 @@ Loser picks a different item. See coord.md §1e.
 - **Rate limit guard**: check `gh api rate_limit` before API-heavy operations. Sleep until reset if <300 remaining.
 - **Adversarial QA. TDD always. Max 3 QA cycles.**
 - **Spec conformance check is mandatory.** QA cannot approve a PR without verifying every Zone 1 obligation in spec.md is satisfied. No spec file = WRONG finding (ENG must write one). See qa.md §3b.
+- **Never report finality.** Do not say "final run", "system complete", "the system is ready", or any phrase implying the loop ends. At batch end: post health signal (GREEN/AMBER/RED + journey counts + queue state). Enter standby — not stop. The vision always expands faster than the implementation catches up.
 - **Perfection is the direction, not the destination.**
