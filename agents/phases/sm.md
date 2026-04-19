@@ -371,6 +371,59 @@ if [ $((SM_CYCLE % 10)) -eq 0 ] && [ "${SM_CYCLE:-0}" -gt 0 ]; then
 fi
 ```
 
+---
+
+## 4g. Codebase hygiene scan (every 20 SM cycles)
+
+Check whether non-trivial agent and script files have design doc coverage.
+Opens `kind/chore` issues for files with no coverage. Nothing deleted autonomously.
+
+```bash
+if [ $((SM_CYCLE % 20)) -eq 0 ] && [ "${SM_CYCLE:-0}" -gt 0 ]; then
+  echo "[SM §4g] Running codebase hygiene scan..."
+
+  # [AI-STEP]
+  # Step 0: Graceful fallback if docs/design/ is missing or empty.
+  #   if [ ! -d "docs/design" ] || [ -z "$(ls docs/design/*.md 2>/dev/null)" ]; then
+  #     echo "[SM §4g] No design docs — skipping."; skip; fi
+  #
+  # Step 1: Build coverage set from all docs/design/*.md files.
+  #   For each docs/design/*.md: read all ✅ Present and 🔲 Future item text.
+  #   Extract a set of covered names (filenames, base names, key terms).
+  #   covered_terms = set of words extracted from Present/Future item text.
+  #
+  # Step 2: Scan agents/*.md (excluding agents/skills/, agents/phases/ — those have
+  #   their own coverage via standalone.md and coord/eng/qa/sm/pm.md).
+  #   Also scan scripts/*.sh and scripts/*.py.
+  #   Exempt: PROVENANCE.md, README.md, any file with "template" in name.
+  #
+  # Step 3: For each non-trivial file (size > 0):
+  #   basename = os.path.basename(filepath).replace('.md','').replace('.sh','').replace('.py','')
+  #   Check if basename appears in any design doc Present or Future item text.
+  #   If no coverage found:
+  #     title = f"chore: uncovered file — {filepath} has no design doc entry"
+  #     open_if_absent(title, "kind/chore,otherness,priority/low")
+  #     Post: "[NEEDS HUMAN: confirm documentation or deletion]"
+  #
+  # Step 4: Duplicate suppression.
+  #   def open_if_absent(title, labels):
+  #     r = subprocess.run(['gh','issue','list','--repo',REPO,'--state','open',
+  #                         '--search',title[:60],'--json','number','--jq','length'],
+  #                        capture_output=True, text=True)
+  #     if int(r.stdout.strip() or '0') == 0:
+  #       subprocess.run(['gh','issue','create','--repo',REPO,
+  #                       '--title',title,'--label',labels,
+  #                       '--body',f'SM §4g codebase hygiene: {title}'], capture_output=True)
+  #
+  # Step 5: Post summary.
+  #   echo "[SM §4g] Codebase hygiene scan complete. <N> uncovered files found."
+
+  echo "[SM §4g] Codebase hygiene scan complete."
+fi
+```
+
+---
+
 ## 4e. Write session handoff
 
 ```bash
