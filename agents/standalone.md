@@ -29,6 +29,10 @@ Shape the vision first, then the team will implement.
 ## SELF-UPDATE
 
 ```bash
+# GIT_TERMINAL_PROMPT=0 prevents git from hanging on credential prompts in CI.
+# On GitHub Actions runners there is no TTY; without this, git pull blocks indefinitely.
+export GIT_TERMINAL_PROMPT=0
+
 # Pin to agent_version if set; otherwise pull latest
 AGENT_VERSION=$(python3 -c "
 import re
