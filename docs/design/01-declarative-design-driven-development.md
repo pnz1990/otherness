@@ -153,7 +153,6 @@ must be parseable:
 ```
 ## Future (🔲)
 - 🔲 <item description> — <why deferred>
-- 🔲 <item description> — <why deferred>
 ```
 
 Completed items move to Present:
