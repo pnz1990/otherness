@@ -977,6 +977,15 @@
       "areas": [
         "area/tooling"
       ]
+    },
+    "issue-479": {
+      "state": "done",
+      "pr_number": 484,
+      "pr_merged": true,
+      "done_at": "2026-04-20T09:22:13Z",
+      "areas": [
+        "area/agent-loop"
+      ]
     }
   },
   "engineer_slots": {
