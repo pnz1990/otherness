@@ -465,6 +465,106 @@
         "area/agent-loop"
       ],
       "design_doc": "22-queue-richness.md"
+    },
+    "401": {
+      "state": "todo",
+      "title": "feat: `SM \u00a74e`: read `metrics.md`, calibrate `simulate.py` parameters against real data, write `",
+      "status": "todo"
+    },
+    "402": {
+      "state": "todo",
+      "title": "feat: `otherness-config-template.yaml`: add `anchor:` section (workflow, score_pattern, coverage",
+      "status": "todo"
+    },
+    "403": {
+      "state": "todo",
+      "title": "feat: Anchor score comment format: PDCA posts `[ANCHOR | kardinal-promoter | DATE] coverage: N/M",
+      "status": "todo"
+    },
+    "404": {
+      "state": "todo",
+      "title": "feat: Anchor score comment: E2E workflow posts `[ANCHOR | kro-ui | DATE] journeys: J | pass: A f",
+      "status": "todo"
+    },
+    "405": {
+      "state": "todo",
+      "title": "feat: M1: Pin `anomalyco/opencode`, `actions/checkout`, `aws-actions/configure-aws-credentials`",
+      "status": "todo"
+    },
+    "406": {
+      "state": "todo",
+      "title": "feat: `otherness-scheduled.yml` in otherness repo: split into two OpenCode steps (Step A: vibe-v",
+      "status": "todo"
+    },
+    "407": {
+      "state": "todo",
+      "title": "feat: `agents/phases/sm.md \u00a74h`: add hygiene scan block (executable, not [AI-STEP])",
+      "status": "todo"
+    },
+    "408": {
+      "state": "todo",
+      "title": "feat: `otherness-config.yaml`: `simulation.calibration_cycles` field (default: 5)",
+      "status": "todo"
+    },
+    "409": {
+      "state": "todo",
+      "title": "feat: Managed project adoption: kardinal-promoter and kro-ui SM inherit otherness defaults, re-c",
+      "status": "todo"
+    },
+    "410": {
+      "state": "todo",
+      "title": "feat: `COORD \u00a71c`: anchor-growth gate",
+      "status": "todo"
+    },
+    "411": {
+      "state": "todo",
+      "title": "feat: `docs/design/25-anchor-kardinal-promoter.md`",
+      "status": "todo"
+    },
+    "412": {
+      "state": "todo",
+      "title": "feat: `docs/design/26-anchor-kro-ui.md`",
+      "status": "todo"
+    },
+    "413": {
+      "state": "todo",
+      "title": "feat: `standalone.md` AGENTS.md template: add `## Anchor` section with standard structure",
+      "status": "todo"
+    },
+    "414": {
+      "state": "todo",
+      "title": "feat: PDCA runs daily (not weekly)",
+      "status": "todo"
+    },
+    "415": {
+      "state": "todo",
+      "title": "feat: Infrastructure reliability: retry logic for S1 reconcile wait + ArgoCD sync timeout increa",
+      "status": "todo"
+    },
+    "416": {
+      "state": "todo",
+      "title": "feat: Scenario 7: config-only promotion",
+      "status": "todo"
+    },
+    "417": {
+      "state": "todo",
+      "title": "feat: Scenario 8: full multi-stage assertion",
+      "status": "todo"
+    },
+    "418": {
+      "state": "todo",
+      "title": "feat: Scenario 9: health check failure blocks promotion",
+      "status": "todo"
+    },
+    "419": {
+      "state": "todo",
+      "title": "feat: Scenarios 10-12: CLI completeness",
+      "status": "todo"
+    },
+    "420": {
+      "state": "todo",
+      "title": "feat: Scenarios 13-15: policy gate completeness",
+      "status": "todo"
     }
   },
   "engineer_slots": {
