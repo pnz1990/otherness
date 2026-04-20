@@ -119,6 +119,7 @@ need for Fix D sooner.
 
 - ✅ Root cause identified: opencode github action exits after first item — one item per session hard ceiling (2026-04-20)
 - ✅ Root cause identified: queue max 5 — empties in one multi-item session (2026-04-20)
+- ✅ `otherness-config.yaml` + `otherness-config-template.yaml`: `maqa.session_item_limit: 10` field added (pre-shipped in feat/session-throughput PR, doc updated PR #340, 2026-04-20)
 
 ## Future (🔲)
 
@@ -126,7 +127,7 @@ need for Fix D sooner.
 - 🔲 `coord.md`: SM/PM gate — only run after queue empty or `session_item_limit` reached, not after every item
 - 🔲 `coord.md`: queue generation cap raised from 5 → 20 items
 - 🔲 `coord.md`: minimum queue depth guard — trigger vision synthesis when queue drops below 5 and no design doc items remain
-- 🔲 `otherness-config.yaml` + `otherness-config-template.yaml`: add `maqa.session_item_limit` field (default: 10)
+- ✅ `otherness-config.yaml` + `otherness-config-template.yaml`: add `maqa.session_item_limit` field (default: 10) — pre-shipped
 - 🔲 `docs/design/22-queue-richness.md`: design doc for Fix C (richer queue sources)
 
 ---
