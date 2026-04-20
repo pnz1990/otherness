@@ -493,6 +493,40 @@ for it in sorted_items[:20]:
         created += 1
         print(f"[COORD §1c] Created issue #{result}: {title[:60]}")
 
+# SECONDARY source: roadmap deliverables — when design items are few (≤5)
+# draw from the earliest incomplete stage in docs/aide/roadmap.md
+# Design ref: docs/design/22-queue-richness.md §Future O1 (source priority: design > roadmap)
+if len(new_items) <= 5:
+    roadmap_created = 0
+    try:
+        roadmap = open('docs/aide/roadmap.md').read()
+        stages = re.split(r'^## Stage', roadmap, flags=re.MULTILINE)
+        for stage in stages[1:]:
+            deliverables = re.findall(r'^- (.+)', stage, re.MULTILINE)
+            for d in deliverables:
+                if roadmap_created >= 5 or created >= 20: break
+                d_clean = d.strip()
+                if is_done_check(d_clean, done_titles, merged_prs): continue
+                title = f"feat: {d_clean[:90]}"
+                body = (f"## Design reference\n"
+                        f"- **Design doc**: `docs/aide/roadmap.md`\n"
+                        f"- **Section**: `§ Stage {stage.strip().split(chr(10))[0].strip()}`\n"
+                        f"- **Implements**: {d_clean[:80]} (roadmap deliverable)\n\n"
+                        f"## Summary\n\n"
+                        f"Implements roadmap deliverable from `docs/aide/roadmap.md`.\n\n"
+                        f"Consider creating a `docs/design/` stub for this feature area before implementation.\n\n"
+                        f"Full item: {d_clean}")
+                result = open_if_absent(title, 'otherness,kind/enhancement,area/agent-loop,size/s,priority/low', body)
+                if result:
+                    roadmap_created += 1
+                    created += 1
+                    print(f"[COORD §1c-roadmap] Created issue #{result}: {title[:60]}")
+            if roadmap_created > 0: break  # one stage at a time — earliest incomplete
+    except Exception as e:
+        print(f"[COORD §1c-roadmap] roadmap read error (non-fatal): {e}")
+    if roadmap_created > 0:
+        print(f"[COORD §1c-roadmap] {roadmap_created} roadmap issues created (design items were ≤5).")
+
 print(f"[COORD §1c] Queue-gen complete: {created} issues created from {len(sorted_items)} candidates.")
 ISSUE_GEN
 
