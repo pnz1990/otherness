@@ -526,20 +526,19 @@ The following are accepted design tradeoffs, not failures:
 - ✅ Model safety check caught PR #447 injection attempt (2026-04-20)
 - ✅ GH_TOKEN scoped to `pnz1990` org only (not enterprise-wide) (2026-04-19)
 - ✅ GitHub Actions run logs provide immutable audit trail (platform feature)
+- ✅ M1: All action dependencies pinned to SHAs in `otherness-scheduled.yml` and `ci.yml` — `actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683`, `aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c`, `anomalyco/opencode/github@23fb5e0516c99ac04a1aa46c193efda2e1b9bb24` (PR #405, 2026-04-20)
+- ✅ M2: `agent_version` set in `otherness-config.yaml` to pin otherness clone to SHA `992aad0828e26c5eda8156879d1b0c47e14fc3c6`; `otherness-config-template.yaml` updated with security rationale (PR #478, 2026-04-20)
+- ✅ M4: `actions:write` intentionally omitted from `otherness-scheduled.yml` job permissions (2026-04-20)
+- ✅ M5: AWS Budget alert at $50/day Bedrock spend (2026-04-20)
+- ✅ M6: `agents_path` allowlist validation added to workflow prompt section — blocks paths outside `~/.otherness` (2026-04-20)
+- ✅ M7: `_state` branch protection applied on all 3 repos: `allow_force_pushes: false`, `allow_deletions: false` (PR #384, 2026-04-20)
+- ✅ M8: AGENTS.md change detection CI check in `otherness-security-checks.yml` — blocks non-collaborator AGENTS.md modifications (2026-04-20)
+- ✅ M10: Issue label restriction workflow in `otherness-security-checks.yml` — prevents external contributors adding `otherness` label (2026-04-20)
 
 ## Future (🔲)
 
-- 🔲 M1: Pin `anomalyco/opencode`, `actions/checkout`, `aws-actions/configure-aws-credentials` to SHAs in all 3 workflow files
-- ✅ M1 (partial): `actions/checkout` in `otherness` repo `ci.yml` pinned to SHA (v4.2.2: `11bd71901bbe5b1630ceea73d27597364c9af683`) — `otherness-scheduled.yml` already pinned (PR #405, 2026-04-20)
-- 🔲 M2: Set `agent_version` in all 3 `otherness-config.yaml` files to pin otherness clone
-- 🔲 M4: Remove `actions:write` from all 3 workflow job permissions
-- 🔲 M6: Add `agents_path` allowlist validation in workflow prompt section (1 line bash check)
-- ✅ M7: `_state` branch protection applied on all 3 repos (otherness, alibi, kardinal-promoter, kro-ui): `allow_force_pushes: false`, `allow_deletions: false` — prevents state poisoning via force-push (direct-push by agent still allowed; PR requirement deferred until M3) (2026-04-20)
-- 🔲 M8: AGENTS.md change detection CI check — block non-collaborator AGENTS.md modifications
-- ✅ M5: AWS Budget alert at $50/day Bedrock spend — posted to rrroizma@amazon.com (2026-04-20)
 - 🔲 M5b: Restrict Bedrock Resource to specific ARNs — DEFERRED. opencode uses cross-region inference profile ARNs (arn:aws:bedrock:<region>:<acct>:inference-profile/*) that vary by model version. Resource:* with Budget alert is the current mitigaton. Revisit when ARN patterns stabilize.
-- 🔲 M3: Replace GH_TOKEN PAT with GitHub App — per-repo scoped, non-exportable, auditable
-- 🔲 M10: Issue label restriction workflow — prevent external contributors adding `otherness` label
+- 🔲 M3: Replace GH_TOKEN PAT with GitHub App — per-repo scoped, non-exportable, auditable (issue #361)
 
 ---
 

@@ -17,6 +17,12 @@ maqa:
   product_validation_cycles: 3
   autonomous_mode: true    # operator has authorized agent to act on their behalf
   session_item_limit: 10   # max items to complete per session before SM/PM gate fires
+  # Security: M2 (docs/design/27-security-model.md §Mitigations)
+  # Pins the otherness git clone to a specific commit SHA so that a compromised
+  # pnz1990/otherness repo cannot push malicious agent instructions via `git pull`.
+  # The SELF-UPDATE block in standalone.md does `git checkout $agent_version` when set.
+  # Update this value after reviewing changelog at: https://github.com/pnz1990/otherness/commits
+  agent_version: 992aad0828e26c5eda8156879d1b0c47e14fc3c6  # main HEAD at 2026-04-20
 
 ci:
   provider: github-actions
