@@ -170,3 +170,5 @@
 | 2026-04-20 | 85 | 1 | 0 | 0 | 12 | 1 | ~30 min | PR #506 fix(vibe-vision-auto): SCAN 2 stale detection false positives — 33 false-positive stale markers removed from 15 design docs. 7 stale session PRs merged/closed. Health: GREEN. |
 
 | 2026-04-20 | 86 | 1 | 0 | 0 | 12 | 5 | ~90 min | PRs #529 (fleet-defaults SM §4e-i), #530 (PDCA daily doc), #531 (journey 063-066 error), #532 (S1 reliability doc), #533 (scenarios 7-12 doc). Cross-repo: kro-ui#504 (e2e error tests), kardinal-promoter#874 (S1 wait 3min→5min). 9 issues closed/done this session. State persistence bug fixed (worktree checkout mode). Health: GREEN. |
+
+| 2026-04-20 | 87 | 1 | 0 | 0 | 12 | 1 | ~20 min | PR #556 fix(validate): add vibe-vision-auto.md + autonomous-vision.md to required files check. 10 stale/duplicate issues closed (scheduled workflow already implemented, anchor items deferred/dup). Journey 2 (alibi) still FAILING — issue #342 open. Health: GREEN. |
