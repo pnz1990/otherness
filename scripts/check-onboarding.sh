@@ -75,7 +75,7 @@ fi
 
 # definition-of-done.md: must have at least one ## Journey
 if [ -f "$DOCS_AIDE/definition-of-done.md" ] && [ -s "$DOCS_AIDE/definition-of-done.md" ]; then
-  JOURNEY_COUNT=$(grep -c "^## Journey" "$DOCS_AIDE/definition-of-done.md" 2>/dev/null || echo "0")
+  JOURNEY_COUNT=$(grep -c "^## Journey [0-9]" "$DOCS_AIDE/definition-of-done.md" 2>/dev/null || echo "0")
   if [ "${JOURNEY_COUNT:-0}" -gt 0 ]; then
     echo "  OK: definition-of-done.md has $JOURNEY_COUNT journey/journeys"
   else

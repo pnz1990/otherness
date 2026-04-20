@@ -203,42 +203,6 @@ ls ~/.otherness/.opencode/command/otherness.vibe-vision.md
 
 ---
 
-## Journey 8: Commands always current
-
-**The user story**: After otherness is updated (new commands added, old ones removed), any project running `/otherness.run` automatically gets the current set of commands — no human action required.
-
-### Automated check
-
-```bash
-# Verify the SELF-UPDATE block syncs commands
-# Run from any otherness-managed project after a session:
-
-# 1. Commands in project match ~/.otherness exactly
-diff <(ls .opencode/command/otherness.*.md 2>/dev/null | xargs -I{} basename {} | sort) \
-     <(ls ~/.otherness/.opencode/command/otherness.*.md 2>/dev/null | xargs -I{} basename {} | sort)
-# Must output nothing (no diff)
-
-# 2. Stale commands are gone
-for f in .opencode/command/otherness.*.md; do
-  fname=$(basename "$f")
-  [ -f ~/.otherness/.opencode/command/"$fname" ] || echo "STALE: $fname"
-done
-# Must output nothing
-
-# 3. SELF-UPDATE block exists in standalone.md
-grep -c "two-way sync\|SYNCED\|cmp -s" ~/.otherness/agents/standalone.md
-# Must be ≥ 3
-```
-
-### Pass criteria
-
-- [ ] `.opencode/command/otherness.*.md` files match `~/.otherness/.opencode/command/otherness.*.md` exactly (no missing, no stale)
-- [ ] `otherness.vibe-vision.md` is present in the project after next `/otherness.run`
-- [ ] `otherness.cross-agent-monitor.md` is absent from the project after next `/otherness.run`
-- [ ] `standalone.md` contains the two-way sync block in SELF-UPDATE
-
----
-
 ## Journey 7: Eternal loop — health signal, not stop condition
 
 **The user story**: The system runs 10 consecutive batches without saying "final run" or "complete." It reports health signals. It enters standby correctly. It wakes when new vision is added without human restart instruction.
@@ -272,6 +236,42 @@ gh issue view 2 --repo pnz1990/otherness --json comments \
 - [ ] At least one standby entry in the last 20 posts
 - [ ] System woke from standby and generated a queue after new design doc items arrived (from vibe-vision or competitive observation)
 - [ ] Journey 2 (reference project) stayed GREEN for 7 consecutive days
+
+---
+
+## Journey 8: Commands always current
+
+**The user story**: After otherness is updated (new commands added, old ones removed), any project running `/otherness.run` automatically gets the current set of commands — no human action required.
+
+### Automated check
+
+```bash
+# Verify the SELF-UPDATE block syncs commands
+# Run from any otherness-managed project after a session:
+
+# 1. Commands in project match ~/.otherness exactly
+diff <(ls .opencode/command/otherness.*.md 2>/dev/null | xargs -I{} basename {} | sort) \
+     <(ls ~/.otherness/.opencode/command/otherness.*.md 2>/dev/null | xargs -I{} basename {} | sort)
+# Must output nothing (no diff)
+
+# 2. Stale commands are gone
+for f in .opencode/command/otherness.*.md; do
+  fname=$(basename "$f")
+  [ -f ~/.otherness/.opencode/command/"$fname" ] || echo "STALE: $fname"
+done
+# Must output nothing
+
+# 3. SELF-UPDATE block exists in standalone.md
+grep -c "two-way sync\|SYNCED\|cmp -s" ~/.otherness/agents/standalone.md
+# Must be ≥ 3
+```
+
+### Pass criteria
+
+- [ ] `.opencode/command/otherness.*.md` files match `~/.otherness/.opencode/command/otherness.*.md` exactly (no missing, no stale)
+- [ ] `otherness.vibe-vision.md` is present in the project after next `/otherness.run`
+- [ ] `otherness.cross-agent-monitor.md` is absent from the project after next `/otherness.run`
+- [ ] `standalone.md` contains the two-way sync block in SELF-UPDATE
 
 ---
 
