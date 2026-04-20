@@ -212,6 +212,36 @@ jobs:
 
             Read and follow $AGENTS_PATH/vibe-vision-auto.md.
 
+            Context for this vision scan:
+
+            The system is not good enough yet. Apply this lens to every gap you find:
+
+            - Is otherness reliable enough? Sessions still fail silently, produce housekeeping
+              PRs with no real feature content, or stall when queues empty. A truly reliable
+              system ships at least one meaningful PR every single run without exception.
+
+            - Is the loop honest enough? The SM health signal says GREEN but the products it
+              manages are not advancing fast enough. The simulation exists but its predictions
+              are not visibly changing agent behavior. Metrics are being collected but not acted on.
+
+            - Is the self-improvement real? The skills library grows slowly. /otherness.learn
+              runs rarely. The agents are not meaningfully smarter than they were two weeks ago.
+              The "monoculture" problem — all agents share the same reasoning framework — has not
+              been addressed. What would genuinely break the frame-lock?
+
+            - Is the onboarding good enough? A new project added today would still require
+              significant human intervention to get running. The setup guide is incomplete.
+              /otherness.onboard produces docs that need manual editing.
+
+            - Is the visibility good enough? A human looking at GitHub right now cannot quickly
+              tell if the system is healthy, what it shipped today, and whether it is moving toward
+              the vision or spinning in circles. The report issue comments are too verbose and
+              technical. There is no clean single-page health dashboard.
+
+            For each gap you identify: if there is no 🔲 Future item in any design doc covering it,
+            add one. The human should never need to manually add direction that the system
+            could have identified itself.
+
       # ── Step 8: Run otherness (Step B) ──────────────────────────────────
       # SHA-pinned (security: doc 27 §M1 — critical supply chain mitigation).
       # agents_path validated against allowlist before agent reads it (doc 27 §M6).
