@@ -147,3 +147,5 @@
 | 2026-04-20 | 74 | 1 | 1 | 0 | 12 | 1 | ~5 | #375 SM §4d arch_convergence auto-trigger learn issue. Design doc 23 updated. Queue: 30 open items. |
 
 | 2026-04-20 | 75 | 17 | 2 | 0 | 12 | 10 | ~2 | PRs #375-#384: SM simulation loop complete, anchor framework, security M7. 10 items shipped. |
+
+| 2026-04-20 | 76 | 2 | 0 | 0 | 12 | 2 | ~5 | #387 fix(ci) security-checks push-noop. #393 feat(coord) §1c roadmap source. CI gate unblocked. Queue: 50+ design doc items. |
