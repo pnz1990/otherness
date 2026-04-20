@@ -601,7 +601,127 @@ fi
 
 ---
 
-## 4e. Divergence detection (every SM cycle)
+## 4e. Calibration update + divergence detection
+
+Every N SM cycles (default 5, configurable): re-calibrate simulation parameters against real metrics
+and write `.otherness/sim-prediction.json` to `_state`. Every cycle: divergence check.
+
+**Design ref**: `docs/design/23-simulation-as-anchor.md §Future → §Step 3`.
+
+### 4e-i. Per-5-cycle calibration update
+
+```bash
+# Read calibration frequency (default: 5 cycles)
+CALIB_CYCLES_4E=$(python3 -c "
+import re
+section = None
+try:
+    for line in open('otherness-config.yaml'):
+        s = re.match(r'^(\w[\w_]*):', line)
+        if s: section = s.group(1)
+        if section == 'simulation':
+            m = re.match(r'\s+calibration_cycles:\s*(\d+)', line)
+            if m: print(m.group(1)); exit()
+except: pass
+print('5')
+" 2>/dev/null || echo "5")
+
+if [ $((SM_CYCLE % CALIB_CYCLES_4E)) -eq 0 ] && [ "${SM_CYCLE:-0}" -gt 0 ]; then
+  echo "[SM §4e] Calibration cycle (sm_cycle=$SM_CYCLE, every ${CALIB_CYCLES_4E})..."
+  if [ -f "scripts/calibrate.py" ] && [ -f "docs/aide/metrics.md" ]; then
+    METRICS_ROWS=$(python3 -c "
+import re
+n=0
+for line in open('docs/aide/metrics.md'):
+    if re.match(r'^\|\s*20', line): n+=1
+print(n)
+" 2>/dev/null || echo "0")
+    if [ "${METRICS_ROWS:-0}" -ge 5 ]; then
+      if python3 scripts/calibrate.py --runs 2 2>/dev/null; then
+        echo "[SM §4e] Calibration complete (${METRICS_ROWS} batches)."
+        # Write sim-prediction.json to _state
+        python3 - <<'PREDEOF'
+import json, os, subprocess, tempfile, datetime, sys
+
+sm_cycle = int(os.environ.get('SM_CYCLE', '0'))
+try:
+    import sys as _sys; _sys.path.insert(0, '.')
+    from scripts.simulate import SimConfig, run_simulation
+    params = json.load(open('scripts/sim-params.json'))
+    cfg = SimConfig(
+        n_agents=3, cycles=50,
+        decay_rate=float(params.get('decay_rate', 0.9)),
+        jump_multiplier=float(params.get('jump_multiplier', 1.3)),
+        skill_boldness_coefficient=float(params.get('skill_boldness_coefficient', 0.018)),
+        seed=42
+    )
+    results = run_simulation(cfg)
+    prs_list = [r.get('prs_merged', 0) for r in results if isinstance(r, dict)]
+    prs_floor = max(1, int(sorted(prs_list)[int(len(prs_list)*0.1)] if prs_list else 1))
+    prs_ceiling = int(sorted(prs_list)[int(len(prs_list)*0.9)] + 1) if prs_list else 10
+    arch_conv = float(results[-1].get('arch_convergence', 0.3)) if results else 0.3
+    skill_rate = float(params.get('skills_growth_per_batch', 0.1))
+    prediction = {
+        'prs_next_batch_floor': prs_floor,
+        'prs_next_batch_ceiling': prs_ceiling,
+        'arch_convergence_score': round(arch_conv, 3),
+        'skill_growth_rate': round(skill_rate, 4),
+        'calibrated_params': {
+            'decay_rate': params.get('decay_rate'),
+            'skill_boldness_coefficient': params.get('skill_boldness_coefficient'),
+            'jump_multiplier': params.get('jump_multiplier'),
+        },
+        'calibrated_at': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+        'source': '4e-calibration',
+        'sm_cycle': sm_cycle,
+    }
+    # Write to _state branch
+    state_wt = os.path.join(tempfile.gettempdir(), 'otherness-pred4e-' + str(os.getpid()))
+    try:
+        if os.path.exists(state_wt):
+            subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
+        subprocess.run(['git','worktree','add','--no-checkout',state_wt,'origin/_state'],
+                       capture_output=True, check=True)
+        target = os.path.join(state_wt, '.otherness', 'sim-prediction.json')
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+        subprocess.run(['git','-C',state_wt,'checkout','_state','--','.otherness/sim-prediction.json'],
+                       capture_output=True)
+        json.dump(prediction, open(target, 'w'), indent=2)
+        subprocess.run(['git','-C',state_wt,'add',target], capture_output=True)
+        subprocess.run(['git','-C',state_wt,'commit',
+                        '-m', f'4e-calibration: sim-prediction.json (sm_cycle={sm_cycle})'],
+                       capture_output=True)
+        r = subprocess.run(['git','-C',state_wt,'push','origin','HEAD:_state'],
+                           capture_output=True)
+        if r.returncode == 0:
+            print(f"[SM §4e] sim-prediction.json written: floor={prs_floor}, ceiling={prs_ceiling}, arch_conv={arch_conv:.3f}")
+        else:
+            print("[SM §4e] sim-prediction.json push failed (non-fatal)")
+    except Exception as e:
+        print(f"[SM §4e] sim-prediction write error (non-fatal): {e}")
+    finally:
+        try:
+            subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
+        except: pass
+    subprocess.run(['git','worktree','prune'], capture_output=True)
+except Exception as e:
+    print(f"[SM §4e] sim-prediction simulation error (non-fatal): {e}")
+PREDEOF
+      else
+        echo "[SM §4e] calibrate.py failed — skipping sim-prediction update (non-fatal)."
+      fi
+    else
+      echo "[SM §4e] Only ${METRICS_ROWS} metric rows — need ≥5 for calibration. Skipping."
+    fi
+  else
+    echo "[SM §4e] calibrate.py or metrics.md missing — skipping calibration (non-fatal)."
+  fi
+else
+  echo "[SM §4e] Calibration skipped (sm_cycle=${SM_CYCLE:-0}, every ${CALIB_CYCLES_4E} cycles)."
+fi
+```
+
+### 4e-ii. Divergence detection (every SM cycle)
 
 Compare actual `todo_shipped` to the simulated prediction floor.
 Post `[⚠️ Simulation divergence]` after 3 consecutive below-floor batches.
