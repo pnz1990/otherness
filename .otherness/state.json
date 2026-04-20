@@ -965,8 +965,8 @@
       "priority": "medium"
     },
     "issue-612": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `SM \u00a74b`: session outcome classification",
       "labels": [
         "priority/medium",
@@ -975,7 +975,10 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_number": 655,
+      "pr_merged": true,
+      "done_at": "2026-04-20T22:29:44Z"
     },
     "issue-611": {
       "state": "todo",
