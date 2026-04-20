@@ -187,10 +187,10 @@ Until depth scoring is implemented, use:
 - ✅ 71 journey files covering 67 merged specs — high parity (2026-04-20)
 - ✅ Journey infrastructure: kind-less (uses mock fixtures), fast, reliable (2026-04-14)
 - ✅ Constitution §XIV E2E standards — anti-patterns documented (PR #311, 2026-04-15)
+- ✅ Anchor score comment format defined: `[ANCHOR | kro-ui | DATE] journeys: J | pass: A fail: B` — SM §4g-anchor-score reads via `anchor.score_pattern` in `otherness-config.yaml` (PR #448, 2026-04-20)
 
 ## Future (🔲)
 
-- 🔲 Anchor score comment: E2E workflow posts `[ANCHOR | kro-ui | DATE] journeys: J | pass: A fail: B` to issue #439
 - 🔲 Feature→journey parity check: SM §4g-anchor reads AGENTS.md spec inventory (Merged rows), diffs against journey file names, opens anchor-growth issues for specs with no journey
 - 🔲 Journey depth: add error state coverage to journeys 063-070 (kro v0.9.1 features)
 - 🔲 Journey depth: add error + empty state to all Tier 1 journeys (001-007)
