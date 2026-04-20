@@ -158,14 +158,12 @@ toward completeness rather than claiming completeness it doesn't have.
 - ✅ kardinal-promoter PDCA workflow — 6 scenarios, weekly execution (2026-04-19)
 - ✅ kro-ui E2E workflow — runs on push/PR, Playwright-based (2026-04-14)
 - ✅ `otherness-config.yaml`: `anchor:` section added (commented-out, for projects with anchor workflows) — fields: workflow, score_pattern, coverage_target, stagnation_sessions (PR #357, 2026-04-20)
+- ✅ `SM §4g-anchor`: feature→anchor gap detection — reads ✅ Present items from docs/design/*.md, diffs against AGENTS.md §Anchor matrix, opens anchor-growth issues for uncovered features; posts `[ANCHOR] coverage: N/M (X%)` to report issue every 10 SM cycles; graceful skip if no §Anchor section (PR #355, 2026-04-20)
 
 ## Future (🔲)
 
 - 🔲 `otherness-config-template.yaml`: add `anchor:` section (workflow, score_pattern, coverage_target, stagnation_sessions) — HIGH tier, requires human review
-- 🔲 `SM §4g-anchor`: feature→anchor gap detection — read Present items, diff against AGENTS.md §Anchor matrix, open anchor-growth issues for uncovered features
-- 🔲 `SM §4g-anchor`: post `[ANCHOR] coverage: N/M (X%)` to report issue after each gap scan
 - 🔲 `COORD §1c`: anchor-growth gate — when coverage < coverage_target, generate anchor-growth items before feature items
-- 🔲 `COORD §1c`: read anchor score from last N report issue comments; if no improvement in stagnation_sessions, trigger anchor-growth queue generation
 - 🔲 `docs/design/25-anchor-kardinal-promoter.md` — kardinal-promoter anchor design (PDCA expansion matrix, CLI/UI surface, infrastructure reliability, feature→scenario gap)
 - 🔲 `docs/design/26-anchor-kro-ui.md` — kro-ui anchor design (E2E journey suite growth, feature→journey coverage, kro API surface, persona coverage)
 - 🔲 `standalone.md` AGENTS.md template: add `## Anchor` section with standard structure
