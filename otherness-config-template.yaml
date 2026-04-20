@@ -187,3 +187,19 @@ monitor:
 #   enabled: true            # default: true
 #   max_issues_per_scan: 3   # cap new issues per scan run (prevents queue flooding)
 #   cycle_interval: 3        # run every N SM cycles
+
+# ── Anchor framework ──────────────────────────────────────────────────────────
+# An anchor is a CI workflow that runs on a schedule and posts a machine-readable
+# quality score to a GitHub issue. otherness SM §4g-anchor reads the score to
+# detect feature→anchor coverage gaps and opens anchor-growth issues.
+#
+# Configure this when your project has an automated quality signal (e.g. a PDCA
+# workflow, an E2E suite, or any CI job that produces a score).
+#
+# See docs/design/24-project-anchor-framework.md for the full design.
+#
+# anchor:
+#   workflow: ""                          # workflow filename (e.g. "pdca.yml", "e2e.yml")
+#   score_pattern: "coverage: (\\d+)/(\\d+)"  # regex to extract N/M from workflow output
+#   coverage_target: 80                   # minimum % of features with anchor coverage
+#   stagnation_sessions: 3                # sessions without anchor growth before COORD prioritizes it
