@@ -46,20 +46,9 @@
       "pr_number": 533
     },
     "issue-518": {
-      "state": "todo",
-      "status": "todo",
-      "title": "feat: Scenarios 13-15: policy gate completeness",
-      "labels": [
-        "priority/medium",
-        "area/agent-loop",
-        "otherness",
-        "size/s",
-        "kind/enhancement"
-      ],
-      "priority": "medium",
-      "branch": null,
-      "worktree": null,
-      "file_spaces": []
+      "state": "done",
+      "status": "done",
+      "pr_number": 534
     },
     "issue-519": {
       "state": "todo",
