@@ -48,6 +48,7 @@ commits to a specific item.
 
 - ✅ `SM §4c` / `agents/otherness.learn.md`: frame-lock break protocol — when arch_convergence >= 0.65 for 3 consecutive calibrations, SM §4c opens a `learn(arch): frame-lock` issue instructing the learn agent to choose an architecturally UNLIKE target (detected via skill category distribution from PROVENANCE.md); `otherness.learn.md §1b-arch-diverse` documents the "unlike" heuristic and category-to-search-terms mapping; flag stored as `frame_lock_detected` in state.json, cleared when convergence drops below 0.55 (PR #669, 2026-04-20)
 - ✅ `agents/onboard.md` STEP 7b: post-run structural validation — after generating docs/aide/, runs inline checks equivalent to `scripts/check-onboarding.sh`; auto-fixes missing section headers, empty files, missing Stage/Journey markers; warns (does not block) on missing AGENTS.md fields or otherness-config.yaml sections; applies fixes as amended commit before PR creation (PR #TBD, 2026-04-20)
+- ✅ `onboarding-existing-project.md` + `onboarding-new-project.md`: "First-run smoke test" section — 3 observable success signals (startup comment, feat/* branch, open PR); diagnosis commands for silent failure; common failure table (PR #TBD, 2026-04-20)
 
 ## Future (🔲)
 
