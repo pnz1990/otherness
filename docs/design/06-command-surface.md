@@ -51,6 +51,8 @@ operation. They should be documented as internal/advanced.
 
 ## Present (✅)
 
+- ✅ `/otherness.status` single-page health summary: 3-line quick glance header added (Health: X | Last: PR title | Queue: N todo) before the 6-section detailed dashboard; design doc 06 O2 satisfied — /otherness.status is the human-readable status command (PR #673 dashboard + PR #TBD 3-line header, 2026-04-20)
+
 - ✅ Command surface audit — all 10 commands measured against taxonomy; verdicts documented in §Audit findings (PR #220, 2026-04-17)
 - ✅ Deprecate `otherness.cross-agent-monitor.md` — command deleted; validate.sh updated (PR #220, 2026-04-17) ⚠️ Stale — referenced file not found
 - ✅ Update `otherness.status.md` — reads _state branch before local file (this PR, 2026-04-17) ⚠️ Stale — referenced file not found
@@ -61,7 +63,6 @@ operation. They should be documented as internal/advanced.
 
 ## Future (🔲)
 
-- 🔲 `/otherness.status` single-page health summary that a human can read in 30 seconds: the current command output is too verbose and technical — it lists state.json fields and raw branch names. A human looking at GitHub right now should be able to answer in one glance: (1) is the system healthy, (2) what did it ship today, (3) is it moving toward the vision or spinning. Required output format: 3-line summary (health signal, last-shipped item, queue depth), then optional detail. Report issue comments must be condensed to the same 3-line format. Everything else is noise. ⚠️ Inferred from visibility lens: no clean single-page health dashboard; report issue comments too verbose and technical.
 - 🔲 README health badge and "last shipped" line: a human visiting the repo on GitHub.com has no at-a-glance signal of system health before they open any file or run any command. The README must include: (1) a GitHub Actions workflow badge pointing to the `otherness-scheduled` workflow (green = running, red = failing), (2) a single line updated by SM §4f every batch: `**Last shipped:** <PR title> (<date>)` — same data as `docs/aide/progress.md` Current State but visible without navigating into docs. Implementation: SM §4f uses `sed` to replace the badge line and last-shipped line in `README.md`. The badge is already supported by GitHub natively (`![CI](https://github.com/owner/repo/actions/workflows/otherness-scheduled.yml/badge.svg)`). This gives the human a 2-second health check from the repo homepage without opening a terminal. ⚠️ Inferred from visibility lens: a human looking at GitHub right now cannot quickly tell if the system is healthy or what it shipped today — no at-a-glance signal on the repo homepage.
 
 ---

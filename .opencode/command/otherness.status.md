@@ -32,6 +32,42 @@ print("=" * 60)
 print("otherness STATUS")
 print("=" * 60)
 
+# ── 3-line quick glance (design doc 06 §Future → ✅) ─────────
+# A human should answer (1) healthy? (2) last shipped? (3) moving? in one glance
+try:
+    ql_health = "UNKNOWN"
+    ql_last = "(none)"
+    ql_queue = "?"
+    try:
+        metrics_content = open('docs/aide/metrics.md').read()
+        rows = []
+        for line in metrics_content.splitlines():
+            if '|' not in line: continue
+            cells = [c.strip() for c in line.split('|')[1:-1]]
+            if len(cells) >= 10 and cells[0].startswith('20'):
+                rows.append(cells[9] if len(cells) > 9 else '?')
+        if rows:
+            recent = rows[-3:]
+            feat = sum(1 for o in recent if o in ('feature-rich', 'mixed'))
+            ql_health = "ADVANCING" if feat >= 2 else "STALLING"
+    except Exception: pass
+    try:
+        import subprocess as _sp
+        r = _sp.run(['gh','pr','list','--repo',REPO,'--state','merged','--limit','5',
+                     '--json','title,mergedAt',
+                     '--jq','[.[] | select(.title | test("^feat|^fix|^refactor";"i"))][0].title'],
+                    capture_output=True, text=True, timeout=10)
+        if r.returncode == 0 and r.stdout.strip() and r.stdout.strip() != 'null':
+            ql_last = r.stdout.strip().strip('"')[:50]
+    except Exception: pass
+    try:
+        with open('.otherness/state.json') as f: _s = json.load(f)
+        ql_queue = str(len([d for d in _s.get('features',{}).values() if d.get('state')=='todo']))
+    except Exception: pass
+    print(f"Health: {ql_health} | Last: {ql_last} | Queue: {ql_queue} todo")
+    print("-" * 60)
+except Exception: pass
+
 # ── Section 1: Health signal with trend ─────────────────────
 print()
 print("1. HEALTH SIGNAL")
