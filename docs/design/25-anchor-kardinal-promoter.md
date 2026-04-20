@@ -207,13 +207,13 @@ The agent reads this pattern to track coverage ratio across sessions.
 - ✅ test infrastructure: kind + krocodile + ArgoCD + kardinal-test-app (2026-04-09)
 - ✅ Anchor score comment format: SM §4g-anchor-score reads `[ANCHOR | kardinal-promoter | DATE] coverage: N/M (X%) | PASS=A FAIL=B` from report issue, tracks stagnation across sessions (PR #438, 2026-04-20)
 - ✅ Infrastructure reliability — S1 reconcile wait increased from 3min (12×15s) to 5min (20×15s) to reduce flaky failures on resource-constrained CI runners (kardinal-promoter PR #874, 2026-04-20; ArgoCD sync timeout deferred — no ArgoCD in current PDCA)
+- ✅ Scenario 7: config-only promotion — `kardinal apply` with no image change, verify bundle created (already in kardinal-promoter PDCA S7, 2026-04-20; design doc corrected PR #533)
+- ✅ Scenario 8: full multi-stage assertion — test+uat Verified check (S8 in PDCA, 2026-04-20; design doc corrected PR #533)
+- ✅ Scenario 9: health check failure blocks promotion — PromotionStep shows HealthCheck/Failed state (S9 in PDCA, 2026-04-20; design doc corrected PR #533)
+- ✅ Scenarios 10-12: CLI completeness — `kardinal get bundles` (S10), `kardinal delete bundle` (S11), `kardinal get steps` (S12) all in PDCA (2026-04-20; design doc corrected PR #533)
 
 ## Future (🔲)
 
-- 🔲 Scenario 7: config-only promotion- 🔲 Scenario 7: config-only promotion — `kardinal apply` with no image change, verify PromotionStep created
-- 🔲 Scenario 8: full multi-stage assertion — verify each stage independently (test health ✅, uat health ✅, prod gate ✅)
-- 🔲 Scenario 9: health check failure blocks promotion — deploy app with failing readiness probe, verify promotion pauses
-- 🔲 Scenarios 10-12: CLI completeness — `kardinal get bundles`, `kardinal delete bundle`, `kardinal get steps`
 - 🔲 Scenarios 13-15: policy gate completeness — multiple gates, custom expression, emergency override
 - 🔲 Scenarios 16-18: health adapter coverage — explicit HTTP, Prometheus, and custom adapter scenarios
 - 🔲 Scenarios 19-21: real-world complexity — 3+ concurrent bundles, app readiness failure, SRE rollback+explain flow
