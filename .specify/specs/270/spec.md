@@ -1,57 +1,34 @@
-# Spec: Phase 2a — per-project calibration
-
-> Item: 270 | Created: 2026-04-18 | Status: Active
+# Spec: SM §4d Phase 2a + 2c — Per-project calibration and sim-results persistence
 
 ## Design reference
 - **Design doc**: `docs/design/11-simulation-feedback-loop.md`
-- **Section**: `## Future`
-- **Implements**: Phase 2a: per-project calibration (🔲 → ✅)
+- **Section**: `§ Present — Phase 2a and Phase 2c`
+- **Implements**: Per-project calibration + sim-results.json to _state (🔲 → ✅)
 
 ---
 
-## Zone 1 — Obligations
+## Zone 1 — Obligations (falsifiable)
 
-**O1 — SM §4d calibration checks for project-specific metrics before running default calibration.**
-The §4d calibration block in sm.md must check whether `docs/aide/metrics.md`
-exists and contains ≥10 data rows. If yes: run `scripts/calibrate.py` using the
-local metrics as input. If no: run with otherness default parameters.
+**O1** — SM §4d must check metrics.md row count before calibration. If ≥10 rows: pass `--metrics docs/aide/metrics.md` to calibrate.py. If <10: run default calibration. Violation: always uses default regardless of metrics count.
 
-Behavior that violates this: calibration always uses otherness defaults regardless
-of whether local project metrics are available.
+**O2** — After successful calibration, SM §4d must persist `scripts/sim-params.json` to the `_state` branch as `.otherness/sim-params.json` using the worktree pattern. Violation: sim-params.json not on _state after calibration.
 
-**O2 — The result (sim-params.json) is committed to the `_state` branch.**
-After calibration runs with project metrics, write `scripts/sim-params.json` to
-the `_state` branch as `.otherness/sim-params.json`. This allows the calibrated
-parameters to persist across sessions.
+**O3** — SM §4d must write `sim-results.json` to _state branch with fields: calibrated_at, best_rmse, source ("project-specific" or "otherness-defaults"), params. Violation: field missing from written JSON.
 
-Behavior that violates this: sim-params.json is written to the working tree only
-and lost between sessions.
+**O4** — All persistence operations are non-fatal: if write fails, log and continue. Violation: exception propagates and halts SM phase.
 
-**O3 — Per-project calibration only runs when ≥10 batches of metrics exist.**
-The check is: count data rows in docs/aide/metrics.md (lines matching
-`^\|\s*\d{4}-\d{2}-\d{2}`). If count < 10: use otherness defaults.
-
-Behavior that violates this: calibration runs with 1-2 rows of project data
-(too few to be statistically meaningful).
-
-**O4 — Design doc 11 marks Phase 2a as ✅ Present.**
+**O5** — validate.sh and lint.sh pass in worktree. Violation: non-zero exit.
 
 ---
 
 ## Zone 2 — Implementer's judgment
 
-- How to pass local metrics to calibrate.py: `scripts/calibrate.py` should accept
-  a `--metrics-file` parameter. If the file is provided: use those rows. If not:
-  use default parameters. Implementation: add [AI-STEP] comment in §4d that
-  reads metrics.md row count and conditionally passes `--metrics-file`.
-- Whether to change calibrate.py itself: yes — add `--metrics-file` argument.
-  The script already parses real metrics; extend it to accept external input.
-- Storage of sim-params in _state: write using the same worktree pattern as state.json.
+- Use `os.environ.get('METRICS_ROWS', '0')` in python3 blocks; pass from bash as env var.
+- Worktree pattern is the same as state.json writes (worktree add → write → commit → push → worktree remove).
 
 ---
 
 ## Zone 3 — Scoped out
 
-- Cross-project parameter sharing (all projects share defaults from otherness main)
-- Per-project storage of learn session history
-- Retroactive calibration from historical metrics
+- Reading sim-results.json from _state in PM §5g (separate issue)
+- Handling concurrent calibration from parallel sessions (worktree commit NOP if unchanged)
