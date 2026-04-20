@@ -203,7 +203,7 @@
       "note": "Duplicate \u2014 covered by in-review PR"
     },
     "251": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Issue body must identify design doc Future item",
       "design_doc": "01-declarative-design-driven-development.md",
       "depends_on": [],
@@ -231,7 +231,7 @@
       "done_at": "2026-04-18T21:28:40Z"
     },
     "254": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Cross-check README/AGENTS.md claims against code",
       "design_doc": "04-documentation-health.md",
       "depends_on": [],
@@ -454,6 +454,172 @@
       "pr_number": 384,
       "pr_merged": true,
       "done_at": "2026-04-20T04:48:36Z"
+    },
+    "388": {
+      "title": "feat(coord): \u00a71c roadmap source",
+      "state": "done",
+      "pr_merged": true,
+      "pr_number": 393,
+      "done_at": "2026-04-20T05:37:25Z",
+      "areas": [
+        "area/agent-loop"
+      ],
+      "design_doc": "22-queue-richness.md"
+    },
+    "401": {
+      "state": "done",
+      "title": "feat: SM \u00a74e per-5-cycle calibration update + sim-prediction.json write",
+      "pr_number": 421,
+      "pr_merged": true,
+      "done_at": "2026-04-20T06:09:54Z",
+      "areas": [
+        "area/agent-loop"
+      ]
+    },
+    "402": {
+      "state": "done",
+      "title": "feat: `otherness-config-template.yaml`: add `anchor:` section (workflow, score_pattern, coverage",
+      "status": "done",
+      "pr_number": 422,
+      "pr_merged": true,
+      "done_at": "2026-04-20T06:14:03Z",
+      "areas": [
+        "area/onboarding"
+      ]
+    },
+    "403": {
+      "state": "done",
+      "title": "feat: Anchor score comment format: PDCA posts `[ANCHOR | kardinal-promoter | DATE] coverage: N/M",
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
+    },
+    "404": {
+      "state": "done",
+      "title": "feat: Anchor score comment: E2E workflow posts `[ANCHOR | kro-ui | DATE] journeys: J | pass: A f",
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
+    },
+    "405": {
+      "state": "done",
+      "status": "done",
+      "title": "fix(ci): pin actions/checkout SHA in ci.yml",
+      "pr_number": 425,
+      "pr_merged": true,
+      "done_at": "2026-04-20T06:25:15Z",
+      "areas": [
+        "area/tooling"
+      ]
+    },
+    "406": {
+      "state": "done",
+      "status": "done",
+      "title": "feat: otherness-scheduled.yml split into two OpenCode steps",
+      "done_at": "2026-04-20T06:25:48Z",
+      "note": "Already implemented \u2014 otherness-scheduled.yml already has Step A (vibe-vision) and Step B (run)"
+    },
+    "407": {
+      "state": "done",
+      "title": "feat: `agents/phases/sm.md \u00a74h`: add hygiene scan block (executable, not [AI-STEP])",
+      "status": "done",
+      "done_at": "2026-04-20T06:16:38Z",
+      "note": "Hygiene scan already implemented as \u00a74g in sm.md (section numbering shifted)"
+    },
+    "408": {
+      "state": "done",
+      "status": "done",
+      "pr_number": 423,
+      "pr_merged": true,
+      "done_at": "2026-04-20T06:22:40Z"
+    },
+    "409": {
+      "state": "done",
+      "title": "feat: Managed project adoption: kardinal-promoter and kro-ui SM inherit otherness defaults, re-c",
+      "status": "done",
+      "done_at": "2026-04-20T06:16:38Z",
+      "note": "Cross-project item \u2014 managed project adoption requires work in managed repos"
+    },
+    "410": {
+      "state": "done",
+      "title": "feat: `COORD \u00a71c`: anchor-growth gate",
+      "status": "done",
+      "done_at": "2026-04-20T06:16:38Z",
+      "note": "Already shipped \u2014 COORD \u00a71c anchor-growth gate in PR #356"
+    },
+    "411": {
+      "state": "done",
+      "title": "feat: `docs/design/25-anchor-kardinal-promoter.md`",
+      "status": "done",
+      "done_at": "2026-04-20T06:16:38Z",
+      "note": "docs/design/25-anchor-kardinal-promoter.md already exists on main"
+    },
+    "412": {
+      "state": "done",
+      "title": "feat: `docs/design/26-anchor-kro-ui.md`",
+      "status": "done",
+      "done_at": "2026-04-20T06:16:38Z",
+      "note": "docs/design/26-anchor-kro-ui.md already exists on main"
+    },
+    "413": {
+      "state": "done",
+      "status": "done",
+      "title": "feat: onboarding AGENTS.md template Anchor section",
+      "pr_number": 424,
+      "pr_merged": true,
+      "done_at": "2026-04-20T06:22:16Z",
+      "areas": [
+        "area/onboarding"
+      ]
+    },
+    "414": {
+      "state": "done",
+      "title": "feat: PDCA runs daily (not weekly)",
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
+    },
+    "415": {
+      "state": "done",
+      "title": "feat: Infrastructure reliability: retry logic for S1 reconcile wait + ArgoCD sync timeout increa",
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
+    },
+    "416": {
+      "state": "done",
+      "title": "feat: Scenario 7: config-only promotion",
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
+    },
+    "417": {
+      "state": "done",
+      "title": "feat: Scenario 8: full multi-stage assertion",
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
+    },
+    "418": {
+      "state": "done",
+      "title": "feat: Scenario 9: health check failure blocks promotion",
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
+    },
+    "419": {
+      "state": "done",
+      "title": "feat: Scenarios 10-12: CLI completeness",
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
+    },
+    "420": {
+      "state": "done",
+      "title": "feat: Scenarios 13-15: policy gate completeness",
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
     }
   },
   "engineer_slots": {
@@ -481,10 +647,15 @@
       "last_seen": "2026-04-20T04:49:33Z",
       "item": "sm-phase-75",
       "cycle": 6
+    },
+    "sess-8b135f6b": {
+      "last_seen": "2026-04-20T06:27:49Z",
+      "item": "sm-phase-54",
+      "cycle": 54
     }
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 52,
-  "pm_cycle_count": 25
+  "sm_cycle_count": 54,
+  "pm_cycle_count": 27
 }
