@@ -847,6 +847,61 @@
       "pr_number": 473,
       "pr_merged": true,
       "done_at": "2026-04-20T08:08:35Z"
+    },
+    "issue-398": {
+      "state": "todo",
+      "issue": 398,
+      "title": "docs: README missing /otherness.learn and /otherness.status commands",
+      "created_at": "2026-04-20T08:16:08Z",
+      "areas": [
+        "area/docs"
+      ],
+      "priority": "medium",
+      "size": "s"
+    },
+    "issue-394": {
+      "state": "todo",
+      "issue": 394,
+      "title": "docs(design): create design doc for Stage 0: Scaffolding",
+      "created_at": "2026-04-20T08:16:08Z",
+      "areas": [
+        "area/docs"
+      ],
+      "priority": "low",
+      "size": "s"
+    },
+    "issue-302": {
+      "state": "todo",
+      "issue": 302,
+      "title": "feat: PM \u00a75g journey 2 AMBER/RED health check",
+      "created_at": "2026-04-20T08:16:08Z",
+      "areas": [
+        "area/agent-loop"
+      ],
+      "priority": "medium",
+      "size": "s"
+    },
+    "issue-336": {
+      "state": "todo",
+      "issue": 336,
+      "title": "feat: proactive vision expansion when queue drops below threshold",
+      "created_at": "2026-04-20T08:16:08Z",
+      "areas": [
+        "area/agent-loop"
+      ],
+      "priority": "medium",
+      "size": "s"
+    },
+    "issue-315": {
+      "state": "todo",
+      "issue": 315,
+      "title": "feat: PM \u00a75m \u26a0\ufe0f Inferred ratio check",
+      "created_at": "2026-04-20T08:16:08Z",
+      "areas": [
+        "area/agent-loop"
+      ],
+      "priority": "low",
+      "size": "s"
     }
   },
   "engineer_slots": {
