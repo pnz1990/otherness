@@ -759,8 +759,8 @@
       "priority": "medium"
     },
     "issue-632": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `/otherness.status` single-page health summary that a human can read in 30 seconds: the cu",
       "labels": [
         "priority/medium",
@@ -769,7 +769,10 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 675,
+      "done_at": "2026-04-20T23:53:10Z"
     },
     "issue-627": {
       "state": "done",
