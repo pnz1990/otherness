@@ -3,14 +3,27 @@ name: otherness security checks
 # Runs on every PR to enforce:
 #   M8: AGENTS.md changes require collaborator — block prompt injection via merged PR
 #   M10: otherness label restriction — prevent external queue injection
+#
+# Note: push trigger added to prevent GitHub from marking this workflow as "failed"
+# when a PR is merged (push to main) and no jobs match. The push-noop job handles this.
 
 on:
+  push:
+    branches: [main]
   pull_request:
     types: [opened, synchronize, reopened]
   issues:
     types: [labeled]
 
 jobs:
+  # ── Push no-op: allows this workflow to succeed on push events ─────────────
+  push-noop:
+    name: Push — no security checks needed
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Push to main — no security checks required."
+
   # ── M8: AGENTS.md change detection ────────────────────────────────────────
   agents-md-guard:
     name: M8 — AGENTS.md security check
