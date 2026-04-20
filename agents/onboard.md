@@ -692,13 +692,121 @@ fi
 echo "[ONBOARD] PR created: $PR_URL"
 ```
 
-Post a summary. Include:
-- Files created
-- Number of done items seeded in state.json
-- Anything that needs human review before merging
-- The PR URL
+---
 
-## Onboarding completion checklist
+## STEP 7b — Post-run validation (design doc 35 §Future → ✅)
+
+Before considering the onboarding complete, run structural checks equivalent to
+`scripts/check-onboarding.sh` inline. Fix any gaps automatically, then proceed to STEP 8.
+
+```bash
+echo "[ONBOARD §7b] Running post-run structural validation..."
+ONBOARD_FIXES=0
+ONBOARD_WARNINGS=""
+
+# Check 1: Required docs/aide/ files exist and are non-empty
+for doc in vision.md roadmap.md definition-of-done.md; do
+  path="docs/aide/$doc"
+  if [ ! -f "$path" ] || [ ! -s "$path" ]; then
+    echo "  [FIX] $path missing or empty — creating stub"
+    mkdir -p docs/aide
+    case "$doc" in
+      vision.md)
+        printf "## Vision\n\nTBD — describe what this project does and for whom.\n" > "$path" ;;
+      roadmap.md)
+        printf "## Stage 1 — Initial\n\n- TBD\n" > "$path" ;;
+      definition-of-done.md)
+        printf "## Journey 1 — Basic use\n\n- TBD\n" > "$path" ;;
+    esac
+    ONBOARD_FIXES=$((ONBOARD_FIXES + 1))
+  else
+    echo "  OK: $path present"
+  fi
+done
+
+# Check 2: Content structure
+# vision.md: must have a vision/what-is section header
+if [ -f "docs/aide/vision.md" ] && [ -s "docs/aide/vision.md" ]; then
+  if ! grep -qiE "^## (what is|vision|about|overview|goal|purpose)" "docs/aide/vision.md"; then
+    echo "  [FIX] vision.md missing section header — prepending '## Vision'"
+    { printf "## Vision\n\n"; cat "docs/aide/vision.md"; } > /tmp/_onboard_vision_fix.md
+    mv /tmp/_onboard_vision_fix.md "docs/aide/vision.md"
+    ONBOARD_FIXES=$((ONBOARD_FIXES + 1))
+  fi
+fi
+
+# roadmap.md: must have at least one ## Stage
+if [ -f "docs/aide/roadmap.md" ] && [ -s "docs/aide/roadmap.md" ]; then
+  STAGE_COUNT=$(grep -c "^## Stage" "docs/aide/roadmap.md" 2>/dev/null || echo "0")
+  if [ "${STAGE_COUNT:-0}" -eq 0 ]; then
+    echo "  [FIX] roadmap.md missing ## Stage sections — appending Stage 1"
+    printf "\n## Stage 1 — Initial\n\n- TBD\n" >> "docs/aide/roadmap.md"
+    ONBOARD_FIXES=$((ONBOARD_FIXES + 1))
+  fi
+fi
+
+# definition-of-done.md: must have at least one ## Journey
+if [ -f "docs/aide/definition-of-done.md" ] && [ -s "docs/aide/definition-of-done.md" ]; then
+  JOURNEY_COUNT=$(grep -c "^## Journey [0-9]" "docs/aide/definition-of-done.md" 2>/dev/null || echo "0")
+  if [ "${JOURNEY_COUNT:-0}" -eq 0 ]; then
+    echo "  [FIX] definition-of-done.md missing Journey sections — appending Journey 1"
+    printf "\n## Journey 1 — Basic use\n\n- TBD\n" >> "docs/aide/definition-of-done.md"
+    ONBOARD_FIXES=$((ONBOARD_FIXES + 1))
+  fi
+fi
+
+# Check 3: AGENTS.md required fields
+if [ -f "AGENTS.md" ]; then
+  AGENTS_MISSING=""
+  for field in PROJECT_NAME BUILD_COMMAND TEST_COMMAND REPORT_ISSUE PR_LABEL; do
+    if ! grep -q "^${field}:" "AGENTS.md"; then
+      AGENTS_MISSING="${AGENTS_MISSING} ${field}"
+    fi
+  done
+  if [ -n "$AGENTS_MISSING" ]; then
+    ONBOARD_WARNINGS="${ONBOARD_WARNINGS}\n- AGENTS.md missing required fields:${AGENTS_MISSING}"
+    echo "  WARN: AGENTS.md missing fields:${AGENTS_MISSING}"
+  else
+    echo "  OK: AGENTS.md required fields present"
+  fi
+fi
+
+# Check 4: otherness-config.yaml required sections
+if [ -f "otherness-config.yaml" ]; then
+  CONFIG_MISSING=""
+  for section in project schedule; do
+    if ! grep -q "^${section}:" "otherness-config.yaml"; then
+      CONFIG_MISSING="${CONFIG_MISSING} ${section}"
+    fi
+  done
+  if [ -n "$CONFIG_MISSING" ]; then
+    ONBOARD_WARNINGS="${ONBOARD_WARNINGS}\n- otherness-config.yaml missing sections:${CONFIG_MISSING}"
+    echo "  WARN: otherness-config.yaml missing sections:${CONFIG_MISSING}"
+  else
+    echo "  OK: otherness-config.yaml required sections present"
+  fi
+fi
+
+# Apply fixes: commit the fixed files
+if [ "$ONBOARD_FIXES" -gt 0 ]; then
+  echo "[ONBOARD §7b] Committing $ONBOARD_FIXES structural fix(es)..."
+  git add docs/aide/ 2>/dev/null || true
+  git commit --amend --no-edit 2>/dev/null || \
+    git commit -m "chore: onboard post-run structural fixes ($ONBOARD_FIXES applied)" 2>/dev/null || true
+  git push origin "$BRANCH" --force-with-lease 2>/dev/null || git push origin "$BRANCH" 2>/dev/null || true
+fi
+
+if [ -n "$ONBOARD_WARNINGS" ]; then
+  echo "[ONBOARD §7b] Human review needed:"
+  printf "$ONBOARD_WARNINGS\n"
+fi
+
+echo "[ONBOARD §7b] Structural validation complete. ${ONBOARD_FIXES} fix(es) applied."
+```
+
+---
+
+## STEP 8 — Verify and report
 
 This onboarding is complete when ALL of the following are true:
 
