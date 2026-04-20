@@ -88,6 +88,78 @@ Always include as baseline targets when not already in the provenance log:
 - `ellistarn/home` (skill definitions, reconciling-implementations)
 - `github/spec-kit` (speckit CLI source, queue/item patterns)
 
+### 1b-arch-diverse: Architecture-diverse target selection (frame-lock mode)
+
+**When to activate**: SM §4c sets `frame_lock_detected: true` in state.json when
+arch_convergence >= 0.65 for 3 consecutive calibrations. When this flag is set,
+the learn agent MUST prioritize architecturally unlike repos.
+
+**The "unlike" heuristic**: The monoculture problem cannot be solved by learning more
+of the same. If current skills are dominated by one paradigm, the next learn session
+must come from a different paradigm.
+
+Step 1 — Identify current skill category distribution:
+```python
+# Scan PROVENANCE.md for source repos and classify by domain
+import re, os
+try:
+    provenance = open(os.path.expanduser('~/.otherness/agents/skills/PROVENANCE.md')).read()
+    # Extract source repos
+    sources = re.findall(r'source:\s*([^\s,\n]+)', provenance, re.IGNORECASE)
+    sources += re.findall(r'github\.com/([^/\s]+/[^/\s]+)', provenance)
+    # Classify by keyword heuristics
+    categories = {'agent-loop': 0, 'data-pipeline': 0, 'frontend': 0,
+                  'backend-service': 0, 'devops': 0, 'ml-training': 0, 'other': 0}
+    for s in sources:
+        s_lower = s.lower()
+        if any(k in s_lower for k in ['agent','autonomous','bot','opencode','otherness']):
+            categories['agent-loop'] += 1
+        elif any(k in s_lower for k in ['pipeline','etl','stream','kafka','spark']):
+            categories['data-pipeline'] += 1
+        elif any(k in s_lower for k in ['ui','react','vue','frontend','web','css']):
+            categories['frontend'] += 1
+        elif any(k in s_lower for k in ['api','service','backend','server','grpc']):
+            categories['backend-service'] += 1
+        elif any(k in s_lower for k in ['docker','k8s','deploy','infra','terraform']):
+            categories['devops'] += 1
+        elif any(k in s_lower for k in ['ml','model','train','torch','tensorflow']):
+            categories['ml-training'] += 1
+        else:
+            categories['other'] += 1
+    print('Current skill categories:', categories)
+    # Find underrepresented categories (0 or fewest entries)
+    min_count = min(categories.values())
+    underrepresented = [k for k, v in categories.items() if v == min_count and k != 'other']
+    print('Underrepresented categories:', underrepresented)
+except Exception as e:
+    print(f'Category scan error: {e}')
+    underrepresented = ['data-pipeline', 'frontend']  # fallback
+```
+
+Step 2 — Search for repos in underrepresented categories:
+```bash
+# Example: if 'data-pipeline' is underrepresented
+CATEGORY="data-pipeline"  # replace with most underrepresented category
+gh search repos "topic:$CATEGORY language:python stars:>50" --limit 10 \
+  --json fullName,description,stargazersCount \
+  --jq '.[] | "\(.fullName) — \(.description)"' 2>/dev/null
+```
+
+**Category-to-search-terms mapping**:
+- `data-pipeline` → `"topic:data-pipeline OR topic:etl stars:>20"`
+- `frontend` → `"topic:react OR topic:vue agents workflow stars:>10"`
+- `backend-service` → `"topic:grpc OR topic:graphql autonomous stars:>20"`
+- `devops` → `"topic:gitops OR topic:kubernetes operator stars:>50"`
+- `ml-training` → `"topic:llm-evaluation OR topic:ml-workflow stars:>30"`
+
+Step 3 — Ensure the selected repos are genuinely unlike current skills:
+- Agent-loop skills (standalone.md, reconciling-implementations) are about coordination,
+  state machines, and quality gates. Do NOT learn from another agent-loop repo.
+- The target must have a different *problem structure*: data flow, UI state management,
+  infrastructure provisioning, or ML training pipelines are all valid contrasts.
+- One sentence test: "The core problem this repo solves is ___." If it sounds like
+  otherness's problem, choose a different repo.
+
 ---
 
 ## Step 2 — Fetch and read each target
