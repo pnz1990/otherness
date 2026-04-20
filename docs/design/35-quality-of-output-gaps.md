@@ -52,6 +52,8 @@ commits to a specific item.
 
 - ✅ `agents/onboard.md` STEP 4c: vision quality gate — after writing vision.md, checks: (1) ≥100 words, (2) named user/operator present, (3) specificity ratio < 35% generic filler words; for each failing check, agent revises inline via [AI-STEP] before proceeding to STEP 5 (PR #TBD, 2026-04-20)
 
+- ✅ `/otherness.status` health dashboard: Step 0 added — shows 6 sections: health trend (last 5 batches), skills count + last learn date, queue depth + next item, journey status, simulation calibration + arch_convergence, reference project health; fits in ≤40 lines; graceful fallback for missing files (PR #TBD, 2026-04-20)
+
 ## Future (🔲)
 
 - 🔲 `coord.md §1c`: track guard-firing frequency in session metrics (metrics.md schema — see docs/design/33-stage-4-self-improvement-metrics.md)
