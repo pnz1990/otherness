@@ -170,8 +170,8 @@
       "done_at": "2026-04-20T13:02:33Z"
     },
     "issue-527": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: Accessibility: run axe assertions on Tier 1 pages (RGD list, DAG, instance list, context s",
       "labels": [
         "priority/medium",
@@ -183,7 +183,10 @@
       "priority": "medium",
       "branch": null,
       "worktree": null,
-      "file_spaces": []
+      "file_spaces": [],
+      "pr_number": 544,
+      "pr_merged": true,
+      "done_at": "2026-04-20T13:06:55Z"
     },
     "issue-528": {
       "state": "todo",
