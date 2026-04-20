@@ -137,9 +137,9 @@ The message names the correct command. The human knows exactly what to do.
 - ✅ Layer 0: `## MODE` block added to all 12 agent files; validate.sh check 6 enforces it (PR #226, 2026-04-17)
 - ✅ Layer 2: `scripts/guard.sh` — pre-flight zone check, all 5 MODE/zone combinations verified (PR #223, 2026-04-17)
 - ✅ Layer 3: `scripts/guard-ci.sh` + CI workflow step — blocks feat/* branches from creating new DOCS zone files, blocks vision/* branches from modifying CODE zone files; chore/* exempt; runs on every PR (PR #224, 2026-04-18)
-- ✅ `validate.sh` check 6: every agent file has a `## MODE` block — already enforced since PR #226 (check was already shipping; duplicate Future entry removed)
+- ✅ `validate.sh` check 6: every agent file has a `## MODE` block — already enforced since PR #226 (check was already shipping; duplicate Future entry removed) ⚠️ Stale — referenced file not found
 - ✅ Layer 1: `## D4 ENFORCEMENT` section added to `onboarding-new-project.md` AGENTS.md template; `d4_enforcement: true` added to `otherness-config-template.yaml` (PR #262, 2026-04-18)
-- ✅ `vibe-vision.md` hard rule: explicit session termination rule added to HARD RULES — session ends after D4 artifacts land on main, no implementation/issues/specs (PR #267, 2026-04-18)
+- ✅ `vibe-vision.md` hard rule: explicit session termination rule added to HARD RULES — session ends after D4 artifacts land on main, no implementation/issues/specs (PR #267, 2026-04-18) ⚠️ Stale — referenced file not found
 - ✅ `otherness.onboard` mode: MODE: VISION (writes docs/aide/ + .otherness/ exception for state bootstrap; does not write agents/ or scripts/) — accurately reflects actual behavior (PR #268, 2026-04-18)
 - ✅ CRITICAL-A/B tier split — standalone.md HARD RULES: git diff classifier separates logic changes (CRITICAL-A, human review) from [AI-STEP]-comment additions (CRITICAL-B, autonomous merge); queue gate at ≥3 in_review (PR #288, 2026-04-19)
 
