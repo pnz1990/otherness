@@ -40,8 +40,8 @@ You don't need Phase 2 to start. Phase 2 emerges from Phase 1 running long enoug
 - ✅ Phase 1b: SM §4d — calibration every 10 batches, arch-convergence alarm at >0.7, sim-params.json updated (PR #239, 2026-04-18)
 - ✅ Phase 2b: arch-convergence signal in SM — SM §4d reads mean_arch_convergence; opens [NEEDS HUMAN] if >0.7 for 2 consecutive batches (PR #239, 2026-04-18)
 - ✅ Phase 1c: SM §4d-learn — auto-trigger /otherness.learn when Type B rate < sim floor for 3 consecutive batches (PR #269, 2026-04-18)
-- ✅ Phase 2a: per-project calibration — SM §4d checks metrics.md row count; if ≥10: uses --metrics arg (PR #270, 2026-04-18)
-- ✅ Phase 2c: sim-results.json written to _state after each calibration; PM §5b reads it for sim health in validation report (PR #271, 2026-04-18)
+- ✅ Phase 2a: per-project calibration — SM §4d checks metrics.md row count; if ≥10: uses --metrics arg (PR #270, 2026-04-20)
+- ✅ Phase 2c: sim-results.json written to _state after each calibration; PM §5b reads it for sim health in validation report (PR #270, 2026-04-20)
 
 ## Future (🔲)
 

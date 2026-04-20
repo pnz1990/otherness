@@ -279,41 +279,96 @@ if [ $((SM_CYCLE % 10)) -eq 0 ] && [ "$SM_CYCLE" -gt 0 ]; then
     echo "[SM §4d] Running simulation calibration (sm_cycle=$SM_CYCLE)..."
 
     # Phase 2a: per-project calibration — use local metrics if ≥10 batches available
-    # [AI-STEP]
-    # Check metrics.md row count:
-    #   METRICS_ROWS=$(grep -c '^\|\s*[0-9][0-9][0-9][0-9]-' docs/aide/metrics.md 2>/dev/null || echo 0)
-    # If METRICS_ROWS >= 10:
-    #   Run: python3 scripts/calibrate.py --runs 3 --cycles 50 --metrics docs/aide/metrics.md 2>/dev/null
-    #   echo "[SM §4d] Using project-specific metrics ($METRICS_ROWS batches) for calibration."
-    # Else:
-    #   Run default: python3 scripts/calibrate.py --runs 3 --cycles 50 2>/dev/null
-    #   echo "[SM §4d] Using otherness default calibration (only $METRICS_ROWS batches available)."
-    #
-    # After calibration succeeds (either path), persist sim-params.json to _state branch:
-    #   if [ -f "scripts/sim-params.json" ]; then
-    #     Use worktree pattern (same as state.json writes) to write
-    #     scripts/sim-params.json → .otherness/sim-params.json on _state branch.
-    #     Commit message: "calibration: update sim-params.json (sm_cycle=$SM_CYCLE)"
-    #   fi
+    METRICS_ROWS=$(grep -c '^\|\s*[0-9][0-9][0-9][0-9]-' docs/aide/metrics.md 2>/dev/null || echo 0)
+    if [ "${METRICS_ROWS:-0}" -ge 10 ]; then
+        echo "[SM §4d] Using project-specific metrics ($METRICS_ROWS batches) for calibration."
+        CALIB_ARGS="--runs 3 --cycles 50 --metrics docs/aide/metrics.md"
+    else
+        echo "[SM §4d] Using otherness default calibration (only ${METRICS_ROWS:-0} batches available)."
+        CALIB_ARGS="--runs 3 --cycles 50"
+    fi
 
-    if python3 scripts/calibrate.py --runs 3 --cycles 50 2>/dev/null; then
+    if python3 scripts/calibrate.py $CALIB_ARGS 2>/dev/null; then
         echo "[SM §4d] Calibration complete — sim-params.json updated."
 
+        # Persist sim-params.json to _state branch
+        if [ -f "scripts/sim-params.json" ]; then
+            python3 - <<'PARAMS_EOF'
+import subprocess, json, os, tempfile, time, shutil
+
+state_wt = os.path.join(tempfile.gettempdir(), 'otherness-simparams-' + str(os.getpid()))
+sm_cycle = os.environ.get('SM_CYCLE', '0')
+
+try:
+    if os.path.exists(state_wt):
+        subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
+    subprocess.run(['git','worktree','add','--no-checkout',state_wt,'origin/_state'],
+                   capture_output=True, check=True)
+    target = os.path.join(state_wt,'.otherness','sim-params.json')
+    os.makedirs(os.path.dirname(target), exist_ok=True)
+    import shutil as _sh
+    _sh.copy('scripts/sim-params.json', target)
+    subprocess.run(['git','-C',state_wt,'add',target], capture_output=True)
+    r = subprocess.run(['git','-C',state_wt,'commit',
+                        '-m', f'calibration: update sim-params.json (sm_cycle={sm_cycle})'],
+                       capture_output=True)
+    if r.returncode == 0:
+        subprocess.run(['git','-C',state_wt,'push','origin','HEAD:_state'], capture_output=True)
+        print(f"[SM §4d] sim-params.json persisted to _state (sm_cycle={sm_cycle})")
+    else:
+        print("[SM §4d] sim-params.json unchanged — no commit needed")
+except Exception as e:
+    print(f"[SM §4d] sim-params persist error (non-fatal): {e}")
+finally:
+    try:
+        subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
+    except: pass
+subprocess.run(['git','worktree','prune'], capture_output=True)
+PARAMS_EOF
+        fi
+
         # Phase 2c: write sim-results.json to _state branch
-        # [AI-STEP]
-        # After successful calibration:
-        # 1. Read scripts/sim-params.json to get best_rmse and params.
-        # 2. Build sim-results.json:
-        #    results = {
-        #      "calibrated_at": datetime.utcnow().isoformat() + "Z",
-        #      "best_rmse": sim_params.get("rmse", null),
-        #      "source": "project-specific" if METRICS_ROWS >= 10 else "otherness-defaults",
-        #      "params": sim_params
-        #    }
-        # 3. Write to _state branch as .otherness/sim-results.json using worktree pattern.
-        #    (Same pattern as state.json writes — worktree add, write, commit, push, worktree remove)
-        #    Commit message: "calibration: sim-results.json (sm_cycle=$SM_CYCLE)"
-        # 4. Non-fatal: if write fails, log and continue.
+        python3 - <<'SIMRES_EOF'
+import subprocess, json, os, tempfile, datetime, shutil
+
+state_wt = os.path.join(tempfile.gettempdir(), 'otherness-simresults-' + str(os.getpid()))
+sm_cycle = os.environ.get('SM_CYCLE', '0')
+metrics_rows = int(os.environ.get('METRICS_ROWS', '0'))
+
+try:
+    sim_params = json.load(open('scripts/sim-params.json'))
+except Exception:
+    sim_params = {}
+
+results = {
+    "calibrated_at": datetime.datetime.utcnow().isoformat() + "Z",
+    "best_rmse": sim_params.get("rmse"),
+    "source": "project-specific" if metrics_rows >= 10 else "otherness-defaults",
+    "params": sim_params
+}
+
+try:
+    if os.path.exists(state_wt):
+        subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
+    subprocess.run(['git','worktree','add','--no-checkout',state_wt,'origin/_state'],
+                   capture_output=True, check=True)
+    target = os.path.join(state_wt,'.otherness','sim-results.json')
+    os.makedirs(os.path.dirname(target), exist_ok=True)
+    json.dump(results, open(target,'w'), indent=2)
+    subprocess.run(['git','-C',state_wt,'add',target], capture_output=True)
+    subprocess.run(['git','-C',state_wt,'commit',
+                    '-m', f'calibration: sim-results.json (sm_cycle={sm_cycle})'],
+                   capture_output=True)
+    subprocess.run(['git','-C',state_wt,'push','origin','HEAD:_state'], capture_output=True)
+    print(f"[SM §4d] sim-results.json written to _state (source={results['source']})")
+except Exception as e:
+    print(f"[SM §4d] sim-results write error (non-fatal): {e}")
+finally:
+    try:
+        subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
+    except: pass
+subprocess.run(['git','worktree','prune'], capture_output=True)
+SIMRES_EOF
 
         # Read arch_convergence from latest sim-params.json
         ARCH_CONV=$(python3 -c "
