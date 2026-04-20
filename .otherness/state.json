@@ -203,7 +203,7 @@
       "note": "Duplicate \u2014 covered by in-review PR"
     },
     "251": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Issue body must identify design doc Future item",
       "design_doc": "01-declarative-design-driven-development.md",
       "depends_on": [],
@@ -231,7 +231,7 @@
       "done_at": "2026-04-18T21:28:40Z"
     },
     "254": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Cross-check README/AGENTS.md claims against code",
       "design_doc": "04-documentation-health.md",
       "depends_on": [],
@@ -454,6 +454,17 @@
       "pr_number": 384,
       "pr_merged": true,
       "done_at": "2026-04-20T04:48:36Z"
+    },
+    "388": {
+      "title": "feat(coord): \u00a71c roadmap source",
+      "state": "done",
+      "pr_merged": true,
+      "pr_number": 393,
+      "done_at": "2026-04-20T05:37:25Z",
+      "areas": [
+        "area/agent-loop"
+      ],
+      "design_doc": "22-queue-richness.md"
     }
   },
   "engineer_slots": {
@@ -485,6 +496,6 @@
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 52,
-  "pm_cycle_count": 25
+  "sm_cycle_count": 53,
+  "pm_cycle_count": 26
 }
