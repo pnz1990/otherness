@@ -159,6 +159,7 @@ toward completeness rather than claiming completeness it doesn't have.
 - ✅ kro-ui E2E workflow — runs on push/PR, Playwright-based (2026-04-14)
 - ✅ `otherness-config.yaml`: `anchor:` section added (commented-out, for projects with anchor workflows) — fields: workflow, score_pattern, coverage_target, stagnation_sessions (PR #357, 2026-04-20)
 - ✅ `SM §4g-anchor`: feature→anchor gap detection — reads ✅ Present items from docs/design/*.md, diffs against AGENTS.md §Anchor matrix, opens anchor-growth issues for uncovered features; posts `[ANCHOR] coverage: N/M (X%)` to report issue every 10 SM cycles; graceful skip if no §Anchor section (PR #355, 2026-04-20)
+- ✅ `COORD §1c`: anchor-growth gate — when `anchor.coverage_target > 0` AND open `anchor: cover` issues exist, skips feature queue generation; anchor-growth items worked first (PR #356, 2026-04-20)
 
 ## Future (🔲)
 
