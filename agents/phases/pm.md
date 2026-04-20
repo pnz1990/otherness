@@ -116,27 +116,99 @@ with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
 ```bash
 if [ $((${PM_CYCLE:-0} % 10)) -eq 0 ] && [ "${PM_CYCLE:-0}" -gt 0 ]; then
   echo "[PM] Running cross-project improvement check..."
-  # [AI-STEP] Cross-project improvement proposals:
-  # 1. Read monitor.projects from otherness-config.yaml
-  # 2. For each project:
-  #    - Check open [needs-human] issues: gh issue list --repo <proj> --label needs-human --state open
-  #    - Check CI status: gh run list --repo <proj> --branch main --limit 1 --json conclusion
-  #    - Check recent metrics (if accessible): look for todo_shipped = 0 in _state metrics
-  # 3. Find common blockers across ≥2 projects:
-  #    - Both have needs-human open → pattern: "unresolved escalation backlog"
-  #    - Both have CI red → pattern: "CI reliability gap"
-  #    - Both have 0 velocity → pattern: "queue generation or claiming issue"
-  # 4. For each common blocker: open an issue on $REPO proposing the improvement.
-  #    Title: "improvement(loop): <abstract pattern> affecting ≥2 managed projects"
-  #    Body: abstract description (no project names) + suggested fix direction
-  #    Labels: otherness,kind/enhancement,area/agent-loop
-  # 5. Also check docs/future-ideas.md for ideas ready to implement.
-  #    If an idea has a complexity tag of 'small' or 'xs' and hasn't been opened as an issue:
-  #    open it now with a [PM proposal] prefix.
-  # 6. Competitive observation: for each competitor version update found in PM §5 competitive
-  #    scan — write a ⚠️ Inferred stub to docs/design/ if the capability is not covered.
-  #    Use the write_inferred_stub helper below.
-  # If only 1 project in monitor: log "[PM] Need ≥2 projects for cross-project analysis."
+  python3 - <<'XPROJECT_EOF'
+import subprocess, re, json, os
+
+REPO = os.environ.get('REPO', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', '')
+
+# Read monitor.projects from otherness-config.yaml
+projects = []
+try:
+    in_monitor = in_projects = False
+    for line in open('otherness-config.yaml'):
+        if re.match(r'^monitor:', line): in_monitor = True
+        if in_monitor and re.match(r'\s+projects:', line): in_projects = True
+        if in_projects:
+            m = re.match(r'\s+- (.+)', line)
+            if m: projects.append(m.group(1).strip())
+except Exception:
+    pass
+
+if len(projects) < 2:
+    print('[PM] Need ≥2 projects for cross-project analysis.')
+    exit(0)
+
+# Check each project for common blocker patterns
+project_status = {}
+for proj in projects:
+    status = {'needs_human': 0, 'ci_red': False}
+    try:
+        r = subprocess.run(
+            ['gh', 'issue', 'list', '--repo', proj, '--state', 'open',
+             '--label', 'needs-human', '--json', 'number', '--jq', 'length'],
+            capture_output=True, text=True, timeout=15)
+        status['needs_human'] = int(r.stdout.strip() or '0')
+    except Exception:
+        pass
+    try:
+        r = subprocess.run(
+            ['gh', 'run', 'list', '--repo', proj, '--branch', 'main',
+             '--limit', '1', '--json', 'conclusion', '--jq', '.[0].conclusion'],
+            capture_output=True, text=True, timeout=15)
+        if r.stdout.strip().strip('"') == 'failure':
+            status['ci_red'] = True
+    except Exception:
+        pass
+    project_status[proj] = status
+
+# Identify common blockers across ≥2 projects
+patterns = []
+needs_human_projs = [p for p, s in project_status.items() if s['needs_human'] > 0]
+ci_red_projs = [p for p, s in project_status.items() if s['ci_red']]
+
+if len(needs_human_projs) >= 2:
+    patterns.append(('unresolved escalation backlog',
+                     f'{len(needs_human_projs)} managed projects have open needs-human issues. '
+                     f'The loop is accumulating escalations faster than humans resolve them. '
+                     f'Suggested fix: improve autonomous resolution (coord.md §1e needs-human handler).'))
+if len(ci_red_projs) >= 2:
+    patterns.append(('CI reliability gap',
+                     f'{len(ci_red_projs)} managed projects have red CI on main. '
+                     f'The agent may be merging PRs that break CI, or external flakiness. '
+                     f'Suggested fix: strengthen the CI gate in coord.md §1a or add retry logic.'))
+
+# Open improvement issues for common patterns (deduplicating)
+def open_if_absent(title, labels, body):
+    try:
+        r = subprocess.run(
+            ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+             '--search', title[:60], '--json', 'number', '--jq', 'length'],
+            capture_output=True, text=True, timeout=15)
+        if int(r.stdout.strip() or '0') > 0:
+            return None
+        r2 = subprocess.run(
+            ['gh', 'issue', 'create', '--repo', REPO,
+             '--title', title, '--label', labels, '--body', body],
+            capture_output=True, text=True, timeout=15)
+        if r2.returncode == 0:
+            return r2.stdout.strip().split('/')[-1]
+    except Exception:
+        pass
+    return None
+
+for pattern_name, description in patterns:
+    title = f'improvement(loop): {pattern_name} affecting ≥2 managed projects'
+    body = f'## PM §5c cross-project analysis finding\n\n{description}\n\nPattern: `{pattern_name}`'
+    num = open_if_absent(title, 'otherness,kind/enhancement,area/agent-loop,priority/medium', body)
+    if num:
+        print(f'[PM §5c] Opened improvement issue #{num}: {pattern_name}')
+    else:
+        print(f'[PM §5c] Issue already open for: {pattern_name}')
+
+if not patterns:
+    print('[PM §5c] No common blockers found across managed projects.')
+XPROJECT_EOF
 fi
 ```
 

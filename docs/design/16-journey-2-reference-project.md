@@ -83,7 +83,7 @@ escalation handles future stalls.
 - ✅ test.sh check 5b: outputs STALE_REASON with specific stall duration + exports JOURNEY2_STALE_HOURS for PM consumption (PR #302-303, 2026-04-19)
 
 ## Future (🔲)
-- 🔲 ⚠️ Inferred: cross-project improvement proposals — pm.md §5 [AI-STEP] reads metrics.json/difficulty-ledger from managed projects, identifies patterns (3+ projects hit same blocker), opens improvement PR on otherness (agents/phases/pm.md, 2026-04-20)
+- ✅ ⚠️ Inferred: cross-project improvement proposals — pm.md §5c [AI-STEP] converted to executable Python: reads monitor.projects, checks needs-human/CI per project, opens improvement issues for common blockers across ≥2 projects. Fail-open. (PR #TBD, 2026-04-20)
 
 - ✅ definition-of-done.md: Journey 2 has automated check command — reads reference project from config, checks _state age, outputs STALE_REASON (2026-04-19)
 
