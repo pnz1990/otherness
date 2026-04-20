@@ -133,12 +133,13 @@ This distinction matters because:
 
 ## Present (✅)
 
+- ✅ `docs/design/34-stage-9-autonomous-vision.md` — stage-level design doc: deliverables, completion threshold, present/future sections (PR #561, 2026-04-20)
+
 - ✅ `docs/aide/definition-of-done.md` Journey 9 — autonomous vision synthesis loop: SM §4h triggers, agent produces ⚠️ Inferred items, COORD picks up without human restart (PR #560, 2026-04-20)
 
 - ✅ COORD queue gen: `✅ ⚠️ Inferred` items matched by existing regex (no change needed); `is_done()` strips `⚠️ Inferred/Observed:` prefix before deduplication (PR #316, 2026-04-19)
 
 ## Future (🔲)
-- 🔲 ⚠️ Inferred: docs/design/34-stage-9-autonomous-vision.md — stage-level design doc for Stage 9 (Autonomous Vision Synthesis), mirroring the pattern of docs/design/30-33 for Stages 0-4. (autonomous-vision, 2026-04-20)
 
 - ✅ `agents/autonomous-vision.md` — MODE: VISION, no dialogue; 4-phase batch process: read corpus, synthesize (5 patterns), write 🔲 ⚠️ Inferred items, commit (PR #313, 2026-04-19)
 - ✅ SM phase trigger — SM §4h checks all 4 conditions; creates vision/auto-<date> branch; runs agents/autonomous-vision.md when deployed; records last_auto_vision_cycle in state.json (PR #314, 2026-04-19)
