@@ -116,7 +116,7 @@
     },
     "207": {
       "title": "feat(coord): D4 classification at issue intake",
-      "state": "done",
+      "state": "in_review",
       "priority": "medium",
       "size": "s",
       "areas": [
@@ -127,24 +127,22 @@
       "branch": "feat/207",
       "worktree": "../otherness.207",
       "pr_number": 245,
-      "pr_url": "https://github.com/pnz1990/otherness/pull/245",
-      "pr_merged": true,
-      "done_at": "2026-04-19T03:06:44Z"
+      "pr_url": "https://github.com/pnz1990/otherness/pull/245"
     },
     "208": {
       "title": "feat(pm): PM \u00a75f periodic doc health scan",
-      "state": "todo",
+      "state": "in_review",
       "priority": "medium",
       "size": "m",
       "areas": [
         "area/agent-loop"
       ],
-      "assigned_to": null,
-      "assigned_at": null,
-      "branch": null,
-      "worktree": null,
-      "pr_number": null,
-      "pr_url": null
+      "assigned_to": "sess-83781955",
+      "assigned_at": "2026-04-18T19:49:11Z",
+      "branch": "feat/208",
+      "worktree": "../otherness.208",
+      "pr_number": 246,
+      "pr_url": "https://github.com/pnz1990/otherness/pull/246"
     },
     "214": {
       "title": "feat: implement /otherness.vibe-vision \u2014 validate and wire",
@@ -201,16 +199,15 @@
       "note": "Duplicate \u2014 covered by in-review PR"
     },
     "251": {
-      "state": "todo",
+      "state": "in_review",
       "title": "feat: Issue body must identify design doc Future item",
       "design_doc": "01-declarative-design-driven-development.md",
       "depends_on": [],
-      "assigned_to": null,
-      "assigned_at": null,
-      "branch": null,
-      "worktree": null,
-      "pr_number": null,
-      "pr_url": null
+      "assigned_to": "sess-83781955",
+      "assigned_at": "2026-04-18T20:06:46Z",
+      "branch": "feat/251",
+      "worktree": "../otherness.251",
+      "pr_number": 255
     },
     "252": {
       "state": "done",
@@ -234,28 +231,26 @@
       "done_at": "2026-04-18T21:28:40Z"
     },
     "254": {
-      "state": "todo",
+      "state": "in_review",
       "title": "feat: Cross-check README/AGENTS.md claims against code",
       "design_doc": "04-documentation-health.md",
       "depends_on": [],
-      "assigned_to": null,
-      "assigned_at": null,
-      "branch": null,
-      "worktree": null,
-      "pr_number": null,
-      "pr_url": null
+      "assigned_to": "sess-83781955",
+      "assigned_at": "2026-04-18T20:16:07Z",
+      "branch": "feat/254",
+      "worktree": "../otherness.254",
+      "pr_number": 257
     },
     "258": {
-      "state": "todo",
+      "state": "in_review",
       "title": "feat: Codebase hygiene scan",
       "design_doc": "04-documentation-health.md",
       "depends_on": [],
-      "assigned_to": null,
-      "assigned_at": null,
-      "branch": null,
-      "worktree": null,
-      "pr_number": null,
-      "pr_url": null
+      "assigned_to": "sess-83781955",
+      "assigned_at": "2026-04-18T20:24:01Z",
+      "branch": "feat/258",
+      "worktree": "../otherness.258",
+      "pr_number": 263
     },
     "259": {
       "state": "done",
@@ -309,7 +304,7 @@
       "done_at": "2026-04-18T20:46:04Z"
     },
     "269": {
-      "state": "done",
+      "state": "in_review",
       "title": "feat: Phase 1c: SM uses simulation output to trigger /otherness.learn",
       "design_doc": "11-simulation-feedback-loop.md",
       "depends_on": [],
@@ -317,69 +312,62 @@
       "assigned_at": "2026-04-18T20:47:27Z",
       "branch": "feat/269",
       "worktree": "../otherness.269",
-      "pr_number": 274,
-      "pr_merged": true,
-      "done_at": "2026-04-19T03:07:09Z"
+      "pr_number": 274
     },
     "270": {
-      "state": "todo",
+      "state": "in_review",
       "title": "feat: Phase 2a: per-project calibration",
       "design_doc": "11-simulation-feedback-loop.md",
       "depends_on": [],
-      "assigned_to": null,
-      "assigned_at": null,
-      "branch": null,
-      "worktree": null,
-      "pr_number": null,
-      "pr_url": null
+      "assigned_to": "sess-83781955",
+      "assigned_at": "2026-04-18T20:51:13Z",
+      "branch": "feat/270",
+      "worktree": "../otherness.270",
+      "pr_number": 275
     },
     "271": {
-      "state": "todo",
+      "state": "in_review",
       "title": "feat: Phase 2c: simulation results in _state",
       "design_doc": "11-simulation-feedback-loop.md",
       "depends_on": [],
-      "assigned_to": null,
-      "assigned_at": null,
-      "branch": null,
-      "worktree": null,
-      "pr_number": null,
-      "pr_url": null
+      "assigned_to": "sess-83781955",
+      "assigned_at": "2026-04-18T20:54:25Z",
+      "branch": "feat/271",
+      "worktree": "../otherness.271",
+      "pr_number": 276
     },
     "277": {
-      "state": "todo",
+      "state": "in_review",
       "title": "feat: PM \u00a75g: simulation health score",
       "design_doc": "12-perpetual-validation.md",
       "depends_on": [],
-      "assigned_to": null,
-      "assigned_at": null,
-      "branch": null,
-      "worktree": null,
-      "pr_number": null,
-      "pr_url": null
+      "assigned_to": "sess-83781955",
+      "assigned_at": "2026-04-18T20:59:36Z",
+      "branch": "feat/277",
+      "worktree": "../otherness.277",
+      "pr_number": 282
     },
     "278": {
-      "state": "todo",
+      "state": "in_review",
       "title": "feat: PM self-correction on AMBER",
       "design_doc": "12-perpetual-validation.md",
       "depends_on": [],
-      "assigned_to": null,
-      "assigned_at": null,
-      "branch": null,
-      "worktree": null,
-      "pr_number": null,
-      "pr_url": null
+      "assigned_to": "sess-83781955",
+      "assigned_at": "2026-04-18T21:04:25Z",
+      "branch": "feat/278",
+      "worktree": "../otherness.278",
+      "pr_number": 283
     },
     "279": {
-      "state": "todo",
+      "state": "in_review",
       "title": "feat: Dynamic definition-of-done",
       "design_doc": "12-perpetual-validation.md",
       "depends_on": [],
-      "assigned_to": null,
-      "assigned_at": null,
-      "branch": null,
-      "worktree": null,
-      "pr_number": null,
-      "pr_url": null
+      "assigned_to": "sess-83781955",
+      "assigned_at": "2026-04-18T21:07:15Z",
+      "branch": "feat/279",
+      "worktree": "../otherness.279",
+      "pr_number": 284
     },
     "280": {
       "state": "done",
@@ -395,171 +383,15 @@
       "done_at": "2026-04-18T21:28:40Z"
     },
     "281": {
-      "state": "todo",
+      "state": "in_review",
       "title": "feat: Self-generating validation criteria",
       "design_doc": "12-perpetual-validation.md",
       "depends_on": [],
-      "assigned_to": null,
-      "assigned_at": null,
-      "branch": null,
-      "worktree": null,
-      "pr_number": null,
-      "pr_url": null
-    },
-    "321": {
-      "title": "feat: .github/workflows/otherness-scheduled.yml",
-      "design_doc": "19-scheduled-execution.md",
-      "depends_on": [],
-      "state": "done",
-      "pr_merged": true,
-      "done_at": "2026-04-19T05:47:34Z"
-    },
-    "322": {
-      "title": "feat: otherness-config.yaml schedule fields",
-      "design_doc": "19-scheduled-execution.md",
-      "depends_on": [],
-      "state": "done",
-      "pr_merged": true,
-      "done_at": "2026-04-19T05:47:34Z"
-    },
-    "323": {
-      "title": "feat: otherness-config-template.yaml schedule section",
-      "design_doc": "19-scheduled-execution.md",
-      "depends_on": [],
-      "state": "done",
-      "pr_merged": true,
-      "done_at": "2026-04-19T05:47:34Z"
-    },
-    "324": {
-      "title": "feat: scripts/validate.sh check scheduled workflow exists",
-      "design_doc": "19-scheduled-execution.md",
-      "depends_on": [],
-      "state": "done",
-      "assigned_to": "sess-c1ba8f84",
-      "assigned_at": "2026-04-19T05:47:34Z",
-      "branch": "feat/schedule-integration",
-      "pr_merged": true,
-      "done_at": "2026-04-19T05:50:52Z"
-    },
-    "325": {
-      "title": "feat: /otherness.setup and /otherness.onboard deploy scheduled workflow",
-      "design_doc": "19-scheduled-execution.md",
-      "depends_on": [],
-      "state": "done",
-      "assigned_to": "sess-c1ba8f84",
-      "assigned_at": "2026-04-19T05:47:34Z",
-      "branch": "feat/schedule-integration",
-      "pr_merged": true,
-      "done_at": "2026-04-19T05:50:52Z"
-    },
-    "328": {
-      "state": "done",
-      "title": "feat: standalone.md SELF-UPDATE two-way command file sync",
-      "design_doc": "20-command-file-sync.md",
-      "depends_on": [],
-      "assigned_to": "sess-5aedff9f",
-      "assigned_at": "2026-04-19T16:41:29Z",
-      "branch": "feat/command-sync",
-      "pr_merged": true,
-      "done_at": "2026-04-19T16:45:41Z"
-    },
-    "329": {
-      "state": "done",
-      "title": "feat: bounded-standalone.md same command sync step",
-      "design_doc": "20-command-file-sync.md",
-      "depends_on": [],
-      "assigned_to": "sess-5aedff9f",
-      "assigned_at": "2026-04-19T16:41:29Z",
-      "branch": "feat/command-sync",
-      "pr_merged": true,
-      "done_at": "2026-04-19T16:45:41Z"
-    },
-    "330": {
-      "state": "done",
-      "title": "feat: otherness.setup.md Step 4 full sync replace skip-if-exists",
-      "design_doc": "20-command-file-sync.md",
-      "depends_on": [],
-      "assigned_to": "sess-5aedff9f",
-      "assigned_at": "2026-04-19T16:41:29Z",
-      "branch": "feat/command-sync",
-      "pr_merged": true,
-      "done_at": "2026-04-19T16:45:41Z"
-    },
-    "331": {
-      "state": "done",
-      "title": "feat: otherness-scheduled.yml add command sync after clone",
-      "design_doc": "20-command-file-sync.md",
-      "depends_on": [],
-      "assigned_to": "sess-5aedff9f",
-      "assigned_at": "2026-04-19T16:41:29Z",
-      "branch": "feat/command-sync",
-      "pr_merged": true,
-      "done_at": "2026-04-19T16:45:41Z"
-    },
-    "issue-316": {
-      "status": "done",
-      "title": "feat: COORD queue gen: treat \u26a0\ufe0f Inferred items identically to \ud83d\udd32 Future"
-    },
-    "issue-307": {
-      "status": "done",
-      "title": "feat: PM \u00a75: vision age check"
-    },
-    "issue-310": {
-      "status": "done",
-      "title": "feat: docs/design/: add \u26a0\ufe0f Inferred and \u26a0\ufe0f Observed marker conventions"
-    },
-    "issue-309": {
-      "status": "done",
-      "title": "feat: PM \u00a75h extension: detect emergent patterns in \u2705 Present items"
-    },
-    "issue-308": {
-      "status": "done",
-      "title": "feat: PM \u00a75c: write competitive gap findings as \u26a0\ufe0f Inferred design doc entries"
-    },
-    "issue-314": {
-      "status": "done",
-      "title": "feat: SM phase trigger"
-    },
-    "339": {
-      "state": "done",
-      "title": "feat(ci): token expiry preflight \u2014 validate GH_TOKEN scopes before push",
-      "design_doc": "19-scheduled-execution.md",
-      "depends_on": [],
-      "areas": [
-        "area/tooling"
-      ],
-      "priority": "medium",
-      "size": "s",
-      "assigned_to": "sess-c63ae0fd",
-      "assigned_at": "2026-04-20T00:31:30Z",
-      "branch": "feat/339",
-      "worktree": "../otherness.339",
-      "file_spaces": [
-        ".github/workflows/"
-      ],
-      "pr_merged": true,
-      "done_at": "2026-04-20T00:34:40Z"
-    },
-    "340": {
-      "state": "done",
-      "title": "feat(config): add maqa.session_item_limit field to otherness-config.yaml and template",
-      "design_doc": "21-session-throughput.md",
-      "depends_on": [],
-      "areas": [
-        "area/tooling"
-      ],
-      "priority": "medium",
-      "size": "xs",
-      "assigned_to": "sess-c63ae0fd",
-      "assigned_at": "2026-04-20T00:39:03Z",
-      "branch": "feat/340",
-      "worktree": "../otherness.340",
-      "file_spaces": [
-        "otherness-config.yaml",
-        "otherness-config-template.yaml"
-      ],
-      "pr_merged": true,
-      "done_at": "2026-04-20T00:41:04Z"
+      "assigned_to": "sess-83781955",
+      "assigned_at": "2026-04-18T21:09:24Z",
+      "branch": "feat/281",
+      "worktree": "../otherness.281",
+      "pr_number": 285
     }
   },
   "engineer_slots": {
@@ -577,20 +409,10 @@
       "last_seen": "2026-04-18T21:35:09Z",
       "item": "standby-60",
       "cycle": 60
-    },
-    "sess-5aedff9f": {
-      "last_seen": "2026-04-19T16:41:29Z",
-      "item": "328",
-      "cycle": 1
-    },
-    "sess-c63ae0fd": {
-      "last_seen": "2026-04-20T00:39:03Z",
-      "item": "340",
-      "cycle": 2
     }
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 53,
-  "pm_cycle_count": 25
+  "sm_cycle_count": 50,
+  "pm_cycle_count": 23
 }
