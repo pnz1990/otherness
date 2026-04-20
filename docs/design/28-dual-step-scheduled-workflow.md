@@ -179,10 +179,10 @@ done
 ## Present (✅)
 
 - ✅ Design doc created (this file) (2026-04-20)
+- ✅ `otherness-scheduled.yml` in otherness repo: split into two OpenCode steps — Step 7: Vision scan (Step A, `continue-on-error: true`) + Step 8: Run otherness (Step B) (PR #440, 2026-04-20)
 
 ## Future (🔲)
 
-- 🔲 `otherness-scheduled.yml` in otherness repo: split into two OpenCode steps (Step A: vibe-vision, Step B: run)
 - 🔲 `otherness-config-template.yaml`: add `schedule.vibe_vision_step: true` field with comment
 - 🔲 `scripts/validate.sh`: check that scheduled workflow has 2 opencode steps when `vibe_vision_step: true`
 - 🔲 SM §4a cross-project monitoring: detect single-step workflows on managed projects and open upgrade issue
