@@ -17,7 +17,7 @@ echo "=== otherness validate ==="
 #             <owner>/<X> that isn't <owner>/otherness. Falls back gracefully.
 #   Rule 2 — reads fleet project names from otherness-config.yaml monitor.projects
 #             and catches them in project-reference context.
-echo "[1/5] Checking for hardcoded project paths in agent files..."
+echo "[1/7] Checking for hardcoded project paths in agent files..."
 
 # Resolve owner from config (used in Rule 1)
 OWNER=$(python3 -c "
@@ -94,7 +94,7 @@ done
 # Skill paths use ~/.otherness/agents/skills/<name>.md — on a CI runner ~/.otherness
 # doesn't exist, but the files are present in the repo at agents/skills/<name>.md.
 # We resolve both locations: prefer the expanded ~ path, fall back to repo-local.
-echo "[2/5] Checking skill references..."
+echo "[2/7] Checking skill references..."
 MISSING=0
 while IFS= read -r line; do
   # Extract path after "Load skill: read `" up to closing backtick
@@ -116,7 +116,7 @@ done < <(grep "Load skill: read" "$AGENTS_DIR/standalone.md" "$AGENTS_DIR/phases
 [ $MISSING -eq 0 ] && echo "  OK: all skill refs resolve" || exit 1
 
 # 3. Check required files exist
-echo "[3/5] Checking required files..."
+echo "[3/7] Checking required files..."
 REQUIRED=(
   "$AGENTS_DIR/standalone.md"
   "$AGENTS_DIR/bounded-standalone.md"
@@ -164,7 +164,7 @@ done
 [ $MISSING_FILES -eq 0 ] && echo "  OK: all required files present" || exit 1
 
 # 4. Check self-update is present in standalone.md
-echo "[4/5] Checking self-update mechanism..."
+echo "[4/7] Checking self-update mechanism..."
 if ! grep -q "git -C ~/.otherness pull" "$AGENTS_DIR/standalone.md"; then
   echo "  ERROR: standalone.md missing self-update (git pull) mechanism"
   exit 1
@@ -174,7 +174,7 @@ echo "  OK: self-update present"
 # 5. Check all spec.md files contain ## Design reference
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 SPECS_DIR="$ROOT_DIR/.specify/specs"
-echo "[5/5] Checking spec files for ## Design reference..."
+echo "[5/7] Checking spec files for ## Design reference..."
 if [ ! -d "$SPECS_DIR" ]; then
   echo "  OK: no .specify/specs/ directory — skipping spec lint"
 else
@@ -189,7 +189,7 @@ else
 fi
 
 # 6. Check every agent file has a ## MODE block
-echo "[6/6] Checking agent files for ## MODE block..."
+echo "[6/7] Checking agent files for ## MODE block..."
 MISSING_MODE=0
 for agent_file in "$AGENTS_DIR"/*.md "$AGENTS_DIR/phases"/*.md; do
   [ -f "$agent_file" ] || continue
@@ -260,6 +260,55 @@ except:
     fi
   fi
 fi
+
+# 7. Check ⚠️ Inferred and ⚠️ Observed items have source attribution
+# Each such item must end with a parenthetical attribution: (source, YYYY-MM-DD)
+# Items inside fenced code blocks are excluded (they are documentation examples).
+echo "[7/7] Checking ⚠️ Inferred/Observed items have source attribution..."
+python3 - <<'INFERRED_CHECK'
+import re, os, sys
+
+DESIGN_DIR = os.path.join(os.getcwd(), 'docs', 'design')
+DESIGN_DIR = os.path.normpath(DESIGN_DIR)
+
+# Attribution pattern: ends with (anything, YYYY-MM-DD) or (anything, YYYY-MM-DD).
+ATTRIBUTION_RE = re.compile(r'\([^()]+,\s*\d{4}-\d{2}-\d{2}\)\.?\s*$')
+
+errors = []
+
+if not os.path.isdir(DESIGN_DIR):
+    print("  OK: docs/design/ not found — skipping ⚠️ attribution check")
+    sys.exit(0)
+
+for fname in sorted(os.listdir(DESIGN_DIR)):
+    if not fname.endswith('.md'):
+        continue
+    filepath = os.path.join(DESIGN_DIR, fname)
+    try:
+        content = open(filepath).read()
+    except Exception:
+        continue
+
+    # Remove fenced code blocks to avoid false positives in examples
+    content_no_code = re.sub(r'```.*?```', '', content, flags=re.DOTALL)
+
+    for lineno, line in enumerate(content_no_code.splitlines(), 1):
+        # Check for ⚠️ Inferred or ⚠️ Observed items
+        if not re.search(r'^- 🔲 ⚠️ (Inferred|Observed):', line):
+            continue
+        # Must have source attribution
+        if not ATTRIBUTION_RE.search(line):
+            errors.append(f"  ERROR: {fname}: ⚠️ Inferred/Observed item missing attribution: {line.strip()[:80]}")
+
+if errors:
+    for e in errors:
+        print(e)
+    print(f"  {len(errors)} item(s) missing source attribution.")
+    print("  Format required: (source, YYYY-MM-DD) at end of item")
+    sys.exit(1)
+else:
+    print("  OK: all ⚠️ Inferred/Observed items have source attribution")
+INFERRED_CHECK
 
 echo ""
 echo "=== validate: PASSED ==="

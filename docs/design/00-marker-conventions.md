@@ -57,12 +57,13 @@ COORD skips all 🚫 items. They remain for history.
 
 ## Present (✅)
 
+- ✅ `scripts/validate.sh` check [7/7]: ⚠️ Inferred/Observed items must have source attribution `(source, YYYY-MM-DD)` — items in code blocks exempt (PR #559, 2026-04-20)
+
 - ✅ ✅/🔲 markers — original design doc vocabulary (introduced in Stage 3, 2026-04-14)
 - ✅ 🚫 Deprecated marker — COORD queue-gen skips deprecated items (PR #209, 2026-04-17)
 - ✅ ⚠️ Inferred marker — PM §5c writes competitive gap stubs with this prefix (PR #311, 2026-04-19)
 - ✅ ⚠️ Observed marker — PM §5h writes emergent pattern stubs with this prefix (PR #311, 2026-04-19)
 
 ## Future (🔲)
-- 🔲 ⚠️ Inferred: validate.sh check for ⚠️ Inferred item source attribution — each ⚠️ Inferred item in docs/design/ should follow the format `(autonomous-vision|pm-§5c, YYYY-MM-DD)` to preserve provenance. (autonomous-vision, 2026-04-20)
 
 *(All marker conventions defined. Future refinements should be opened as new issues.)*
