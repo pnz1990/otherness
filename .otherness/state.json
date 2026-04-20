@@ -519,9 +519,12 @@
       "note": "Hygiene scan already implemented as \u00a74g in sm.md (section numbering shifted)"
     },
     "408": {
-      "state": "todo",
-      "title": "feat: `otherness-config.yaml`: `simulation.calibration_cycles` field (default: 5)",
-      "status": "todo"
+      "state": "done",
+      "status": "done",
+      "title": "feat: otherness-config.yaml simulation.calibration_cycles field",
+      "pr_number": 423,
+      "pr_merged": true,
+      "done_at": "2026-04-20T06:20:15Z"
     },
     "409": {
       "state": "done",
