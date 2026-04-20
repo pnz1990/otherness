@@ -238,11 +238,13 @@
       "status": "todo"
     },
     "258": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Codebase hygiene scan",
       "design_doc": "04-documentation-health.md",
       "depends_on": [],
-      "status": "todo"
+      "status": "todo",
+      "done_at": "2026-04-20T03:09:05Z",
+      "note": "Duplicate of issue-344 \u2014 SM \u00a74g already shipped"
     },
     "259": {
       "state": "done",
@@ -309,39 +311,83 @@
       "done_at": "2026-04-20T03:03:35Z"
     },
     "270": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Phase 2a: per-project calibration",
       "design_doc": "11-simulation-feedback-loop.md",
       "depends_on": [],
-      "status": "todo"
+      "status": "in_progress",
+      "assigned_to": "sess-d3165ebe",
+      "assigned_at": "2026-04-20T03:10:33Z",
+      "branch": "feat/270",
+      "worktree": "../otherness.270",
+      "file_spaces": [
+        "agents/phases/sm.md"
+      ],
+      "pr_merged": true,
+      "pr_number": 368,
+      "done_at": "2026-04-20T03:12:37Z"
     },
     "271": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Phase 2c: simulation results in _state",
       "design_doc": "11-simulation-feedback-loop.md",
       "depends_on": [],
-      "status": "todo"
+      "status": "in_progress",
+      "assigned_to": "sess-d3165ebe",
+      "assigned_at": "2026-04-20T03:10:33Z",
+      "branch": "feat/270",
+      "worktree": "../otherness.270",
+      "file_spaces": [
+        "agents/phases/sm.md"
+      ],
+      "pr_merged": true,
+      "pr_number": 368,
+      "done_at": "2026-04-20T03:12:37Z"
     },
     "277": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: PM \u00a75g: simulation health score",
       "design_doc": "12-perpetual-validation.md",
       "depends_on": [],
-      "status": "todo"
+      "status": "in_progress",
+      "done_at": "2026-04-20T03:15:18Z",
+      "note": "Already shipped per design doc 12 \u2705 Present section (PR #287 integration)",
+      "assigned_to": "sess-d3165ebe",
+      "assigned_at": "2026-04-20T03:13:19Z",
+      "branch": "feat/277",
+      "worktree": "../otherness.277",
+      "file_spaces": [
+        "agents/phases/pm.md"
+      ],
+      "pr_merged": true,
+      "pr_number": 369
     },
     "278": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: PM self-correction on AMBER",
       "design_doc": "12-perpetual-validation.md",
       "depends_on": [],
-      "status": "todo"
+      "status": "in_progress",
+      "done_at": "2026-04-20T03:15:18Z",
+      "note": "Already shipped per design doc 12 \u2705 Present section (PR #287 integration)",
+      "assigned_to": "sess-d3165ebe",
+      "assigned_at": "2026-04-20T03:13:19Z",
+      "branch": "feat/277",
+      "worktree": "../otherness.277",
+      "file_spaces": [
+        "agents/phases/pm.md"
+      ],
+      "pr_merged": true,
+      "pr_number": 369
     },
     "279": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Dynamic definition-of-done",
       "design_doc": "12-perpetual-validation.md",
       "depends_on": [],
-      "status": "todo"
+      "status": "todo",
+      "done_at": "2026-04-20T03:09:59Z",
+      "note": "Already shipped per design doc 12 \u2705 Present section (PR #287 integration)"
     },
     "280": {
       "state": "done",
@@ -357,11 +403,13 @@
       "done_at": "2026-04-18T21:28:40Z"
     },
     "281": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Self-generating validation criteria",
       "design_doc": "12-perpetual-validation.md",
       "depends_on": [],
-      "status": "todo"
+      "status": "todo",
+      "done_at": "2026-04-20T03:09:59Z",
+      "note": "Already shipped per design doc 12 \u2705 Present section (PR #287 integration)"
     },
     "issue-344": {
       "status": "done",
@@ -380,8 +428,11 @@
       "title": "feat: docs/design/22-queue-richness.md"
     },
     "issue-303": {
-      "status": "todo",
-      "title": "feat: test.sh check 5b failure reason"
+      "status": "done",
+      "title": "feat: test.sh check 5b failure reason",
+      "state": "done",
+      "done_at": "2026-04-20T03:12:59Z",
+      "note": "Already shipped \u2014 test.sh has STALE_REASON + JOURNEY2_STALE_HOURS"
     },
     "issue-340": {
       "status": "done",
