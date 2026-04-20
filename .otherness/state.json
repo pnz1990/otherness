@@ -798,7 +798,7 @@
       "priority": "medium"
     },
     "issue-625": {
-      "state": "todo",
+      "state": "done",
       "status": "todo",
       "title": "feat: `SM \u00a74f` batch report condensed format: the report issue comment must fit in 8 lines; curr",
       "labels": [
@@ -808,7 +808,9 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-20T23:09:49Z"
     },
     "issue-624": {
       "state": "todo",
@@ -1068,7 +1070,7 @@
       "priority": "low"
     }
   },
-  "sm_cycle_count": 6,
+  "sm_cycle_count": 7,
   "last_sm_at": "2026-04-20T21:30:49Z",
   "session_heartbeats": {
     "sess-5327084f": {
