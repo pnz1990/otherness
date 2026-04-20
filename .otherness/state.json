@@ -341,6 +341,43 @@
       "pr_number": 556,
       "pr_merged": true,
       "done_at": "2026-04-20T13:54:53Z"
+    },
+    "issue-559": {
+      "state": "done",
+      "title": "feat(validate): check \u26a0\ufe0f Inferred items have source attribution format",
+      "priority": "medium",
+      "labels": [
+        "otherness"
+      ],
+      "branch": "feat/issue-559",
+      "worktree": "../otherness.issue-559",
+      "file_spaces": [
+        "scripts/"
+      ],
+      "assigned_to": "sess-034d8f59",
+      "assigned_at": "2026-04-20T14:54:19Z"
+    },
+    "issue-560": {
+      "state": "todo",
+      "title": "feat(definition-of-done): Journey 9 \u2014 autonomous vision synthesis loop",
+      "priority": "low",
+      "labels": [
+        "otherness"
+      ],
+      "branch": null,
+      "worktree": null,
+      "file_spaces": []
+    },
+    "issue-561": {
+      "state": "todo",
+      "title": "docs(design): add docs/design/34-stage-9-autonomous-vision.md \u2014 stage-level doc",
+      "priority": "low",
+      "labels": [
+        "otherness"
+      ],
+      "branch": null,
+      "worktree": null,
+      "file_spaces": []
     }
   },
   "sm_cycle_count": 3,
@@ -352,5 +389,6 @@
       "cycle": 1
     }
   },
-  "pm_cycle_count": 1
+  "pm_cycle_count": 1,
+  "last_auto_vision_cycle": 87
 }
