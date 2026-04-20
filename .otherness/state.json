@@ -1011,8 +1011,8 @@
       "priority": "medium"
     },
     "issue-609": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: Self-updating pressure prompts: Step A should read its own current pressure context, evalu",
       "labels": [
         "priority/medium",
@@ -1021,7 +1021,10 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_number": 656,
+      "pr_merged": true,
+      "done_at": "2026-04-20T22:35:21Z"
     },
     "issue-608": {
       "state": "done",
