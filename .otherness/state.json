@@ -56,20 +56,9 @@
       "pr_number": 535
     },
     "issue-520": {
-      "state": "todo",
-      "status": "todo",
-      "title": "feat: Scenarios 19-21: real-world complexity",
-      "labels": [
-        "priority/medium",
-        "area/agent-loop",
-        "otherness",
-        "size/s",
-        "kind/enhancement"
-      ],
-      "priority": "medium",
-      "branch": null,
-      "worktree": null,
-      "file_spaces": []
+      "state": "done",
+      "status": "done",
+      "pr_number": 536
     },
     "issue-521": {
       "state": "todo",
