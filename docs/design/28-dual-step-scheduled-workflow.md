@@ -179,7 +179,7 @@ done
 ## Present (✅)
 
 - ✅ Design doc created (this file) (2026-04-20)
-- ✅ `otherness-scheduled.yml` in otherness repo: split into two OpenCode steps — Step 7: Vision scan (Step A, `continue-on-error: true`) + Step 8: Run otherness (Step B) (PR #440, 2026-04-20)
+- ✅ `otherness-scheduled.yml` in otherness repo: split into two OpenCode steps — Step 7: Vision scan (Step A, `continue-on-error: true`) + Step 8: Run otherness (Step B) (PR #440, 2026-04-20) ⚠️ Stale — referenced file not found
 - ✅ `otherness-config-template.yaml`: `schedule.vibe_vision_step: true` field added with comment (PR #456, 2026-04-20)
 
 ## Future (🔲)
