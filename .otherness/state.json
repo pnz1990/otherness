@@ -863,8 +863,8 @@
       "priority": "medium"
     },
     "issue-620": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `agents/skills/README.md` + `SM \u00a74c`: skill decay tracking",
       "labels": [
         "priority/medium",
@@ -873,7 +873,16 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "assigned_to": "sess-fa7fdbde",
+      "branch": "feat/issue-620",
+      "worktree": "../otherness.issue-620",
+      "file_spaces": [
+        "agents/"
+      ],
+      "pr_number": 660,
+      "pr_merged": true,
+      "done_at": "2026-04-20T22:49:10Z"
     },
     "issue-619": {
       "state": "todo",
