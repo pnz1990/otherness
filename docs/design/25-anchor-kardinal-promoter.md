@@ -26,7 +26,7 @@ A project where depth grows but width stagnates has gaps. Both dimensions must a
 
 ## Current state (as of 2026-04-20)
 
-**Anchor workflow:** `.github/workflows/pdca.yml` — runs weekly (Sundays 04:00 UTC) + manual dispatch
+**Anchor workflow:** `.github/workflows/pdca.yml` — runs daily (02:00 UTC, `0 2 * * *`) + manual dispatch
 **Also:** `.github/workflows/demo-validate.yml` — runs nightly, broader demo surface
 
 **Current PDCA coverage (6 scenarios):**
@@ -202,14 +202,13 @@ The agent reads this pattern to track coverage ratio across sessions.
 
 ## Present (✅)
 
-- ✅ PDCA workflow — 6 scenarios, weekly execution, posts results to issue #1 (2026-04-19)
-- ✅ Demo-validate workflow — nightly, broader demo surface (2026-04-19)
+- ✅ PDCA workflow — 6 scenarios, daily execution (`0 2 * * *`), posts results to issue #1 (2026-04-19)
+- ✅ PDCA runs daily (not weekly) — cron `0 2 * * *` matching demo-validate cadence (already implemented in kardinal-promoter .github/workflows/pdca.yml; design doc corrected PR #510, 2026-04-20)- ✅ Demo-validate workflow — nightly, broader demo surface (2026-04-19)
 - ✅ test infrastructure: kind + krocodile + ArgoCD + kardinal-test-app (2026-04-09)
 - ✅ Anchor score comment format: SM §4g-anchor-score reads `[ANCHOR | kardinal-promoter | DATE] coverage: N/M (X%) | PASS=A FAIL=B` from report issue, tracks stagnation across sessions (PR #438, 2026-04-20)
 
 ## Future (🔲)
 
-- 🔲 PDCA runs daily (not weekly) — change cron to `0 2 * * *` matching demo-validate cadence
 - 🔲 Infrastructure reliability: retry logic for S1 reconcile wait + ArgoCD sync timeout increase
 - 🔲 Scenario 7: config-only promotion — `kardinal apply` with no image change, verify PromotionStep created
 - 🔲 Scenario 8: full multi-stage assertion — verify each stage independently (test health ✅, uat health ✅, prod gate ✅)
