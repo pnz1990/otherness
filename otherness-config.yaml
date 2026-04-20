@@ -22,7 +22,7 @@ maqa:
   # pnz1990/otherness repo cannot push malicious agent instructions via `git pull`.
   # The SELF-UPDATE block in standalone.md does `git checkout $agent_version` when set.
   # Update this value after reviewing changelog at: https://github.com/pnz1990/otherness/commits
-  agent_version: 992aad0828e26c5eda8156879d1b0c47e14fc3c6  # main HEAD at 2026-04-20
+  agent_version: v0.2.0  # pinned to stable release
 
 ci:
   provider: github-actions
