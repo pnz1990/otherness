@@ -887,8 +887,8 @@
       "done_at": "2026-04-20T22:49:10Z"
     },
     "issue-619": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `agents/otherness.learn.md` / `SM \u00a74c`: frame-lock break protocol",
       "labels": [
         "priority/medium",
@@ -897,7 +897,10 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 669,
+      "done_at": "2026-04-20T23:38:07Z"
     },
     "issue-618": {
       "state": "done",
