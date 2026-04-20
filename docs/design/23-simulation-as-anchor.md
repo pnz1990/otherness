@@ -167,12 +167,12 @@ docs/aide/metrics.md             — existing batch log (SM already writes this)
 - ✅ `scripts/sim-defaults.json`: fleet defaults — written by otherness SM §4d after calibration (otherness-repo-only gate); shipped to managed projects via `git -C ~/.otherness pull` self-update (PR #353, 2026-04-20)
 - ✅ `SM §4e-i`: per-N-cycle calibration update — reads `metrics.md`, runs `calibrate.py --runs 2`, writes `sim-prediction.json` to `_state` every `simulation.calibration_cycles` cycles (default: 5); frequency configurable via `otherness-config.yaml` (PR #401, 2026-04-20) ⚠️ Stale — referenced file not found
 - ✅ `otherness-config.yaml`: `simulation.calibration_cycles` field (default: 5) — controls SM §4e-i re-calibration frequency (PR #408, 2026-04-20)
+- ✅ SM §4e-i fleet-defaults fallback: when `scripts/calibrate.py` is absent (managed project), SM reads `~/.otherness/scripts/sim-defaults.json` and writes it as `sim-prediction.json` to `_state` with `source: "fleet-defaults"`. Local calibration activates when ≥5 batch rows in `metrics.md` AND `calibrate.py` present. `otherness-config-template.yaml` now includes `simulation.calibration_cycles: 5` stub so new projects inherit the correct default. (PR #509, 2026-04-20)
 
 ## Future (🔲)
 
 
 - 🚫 `scripts/simulate.py`: add `--calibrate` flag — DEPRECATED: `scripts/calibrate.py` provides this functionality as a standalone script. No duplication needed.
-- 🔲 Managed project adoption: kardinal-promoter and kro-ui SM inherit otherness defaults, re-calibrate after ≥5 batches
 
 ---
 
