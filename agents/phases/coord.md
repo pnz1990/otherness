@@ -413,7 +413,10 @@ PYEOF
      #            sorted_items.append(item)
      #    new_items = sorted_items
      #
-     # 4. Create max 5 issues from sorted_items. Prefer size/s or size/xs labels.
+     # 4. Create max 20 issues from sorted_items. Prefer size/s or size/xs labels.
+     #    Rationale: with multi-item sessions (§1f), a session can consume 10+ items.
+     #    A cap of 5 causes the queue to empty in a single session, wasting the next
+     #    session on queue-gen overhead instead of implementation work.
      #    gh issue create --repo $REPO --title "feat(<area>): <desc>" \
      #      --label "otherness,kind/enhancement,area/<area>,size/s,priority/medium" \
      #      --body "<body from step 2>"
@@ -704,3 +707,62 @@ else
   # loop back
 fi
 ```
+
+---
+
+## 1f. Multi-item session loop
+
+**Design ref**: `docs/design/21-session-throughput.md` — Fix A.
+
+After ENG → QA completes one item and the PR is merged (or queued for merge), COORD
+does not hand off to SM/PM yet. Instead it checks whether the session has budget
+remaining and the queue has more work.
+
+**Session budget**: tracked in memory as `ITEMS_COMPLETED` (shell variable, not
+written to `_state`). Read `session_item_limit` from `otherness-config.yaml`:
+
+```bash
+SESSION_LIMIT=$(python3 -c "
+import re
+for line in open('otherness-config.yaml'):
+    m = re.match(r'^\s+session_item_limit:\s*(\d+)', line)
+    if m: print(m.group(1)); break
+" 2>/dev/null || echo "10")
+
+# Increment after each completed item (set in ENG/QA handoff)
+ITEMS_COMPLETED=${ITEMS_COMPLETED:-0}
+```
+
+**After each item completes**, before entering SM/PM:
+
+```bash
+ITEMS_COMPLETED=$((ITEMS_COMPLETED + 1))
+
+# Check: more work available AND budget remaining?
+QUEUE_REMAINING=$(python3 -c "
+import json
+try:
+    s = json.load(open('.otherness/state.json'))
+    todos = [v for v in s.get('features', {}).values() if v.get('status') == 'todo']
+    print(len(todos))
+except: print(0)
+" 2>/dev/null || echo "0")
+
+if [ "$ITEMS_COMPLETED" -lt "$SESSION_LIMIT" ] && [ "$QUEUE_REMAINING" -gt 0 ]; then
+  echo "[COORD] Item $ITEMS_COMPLETED/$SESSION_LIMIT complete. $QUEUE_REMAINING items remaining. Continuing..."
+  # Skip SM/PM — loop back to §1e (claim next item)
+  # SM/PM will run at end of session when queue is empty or limit reached
+else
+  echo "[COORD] Session gate: $ITEMS_COMPLETED items done, $QUEUE_REMAINING remaining. Running SM/PM."
+  # Proceed to Phase 4 (SM) and Phase 5 (PM) normally
+fi
+```
+
+**SM/PM gate fires when:**
+- `ITEMS_COMPLETED >= SESSION_LIMIT` (budget exhausted), OR
+- `QUEUE_REMAINING == 0` (queue empty), OR
+- A `[NEEDS HUMAN]` block was posted (error state — stop implementing, triage first)
+
+**Minimum queue depth guard**: if `QUEUE_REMAINING < 5` AND queue-gen is not already
+locked, trigger queue-gen immediately (don't wait for next session) so the queue
+never hits zero mid-session.

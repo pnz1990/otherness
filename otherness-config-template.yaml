@@ -49,6 +49,12 @@ maqa:
   # deploys globally to all otherness users.
   autonomous_mode: true
 
+  # Max items to complete per session before SM/PM gate fires.
+  # Higher = more throughput per session. Lower = more frequent triage and metrics.
+  # With multi-item sessions (docs/design/21-session-throughput.md), a session running
+  # for 30–60 min can ship 3–10 items. Default: 10.
+  session_item_limit: 10
+
   # Version pinning — pin to a specific otherness release tag for stability.
   # When set: agent checks out this tag at startup instead of pulling latest.
   # When empty: agent pulls latest main (current behavior — fine for most users).
