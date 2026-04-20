@@ -68,3 +68,16 @@ schedule:
   cron: "0 * * * *"         # HOURLY — locked. Do not change to */6 or slower.
   model: "amazon-bedrock/global.anthropic.claude-sonnet-4-6"
   api_key_secret: "ANTHROPIC_API_KEY"   # GitHub Actions secret name containing the API key
+
+# ── Anchor framework ──────────────────────────────────────────────────────────
+# Optional: configure when this project has an anchor workflow (automated quality signal).
+# An anchor is a CI workflow that runs on a schedule and posts a score to a GitHub issue.
+# otherness SM §4g-anchor reads the score to detect feature→anchor coverage gaps.
+#
+# See docs/design/24-project-anchor-framework.md for the full design.
+#
+# anchor:
+#   workflow: ""                          # workflow filename that runs the anchor (e.g. pdca.yml)
+#   score_pattern: "PASS=([0-9]+) FAIL=([0-9]+)"  # regex to extract pass/fail from issue comment
+#   coverage_target: 80                   # minimum % of features that must have anchor coverage
+#   stagnation_sessions: 3                # sessions without anchor growth before COORD prioritizes it
