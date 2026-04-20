@@ -526,7 +526,7 @@ The following are accepted design tradeoffs, not failures:
 - ✅ GitHub Actions run logs provide immutable audit trail (platform feature)
 - ✅ M1: All action dependencies SHA-pinned in `otherness-scheduled.yml` on otherness, kardinal-promoter, and kro-ui. Pins: `actions/checkout@11bd71901...`, `aws-actions/configure-aws-credentials@ff717079...`, `anomalyco/opencode/github@23fb5e05...` (otherness/kp) and `@27db54c8...` (kro-ui). No `@latest` or floating tags anywhere. (2026-04-20)
 - ✅ M2: `agent_version` set in `otherness-config.yaml` on all 3 projects — pins otherness clone to a specific SHA. otherness: `992aad08...`, kardinal-promoter and kro-ui: `4daf5ea6...` (2026-04-20). **Requirement: must update `agent_version` when pulling otherness changes — it does not auto-advance.**
-- ✅ M3: GitHub App token support implemented in `otherness-scheduled.yml` — generates per-repo short-lived token when `OTHERNESS_USE_APP_TOKEN=true`. Falls back to GH_TOKEN PAT when App not configured. Attack vectors 3E and 4C are closed **only when App is configured**. PAT fallback leaves cross-repo blast radius open. (PR #605, 2026-04-20)
+- ✅ M3: GitHub App token support implemented in `otherness-scheduled.yml` — generates per-repo short-lived token when `OTHERNESS_USE_APP_TOKEN=true`. Falls back to GH_TOKEN PAT when App not configured. Attack vectors 3E and 4C CLOSED — GitHub App (ID 3447311) installed on all 3 repos, APP_ID + APP_PRIVATE_KEY + OTHERNESS_USE_APP_TOKEN=true set on all 3 repos, token validated and working (2026-04-20). PAT fallback exists for compatibility but App mode is active.
 - ✅ M4: `actions:write` intentionally omitted from `otherness-scheduled.yml` job permissions on all 3 projects. Agent triggers CI via git push, not Actions API. Workflow file modification via Actions API blocked. (2026-04-20)
 - ✅ M5: AWS Budget alert configured at $50/day Bedrock spend (2026-04-20). Bedrock Resource remains `*` — M5b (restrict to specific ARNs) deferred, see Future.
 - ✅ M6: `agents_path` allowlist validation in both Step A and Step B workflow prompts — refuses to execute if `agents_path` is outside `~/.otherness`. Applied on all 3 projects. (2026-04-20)
@@ -541,8 +541,8 @@ The following are accepted design tradeoffs, not failures:
 |---|---|---|---|---|
 | 3A: anomalyco@latest supply chain | Medium | Critical | ✅ Closed | M1 — all SHAs pinned |
 | 3B: otherness clone unpinned | Low | Critical | ✅ Closed | M2 — agent_version set on all 3 projects |
-| 3E: GH_TOKEN cross-repo scope | Medium | High | ⚠️ Partial | M3 closes it when App configured; PAT fallback leaves it open |
-| 4C: cross-repo contamination | Medium | Medium | ⚠️ Partial | Same as 3E — App closes it |
+| 3E: GH_TOKEN cross-repo scope | Medium | High | ✅ Closed | M3 — GitHub App active on all 3 repos, per-repo token |
+| 4C: cross-repo contamination | Medium | Medium | ✅ Closed | Same as 3E — App token is per-repo |
 | 3F: actions:write workflow mod | Low | High | ✅ Closed | M4 — permissions block omits actions:write |
 | 1C: _state branch direct push | Low | Medium | ⚠️ Partial | M7 blocks force/delete; direct push by collaborator still possible on free plan |
 | 2B: agents_path injection | Low | Critical | ✅ Closed | M6 — allowlist check in both workflow prompts |
