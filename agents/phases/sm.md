@@ -2047,7 +2047,84 @@ ACTION="Active"
 gh issue comment $REPORT_ISSUE --repo $REPO \
   --body "[🔄 SDM | ${MY_SESSION_ID:-sess-unknown} | otherness@${OTHERNESS_VERSION:-unknown}] Batch ${SM_CYCLE:-?}. Health: ${HEALTH} | Outcome: ${SESSION_OUTCOME:-unknown} | Vision PRs: ${VISION_PRS:-0}${THROUGHPUT_WARN:-} | Queue: ${TODO_COUNT:-0} todo ${IN_REVIEW:-0} in_review | Action: ${ACTION}" 2>/dev/null
 
-# §4f-progress: Update docs/aide/progress.md with current state
+# §4f: Silent-session detection (design doc 35 §Future → ✅)
+# A silent session: 0 PRs merged AND 0 open PRs. Two consecutive silent sessions → escalate.
+OPEN_PRS=$(gh pr list --repo $REPO --state open --json number --jq 'length' 2>/dev/null || echo "0")
+python3 - <<'SILENT_EOF'
+import json, os, subprocess
+
+REPO = os.environ.get('REPO', '')
+MERGED = os.environ.get('MERGED', '0')
+OPEN_PRS = os.environ.get('OPEN_PRS', '0')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+
+# Determine if this is a silent session
+try:
+    merged_count = int(MERGED) if str(MERGED).isdigit() else 0
+    open_count = int(OPEN_PRS) if str(OPEN_PRS).isdigit() else 0
+except:
+    merged_count = 1  # fail-open: assume not silent
+    open_count = 1
+
+is_silent = (merged_count == 0 and open_count == 0)
+
+try:
+    with open('.otherness/state.json') as f: s = json.load(f)
+    current_count = s.get('silent_session_count', 0)
+
+    if is_silent:
+        new_count = current_count + 1
+        print(f'[SM §4f] Silent session detected. streak={new_count}')
+    else:
+        new_count = 0
+        if current_count > 0:
+            print(f'[SM §4f] Session is active — resetting silent streak (was {current_count})')
+
+    s['silent_session_count'] = new_count
+    with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
+
+    # Check for streak: ≥2 consecutive silent sessions → [NEEDS HUMAN]
+    if new_count >= 2:
+        issue_title = '[NEEDS HUMAN: silent-session-streak] Loop is spinning without shipping'
+        existing = subprocess.run(
+            ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+             '--search', 'silent-session-streak', '--json', 'number', '--jq', 'length'],
+            capture_output=True, text=True)
+        if int(existing.stdout.strip() or '0') == 0:
+            body = (
+                f'## Silent session streak detected\n\n'
+                f'`silent_session_count = {new_count}` — the loop has run {new_count} consecutive '
+                f'sessions with 0 merged PRs and 0 open PRs.\n\n'
+                f'This means the agent is starting, running, and exiting without shipping anything. '
+                f'Common causes:\n'
+                f'- Queue is empty and vision synthesis is not producing claimable items\n'
+                f'- All items are stuck in conflict or require human unblock\n'
+                f'- CI is red on main and blocking new PRs\n'
+                f'- Agent is failing silently in an early phase\n\n'
+                f'## Actions\n'
+                f'1. Check the report issue comments for the last 2 sessions\n'
+                f'2. Check `_state` branch for recent state.json changes\n'
+                f'3. Check GitHub Actions run logs for errors\n'
+                f'4. If queue empty: run `/otherness.vibe-vision` to inject new items\n\n'
+                f'Reported by SM §4f | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}'
+            )
+            r = subprocess.run(
+                ['gh', 'issue', 'create', '--repo', REPO,
+                 '--title', issue_title, '--label', 'needs-human,otherness',
+                 '--body', body],
+                capture_output=True, text=True)
+            if r.returncode == 0:
+                print(f'[SM §4f] Opened silent-session-streak issue: {r.stdout.strip()}')
+            else:
+                print(f'[SM §4f] Failed to open streak issue: {r.stderr.strip()[:100]}')
+        else:
+            print(f'[SM §4f] Silent streak issue already open — skipping duplicate.')
+
+except Exception as e:
+    print(f'[SM §4f] Silent-session detection error (non-fatal): {e}')
+SILENT_EOF
 # Design ref: docs/design/06-command-surface.md §Future (🔲 → ✅)
 # Runs every batch — always reflects current reality, not stale history.
 python3 - <<'PROGRESS_EOF'
