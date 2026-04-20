@@ -784,7 +784,7 @@
       "note": "Already done in PR #424 \u2014 issue-413 was doc fix (PR ref correction)"
     },
     "issue-405": {
-      "state": "todo",
+      "state": "done",
       "issue": 405,
       "title": "security: M1 pin opencode and aws-credentials SHA in workflows",
       "created_at": "2026-04-20T07:59:23Z",
@@ -792,10 +792,11 @@
         "area/tooling"
       ],
       "priority": "high",
-      "size": "s"
+      "size": "s",
+      "done_at": "2026-04-20T08:05:26Z"
     },
     "issue-469": {
-      "state": "todo",
+      "state": "done",
       "issue": 469,
       "title": "hygiene: fix stale Present ref d4/translation.md",
       "created_at": "2026-04-20T07:59:23Z",
@@ -803,10 +804,17 @@
         "area/docs"
       ],
       "priority": "low",
-      "size": "xs"
+      "size": "xs",
+      "assigned_to": "sess-4dcd2a42",
+      "assigned_at": "2026-04-20T08:05:34Z",
+      "branch": "feat/issue-469",
+      "worktree": "/home/runner/work/otherness/otherness.issue-469",
+      "pr_number": 473,
+      "pr_merged": true,
+      "done_at": "2026-04-20T08:08:35Z"
     },
     "issue-470": {
-      "state": "todo",
+      "state": "done",
       "issue": 470,
       "title": "hygiene: fix stale Present ref otherness.upgrade.md",
       "created_at": "2026-04-20T07:59:23Z",
@@ -814,10 +822,13 @@
         "area/docs"
       ],
       "priority": "low",
-      "size": "xs"
+      "size": "xs",
+      "pr_number": 473,
+      "pr_merged": true,
+      "done_at": "2026-04-20T08:08:35Z"
     },
     "issue-471": {
-      "state": "todo",
+      "state": "done",
       "issue": 471,
       "title": "hygiene: fix stale Present ref validate.sh in d4-enforcement",
       "created_at": "2026-04-20T07:59:23Z",
@@ -825,7 +836,10 @@
         "area/docs"
       ],
       "priority": "low",
-      "size": "xs"
+      "size": "xs",
+      "pr_number": 473,
+      "pr_merged": true,
+      "done_at": "2026-04-20T08:08:35Z"
     }
   },
   "engineer_slots": {
