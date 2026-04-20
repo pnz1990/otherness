@@ -212,10 +212,10 @@ The agent reads this pattern to track coverage ratio across sessions.
 - ✅ Scenario 9: health check failure blocks promotion — PromotionStep shows HealthCheck/Failed state (S9 in PDCA, 2026-04-20; design doc corrected PR #533)
 - ✅ Scenarios 10-12: CLI completeness — `kardinal get bundles` (S10), `kardinal delete bundle` (S11), `kardinal get steps` (S12) all in PDCA (2026-04-20; design doc corrected PR #533)
 - ✅ Scenarios 13-15: policy gate completeness — S13 (multiple gates, prod blocked on weekend), S14 (custom expression soak gate simulate), S15 (emergency override K-09 command) added to kardinal-promoter PDCA (PR #874, 2026-04-20)
+- ✅ Scenarios 16-18: health adapter coverage — S16 (pipeline stages API structural check), S17 (MetricCheck CRD presence for Prometheus adapter), S18 (pipeline spec dry-run validation for custom health config) added to kardinal-promoter PDCA (PR #874, 2026-04-20)
 
 ## Future (🔲)
 
-- 🔲 Scenarios 16-18: health adapter coverage — explicit HTTP, Prometheus, and custom adapter scenarios
 - 🔲 Scenarios 19-21: real-world complexity — 3+ concurrent bundles, app readiness failure, SRE rollback+explain flow
 - 🔲 Scenarios 22-24: persona journeys — developer full lifecycle, platform engineer pipeline setup, SRE incident response
 - 🔲 Playwright integration in PDCA — first 3 UI scenarios (bundle status, pipeline graph, rollback button)
