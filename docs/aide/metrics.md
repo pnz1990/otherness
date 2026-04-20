@@ -151,3 +151,6 @@
 | 2026-04-20 | 76 | 2 | 0 | 0 | 12 | 2 | ~5 | #387 fix(ci) security-checks push-noop. #393 feat(coord) §1c roadmap source. CI gate unblocked. Queue: 50+ design doc items. |
 
 | 2026-04-20 | 77 | 36 | 1 | 0 | 12 | 5 | ~10 | #400 fix ci YAML, #421 SM §4e calibration, #422 anchor template, #423 calibration_cycles, #424 Anchor section, #425 pin SHA. CI unblocked. |
+
+| 2026-04-20 | 78 | 5 | 0 | 0 | 12 | 10 | ~2 | #448 SM §4g-anchor-score [needs-human]. #449 kro-ui anchor doc. #450 dual-step workflow doc. #451 hygiene scan doc. #452 anchor template doc. 5 kardinal-promoter scenario items closed (out-of-scope). Health: GREEN. |
+
