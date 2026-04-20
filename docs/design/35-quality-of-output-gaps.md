@@ -42,7 +42,8 @@ commits to a specific item.
 - ✅ `coord.md §1c`: queue refusal guard — when all todo items are `kind/chore` or `kind/docs`, trigger enrichment before claiming; enrichment follows design doc → roadmap → vision sequence; posts report comment when triggered (PR #629, 2026-04-20)
 - ✅ `SM §4b`: session outcome classification — classify sessions as `feature-rich` / `mixed` / `chore-only` based on vision_prs ratio; write `vision_prs` and `session_outcome` columns to metrics.md; `session_outcome=chore-only` triggers AMBER health signal in §4f (PR #655, 2026-04-20)
 - ✅ `SM §4f`: silent-session detection — when session ends with 0 merged PRs AND 0 open PRs, increment `silent_session_count` in state.json; when streak ≥ 2 consecutive sessions, open `[NEEDS HUMAN: silent-session-streak]` issue with diagnosis guide; resets to 0 when any PR ships (PR #657, 2026-04-20)
-- ✅ `docs/aide/metrics.md` schema: added `arch_convergence` and `sim_floor_delta` columns to batch log — tells the human whether the simulation is tracking reality; SM §4b [AI-STEP] updated to include these values (from sim-params.json) in new rows (PR #TBD, 2026-04-20)
+- ✅ `docs/aide/metrics.md` schema: added `arch_convergence` and `sim_floor_delta` columns to batch log — tells the human whether the simulation is tracking reality; SM §4b [AI-STEP] updated to include these values (from sim-params.json) in new rows (PR #659, 2026-04-20)
+- ✅ `SM §4c`: skill decay tracking — every 10 SM cycles, check each skill file age (via git log) against PROVENANCE.md mentions in last 90 days; if skill not mentioned in 90 days, flag as stale; posts informational report to report issue; does NOT auto-delete skills (PR #TBD, 2026-04-20)
 
 ## Future (🔲)
 
