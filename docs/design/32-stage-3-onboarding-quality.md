@@ -24,7 +24,7 @@ any human corrections to the generated files.
 ## Future (🔲)
 
 - ✅ Acceptance test: `scripts/check-onboarding.sh` — structural validator for onboarding output; checks docs/aide/ required files, section headers, AGENTS.md fields, otherness-config.yaml sections (2026-04-20)
-- 🔲 Gap fix cycle: identify and fix any gaps in the generated `vision.md`, `roadmap.md`, `definition-of-done.md`
+- ✅ Gap fix cycle: definition-of-done.md journey ordering fixed (Journey 7/8 were swapped), check-onboarding.sh validates 0 errors (2026-04-20)
 
 ---
 
