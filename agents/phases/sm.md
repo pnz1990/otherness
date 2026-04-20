@@ -2922,6 +2922,23 @@ except Exception as e:
 today = datetime.date.today().isoformat()
 health_icon = '🟢' if HEALTH == 'GREEN' else '🟡' if HEALTH == 'AMBER' else '🔴'
 
+# Read last 3 batch outcomes from metrics.md
+last_3_outcomes = []
+try:
+    metrics_content = open('docs/aide/metrics.md').read()
+    rows = []
+    for line in metrics_content.splitlines():
+        if '|' not in line: continue
+        cells = [c.strip() for c in line.split('|')[1:-1]]
+        if len(cells) >= 10 and cells[0].startswith('20'):
+            outcome = cells[9] if len(cells) > 9 else '?'
+            rows.append({'date': cells[0][:10], 'batch': cells[1], 'outcome': outcome})
+    last_3_outcomes = rows[-3:]
+except Exception:
+    pass
+
+outcomes_str = ' | '.join(f"{r['date']}: {r['outcome']}" for r in last_3_outcomes) or '(no batch data yet)'
+
 # Build new header block — overwrite only the dynamic fields
 new_header = f"""# otherness: Current Progress
 
@@ -2934,6 +2951,7 @@ new_header = f"""# otherness: Current Progress
 - **Queue depth**: {TODO_COUNT} todo, {IN_REVIEW} in_review
 - **Vision PRs this batch**: {VISION_PRS}
 - **SM cycle**: {SM_CYCLE} | Agent: otherness@{OTHERNESS_VERSION}
+- **Last 3 batch outcomes**: {outcomes_str}
 """
 
 # Replace the header block (everything up to and including ## Stage Completion or ## Key milestones)

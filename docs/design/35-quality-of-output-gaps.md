@@ -54,6 +54,8 @@ commits to a specific item.
 
 - ✅ `/otherness.status` health dashboard: Step 0 added — shows 6 sections: health trend (last 5 batches), skills count + last learn date, queue depth + next item, journey status, simulation calibration + arch_convergence, reference project health; fits in ≤40 lines; graceful fallback for missing files (PR #TBD, 2026-04-20)
 
+- ✅ `SM §4f` `docs/aide/progress.md` automated update: progress.md now includes "Last 3 batch outcomes" field from metrics.md session_outcome column; SM owns progress.md the same way it owns metrics.md — updated every batch via pull-rebase-retry push to main (PR #TBD, 2026-04-20)
+
 ## Future (🔲)
 
 - 🔲 `coord.md §1c`: track guard-firing frequency in session metrics (metrics.md schema — see docs/design/33-stage-4-self-improvement-metrics.md)
