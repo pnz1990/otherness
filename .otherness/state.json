@@ -90,7 +90,7 @@
       "done_at": "2026-04-20T12:46:24Z"
     },
     "issue-523": {
-      "state": "todo",
+      "state": "assigned",
       "status": "todo",
       "title": "feat: Feature\u2192scenario gap detection: SM \u00a74g-anchor reads \u2705 Present items from docs/design/*.md,",
       "labels": [
@@ -101,9 +101,13 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "branch": null,
-      "worktree": null,
-      "file_spaces": []
+      "branch": "feat/issue-523",
+      "worktree": "../otherness.issue-523",
+      "file_spaces": [
+        "agents/"
+      ],
+      "assigned_to": "sess-5327084f",
+      "assigned_at": "2026-04-20T12:47:53Z"
     },
     "issue-524": {
       "state": "todo",
