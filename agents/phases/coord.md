@@ -726,14 +726,36 @@ try:
 except: print(999)
 " 2>/dev/null || echo "999")
 
-  if [ "${DAYS_SINCE_LEARN:-999}" -ge 14 ]; then
-    LEARN_BRANCH="feat/learn-$(date +%Y%m%d)"
+  # Learn scheduling: trigger when queue is empty OR <5 items (not just >14 days)
+  TODO_NOW=$(python3 -c "
+import json
+try:
+    s=json.load(open('.otherness/state.json'))
+    print(len([d for d in s.get('features',{}).values() if d.get('state')=='todo']))
+except: print(0)
+" 2>/dev/null || echo "0")
+
+  DAYS_SINCE_LEARN=$(python3 -c "
+import re, datetime, os
+try:
+    content = open(os.path.expanduser('~/.otherness/agents/skills/PROVENANCE.md')).read()
+    dates = re.findall(r'^## (\d{4}-\d{2}-\d{2})', content, re.MULTILINE)
+    if dates:
+        last = datetime.date.fromisoformat(sorted(dates)[-1])
+        print((datetime.date.today() - last).days)
+    else: print(999)
+except: print(999)
+" 2>/dev/null || echo "999")
+
+  # Trigger learn if: queue < 5 items OR >3 days since last learn
+  if [ "${TODO_NOW:-0}" -lt 5 ] || [ "${DAYS_SINCE_LEARN:-999}" -ge 3 ]; then
+    LEARN_BRANCH="feat/learn-$(date +%Y%m%d-%H%M)"
     if git push origin "HEAD:refs/heads/$LEARN_BRANCH" 2>/dev/null; then
       LEARN_WT="../${REPO_NAME}.learn-$(date +%Y%m%d)"
       [ -d "$LEARN_WT" ] && git worktree remove "$LEARN_WT" --force 2>/dev/null
       git worktree add "$LEARN_WT" "$LEARN_BRANCH"
       gh issue comment $REPORT_ISSUE --repo $REPO \
-        --body "[STANDALONE | ${MY_SESSION_ID:-sess-unknown} | otherness@${OTHERNESS_VERSION:-unknown}] Autonomous learn session triggered (${DAYS_SINCE_LEARN}d since last)." 2>/dev/null
+        --body "[STANDALONE | ${MY_SESSION_ID:-sess-unknown}] Queue low (${TODO_NOW} items, ${DAYS_SINCE_LEARN}d since learn) — triggering learn session." 2>/dev/null
       # [AI-STEP] Navigate to $LEARN_WT, read and follow ~/.otherness/agents/otherness.learn.md
       # After learn PR open and CI green: merge and clean up
       gh pr merge "$LEARN_BRANCH" --repo "$REPO" --squash --delete-branch 2>/dev/null || true
@@ -742,7 +764,43 @@ except: print(999)
     fi
   fi
 
-  sleep 60 && continue
+  # Run vibe-vision-auto to refill queue from code gaps — do NOT sleep or idle
+  AGENTS_PATH=$(python3 -c "
+import re, os
+section = None
+for line in open('otherness-config.yaml'):
+    s = re.match(r'^(\w[\w_]*):', line)
+    if s: section = s.group(1)
+    if section == 'maqa':
+        m = re.match(r'\s+agents_path:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?', line)
+        if m: print(os.path.expanduser(m.group(1).strip())); break
+" 2>/dev/null || echo "$HOME/.otherness/agents")
+
+  if [ -f "$AGENTS_PATH/vibe-vision-auto.md" ]; then
+    echo "[COORD] Queue empty/low — running vibe-vision-auto to synthesize new items..."
+    # [AI-STEP] Read and follow $AGENTS_PATH/vibe-vision-auto.md in the current worktree.
+    # This scan adds 🔲 Future items to design docs. After the scan, re-run queue-gen.
+    git pull origin main --quiet 2>/dev/null || true
+    # Re-run queue generation after vision scan
+    TODO_AFTER=$(python3 -c "
+import json
+try:
+    s=json.load(open('.otherness/state.json'))
+    print(len([d for d in s.get('features',{}).values() if d.get('state')=='todo']))
+except: print(0)
+" 2>/dev/null || echo "0")
+    echo "[COORD] After vision scan: ${TODO_AFTER} todo items."
+    if [ "${TODO_AFTER:-0}" -gt 0 ]; then
+      continue  # restart loop with new items
+    fi
+  fi
+
+  # If still empty after learn + vision: generate competitive/inferred items from roadmap
+  echo "[COORD] Generating inferred items from roadmap and competitive gaps..."
+  # [AI-STEP] Read docs/aide/roadmap.md and competitive landscape in vision.md.
+  # Identify 3-5 concrete Next items (labeled ⚠️ Inferred) and create issues for them.
+  # These become the queue. Do NOT idle — always have work.
+  continue
 fi
 
 # Atomic claim via branch creation

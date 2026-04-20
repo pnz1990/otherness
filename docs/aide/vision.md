@@ -170,12 +170,33 @@ inheritance → per-project re-calibration → fleet intelligence.
 The simulation becomes the anchor not when it runs — it already runs. It becomes
 the anchor when its output changes how agents behave. That is Stage 6.
 
+## The throughput principle (added 2026-04-20)
+
+Agents run 24/7 on infrastructure. Every session that does not push the vision forward
+is money burned. "One improvement per week" is a human benchmark — meaningless here.
+
+**The rate**: every scheduled run (hourly or better) must ship at least one merged PR
+that advances the product vision. Not a metrics commit. Not a chore. A design-doc-backed
+feature, refactor, or validated fix. If a run completes without shipping meaningful work,
+that is a system defect to be diagnosed and fixed — not an acceptable steady state.
+
+**What counts**: a merged PR that moves a `🔲 Future` item to `✅ Present` in a design
+doc, or a validated fix for a known regression, or a skills library addition. Metrics
+commits, session report PRs, and CI housekeeping do NOT count.
+
+**The empty queue is a defect, not a rest state.** When the queue empties:
+1. Immediately run `vibe-vision-auto` to scan for new items
+2. Immediately run `/otherness.learn` on the lowest-boldness area
+3. If still empty: generate `⚠️ Inferred` items from roadmap gaps and competitive analysis
+The loop NEVER idles. Standby mode is eliminated.
+
 ## What "done" looks like
 
 otherness is never done. It is a living system that improves continuously. The benchmark for "good enough to stop manually maintaining":
 
-1. otherness ships at least one improvement to itself per week without human prompting
-2. Reference projects continue advancing without human intervention
-3. `/otherness.learn` discovers and internalizes at least one new pattern per month autonomously
-4. The PM validation scenarios all pass: reference projects alive, skills growing, docs matching behavior
-5. The simulation runs automatically, stays calibrated against real batch data, and its arch-convergence signal has correctly predicted at least one genuine stall — surfaced to the human before they noticed it themselves
+1. Every scheduled run ships ≥1 merged PR that advances the product vision
+2. Reference projects ship ≥1 vision-advancing PR per run, measured by design doc Present count
+3. `/otherness.learn` runs automatically whenever the queue drops below 5 items
+4. Queue never reaches 0 — the perpetual vision loop refills it before it empties
+5. The PM validation scenarios all pass: reference projects alive, skills growing, docs fresh
+6. The simulation stays calibrated and arch-convergence signal predicts stalls before humans notice

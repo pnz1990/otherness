@@ -442,15 +442,15 @@ Classify the instruction into one of three categories:
 in the right form. Create or update the D4 artifact they described, then enter the loop.
 
 **IMPERATIVE** — the human expressed a direct action ("add X", "fix Y", "make Z do W",
-"update the readme"). Translate to D4 first. Post the translation. Wait 60s. Then act on
-the translation, not the original instruction.
+"update the readme"). Translate to D4 first. Post the translation. Proceed immediately —
+no 60s wait. Act on the translation, not the original instruction.
 
 **INFRA** — pure maintenance with no user-visible behavior change (fix broken CI, clean
 stale branches, update a pinned dependency). No translation needed. Proceed directly.
 
 ### Translation format (for IMPERATIVE instructions)
 
-Post this before doing any implementation work:
+Post this before doing any implementation work, then proceed immediately:
 
 ```
 [📋 D4 TRANSLATION]
@@ -458,22 +458,14 @@ Heard:     "<instruction verbatim>"
 Intent:    <one sentence — what the human actually wants, stated as an outcome>
 D4 layer:  <vision | roadmap | design doc | spec>
 Artifact:  <what would be written — exact text of the design doc entry, vision update, etc.>
-Question:  <one question if genuinely ambiguous — omit if clear>
-Proceeding in 60s unless you correct the translation.
 ```
 
-Then wait 60 seconds. If the human corrects the translation, update it and repost. If not,
-proceed using the D4 artifact as the work order — not the original instruction.
-
-Before proceeding, save the translation to `.specify/d4/translation.md` (ITEM_ID is not
-yet set at D4 time — use the dedicated d4/ directory for session-start artifacts):
-```bash
-mkdir -p ".specify/d4"
-# [AI-STEP] Write the full [📋 D4 TRANSLATION] block verbatim to .specify/d4/translation.md
-```
+Save the translation to `.specify/d4/translation.md` and proceed immediately.
 
 ### Rules
 
+- **No waiting.** Post the translation and act on it. The 60s pause is eliminated — it
+  blocks throughput on scheduled runs where no human is watching.
 - **Never silently infer and act.** The translation is always posted for IMPERATIVE instructions.
 - **Act on the artifact, not the instruction.** After translation: create/update the design doc
   `🔲 Future` item, write the spec referencing it (per eng.md §2b), then implement.
@@ -495,7 +487,7 @@ Intent:    Improve debuggability by exposing internal state on request
 D4 layer:  design doc → spec
 Artifact:  docs/design/03-cli.md §Future:
            🔲 --verbose: emit reconciler decisions to stderr. Useful for stuck promotions.
-Proceeding in 60s unless you correct the translation.
+Proceeding immediately.
 ```
 
 Imperative: "update the readme with the D4 logo"
@@ -557,13 +549,12 @@ If a resume item is found: go directly to the correct phase for its state.
 The loop does not end. Empty queue → generate a new queue → claim an item → continue.
 The only valid exit is the STOP CONDITION (all journeys ✅ validated live AND a human says "stop").
 
-**Perpetual loop behavior (Stage 7 — Perpetual Autonomous Validation):**
+**Perpetual loop behavior:**
 - After each batch, COORD checks state for todo items and design docs for unqueued Future items.
 - If new items exist: continue normally.
-- If no new items AND PM §5g health is GREEN AND all journeys pass: enter standby loop.
-  Standby: `sleep 60 && GOTO LOOP` — watch for new vision. Not stop.
-  New items arrive from: /otherness.vibe-vision, PM §5h journey gap issues, competitive observation stubs.
-- Standby is NOT a stop. The session remains active.
+- If queue drops below 5 items OR is empty: immediately run vibe-vision-auto scan AND
+  schedule a learn cycle (coord.md §1g). Do NOT enter standby — refill the queue first.
+- The loop never waits for a human to add vision. It synthesizes vision autonomously.
 
 ```
 LOOP:
@@ -663,5 +654,8 @@ Loser picks a different item. See coord.md §1e.
 - **Rate limit guard**: check `gh api rate_limit` before API-heavy operations. Sleep until reset if <300 remaining.
 - **Adversarial QA. TDD always. Max 3 QA cycles.**
 - **Spec conformance check is mandatory.** QA cannot approve a PR without verifying every Zone 1 obligation in spec.md is satisfied. No spec file = WRONG finding (ENG must write one). See qa.md §3b.
-- **Never report finality.** Do not say "final run", "system complete", "the system is ready", or any phrase implying the loop ends. At batch end: post health signal (GREEN/AMBER/RED + journey counts + queue state). Enter standby — not stop. The vision always expands faster than the implementation catches up.
-- **Perfection is the direction, not the destination.**
+- **Throughput is the primary metric.** Every run must ship ≥1 design-doc-backed merged PR. Metrics commits, session PRs, and housekeeping do not count. If a run completes without shipping meaningful work, diagnose why and fix it in the same run.
+- **Empty queue = immediate action, never standby.** Queue drops below 5 items → run vibe-vision-auto + learn in the SAME session before picking any new item. Do not wait for the next session.
+- **Speckit task→issue is mandatory for all non-trivial items.** If `.specify/specs/$ITEM_ID/tasks.md` does not exist when ENG starts implementation, create it before writing any code. Mark each task: `[AI]` for steps requiring judgment, `[CMD]` for deterministic commands.
+- **Design docs and specs must be kept fresh.** Every batch: SM §4a checks for specs older than 30 days with no corresponding merged PR — opens a `chore(refactor)` issue to update or delete them. A stale spec is a bug.
+- **Never report finality.** The loop is eternal. At batch end: post health signal (GREEN/AMBER/RED + journey counts + PRs shipped this run). Perfection is the direction, not the destination.

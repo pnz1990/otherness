@@ -55,6 +55,56 @@ print((datetime.date.today()-d).days)
   fi
 done
 
+# Stale specs: .specify/specs/ dirs older than 30 days with no merged PR
+python3 - <<'STALE_SPEC_EOF'
+import os, subprocess, re, datetime
+
+REPO = os.environ.get('REPO', '')
+specs_dir = '.specify/specs'
+if not os.path.isdir(specs_dir):
+    exit(0)
+
+try:
+    merged = subprocess.check_output(
+        ['gh','pr','list','--repo',REPO,'--state','merged','--limit','100',
+         '--json','title,mergedAt','--jq','.[] | .title'],
+        text=True, timeout=15).lower()
+except:
+    merged = ''
+
+for spec_id in os.listdir(specs_dir):
+    spec_path = f'{specs_dir}/{spec_id}'
+    if not os.path.isdir(spec_path): continue
+    spec_file = f'{spec_path}/spec.md'
+    if not os.path.exists(spec_file): continue
+    # Check age via git log
+    age_r = subprocess.run(['git','log','--follow','--format=%ci','--',spec_file],
+                           capture_output=True, text=True, timeout=10)
+    dates = re.findall(r'(\d{4}-\d{2}-\d{2})', age_r.stdout)
+    if not dates: continue
+    try:
+        oldest = datetime.datetime.fromisoformat(dates[-1])
+        age = (datetime.datetime.utcnow() - oldest).days
+    except: continue
+    if age < 30: continue
+    # Check if there's a merged PR referencing this spec
+    spec_key = spec_id.lower()[:40]
+    if spec_key in merged: continue
+    # Open stale-spec issue
+    title = f'chore(refactor): stale spec {spec_id} — {age}d old, no merged PR'
+    existing = subprocess.run(
+        ['gh','issue','list','--repo',REPO,'--state','open','--search',title[:50],'--json','number','--jq','length'],
+        capture_output=True, text=True, timeout=10)
+    if int(existing.stdout.strip() or '0') == 0:
+        subprocess.run(['gh','issue','create','--repo',REPO,
+            '--title',title,'--label','kind/chore,priority/low,size/xs',
+            '--body',f'SM §4a: `.specify/specs/{spec_id}/` is {age} days old with no corresponding merged PR.\n\nOptions:\n1. Delete if the feature was shipped under a different name\n2. Update the spec if still relevant\n3. Archive if deferred indefinitely'],
+            capture_output=True, timeout=15)
+        print(f'[SM §4a] Stale spec issue: {title[:60]}')
+
+print('[SM §4a] Stale spec check complete.')
+STALE_SPEC_EOF
+
 # Version pinning check — is agent_version set?
 AGENT_VERSION=$(python3 -c "
 import re
@@ -65,7 +115,6 @@ for line in open('otherness-config.yaml'):
 if [ -z "$AGENT_VERSION" ]; then
   CURRENT_TAG=$(git -C ~/.otherness describe --tags --abbrev=0 2>/dev/null || echo "unpinned")
   echo "[SM] agent_version not pinned — currently on $CURRENT_TAG"
-  echo "     Consider setting agent_version: $CURRENT_TAG in otherness-config.yaml for stability."
 fi
 ```
 
@@ -1924,22 +1973,41 @@ EOF
 ## 4f. Post SDM review to report issue
 
 ```bash
-# Compute health signal before posting
-# [AI-STEP]
-# HEALTH="GREEN"
-# CI_STATUS=$(gh run list --repo $REPO --branch main --limit 1 --json conclusion --jq '.[0].conclusion' 2>/dev/null)
-# [ "$CI_STATUS" != "success" ] && HEALTH="AMBER"
-# NEEDS_HUMAN_COUNT=$(gh issue list --repo $REPO --label needs-human --state open --json number --jq 'length' 2>/dev/null || echo 0)
-# [ "${NEEDS_HUMAN_COUNT:-0}" -gt 0 ] && HEALTH="AMBER"
-# JOURNEYS_PASS=$(bash scripts/test.sh 2>/dev/null && echo "✅" || echo "❌")
-# [ "$JOURNEYS_PASS" = "❌" ] && HEALTH="AMBER"
-# TODO_COUNT=$(python3 -c "import json; s=json.load(open('.otherness/state.json')); print(len([d for d in s.get('features',{}).values() if d.get('state')=='todo']))" 2>/dev/null || echo 0)
-# IN_REVIEW=$(python3 -c "import json; s=json.load(open('.otherness/state.json')); print(len([d for d in s.get('features',{}).values() if d.get('state')=='in_review']))" 2>/dev/null || echo 0)
-# ACTION="Active"
-# [ "${TODO_COUNT:-0}" -eq 0 ] && ACTION="Standby"
+# Compute health signal and run-level throughput check
+HEALTH="GREEN"
+CI_STATUS=$(gh run list --repo $REPO --branch main --limit 1 --json conclusion --jq '.[0].conclusion' 2>/dev/null)
+[ "$CI_STATUS" = "failure" ] && HEALTH="AMBER"
+NEEDS_HUMAN_COUNT=$(gh issue list --repo $REPO --label needs-human --state open --json number --jq 'length' 2>/dev/null || echo 0)
+[ "${NEEDS_HUMAN_COUNT:-0}" -gt 0 ] && HEALTH="AMBER"
+TODO_COUNT=$(python3 -c "import json; s=json.load(open('.otherness/state.json')); print(len([d for d in s.get('features',{}).values() if d.get('state')=='todo']))" 2>/dev/null || echo 0)
+IN_REVIEW=$(python3 -c "import json; s=json.load(open('.otherness/state.json')); print(len([d for d in s.get('features',{}).values() if d.get('state')=='in_review']))" 2>/dev/null || echo 0)
+
+# Count design-doc-backed PRs merged THIS session (not metrics/chore/session report PRs)
+SESSION_START=$(python3 -c "
+import json, os
+try:
+    s = json.load(open('.otherness/state.json'))
+    hb = s.get('session_heartbeats', {}).get(os.environ.get('MY_SESSION_ID',''), {})
+    print(hb.get('session_start', ''))
+except: print('')
+" 2>/dev/null || echo "")
+
+VISION_PRS=$(gh pr list --repo $REPO --state merged --limit 30 \
+  --json title,mergedAt \
+  --jq "[.[] | select(
+    (.title | test(\"^feat|^fix|^refactor\"; \"i\")) and
+    (.title | test(\"^chore\\\\(sm\\\\)|metrics|session complete|PRs merged\"; \"i\") | not)
+  ) | .title] | length" 2>/dev/null || echo "0")
+
+# Throughput signal: AMBER if this run shipped 0 vision PRs
+[ "${VISION_PRS:-0}" -eq 0 ] && HEALTH="AMBER" && THROUGHPUT_WARN=" ⚠️ 0 vision PRs this run"
+
+ACTION="Active"
+[ "${TODO_COUNT:-0}" -lt 5 ] && ACTION="Refilling queue"
+[ "${TODO_COUNT:-0}" -eq 0 ] && ACTION="Queue empty — running vision+learn"
 
 gh issue comment $REPORT_ISSUE --repo $REPO \
-  --body "[🔄 SDM | ${MY_SESSION_ID:-sess-unknown} | otherness@${OTHERNESS_VERSION:-unknown}] Batch ${SM_CYCLE:-?} complete. Health: ${HEALTH:-GREEN} | Queue: ${TODO_COUNT:-0} todo ${IN_REVIEW:-0} in_review | Action: ${ACTION:-Active}" 2>/dev/null
+  --body "[🔄 SDM | ${MY_SESSION_ID:-sess-unknown} | otherness@${OTHERNESS_VERSION:-unknown}] Batch ${SM_CYCLE:-?}. Health: ${HEALTH} | Vision PRs this run: ${VISION_PRS:-0}${THROUGHPUT_WARN:-} | Queue: ${TODO_COUNT:-0} todo ${IN_REVIEW:-0} in_review | Action: ${ACTION}" 2>/dev/null
 ```
 
 ---
