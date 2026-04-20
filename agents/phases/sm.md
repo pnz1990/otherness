@@ -393,29 +393,43 @@ except Exception as e:
         echo "[SM §4d] Current arch_convergence: $ARCH_CONV"
 
         # Arch-convergence alarm: > 0.7 = architectural monoculture
+        # Open an autonomous learn trigger issue (design doc 23 §arch_convergence signal).
+        # This is NOT a [NEEDS HUMAN] — COORD picks it up and runs /otherness.learn.
         ALARM=$(python3 -c "print('true' if float('$ARCH_CONV') > 0.7 else 'false')" 2>/dev/null || echo "false")
         if [ "$ALARM" = "true" ]; then
             echo "[SM §4d] ⚠ Architectural monoculture detected (arch_convergence=$ARCH_CONV > 0.7)"
-            gh issue create --repo "$REPO" \
-              --title "[NEEDS HUMAN] Architectural monoculture detected (arch_convergence=$ARCH_CONV)" \
-              --label "needs-human,area/agent-loop" \
-              --body "## Simulation calibration signal
 
-The SM phase simulation calibration (sm_cycle=$SM_CYCLE) detected mean_arch_convergence > 0.7.
+            # Deduplication check — only open if no open learn(arch): issue already exists
+            EXISTING=$(gh issue list --repo "$REPO" --state open \
+              --search "learn(arch):" --json number --jq 'length' 2>/dev/null || echo "0")
+
+            if [ "${EXISTING:-0}" -eq 0 ]; then
+                LEARN_TITLE="learn(arch): arch_convergence at ${ARCH_CONV} — run /otherness.learn"
+                gh issue create --repo "$REPO" \
+                  --title "$LEARN_TITLE" \
+                  --label "otherness,area/agent-loop,kind/chore,priority/high" \
+                  --body "## Simulation calibration signal — arch_convergence
+
+SM §4d calibration (sm_cycle=$SM_CYCLE) detected **arch_convergence = $ARCH_CONV** (threshold: 0.7).
 
 This means agents are proposing items of the same structural type repeatedly — a sign
 of architectural frame-lock rather than genuine exploration.
 
-**arch_convergence:** $ARCH_CONV (threshold: 0.7)
+## Recovery action
 
-## Recommended actions (choose one)
-- Run \`/otherness.learn\` to inject novel patterns from external repos
-- Run \`/otherness.vibe-vision\` to introduce new architectural direction
-- Review the last 5 shipped items — are they all the same type of change?
+Run \`/otherness.learn\` to inject novel patterns from an external open-source repo.
+This is an autonomous trigger — COORD will pick this issue up on its next queue cycle.
 
-The system will not take autonomous action. This is for your awareness." 2>/dev/null \
-              && echo "[SM §4d] needs-human issue opened." \
-              || echo "[SM §4d] Could not open needs-human issue."
+**Reference**: \`docs/design/23-simulation-as-anchor.md §The arch_convergence signal\`" 2>/dev/null \
+                  && echo "[SM §4d] Learn trigger issue opened (arch_convergence=$ARCH_CONV)." \
+                  || echo "[SM §4d] Could not open learn trigger issue."
+
+                # Also post observation to report issue (audit trail)
+                gh issue comment $REPORT_ISSUE --repo $REPO \
+                  --body "[🔄 SM §4d | $MY_SESSION_ID] arch_convergence=$ARCH_CONV > 0.7 detected. Learn trigger issue opened." 2>/dev/null || true
+            else
+                echo "[SM §4d] Learn trigger already open ($EXISTING issue) — skipping duplicate."
+            fi
         fi
     else
         echo "[SM §4d] Calibration skipped (calibrate.py not available or failed)."
