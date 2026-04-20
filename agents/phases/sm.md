@@ -2041,27 +2041,64 @@ if echo "$SESSION_BRANCH" | grep -qE '^opencode/(schedule|dispatch)-'; then
       sleep 10
     fi
 
-    # Wait for CI if configured (up to 3 minutes — session PRs are low-risk doc changes)
+    # Wait for CI — use gh pr checks --json (authoritative, all checks)
+    # Design ref: docs/design/38-qa-ci-gate.md §O5
     _CI_WAIT=0
-    while [ $_CI_WAIT -lt 18 ]; do
-      _CI=$(gh pr checks "$SESSION_PR" --repo "$REPO" 2>/dev/null | grep -E "fail|error" || true)
-      if [ -z "$_CI" ]; then break; fi
-      echo "[SM §4g] CI pending/failing — waiting 10s (attempt $((_CI_WAIT+1))/18)..."
-      sleep 10
+    while [ $_CI_WAIT -lt 60 ]; do  # up to 30 min (60 × 30s)
+      _CI_JSON=$(gh pr checks "$SESSION_PR" --repo "$REPO" \
+        --json name,state,conclusion 2>/dev/null || echo "[]")
+      _CI_FAILING=$(echo "$_CI_JSON" | python3 -c "
+import json, sys
+checks = json.load(sys.stdin)
+failing=[c['name'] for c in checks if c.get('conclusion') in ('failure','timed_out','action_required')]
+pending=[c for c in checks if c.get('state')=='PENDING' or c.get('conclusion') is None]
+print(f'failing={len(failing)} pending={len(pending)}')
+for c in failing: print(f'FAIL:{c}')
+" 2>/dev/null || echo "failing=0 pending=0")
+
+      if echo "$_CI_FAILING" | grep -q "^FAIL:"; then
+        echo "[SM §4g] Session PR CI failing — will close rather than merge broken code to main"
+        gh pr close "$SESSION_PR" --repo "$REPO" \
+          --comment "[SM §4g] Session branch CI failing — not merged to avoid breaking main. Failing checks: $(echo "$_CI_FAILING" | grep "^FAIL:" | sed 's/^FAIL://' | tr '\n' ','). Fix the failure and re-open or let the next session handle it." \
+          2>/dev/null || true
+        break 2  # exit both the CI loop and the outer if block
+      fi
+
+      if ! echo "$_CI_FAILING" | grep -q "pending=[^0]"; then
+        break  # all checks complete, none failing
+      fi
+
+      echo "[SM §4g] CI pending — waiting 30s (attempt $((_CI_WAIT+1))/60)..."
+      sleep 30
       _CI_WAIT=$((_CI_WAIT + 1))
     done
 
-    # Merge: try squash → squash --admin
-    if gh pr merge "$SESSION_PR" --repo "$REPO" --squash --delete-branch 2>/dev/null; then
-      echo "[SM §4g] Session PR #${SESSION_PR} merged to main."
-    elif gh pr merge "$SESSION_PR" --repo "$REPO" --squash --delete-branch --admin 2>/dev/null; then
-      echo "[SM §4g] Session PR #${SESSION_PR} merged to main (--admin)."
-    else
-      # Fallback: close with a note if merge fails (better than leaving it open forever)
-      echo "[SM §4g] Merge failed — closing session PR #${SESSION_PR} as superseded."
+    # Final CI gate before merge — verify no failures (in case loop exited on timeout)
+    _FINAL_FAILING=$(gh pr checks "$SESSION_PR" --repo "$REPO" \
+      --json name,conclusion 2>/dev/null | python3 -c "
+import json,sys
+checks=json.load(sys.stdin)
+failing=[c['name'] for c in checks if c.get('conclusion') in ('failure','timed_out','action_required')]
+print(','.join(failing))
+" 2>/dev/null || echo "")
+
+    if [ -n "$_FINAL_FAILING" ]; then
+      echo "[SM §4g] Final CI gate: failing checks: $_FINAL_FAILING — closing session PR"
       gh pr close "$SESSION_PR" --repo "$REPO" \
-        --comment "[SM §4g] Session branch closed — changes were applied directly during session. Branch: $SESSION_BRANCH" \
+        --comment "[SM §4g] Closing — CI failing: $_FINAL_FAILING. Not merged to protect main." \
         2>/dev/null || true
+    else
+      # CI all green — merge: try squash → squash --admin
+      if gh pr merge "$SESSION_PR" --repo "$REPO" --squash --delete-branch 2>/dev/null; then
+        echo "[SM §4g] Session PR #${SESSION_PR} merged to main."
+      elif gh pr merge "$SESSION_PR" --repo "$REPO" --squash --delete-branch --admin 2>/dev/null; then
+        echo "[SM §4g] Session PR #${SESSION_PR} merged to main (--admin)."
+      else
+        echo "[SM §4g] Merge failed — closing session PR #${SESSION_PR} as superseded."
+        gh pr close "$SESSION_PR" --repo "$REPO" \
+          --comment "[SM §4g] Session branch closed — changes were applied directly during session. Branch: $SESSION_BRANCH" \
+          2>/dev/null || true
+      fi
     fi
   else
     echo "[SM §4g] No open session PR found for $SESSION_BRANCH — nothing to do."

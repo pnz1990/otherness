@@ -30,23 +30,116 @@ The review comment should teach, not just block. Max 3 QA cycles.
 ## 3a. Wait for CI, read diff
 
 ```bash
-# Wait for CI on the PR branch — poll up to 20 min
-for i in $(seq 1 40); do
-  CI=$(gh run list --repo $REPO --branch $MY_BRANCH --limit 1 \
-    --json conclusion,status --jq '.[0] | (.conclusion // .status)' 2>/dev/null)
-  case "$CI" in
-    success) echo "[QA] CI green"; break ;;
-    failure) echo "[QA] CI failed — filing for ENG fix"; break ;;
-    "") sleep 15 ;; # not started yet
-    *) sleep 30 ;; # in_progress, queued
-  esac
-done
+# Design ref: docs/design/38-qa-ci-gate.md
+# Use gh pr checks (all required checks on the PR) — NOT gh run list (only last workflow run).
+# gh run list misses failures on other workflows. gh pr checks is authoritative.
 
-if [ "$CI" = "failure" ]; then
-  # Read the failure, fix it (go back to ENG phase step 2d-2e), push, re-check
-  echo "[QA] CI failure — returning to ENG for fix"
-  # [AI-STEP] Read failure log, fix root cause in $MY_WORKTREE, push, re-enter QA
-fi
+_CI_ATTEMPTS=0
+_CI_FIXED=false
+
+while true; do
+  # Get aggregate status of all checks on this PR
+  _CHECKS=$(gh pr checks "$PR_NUM" --repo "$REPO" \
+    --json name,state,conclusion 2>/dev/null || echo "[]")
+
+  _FAILING=$(echo "$_CHECKS" | python3 -c "
+import json, sys
+checks = json.load(sys.stdin)
+failing = [c for c in checks if c.get('conclusion') in ('failure','timed_out','action_required')]
+pending = [c for c in checks if c.get('state') == 'PENDING' or c.get('conclusion') is None]
+passing = [c for c in checks if c.get('conclusion') in ('success','skipped','neutral')]
+print(f'failing={len(failing)} pending={len(pending)} passing={len(passing)}')
+for c in failing: print(f'FAIL: {c[\"name\"]}')
+for c in pending: print(f'PENDING: {c[\"name\"]}')
+" 2>/dev/null || echo "failing=0 pending=0 passing=0")
+
+  echo "[QA §3a] Checks: $_FAILING"
+
+  if echo "$_FAILING" | grep -q "^FAIL:"; then
+    _CI_ATTEMPTS=$((_CI_ATTEMPTS + 1))
+    echo "[QA §3a] CI failing (attempt $_CI_ATTEMPTS/3)"
+
+    if [ $_CI_ATTEMPTS -ge 3 ]; then
+      echo "[QA §3a] CI still failing after 3 attempts — posting [NEEDS HUMAN]"
+      _FAIL_DETAILS=$(echo "$_CHECKS" | python3 -c "
+import json,sys
+checks=json.load(sys.stdin)
+for c in checks:
+    if c.get('conclusion') in ('failure','timed_out','action_required'):
+        print(c['name'])
+" 2>/dev/null)
+      gh issue comment "$REPORT_ISSUE" --repo "$REPO" \
+        --body "[NEEDS HUMAN: ci-red-3-attempts] PR #${PR_NUM} has failing CI after 3 fix attempts. Failing checks: ${_FAIL_DETAILS}. Human action required to resolve." 2>/dev/null
+      gh issue create --repo "$REPO" \
+        --title "[NEEDS HUMAN] CI failing on PR #${PR_NUM} after 3 attempts" \
+        --label "needs-human" \
+        --body "Failing checks: ${_FAIL_DETAILS}" 2>/dev/null || true
+      exit 1
+    fi
+
+    # Check for DCO failure — mechanical fix: amend commit with Signed-off-by
+    if echo "$_FAILING" | grep -qi "dco\|sign.off"; then
+      echo "[QA §3a] DCO failure detected — amending commit with Signed-off-by"
+      cd "$MY_WORKTREE"
+      git commit --amend --no-edit \
+        --trailer "Signed-off-by: otherness[bot] <otherness[bot]@users.noreply.github.com>" \
+        2>/dev/null || true
+      git push --force-with-lease origin "$(git rev-parse --abbrev-ref HEAD)" 2>/dev/null || true
+      sleep 20
+      continue
+    fi
+
+    # Read failure log and attempt fix
+    _FAIL_RUN=$(gh run list --repo "$REPO" --branch "$MY_BRANCH" --limit 5 \
+      --json databaseId,conclusion \
+      --jq '[.[] | select(.conclusion=="failure")] | .[0].databaseId' 2>/dev/null)
+
+    if [ -n "$_FAIL_RUN" ] && [ "$_FAIL_RUN" != "null" ]; then
+      echo "[QA §3a] Reading failure log for run $_FAIL_RUN"
+      _FAIL_LOG=$(gh run view "$_FAIL_RUN" --repo "$REPO" --log-failed 2>/dev/null | \
+        grep -v "toolchain\|^2026.*##\[group\]\|^2026.*##\[endgroup\]" | \
+        grep -E "error:|Error:|FAIL|cannot|undefined|missing|exit code" | \
+        head -30)
+      echo "[QA §3a] Failure log excerpt:"
+      echo "$_FAIL_LOG"
+    fi
+
+    # [AI-STEP] Analyse $_FAIL_LOG, identify root cause, fix in $MY_WORKTREE.
+    # Common patterns to handle:
+    # - "File is not properly formatted (gofmt)" → run gofmt -w on the file
+    # - "Missing Apache 2.0 header" → add license header to new .go file
+    # - "CRD schemas are stale" → run make manifests generate, commit
+    # - "undefined:" or "cannot find" → fix import or type error in Go code
+    # - "FAIL\s+github.com/..." → read test failure, fix the test or the code
+    # Push the fix, then loop back to recheck.
+    # If the failure is not fixable (external infra, permissions): break and post [NEEDS HUMAN].
+    sleep 30
+    continue
+  fi
+
+  if echo "$_FAILING" | grep -q "pending=[^0]"; then
+    echo "[QA §3a] CI still pending — waiting 30s"
+    sleep 30
+    continue
+  fi
+
+  # All checks passed (or skipped/neutral — no failures, no pending)
+  echo "[QA §3a] All CI checks passed."
+  break
+
+  # Timeout guard: _CI_ATTEMPTS tracks wait cycles too via the outer loop
+  # If we've been waiting >30 min (60 × 30s) without resolution: escalate
+  _CI_ATTEMPTS=$((_CI_ATTEMPTS + 1))
+  if [ $_CI_ATTEMPTS -gt 60 ]; then
+    echo "[QA §3a] CI still pending after 30 min — escalating"
+    gh issue create --repo "$REPO" \
+      --title "[NEEDS HUMAN] CI pending >30 min on PR #${PR_NUM}" \
+      --label "needs-human" \
+      --body "CI has not completed after 30 minutes. Check runner health or external dependency." \
+      2>/dev/null || true
+    exit 1
+  fi
+done
 ```
 
 ---
@@ -153,18 +246,72 @@ Post answers to each check as `[AGENT SELF-REVIEW]` comment. If any fails: post
 cd $(git -C $MY_WORKTREE rev-parse --show-toplevel)/../$(basename $(git rev-parse --show-toplevel))
 
 # Autonomous merge protocol (3-step, see docs/design/13-autonomous-merge-strategy.md)
+# Design ref: docs/design/38-qa-ci-gate.md
 # NEVER post [NEEDS HUMAN: pr-approval-required] before trying all three steps.
+# CI gate fires BEFORE every step — --admin and protection-clear bypass review
+# requirements only, NEVER CI check requirements.
 _merge_pr() {
   local pr_num="$1"
   local repo="$2"
 
+  # CI gate — authoritative check before any merge attempt (O1, O2 in design doc 38)
+  # gh pr checks is used, not gh run list (gh run list only sees the last workflow run)
+  _CI_STATUS=$(gh pr checks "$pr_num" --repo "$repo" \
+    --json name,state,conclusion 2>/dev/null || echo "[]")
+  _CI_FAILING=$(echo "$_CI_STATUS" | python3 -c "
+import json, sys
+checks = json.load(sys.stdin)
+failing = [c['name'] for c in checks
+           if c.get('conclusion') in ('failure','timed_out','action_required')]
+print(','.join(failing))
+" 2>/dev/null || echo "")
+
+  if [ -n "$_CI_FAILING" ]; then
+    echo "[QA §3e] CI gate: failing checks: $_CI_FAILING"
+    echo "[QA §3e] Refusing to merge — CI is red. Return to ENG to fix: $_CI_FAILING"
+    return 1  # caller (§3a loop) must fix CI before retrying _merge_pr
+  fi
+
   # Step 0 — update branch if behind main (strict status checks require up-to-date branches)
-  # gh pr update-branch merges main into the PR branch so required_status_checks.strict passes.
   _MERGE_STATE=$(gh pr view "$pr_num" --repo "$repo" --json mergeStateStatus --jq '.mergeStateStatus' 2>/dev/null)
   if [ "$_MERGE_STATE" = "BEHIND" ]; then
     echo "[QA] Branch is BEHIND main — updating before merge attempt."
     gh pr update-branch "$pr_num" --repo "$repo" 2>/dev/null || true
-    sleep 5  # let GitHub process the update
+    sleep 15  # let GitHub re-run checks after update
+
+    # Re-check CI after branch update — update may invalidate passing checks
+    _CI_STATUS=$(gh pr checks "$pr_num" --repo "$repo" \
+      --json name,state,conclusion 2>/dev/null || echo "[]")
+    _CI_PENDING=$(echo "$_CI_STATUS" | python3 -c "
+import json, sys
+checks = json.load(sys.stdin)
+pending = [c for c in checks if c.get('state') == 'PENDING' or c.get('conclusion') is None]
+print(len(pending))
+" 2>/dev/null || echo "0")
+
+    if [ "${_CI_PENDING:-0}" -gt 0 ]; then
+      echo "[QA §3e] Checks re-running after branch update — waiting up to 15 min"
+      for _w in $(seq 1 30); do
+        sleep 30
+        _CI_STATUS=$(gh pr checks "$pr_num" --repo "$repo" \
+          --json name,state,conclusion 2>/dev/null || echo "[]")
+        _CI_FAILING=$(echo "$_CI_STATUS" | python3 -c "
+import json, sys
+checks = json.load(sys.stdin)
+failing=[c['name'] for c in checks if c.get('conclusion') in ('failure','timed_out','action_required')]
+pending=[c for c in checks if c.get('state')=='PENDING' or c.get('conclusion') is None]
+print(f'failing={len(failing)} pending={len(pending)}')
+" 2>/dev/null || echo "failing=0 pending=0")
+        echo "[QA §3e] Post-update: $_CI_FAILING"
+        if ! echo "$_CI_FAILING" | grep -q "pending=[^0]" && ! echo "$_CI_FAILING" | grep -q "failing=[^0]"; then
+          break
+        fi
+        if echo "$_CI_FAILING" | grep -q "failing=[^0]"; then
+          echo "[QA §3e] CI failed after branch update — returning to ENG"
+          return 1
+        fi
+      done
+    fi
   fi
 
   # Step 1 — try normal merge
@@ -172,14 +319,13 @@ _merge_pr() {
     return 0
   fi
 
-  # Step 2 — try --admin (repo owner token bypasses enforce_admins when enabled)
+  # Step 2 — try --admin (repo owner token bypasses review requirements)
+  # NOTE: --admin bypasses review requirements ONLY. CI is already verified above.
   if gh pr merge "$pr_num" --repo "$repo" --squash --delete-branch --admin 2>/dev/null; then
     return 0
   fi
 
-  # Step 3 — temporarily clear branch protection rules (full PUT replacement)
-  # This handles: require_code_owner_reviews, required_approving_review_count, enforce_admins
-  # Always restore regardless of merge outcome.
+  # Step 3 — temporarily clear branch protection (review rules only, not status checks)
   _RESTORE_TRAP="curl -s -X PUT \
     -H 'Authorization: Bearer \$(gh auth token)' \
     -H 'Accept: application/vnd.github+json' \
@@ -201,7 +347,6 @@ _merge_pr() {
     _MERGE_EXIT=1
   fi
 
-  # Restore protection (trap handles abnormal exit; explicit call handles normal exit)
   eval "$_RESTORE_TRAP"
   trap - EXIT
 
