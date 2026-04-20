@@ -164,12 +164,11 @@ docs/aide/metrics.md             — existing batch log (SM already writes this)
 - ✅ `SM §4d`: `arch_convergence > 0.7` → open `learn(arch):` issue labeled `otherness,area/agent-loop,kind/chore` with deduplication check; replaces `[NEEDS HUMAN]` escalation (PR #351, 2026-04-20)
 - ✅ `SM §4e`: compare actual `todo_shipped` to predicted floor from `scripts/sim-params.json`; track consecutive below-floor count in `_state:.otherness/divergence_count.json`; post `[⚠️ Simulation divergence]` after 3 consecutive below-floor batches (PR #350, 2026-04-20)
 - ✅ `SM §4d`: write `sim-prediction.json` to `_state` after each calibration — fields: `prs_next_batch_floor`, `prs_next_batch_ceiling`, `arch_convergence_score`, `skill_growth_rate`, `calibrated_params`, `calibrated_at` (PR #349, 2026-04-20)
+- ✅ `scripts/sim-defaults.json`: fleet defaults — written by otherness SM §4d after calibration (otherness-repo-only gate); shipped to managed projects via `git -C ~/.otherness pull` self-update (PR #353, 2026-04-20)
 
 ## Future (🔲)
 
 - 🔲 `SM §4e`: read `metrics.md`, calibrate `simulate.py` parameters against real data, write `.otherness/sim-prediction.json` — runs every 5 SM cycles (NOTE: calibration runs every 10; sim-prediction.json written by SM §4d after calibration)
-- 🔲 `scripts/simulate.py`: add `--calibrate` flag — reads metrics.md, grid-searches parameters, outputs best fit as JSON
-- 🔲 `~/.otherness/scripts/sim-defaults.json`: fleet defaults — written by otherness SM, shipped to managed projects via self-update
 - 🔲 `otherness-config.yaml`: `simulation.calibration_cycles` field (default: 5) — how often SM re-calibrates
 - 🔲 Managed project adoption: kardinal-promoter and kro-ui SM inherit otherness defaults, re-calibrate after ≥5 batches
 

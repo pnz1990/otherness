@@ -327,6 +327,57 @@ subprocess.run(['git','worktree','prune'], capture_output=True)
 PARAMS_EOF
         fi
 
+        # Fleet defaults: if this is the otherness repo, write sim-defaults.json
+        # to scripts/ and push to main. Managed projects pick it up on next git pull.
+        # O4: skip silently on managed projects.
+        IS_OTHERNESS=$(python3 -c "
+import re, os
+try:
+    for line in open('otherness-config.yaml'):
+        m = re.match(r'^\s+repo:\s*(.+)', line)
+        if m:
+            print('true' if m.group(1).strip().endswith('/otherness') else 'false')
+            exit()
+except: pass
+print('false')
+" 2>/dev/null || echo "false")
+
+        if [ "$IS_OTHERNESS" = "true" ] && [ -f "scripts/sim-params.json" ]; then
+            python3 - <<'FLEETEOF'
+import subprocess, json, os, datetime, shutil
+
+sm_cycle = os.environ.get('SM_CYCLE', '0')
+try:
+    params = json.load(open('scripts/sim-params.json'))
+    defaults = dict(params)
+    defaults['fleet_calibrated_at'] = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    defaults['source'] = 'otherness'
+    json.dump(defaults, open('scripts/sim-defaults.json', 'w'), indent=2)
+    print(f"[SM §4d] sim-defaults.json written (sm_cycle={sm_cycle})")
+
+    # Commit and push to main — managed projects pick up on next git pull startup
+    subprocess.run(['git','add','scripts/sim-defaults.json'], capture_output=True)
+    r = subprocess.run(['git','commit','-m',f'chore(sm): update sim-defaults.json (sm_cycle={sm_cycle})'],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        print("[SM §4d] sim-defaults.json: no changes to commit")
+    else:
+        for attempt in range(3):
+            subprocess.run(['git','pull','--rebase','origin','main','--quiet'],
+                           capture_output=True)
+            push_r = subprocess.run(['git','push','origin','HEAD:main'],
+                                    capture_output=True, text=True)
+            if push_r.returncode == 0:
+                print("[SM §4d] sim-defaults.json pushed to main (fleet update)")
+                break
+            import time; time.sleep(2 * (attempt + 1))
+        else:
+            print("[SM §4d] sim-defaults.json push failed after 3 attempts — non-fatal")
+except Exception as e:
+    print(f"[SM §4d] sim-defaults.json error (non-fatal): {e}")
+FLEETEOF
+        fi
+
         # Phase 2c: write sim-results.json to _state branch
         python3 - <<'SIMRES_EOF'
 import subprocess, json, os, tempfile, datetime, shutil
