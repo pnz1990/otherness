@@ -967,6 +967,16 @@
       "pr_number": 476,
       "pr_merged": true,
       "done_at": "2026-04-20T08:35:13Z"
+    },
+    "issue-478": {
+      "title": "feat(security): M2 \u2014 agent_version pin",
+      "state": "done",
+      "pr_number": 480,
+      "pr_merged": true,
+      "done_at": "2026-04-20T09:09:24Z",
+      "areas": [
+        "area/tooling"
+      ]
     }
   },
   "engineer_slots": {
