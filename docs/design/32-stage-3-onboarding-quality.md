@@ -25,7 +25,8 @@ any human corrections to the generated files.
 
 ## Future (🔲)
 
-*(Stage 3 is complete. All deliverables shipped.)*
+- 🔲 End-to-end onboarding smoke test on a live fresh repo: `scripts/check-onboarding.sh` validates structural completeness of generated docs but does NOT verify that `/otherness.run` actually starts cleanly after onboarding. Stage 3 declared complete based on structural checks only. The true acceptance test — run `/otherness.onboard` on a repo that has never seen otherness, then run `/otherness.run` and confirm the first batch ships ≥1 meaningful PR with zero `[NEEDS HUMAN]` posts — has not been performed. This test must be run and any gaps found in `agents/onboard.md` must be fixed before Stage 3 can be considered genuinely complete. ⚠️ Inferred from onboarding lens: new project added today would still require significant human intervention to get running.
+- 🔲 `onboarding-existing-project.md` first-run smoke test section: the onboarding guides for existing projects are missing a "verify the loop is working" section that a human can run in <5 minutes after setup to confirm: (1) `_state` branch updated in last 24h, (2) at least one PR opened or merged in last 7 days, (3) no `[NEEDS HUMAN]` issues older than 48h. Without this, a human completing onboarding has no clear signal that it worked. `/otherness.status` should serve this purpose but its output is not yet actionable enough. ⚠️ Inferred from onboarding lens: setup guide is incomplete for first-run confidence.
 
 ---
 

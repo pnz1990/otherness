@@ -129,6 +129,8 @@ need for Fix D sooner.
 - ✅ `coord.md`: minimum queue depth guard — trigger vision synthesis when queue drops below 5 and no design doc items remain
 - ✅ `otherness-config.yaml` + `otherness-config-template.yaml`: add `maqa.session_item_limit` field (default: 10) — pre-shipped
 - ✅ `docs/design/22-queue-richness.md`: design doc for Fix C — richer queue sources (2026-04-20)es)
+- 🔲 Session defect diagnosis: when a session completes with 0 meaningful items (only metrics commits, chores, or SM/PM housekeeping), SM §4b must open a `kind/bug` issue with the diagnosed root cause — queue source exhausted / all items blocked / vision pressure too low / etc. A housekeeping-only session is not an acceptable outcome; it is a measurable defect that the system must self-diagnose and self-heal. ⚠️ Inferred from reliability lens: sessions still fail silently or produce housekeeping PRs with no real feature content.
+- 🔲 Meaningful-work rate tracked as a first-class metric: `docs/aide/metrics.md` must add a `meaningful_prs` column (PRs that advance a 🔲 Future → ✅ Present transition or fix a validated regression). SM §4b fills this column each batch. PM §5 stagnation check triggers AMBER when `meaningful_prs = 0` for 2 consecutive batches. This makes the throughput principle from `docs/aide/vision.md` measurable, not aspirational. ⚠️ Inferred from honesty lens: metrics collected but not acting on the meaningful/housekeeping split.
 
 ---
 
