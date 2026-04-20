@@ -1074,10 +1074,15 @@
       "last_seen": "2026-04-20T10:19:36Z",
       "item": "session_complete",
       "cycle": 10
+    },
+    "sess-49fbbf76": {
+      "last_seen": "2026-04-20T11:05:09Z",
+      "item": "batch-85-complete",
+      "cycle": 1
     }
   },
   "handoff": null,
   "report_issue": 2,
   "sm_cycle_count": 63,
-  "pm_cycle_count": 36
+  "pm_cycle_count": 37
 }
