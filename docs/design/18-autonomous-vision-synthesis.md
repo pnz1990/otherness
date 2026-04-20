@@ -26,7 +26,7 @@ sessions. It keeps the loop alive.
 | **Human-initiated** | Human runs `/otherness.vibe-vision` | Human intent, shaped by dialogue | `🔲 Future` | Yes |
 | **Autonomous synthesis** | Queue empty + no ⚠️ stubs pending + SM triggers | System's own knowledge corpus | `🔲 ⚠️ Inferred` | No — human confirms at own cadence |
 
-The autonomous agent writes `🔲 ⚠️ Inferred` items. COORD queues them the same as
+The autonomous agent writes `✅ ⚠️ Inferred` items. COORD queues them the same as
 ordinary `🔲` items. The human can confirm, reshape, or remove them at the next
 vibe-vision session or by directly merging the PR.
 
@@ -90,7 +90,7 @@ New or extended design docs in `docs/design/`. Each synthesized item is marked:
 - 🔲 ⚠️ Inferred: <capability description> — synthesized from <source>. (autonomous-vision, YYYY-MM-DD)
 ```
 
-COORD treats `🔲 ⚠️ Inferred` identically to `🔲 Future`. The item enters the queue.
+COORD treats `✅ ⚠️ Inferred` identically to `🔲 Future`. The item enters the queue.
 The `⚠️ Inferred` prefix is a flag to the human: this came from the system, not from
 you. You can confirm it by letting it ship, or remove it at the next vibe-vision
 session.
@@ -133,7 +133,7 @@ This distinction matters because:
 
 ## Present (✅)
 
-- ✅ COORD queue gen: `🔲 ⚠️ Inferred` items matched by existing regex (no change needed); `is_done()` strips `⚠️ Inferred/Observed:` prefix before deduplication (PR #316, 2026-04-19)
+- ✅ COORD queue gen: `✅ ⚠️ Inferred` items matched by existing regex (no change needed); `is_done()` strips `⚠️ Inferred/Observed:` prefix before deduplication (PR #316, 2026-04-19)
 
 ## Future (🔲)
 

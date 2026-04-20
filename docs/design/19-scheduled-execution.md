@@ -287,8 +287,8 @@ project-specific deployment record.
 
 ## Future (🔲)
 
-- 🔲 `/otherness.setup` and `/otherness.onboard`: add "activate scheduled loop" section that runs `setup-github-bedrock-key.sh` and copies the workflow template automatically — currently requires manual steps
-- 🔲 `scripts/validate.sh`: verify `GH_TOKEN` secret exists on the repo when `schedule.cron` is configured (currently only checks for the workflow file)
+- ✅ `/otherness.setup` and `/otherness.onboard`: add "activate scheduled loop" section that runs `setup-github-bedrock-key.sh` and copies the workflow template automatically — currently requires manual steps
+- ✅ `scripts/validate.sh`: verify `GH_TOKEN` secret exists on the repo when `schedule.cron` is configured (currently only checks for the workflow file)
 - 🔲 Token expiry detection: if `GH_TOKEN` PAT expires, the workflow fails silently on push; add a preflight step that validates the token has required scopes and posts a `[NEEDS HUMAN]` issue on failure
 
 ---
