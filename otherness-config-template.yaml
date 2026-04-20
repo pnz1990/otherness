@@ -55,12 +55,15 @@ maqa:
   # for 30–60 min can ship 3–10 items. Default: 10.
   session_item_limit: 10
 
-  # Version pinning — pin to a specific otherness release tag for stability.
-  # When set: agent checks out this tag at startup instead of pulling latest.
-  # When empty: agent pulls latest main (current behavior — fine for most users).
+  # Version pinning — pin to a specific otherness release tag or commit SHA.
+  # Security (M2, docs/design/27-security-model.md): setting this value prevents
+  # a compromised pnz1990/otherness repo from pushing malicious agent instructions
+  # via `git pull` on the next scheduled run. The SELF-UPDATE block does
+  # `git checkout $agent_version` when set, freezing agent behavior at a known state.
+  # When empty: agent pulls latest main (convenient but less secure).
   # To upgrade: run /otherness.upgrade to preview changelog and bump the pin.
-  # Recommended for projects with >1 external contributor or production SLA.
-  agent_version: ""     # e.g. "v1.0.0" — leave empty for latest
+  # Recommended: always set this for projects with scheduled autonomous runs.
+  agent_version: ""     # e.g. "v0.1.0" or full SHA — leave empty for latest (insecure)
 
   # D4 zone enforcement — enforces declarative design-driven development.
   # When true: guard.sh is called before file writes; guard-ci.sh runs in CI;
