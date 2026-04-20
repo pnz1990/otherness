@@ -432,6 +432,132 @@ DEPRECATE_EOF
 
 ---
 
+## SCAN 5 — Self-updating pressure prompts (design doc 28 §Future → ✅)
+
+Evaluate whether the current vision pressure context is still pushing the right things.
+When pressure areas are substantially addressed, add a design doc Future item to trigger
+a pressure rewrite — the human should not be the one raising the bar.
+
+```bash
+python3 - <<'SCAN5_EOF'
+import re, os, subprocess, sys
+
+REPO = os.environ.get('REPO', '')
+
+# Step 1: Find the workflow file containing the pressure context
+# The pressure block is identified by "Context for this vision scan:" or
+# "OTHERNESS_PRESSURE_START" markers in .github/workflows/ files.
+workflow_dir = '.github/workflows'
+pressure_keywords = []
+pressure_file = None
+
+if os.path.isdir(workflow_dir):
+    for fname in sorted(os.listdir(workflow_dir)):
+        if not fname.endswith(('.yml', '.yaml')): continue
+        fpath = os.path.join(workflow_dir, fname)
+        try:
+            content = open(fpath).read()
+            # Look for the vision pressure block
+            if 'Context for this vision scan:' in content or 'OTHERNESS_PRESSURE_START' in content:
+                pressure_file = fname
+                # Extract pressure keywords: lines starting with "- Is" or bullet points
+                m = re.search(
+                    r'Context for this vision scan:(.*?)(?=For each gap you identify|OTHERNESS_PRESSURE_END|$)',
+                    content, re.DOTALL)
+                if m:
+                    block = m.group(1)
+                    # Extract key phrases from the pressure block
+                    keywords = re.findall(r'- (?:Is )?(\w[\w\s]{3,30})\??', block)
+                    pressure_keywords = [k.lower().strip() for k in keywords if len(k) > 5]
+                break
+        except Exception:
+            continue
+
+if not pressure_file or not pressure_keywords:
+    print('[SCAN 5] No pressure block found — skipping.')
+    sys.exit(0)
+
+print(f'[SCAN 5] Found pressure block in {pressure_file}: {len(pressure_keywords)} keywords')
+print(f'[SCAN 5] Keywords: {pressure_keywords[:5]}')
+
+# Step 2: Check how many pressure areas have shipped recently (last 20 merged PRs)
+try:
+    recent_prs = subprocess.check_output(
+        ['gh', 'pr', 'list', '--repo', REPO, '--state', 'merged',
+         '--limit', '20', '--json', 'title', '--jq', '.[].title'],
+        text=True, timeout=20).lower()
+except Exception:
+    recent_prs = ''
+
+addressed = 0
+total = len(pressure_keywords)
+
+for kw in pressure_keywords:
+    kw_words = kw.split()[:3]  # use first 3 words as search key
+    kw_key = ' '.join(kw_words)
+    if any(kw_key in pr_title for pr_title in recent_prs.splitlines()):
+        addressed += 1
+
+ratio = addressed / total if total > 0 else 0
+print(f'[SCAN 5] Pressure addressed: {addressed}/{total} areas ({ratio:.0%})')
+
+# Step 3: If addressed ratio >= 60%, add a Future item to trigger pressure rewrite
+STALENESS_THRESHOLD = 0.60
+
+if ratio >= STALENESS_THRESHOLD:
+    print(f'[SCAN 5] Pressure context is ≥{STALENESS_THRESHOLD:.0%} addressed — adding rewrite reminder.')
+
+    # Find best design doc to attach to (doc 28 for dual-step workflow)
+    design_dir = 'docs/design'
+    target_doc = None
+    for fname in sorted(os.listdir(design_dir) if os.path.isdir(design_dir) else []):
+        if fname.startswith('28-') or 'dual-step' in fname or 'scheduled' in fname:
+            target_doc = fname
+            break
+    if not target_doc:
+        # Fallback: first design doc
+        docs = sorted(os.listdir(design_dir)) if os.path.isdir(design_dir) else []
+        target_doc = next((f for f in docs if f.endswith('.md')), None)
+
+    if target_doc:
+        fpath = os.path.join(design_dir, target_doc)
+        try:
+            content = open(fpath).read()
+            new_item = (
+                f'- 🔲 Rewrite vision pressure context in scheduled workflow: '
+                f'{addressed}/{total} pressure areas addressed in recent PRs — '
+                f'the bar needs to be raised. Update the "Context for this vision scan:" '
+                f'block to push on the remaining open gaps. '
+                f'⚠️ Inferred from pressure staleness scan: {ratio:.0%} addressed.'
+            )
+            # Only add if not already present
+            if 'Rewrite vision pressure context' not in content:
+                # Find Future section
+                if '## Future' in content:
+                    future_pos = content.index('## Future')
+                    # Find end of future section marker (first line after header)
+                    lines = content[future_pos:].split('\n')
+                    insert_after = future_pos + len(lines[0]) + len(lines[1]) + 2
+                    content = content[:insert_after] + '\n' + new_item + '\n' + content[insert_after:]
+                else:
+                    content += f'\n## Future (🔲)\n\n{new_item}\n'
+                with open(fpath, 'w') as f:
+                    f.write(content)
+                print(f'[SCAN 5] Added pressure rewrite item to {target_doc}')
+            else:
+                print(f'[SCAN 5] Pressure rewrite item already present — skipping.')
+        except Exception as e:
+            print(f'[SCAN 5] Error updating {target_doc}: {e}')
+    else:
+        print('[SCAN 5] No design doc found to attach pressure rewrite item to.')
+else:
+    print(f'[SCAN 5] Pressure context still relevant ({ratio:.0%} addressed < {STALENESS_THRESHOLD:.0%} threshold) — no action needed.')
+
+SCAN5_EOF
+```
+
+---
+
 ## COMMIT
 
 If any files changed, commit to the session branch (Step B will see the changes
@@ -455,6 +581,7 @@ Scans performed:
 - Scan 2: flag stale ✅ Present items (referenced files missing)
 - Scan 3: infer 🔲 Future items from untracked TODO/FIXME in code
 - Scan 4: deprecate 🔲 Future items stale >90 days with no open issue
+- Scan 5: self-updating pressure prompts — flag stale pressure context when ≥60% addressed
 
 Signed-off-by: otherness[bot] <otherness[bot]@users.noreply.github.com>" 2>/dev/null || true
 
