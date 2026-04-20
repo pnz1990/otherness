@@ -43,6 +43,86 @@ jobs:
           git config --global user.name  "otherness[bot]"
           git config --global user.email "otherness[bot]@users.noreply.github.com"
 
+      - name: Validate GH_TOKEN
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          # Preflight: verify GH_TOKEN is set and valid before any agent work.
+          # On failure: post a [NEEDS HUMAN] issue using GITHUB_TOKEN (always valid)
+          # so the failure is visible even when GH_TOKEN is expired.
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::GH_TOKEN secret is not configured on this repository."
+            gh issue create \
+              --repo "$REPO" \
+              --title "[NEEDS HUMAN] GH_TOKEN secret is missing — otherness scheduled run cannot proceed" \
+              --body "## otherness scheduled run: GH_TOKEN not configured
+
+          The \`GH_TOKEN\` secret is required for otherness to push commits, open PRs, and trigger CI.
+          It is not configured on this repository.
+
+          ## What to do
+          1. Create a GitHub PAT with \`repo\` and \`workflow\` scopes.
+          2. Add it as a repository secret named \`GH_TOKEN\`.
+          3. Re-run the workflow via workflow_dispatch to verify.
+
+          See \`docs/design/19-scheduled-execution.md\` §Credential model." \
+              --label "needs-human" 2>/dev/null || \
+            gh issue create \
+              --repo "$REPO" \
+              --title "[NEEDS HUMAN] GH_TOKEN secret is missing — otherness scheduled run cannot proceed" \
+              --body "## otherness scheduled run: GH_TOKEN not configured
+
+          The \`GH_TOKEN\` secret is required for otherness to push commits, open PRs, and trigger CI.
+          It is not configured on this repository.
+
+          ## What to do
+          1. Create a GitHub PAT with \`repo\` and \`workflow\` scopes.
+          2. Add it as a repository secret named \`GH_TOKEN\`.
+          3. Re-run the workflow via workflow_dispatch to verify.
+
+          See \`docs/design/19-scheduled-execution.md\` §Credential model." 2>/dev/null || true
+            exit 1
+          fi
+
+          # Verify the token is valid by calling the API
+          if ! GH_TOKEN="$GH_TOKEN" gh api user --jq '.login' > /dev/null 2>&1; then
+            echo "::error::GH_TOKEN is set but invalid or expired."
+            GH_TOKEN="" gh issue create \
+              --repo "$REPO" \
+              --title "[NEEDS HUMAN] GH_TOKEN has expired — otherness scheduled run cannot proceed" \
+              --body "## otherness scheduled run: GH_TOKEN invalid or expired
+
+          The \`GH_TOKEN\` PAT is set but the GitHub API returned an authentication error.
+          The token has likely expired or been revoked.
+
+          ## What to do
+          1. Generate a new GitHub PAT with \`repo\` and \`workflow\` scopes.
+          2. Update the \`GH_TOKEN\` repository secret with the new token.
+          3. Re-run the workflow via workflow_dispatch to verify.
+
+          See \`docs/design/19-scheduled-execution.md\` §Credential model." \
+              --label "needs-human" 2>/dev/null || \
+            GH_TOKEN="" gh issue create \
+              --repo "$REPO" \
+              --title "[NEEDS HUMAN] GH_TOKEN has expired — otherness scheduled run cannot proceed" \
+              --body "## otherness scheduled run: GH_TOKEN invalid or expired
+
+          The \`GH_TOKEN\` PAT is set but the GitHub API returned an authentication error.
+          The token has likely expired or been revoked.
+
+          ## What to do
+          1. Generate a new GitHub PAT with \`repo\` and \`workflow\` scopes.
+          2. Update the \`GH_TOKEN\` repository secret with the new token.
+          3. Re-run the workflow via workflow_dispatch to verify.
+
+          See \`docs/design/19-scheduled-execution.md\` §Credential model." 2>/dev/null || true
+            exit 1
+          fi
+
+          echo "GH_TOKEN is valid. Proceeding."
+
       - name: Install otherness agent files
         run: |
           git clone --quiet --depth 1 https://github.com/pnz1990/otherness.git ~/.otherness

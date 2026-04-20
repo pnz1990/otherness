@@ -1,6 +1,6 @@
 # 19: Scheduled Execution — The Loop That Never Needs You to Press Play
 
-> Status: Active | Created: 2026-04-19 | Updated: 2026-04-19
+> Status: Active | Created: 2026-04-19 | Updated: 2026-04-20
 > Applies to: otherness itself and all managed projects
 
 ---
@@ -284,12 +284,11 @@ project-specific deployment record.
 - ✅ IAM OIDC provider `token.actions.githubusercontent.com` in account 569190534191 — trust scoped to `pnz1990/*` (2026-04-19)
 - ✅ IAM role `github-bedrock-key` — OIDC trust for `pnz1990/*`, inline `BedrockInvoke` policy (2026-04-19)
 - ✅ kardinal-promoter deployed — hourly cron, all secrets set, PR #828 (2026-04-19)
-
-## Future (🔲)
-
 - ✅ `/otherness.setup` and `/otherness.onboard`: add "activate scheduled loop" section that runs `setup-github-bedrock-key.sh` and copies the workflow template automatically — currently requires manual steps
 - ✅ `scripts/validate.sh`: verify `GH_TOKEN` secret exists on the repo when `schedule.cron` is configured (currently only checks for the workflow file)
-- 🔲 Token expiry detection: if `GH_TOKEN` PAT expires, the workflow fails silently on push; add a preflight step that validates the token has required scopes and posts a `[NEEDS HUMAN]` issue on failure
+- ✅ Token expiry detection: preflight step in `otherness-scheduled.yml` validates `GH_TOKEN` before agent work; posts `[NEEDS HUMAN]` issue via `GITHUB_TOKEN` on missing or invalid token (PR #339, 2026-04-20)
+
+## Future (🔲)
 
 ---
 
