@@ -221,5 +221,7 @@
       "worktree": null,
       "file_spaces": []
     }
-  }
+  },
+  "sm_cycle_count": 1,
+  "last_sm_at": "2026-04-20T12:15:00Z"
 }
