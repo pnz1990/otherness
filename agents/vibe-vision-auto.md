@@ -186,11 +186,35 @@ for fname in sorted(os.listdir(design_dir)):
 
     for item in present_items:
         # Look for file path references like scripts/foo.sh, agents/phases/bar.md
-        file_refs = re.findall(r'`([a-zA-Z0-9_./-]+\.[a-zA-Z]{1,6})`', item)
+        # Skip hostnames (multiple dots without slashes) and refs without a file extension
+        file_refs = [r for r in re.findall(r'`([a-zA-Z0-9_./-]+\.[a-zA-Z]{1,6})`', item)
+                     if r.count('.') == 1 or '/' in r]
         for fref in file_refs:
-            # Normalize: strip leading ./
-            fref_clean = fref.lstrip('./')
-            if not os.path.exists(fref_clean) and not os.path.exists(f'./{fref_clean}'):
+            # Determine if the file reference exists in the repository.
+            # Strategy:
+            #   1. Try the exact path as written (handles .github/workflows/, .opencode/command/).
+            #   2. If the ref has no path separator (bare filename), search recursively by basename.
+            #   3. If the ref has a path separator, require the full path to exist — no fuzzy match.
+            # This avoids false positives when a bare name like 'otherness-scheduled.yml' is used
+            # while also correctly requiring 'scripts/vision.md' to exist at that exact path.
+            def _file_exists(ref):
+                # Exact path match (also handles refs with leading dot like .github/workflows/)
+                if os.path.exists(ref) or os.path.exists(f'./{ref}'):
+                    return True
+                # Strip leading ./ if present
+                if ref.startswith('./') and os.path.exists(ref[2:]):
+                    return True
+                # If ref contains a path separator: require exact location — no fuzzy match
+                name_part = ref.lstrip('./')
+                if '/' in name_part:
+                    return False
+                # Bare filename (no path): search recursively by basename
+                for root, dirs, files in os.walk('.'):
+                    dirs[:] = [d for d in dirs if d != '.git']
+                    if name_part in files:
+                        return True
+                return False
+            if not _file_exists(fref):
                 if '⚠️ Stale' not in item:
                     new_item = item + ' ⚠️ Stale — referenced file not found'
                     content = content.replace(item, new_item, 1)

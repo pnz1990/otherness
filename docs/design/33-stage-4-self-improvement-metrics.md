@@ -18,7 +18,7 @@ opens proactive improvement issues.
 - ✅ SM §4b: metrics update every batch — appends new row, regression detection (2-batch regression opens issue) (2026-04-14)
 - ✅ PM §5 stagnation check — checks last 2 batches for `todo_shipped=0` (velocity stall) and `needs_human>0` (escalation spike) (2026-04-14)
 - ✅ Regression detection: SM auto-opens `kind/chore` issue when `needs_human` or `todo_shipped` regresses for 2 consecutive batches (2026-04-14)
-- ✅ SM §4e calibration: reads `metrics.md` to calibrate simulation parameters (PR #421, 2026-04-20) ⚠️ Stale — referenced file not found
+- ✅ SM §4e calibration: reads `metrics.md` to calibrate simulation parameters (PR #421, 2026-04-20)
 
 ## Future (🔲)
 
