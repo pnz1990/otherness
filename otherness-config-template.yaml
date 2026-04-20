@@ -209,9 +209,8 @@ monitor:
 # workflow, an E2E suite, or any CI job that produces a score).
 #
 # See docs/design/24-project-anchor-framework.md for the full design.
-#
-# anchor:
-#   workflow: ""                          # workflow filename (e.g. "pdca.yml", "e2e.yml")
-#   score_pattern: "coverage: (\\d+)/(\\d+)"  # regex to extract N/M from workflow output
-#   coverage_target: 80                   # minimum % of features with anchor coverage
-#   stagnation_sessions: 3                # sessions without anchor growth before COORD prioritizes it
+anchor:
+  workflow: ""                                         # workflow filename (e.g. "pdca.yml", "e2e.yml")
+  score_pattern: "PASS=([0-9]+) FAIL=([0-9]+)"        # regex to extract pass/fail from issue comment
+  coverage_target: 80                                  # minimum % of features with anchor coverage
+  stagnation_sessions: 3                               # sessions without anchor growth before COORD prioritizes it
