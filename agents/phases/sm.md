@@ -1320,6 +1320,187 @@ if consecutive_count >= 3:
 DIVEOF
 ```
 
+### 4e-iii. Simulation-behavior coupling gate (design doc 23 §Future → ✅)
+
+Verify that simulation signals are actually driving agent behavior.
+Runs at calibration cadence (every N SM cycles). Informational only — does not block.
+
+```bash
+if [ $((SM_CYCLE % CALIB_CYCLES_4E)) -eq 0 ] && [ "${SM_CYCLE:-0}" -gt 0 ]; then
+python3 - <<'COUPLING_EOF'
+import json, os, subprocess, re, datetime, tempfile
+
+REPO = os.environ.get('REPO', '')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'SM')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+
+# AMBER threshold: arch_convergence >= 0.7 means the simulation thinks the project is
+# over-indexed on one approach and needs architectural diversity (a learn session).
+AMBER_THRESHOLD = 0.7
+
+# Step 1: Read current sim-prediction.json from _state
+arch_conv = None
+state_wt = os.path.join(tempfile.gettempdir(), 'otherness-coupling-' + str(os.getpid()))
+pred_history = []
+try:
+    if os.path.exists(state_wt):
+        subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
+    subprocess.run(['git','worktree','add','--no-checkout',state_wt,'origin/_state'],
+                   capture_output=True, check=True)
+
+    pred_file = os.path.join(state_wt, '.otherness', 'sim-prediction.json')
+    subprocess.run(['git','-C',state_wt,'checkout','_state','--','.otherness/sim-prediction.json'],
+                   capture_output=True)
+    if os.path.exists(pred_file):
+        current_pred = json.load(open(pred_file))
+        arch_conv = float(current_pred.get('arch_convergence_score', 0.0))
+
+    # Step 2: Read last 2 sim-prediction entries from git log (for before/after comparison)
+    log_r = subprocess.run(
+        ['git','-C',state_wt,'log','--format=%H','-5','--','/.otherness/sim-prediction.json'],
+        capture_output=True, text=True)
+    for sha in log_r.stdout.strip().splitlines()[:2]:
+        try:
+            blob = subprocess.run(
+                ['git','-C',state_wt,'show',f'{sha}:.otherness/sim-prediction.json'],
+                capture_output=True, text=True)
+            if blob.returncode == 0:
+                pred_history.append(json.loads(blob.stdout))
+        except Exception:
+            pass
+except Exception as e:
+    print(f'[SM §4e-coupling] Could not read sim-prediction.json (non-fatal): {e}')
+finally:
+    try:
+        subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
+    except: pass
+subprocess.run(['git','worktree','prune'], capture_output=True)
+
+if arch_conv is None:
+    print('[SM §4e-coupling] No sim-prediction.json found — skipping coupling gate.')
+    exit(0)
+
+print(f'[SM §4e-coupling] arch_convergence={arch_conv:.3f} (AMBER threshold={AMBER_THRESHOLD})')
+
+unclosed_signals = []
+
+# Step 3: If arch_convergence AMBER, check for learn evidence in last 10 batches
+if arch_conv >= AMBER_THRESHOLD:
+    print(f'[SM §4e-coupling] AMBER: arch_convergence={arch_conv:.3f} >= {AMBER_THRESHOLD}')
+    learn_evidence = False
+
+    # Check for recent learn branch (last 7 days)
+    try:
+        ls_r = subprocess.run(['git','ls-remote','--heads','origin'],
+                               capture_output=True, text=True, timeout=10)
+        learn_branches = [l for l in ls_r.stdout.splitlines() if 'feat/learn-' in l]
+        if learn_branches:
+            learn_evidence = True
+            print(f'[SM §4e-coupling] Learn branch found: {len(learn_branches)} branch(es)')
+    except Exception:
+        pass
+
+    # Check for open or recently closed learn issue
+    if not learn_evidence:
+        try:
+            issues_r = subprocess.run(
+                ['gh','issue','list','--repo',REPO,'--state','all',
+                 '--search','learn(arch)','--json','number,title,state,createdAt',
+                 '--jq','.[0:3]'],
+                capture_output=True, text=True, timeout=15)
+            if issues_r.returncode == 0:
+                issues = json.loads(issues_r.stdout or '[]')
+                recent_cutoff = (datetime.date.today() - datetime.timedelta(days=14)).isoformat()
+                for iss in issues:
+                    created = iss.get('createdAt','')[:10]
+                    if created >= recent_cutoff:
+                        learn_evidence = True
+                        print(f'[SM §4e-coupling] Learn issue found: #{iss["number"]} ({created})')
+                        break
+        except Exception:
+            pass
+
+    # Check PROVENANCE.md for recent learn session
+    if not learn_evidence:
+        try:
+            provenance = open(os.path.expanduser('~/.otherness/agents/skills/PROVENANCE.md')).read()
+            dates = re.findall(r'^## (\d{4}-\d{2}-\d{2})', provenance, re.MULTILINE)
+            if dates:
+                last_learn = datetime.date.fromisoformat(sorted(dates)[-1])
+                days_since = (datetime.date.today() - last_learn).days
+                if days_since <= 14:
+                    learn_evidence = True
+                    print(f'[SM §4e-coupling] Recent PROVENANCE.md entry: {last_learn} ({days_since}d ago)')
+        except Exception:
+            pass
+
+    if not learn_evidence:
+        unclosed_signals.append(
+            f'arch_convergence={arch_conv:.3f} (≥{AMBER_THRESHOLD} AMBER) '
+            f'but no learn session in last 14 days'
+        )
+        print('[SM §4e-coupling] AMBER signal without learn response — loop unclosed.')
+
+# Step 4: If learn ran, check whether arch_convergence decreased afterward
+if len(pred_history) >= 2:
+    prev_conv = float(pred_history[1].get('arch_convergence_score', 0.0))
+    curr_conv = float(pred_history[0].get('arch_convergence_score', 0.0))
+    prev_at = pred_history[1].get('calibrated_at', '?')[:10]
+    curr_at = pred_history[0].get('calibrated_at', '?')[:10]
+    print(f'[SM §4e-coupling] arch_convergence history: {prev_conv:.3f} ({prev_at}) → {curr_conv:.3f} ({curr_at})')
+
+    # Only flag if the previous calibration was AMBER and convergence didn't improve
+    if prev_conv >= AMBER_THRESHOLD and curr_conv >= prev_conv - 0.02:
+        # Check if a learn session ran between the two calibrations
+        try:
+            provenance = open(os.path.expanduser('~/.otherness/agents/skills/PROVENANCE.md')).read()
+            dates = re.findall(r'^## (\d{4}-\d{2}-\d{2})', provenance, re.MULTILINE)
+            if dates:
+                last_learn = datetime.date.fromisoformat(sorted(dates)[-1])
+                prev_date = datetime.date.fromisoformat(prev_at) if len(prev_at) == 10 else datetime.date.min
+                learn_between = last_learn >= prev_date
+            else:
+                learn_between = False
+        except Exception:
+            learn_between = False
+
+        if learn_between:
+            unclosed_signals.append(
+                f'learn ran (PROVENANCE.md) but arch_convergence unchanged: '
+                f'{prev_conv:.3f} → {curr_conv:.3f}'
+            )
+            print('[SM §4e-coupling] Learn ran but arch_convergence not decreasing — loop unclosed.')
+else:
+    print('[SM §4e-coupling] Only 1 calibration run found — skipping before/after comparison.')
+
+# Step 5: Post coupling gate signal if any unclosed loops detected
+if unclosed_signals:
+    signal_body = (
+        f'[⚠️ Simulation loop unclosed | SM §4e-coupling | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}]\n\n'
+        + '\n'.join(f'- {s}' for s in unclosed_signals)
+        + '\n\nThe simulation is an instrument, not wallpaper. '
+        f'Signals exist but behavior may be unchanged.\n\n'
+        f'Recommended: verify learn scheduling in coord.md §1e and SM §4c '
+        f'(design doc 23 §Future coupling gate).'
+    )
+    try:
+        r = subprocess.run(
+            ['gh','issue','comment',REPORT_ISSUE,'--repo',REPO,'--body',signal_body],
+            capture_output=True, text=True, timeout=15)
+        if r.returncode == 0:
+            print(f'[SM §4e-coupling] Unclosed loop signal posted ({len(unclosed_signals)} signals).')
+        else:
+            print(f'[SM §4e-coupling] Could not post signal (non-fatal): {r.stderr[:100]}')
+    except Exception as e:
+        print(f'[SM §4e-coupling] Signal post error (non-fatal): {e}')
+else:
+    print('[SM §4e-coupling] Simulation-behavior coupling OK — no unclosed loops detected.')
+
+COUPLING_EOF
+fi
+```
+
 ---
 
 ## 4g. Codebase hygiene scan (every 3 SM cycles)
