@@ -392,6 +392,26 @@
       "branch": "feat/281",
       "worktree": "../otherness.281",
       "pr_number": 285
+    },
+    "issue-344": {
+      "status": "todo",
+      "title": "feat(sm): \u00a74g codebase hygiene scan \u2014 executable"
+    },
+    "issue-345": {
+      "status": "todo",
+      "title": "feat(coord): \u00a71f SM/PM gate explicit check"
+    },
+    "issue-346": {
+      "status": "todo",
+      "title": "feat(coord): \u00a71f minimum queue depth guard"
+    },
+    "issue-335": {
+      "status": "todo",
+      "title": "feat: docs/design/22-queue-richness.md"
+    },
+    "issue-303": {
+      "status": "todo",
+      "title": "feat: test.sh check 5b failure reason"
     }
   },
   "engineer_slots": {
