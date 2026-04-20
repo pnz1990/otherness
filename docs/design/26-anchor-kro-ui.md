@@ -196,7 +196,7 @@ Until depth scoring is implemented, use:
 - ✅ Journey depth: add error + empty state to all Tier 1 journeys (001-007) — Steps 10-11 added to journey 006 (CEL highlighting error + empty CEL state), Steps 8-9 added to journey 007 (context switcher error + empty/single-context state) (kro-ui PR #TBD, 2026-04-20)
 - ✅ First persona journey: Operator — deploy RGD via designer, verify instances appear, check health indicators — implemented as `test/e2e/journeys/071-operator-persona-journey.spec.ts` in kro-ui (design doc corrected PR #543, 2026-04-20)
 - ✅ Accessibility: run axe assertions on Tier 1 pages (RGD list, DAG, instance list, context switcher) — journey 074 added with @axe-core/playwright, WCAG 2.1 AA, critical/serious violations block CI (kro-ui PR #512, 2026-04-20)
-- 🔲 kro upstream tracking: when kro version bumps, SM opens anchor-growth issue for new API surface
+- ✅ kro upstream tracking: when kro version bumps, SM §4g-anchor-upstream opens anchor-growth issue for new API surface — configurable via anchor.upstream_version_file + anchor.upstream_version_pattern (PR #545, 2026-04-20)
 - 🔲 otherness-config.yaml: `anchor:` section — score_pattern for `[ANCHOR | kro-ui]`, coverage_target: 60, stagnation_sessions: 5
 - 🔲 docs/design/: add design docs for major feature areas (RGD display, instance management, health system, designer) to enable generic gap detection
 

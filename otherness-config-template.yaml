@@ -214,3 +214,5 @@ anchor:
   score_pattern: "PASS=([0-9]+) FAIL=([0-9]+)"        # regex to extract pass/fail from issue comment
   coverage_target: 80                                  # minimum % of features with anchor coverage
   stagnation_sessions: 3                               # sessions without anchor growth before COORD prioritizes it
+  # upstream_version_file: go.mod                       # file to grep for upstream version (e.g. go.mod)
+  # upstream_version_pattern: "github.com/awslabs/kro"  # pattern to find in the file (e.g. kro dependency line)
