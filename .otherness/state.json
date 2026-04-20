@@ -1012,8 +1012,8 @@
       "done_at": "2026-04-20T22:29:44Z"
     },
     "issue-611": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: Cross-project pressure propagation: when otherness identifies a pattern (e.g. \"test covera",
       "labels": [
         "priority/medium",
@@ -1022,7 +1022,10 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 667,
+      "done_at": "2026-04-20T23:28:05Z"
     },
     "issue-610": {
       "state": "done",
@@ -1070,8 +1073,8 @@
       "priority": "low"
     }
   },
-  "sm_cycle_count": 7,
-  "last_sm_at": "2026-04-20T21:30:49Z",
+  "sm_cycle_count": 8,
+  "last_sm_at": "2026-04-20T23:30:00Z",
   "session_heartbeats": {
     "sess-5327084f": {
       "last_seen": "2026-04-20T13:12:45Z",
