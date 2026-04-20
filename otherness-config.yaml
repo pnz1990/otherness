@@ -96,8 +96,10 @@ simulation:
 #
 # See docs/design/24-project-anchor-framework.md for the full design.
 #
-# anchor:
-#   workflow: ""                          # workflow filename that runs the anchor (e.g. pdca.yml)
-#   score_pattern: "PASS=([0-9]+) FAIL=([0-9]+)"  # regex to extract pass/fail from issue comment
-#   coverage_target: 80                   # minimum % of features that must have anchor coverage
-#   stagnation_sessions: 3                # sessions without anchor growth before COORD prioritizes it
+# Note: otherness itself does not have a PDCA/anchor workflow — workflow is empty.
+# Managed projects (kardinal-promoter, kro-ui) configure their own anchor: sections.
+anchor:
+  workflow: ""                                         # no anchor workflow on the otherness repo
+  score_pattern: "PASS=([0-9]+) FAIL=([0-9]+)"        # regex to extract pass/fail from issue comment
+  coverage_target: 80                                  # minimum % of features with anchor coverage
+  stagnation_sessions: 3                               # sessions without growth before COORD prioritizes
