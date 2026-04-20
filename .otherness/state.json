@@ -889,8 +889,8 @@
       "priority": "medium"
     },
     "issue-618": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `SM \u00a74c` learn-cadence enforcement: add an explicit check",
       "labels": [
         "priority/medium",
@@ -899,7 +899,10 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_number": 658,
+      "pr_merged": true,
+      "done_at": "2026-04-20T22:42:29Z"
     },
     "issue-617": {
       "state": "todo",
