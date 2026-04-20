@@ -141,3 +141,5 @@
 | 2026-04-19 | 71 | 1 | 0 | 0 | 20 | 4 | ~3 | #332: two-way command file sync. Doc 20 COMPLETE. Every session on every project now auto-syncs commands. |
 
 | 2026-04-20 | 72 | 1 | 0 | 0 | 12 | 1 | ~5 | Stage 10+: #341 GH_TOKEN preflight validation. Doc 19 updated. 10 todo items from reset PRs. Session throughput design doc queued. |
+
+| 2026-04-20 | 73 | 1 | 0 | 0 | 12 | 1 | ~2 | #343 design doc 21 session_item_limit field marked ✅. Queue: 9 todo. |
