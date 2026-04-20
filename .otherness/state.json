@@ -395,63 +395,13 @@
       "worktree": null,
       "file_spaces": []
     },
-    "issue-567": {
+    "issue-576": {
       "state": "done",
       "status": "done",
-      "title": "feat: otherness-config.yaml: `anchor:` section",
-      "labels": [
-        "priority/medium",
-        "area/agent-loop",
-        "otherness",
-        "size/s",
-        "kind/enhancement"
-      ],
-      "priority": "medium",
+      "title": "feat: spatial collision detection",
       "pr_merged": true,
-      "done_at": "2026-04-20T15:47:54Z"
-    },
-    "issue-568": {
-      "state": "done",
-      "status": "done",
-      "title": "feat: docs/design/: add design docs for major feature areas (RGD display, instance management, h",
-      "labels": [
-        "priority/medium",
-        "area/agent-loop",
-        "otherness",
-        "size/s",
-        "kind/enhancement"
-      ],
-      "priority": "medium",
-      "pr_merged": true,
-      "done_at": "2026-04-20T15:54:07Z"
-    },
-    "issue-569": {
-      "state": "done",
-      "status": "done",
-      "title": "feat: M5b: Restrict Bedrock Resource to specific ARNs",
-      "labels": [
-        "priority/medium",
-        "area/agent-loop",
-        "otherness",
-        "size/s",
-        "kind/enhancement"
-      ],
-      "priority": "medium",
-      "note": "closed: deferred or duplicate"
-    },
-    "issue-570": {
-      "state": "done",
-      "status": "done",
-      "title": "feat: M3: Replace GH_TOKEN PAT with GitHub App",
-      "labels": [
-        "priority/medium",
-        "area/agent-loop",
-        "otherness",
-        "size/s",
-        "kind/enhancement"
-      ],
-      "priority": "medium",
-      "note": "closed: deferred or duplicate"
+      "pr_number": 580,
+      "done_at": "2026-04-20T16:10:56Z"
     }
   },
   "sm_cycle_count": 3,
