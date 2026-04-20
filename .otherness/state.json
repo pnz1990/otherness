@@ -709,6 +709,36 @@
       "pr_merged": false,
       "note": "closed-out-of-scope",
       "done_at": "2026-04-20T07:20:56Z"
+    },
+    "issue-454": {
+      "state": "todo",
+      "issue": 454,
+      "title": "issue-454",
+      "created_at": "2026-04-20T07:25:51Z"
+    },
+    "issue-455": {
+      "state": "todo",
+      "issue": 455,
+      "title": "issue-455",
+      "created_at": "2026-04-20T07:25:51Z"
+    },
+    "issue-456": {
+      "state": "todo",
+      "issue": 456,
+      "title": "issue-456",
+      "created_at": "2026-04-20T07:25:51Z"
+    },
+    "issue-457": {
+      "state": "todo",
+      "issue": 457,
+      "title": "issue-457",
+      "created_at": "2026-04-20T07:25:51Z"
+    },
+    "issue-458": {
+      "state": "todo",
+      "issue": 458,
+      "title": "issue-458",
+      "created_at": "2026-04-20T07:25:51Z"
     }
   },
   "engineer_slots": {
@@ -741,6 +771,11 @@
       "last_seen": "2026-04-20T06:27:49Z",
       "item": "sm-phase-54",
       "cycle": 54
+    },
+    "sess-6d590a23": {
+      "last_seen": "2026-04-20T07:24:51Z",
+      "item": "coord-batch79",
+      "cycle": 1
     }
   },
   "handoff": null,
