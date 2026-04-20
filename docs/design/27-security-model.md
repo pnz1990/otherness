@@ -528,6 +528,7 @@ The following are accepted design tradeoffs, not failures:
 - ✅ GitHub Actions run logs provide immutable audit trail (platform feature)
 - ✅ M1: All action dependencies pinned to SHAs in `otherness-scheduled.yml` and `ci.yml` — `actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683`, `aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c`, `anomalyco/opencode/github@23fb5e0516c99ac04a1aa46c193efda2e1b9bb24` (PR #405, 2026-04-20) ⚠️ Stale — referenced file not found
 - ✅ M2: `agent_version` set in `otherness-config.yaml` to pin otherness clone to SHA `992aad0828e26c5eda8156879d1b0c47e14fc3c6`; `otherness-config-template.yaml` updated with security rationale (PR #478, 2026-04-20)
+- ✅ M3: GitHub App token support added to `otherness-scheduled.yml` — uses `actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3` (v3.1.1, SHA-pinned) when `APP_ID` + `APP_PRIVATE_KEY` secrets are set; falls back to GH_TOKEN PAT for backward compatibility. `otherness-config-template.yaml` and `onboarding-new-project.md` updated with App setup instructions. Attack vectors 3E and 4C eliminated when App is configured. (PR #595, 2026-04-20)
 - ✅ M4: `actions:write` intentionally omitted from `otherness-scheduled.yml` job permissions (2026-04-20) ⚠️ Stale — referenced file not found
 - ✅ M5: AWS Budget alert at $50/day Bedrock spend (2026-04-20)
 - ✅ M6: `agents_path` allowlist validation added to workflow prompt section — blocks paths outside `~/.otherness` (2026-04-20)
@@ -538,7 +539,6 @@ The following are accepted design tradeoffs, not failures:
 ## Future (🔲)
 
 - 🔲 🚫 M5b: Restrict Bedrock Resource to specific ARNs — DEFERRED. opencode uses cross-region inference profile ARNs (arn:aws:bedrock:<region>:<acct>:inference-profile/*) that vary by model version. Resource:* with Budget alert is the current mitigaton. Revisit when ARN patterns stabilize.
-- 🔲 M3: Replace GH_TOKEN PAT with GitHub App — per-repo scoped, non-exportable, auditable (issue #361)
 
 ---
 

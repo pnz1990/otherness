@@ -163,12 +163,29 @@ monitor:
 # When configured: .github/workflows/otherness-scheduled.yml triggers on the cron
 # schedule below, installs otherness, and runs /otherness.run automatically.
 #
-# Setup:
-#   1. Add your LLM provider API key to GitHub repo Secrets:
-#      Settings → Secrets and variables → Actions → New repository secret
-#      Name it to match api_key_secret below (default: ANTHROPIC_API_KEY)
-#   2. The workflow file is created by /otherness.setup automatically.
-#   3. Adjust cron to your preferred cadence.
+# Auth — choose one option:
+#
+#   Option A: GitHub App (M3, recommended — see docs/design/27-security-model.md §M3)
+#     More secure: per-repo scoped, non-exportable, auto-rotates hourly.
+#     Setup steps:
+#       1. Create a GitHub App at https://github.com/settings/apps/new
+#          - Permissions: Repository → Contents (write), Pull requests (write), Issues (write)
+#          - Do NOT grant workflow permission (stays within M4 security model)
+#       2. Install the App on this repo
+#       3. Add two repository secrets (Settings → Secrets and variables → Actions):
+#          APP_ID          — the App's numeric ID (shown on the App settings page)
+#          APP_PRIVATE_KEY — the App's private key (generated on the App settings page)
+#     The workflow auto-detects APP_ID and switches to App token mode.
+#
+#   Option B: Personal Access Token / PAT (legacy — simpler but less secure)
+#     GH_TOKEN — a PAT with repo+workflow scopes (pnz1990 org, all repos)
+#     This is the default if APP_ID is not configured.
+#
+# See onboarding-new-project.md §GitHub App setup for step-by-step instructions.
+#
+# Other settings:
+#   1. The workflow file is created by /otherness.setup automatically.
+#   2. Adjust cron to your preferred cadence.
 #
 # See docs/design/19-scheduled-execution.md for the full design.
 #
