@@ -720,10 +720,11 @@
       "done_at": "2026-04-20T07:27:32Z"
     },
     "issue-455": {
-      "state": "todo",
+      "state": "in_review",
       "issue": 455,
       "title": "issue-455",
-      "created_at": "2026-04-20T07:25:51Z"
+      "created_at": "2026-04-20T07:25:51Z",
+      "pr_number": 459
     },
     "issue-456": {
       "state": "done",
@@ -735,10 +736,13 @@
       "done_at": "2026-04-20T07:32:46Z"
     },
     "issue-457": {
-      "state": "todo",
+      "state": "done",
       "issue": 457,
       "title": "issue-457",
-      "created_at": "2026-04-20T07:25:51Z"
+      "created_at": "2026-04-20T07:25:51Z",
+      "pr_number": 461,
+      "pr_merged": true,
+      "done_at": "2026-04-20T07:36:37Z"
     },
     "issue-458": {
       "state": "done",
