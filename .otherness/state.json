@@ -756,6 +756,72 @@
       "pr_merged": false,
       "note": "closed-duplicate",
       "done_at": "2026-04-20T07:27:32Z"
+    },
+    "issue-464": {
+      "state": "todo",
+      "issue": 464,
+      "title": "feat: validate.sh check for 2-step scheduled workflow",
+      "created_at": "2026-04-20T07:59:23Z",
+      "areas": [
+        "area/tooling"
+      ],
+      "priority": "medium",
+      "size": "s"
+    },
+    "issue-413": {
+      "state": "todo",
+      "issue": 413,
+      "title": "feat: AGENTS.md template anchor section",
+      "created_at": "2026-04-20T07:59:23Z",
+      "areas": [
+        "area/onboarding"
+      ],
+      "priority": "medium",
+      "size": "s"
+    },
+    "issue-405": {
+      "state": "todo",
+      "issue": 405,
+      "title": "security: M1 pin opencode and aws-credentials SHA in workflows",
+      "created_at": "2026-04-20T07:59:23Z",
+      "areas": [
+        "area/tooling"
+      ],
+      "priority": "high",
+      "size": "s"
+    },
+    "issue-469": {
+      "state": "todo",
+      "issue": 469,
+      "title": "hygiene: fix stale Present ref d4/translation.md",
+      "created_at": "2026-04-20T07:59:23Z",
+      "areas": [
+        "area/docs"
+      ],
+      "priority": "low",
+      "size": "xs"
+    },
+    "issue-470": {
+      "state": "todo",
+      "issue": 470,
+      "title": "hygiene: fix stale Present ref otherness.upgrade.md",
+      "created_at": "2026-04-20T07:59:23Z",
+      "areas": [
+        "area/docs"
+      ],
+      "priority": "low",
+      "size": "xs"
+    },
+    "issue-471": {
+      "state": "todo",
+      "issue": 471,
+      "title": "hygiene: fix stale Present ref validate.sh in d4-enforcement",
+      "created_at": "2026-04-20T07:59:23Z",
+      "areas": [
+        "area/docs"
+      ],
+      "priority": "low",
+      "size": "xs"
     }
   },
   "engineer_slots": {
