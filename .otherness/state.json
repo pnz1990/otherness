@@ -208,7 +208,7 @@
       "done_at": "2026-04-20T13:11:06Z"
     },
     "issue-554": {
-      "state": "todo",
+      "state": "done",
       "status": "todo",
       "title": "feat: `/otherness.setup` and `/otherness.onboard`: deploy workflow during project setup",
       "labels": [
@@ -221,7 +221,7 @@
       "priority": "low"
     },
     "issue-553": {
-      "state": "todo",
+      "state": "done",
       "status": "todo",
       "title": "feat: `scripts/validate.sh`: check scheduled workflow exists if `schedule.cron` set",
       "labels": [
@@ -234,7 +234,7 @@
       "priority": "low"
     },
     "issue-552": {
-      "state": "todo",
+      "state": "done",
       "status": "todo",
       "title": "feat: `otherness-config-template.yaml`: `schedule` section added",
       "labels": [
@@ -247,7 +247,7 @@
       "priority": "low"
     },
     "issue-551": {
-      "state": "todo",
+      "state": "done",
       "status": "todo",
       "title": "feat: `otherness-config.yaml`: `schedule.cron` and `schedule.model` fields",
       "labels": [
@@ -260,7 +260,7 @@
       "priority": "low"
     },
     "issue-550": {
-      "state": "todo",
+      "state": "done",
       "status": "todo",
       "title": "feat: `.github/workflows/otherness-scheduled.yml` \u2014 cron workflow using",
       "labels": [
@@ -273,7 +273,7 @@
       "priority": "low"
     },
     "issue-549": {
-      "state": "todo",
+      "state": "done",
       "status": "todo",
       "title": "feat: M3: Replace GH_TOKEN PAT with GitHub App",
       "labels": [
@@ -286,7 +286,7 @@
       "priority": "medium"
     },
     "issue-548": {
-      "state": "todo",
+      "state": "done",
       "status": "todo",
       "title": "feat: M5b: Restrict Bedrock Resource to specific ARNs",
       "labels": [
@@ -299,7 +299,7 @@
       "priority": "medium"
     },
     "issue-547": {
-      "state": "todo",
+      "state": "done",
       "status": "todo",
       "title": "feat: docs/design/: add design docs for major feature areas (RGD display, instance management, h",
       "labels": [
