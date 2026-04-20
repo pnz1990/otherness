@@ -130,9 +130,40 @@ NEEDS_HUMAN=$(gh issue list --repo $REPO --state all --label "needs-human" \
   --json number,createdAt --jq '[.[] | select(.createdAt >= "'$(date -u +%Y-%m-%d)'T00:00:00Z")] | length' 2>/dev/null || echo "0")
 SKILLS=$(ls ~/.otherness/agents/skills/*.md 2>/dev/null | grep -v PROVENANCE | grep -v README | wc -l | xargs)
 
+# §4b: Session outcome classification (design doc 35 §Future → ✅)
+# Count vision PRs: feat/fix/refactor titles that are NOT chore/metrics/session-report
+VISION_PRS=$(gh pr list --repo $REPO --state merged --limit 30 \
+  --json title,mergedAt \
+  --jq "[.[] | select(
+    (.title | test(\"^feat|^fix|^refactor\"; \"i\")) and
+    (.title | test(\"^chore\\\\(sm\\\\)|metrics|session complete|PRs merged|batch \"; \"i\") | not)
+  ) | .title] | length" 2>/dev/null || echo "0")
+
+# Classify session outcome based on vision_prs ratio
+SESSION_OUTCOME=$(python3 -c "
+import sys
+try:
+    vision = int('${VISION_PRS:-0}')
+    merged = int('${MERGED:-0}') if '${MERGED:-0}'.isdigit() else 0
+    if vision == 0:
+        print('chore-only')
+    elif merged > 0 and vision >= merged / 2:
+        print('feature-rich')
+    else:
+        print('mixed')
+except:
+    print('unknown')
+" 2>/dev/null || echo "unknown")
+
+export VISION_PRS SESSION_OUTCOME
+echo "[SM §4b] Session outcome: ${SESSION_OUTCOME} (vision_prs=${VISION_PRS}, prs_merged=${MERGED})"
+
 # Append row to metrics.md
 DATE=$(date +%Y-%m-%d)
 # [AI-STEP] Append a new row to docs/aide/metrics.md with today's metrics.
+# Row format (as of PR that added vision_prs + session_outcome):
+#   | $DATE | $BATCH | $MERGED | $NEEDS_HUMAN | 0 | $SKILLS | $TODO_SHIPPED | ~Xmin | $VISION_PRS | $SESSION_OUTCOME | <notes> |
+# Historical rows (before this PR) have only 9 columns — do not modify them.
 # Use the pull-rebase-retry pattern to push directly to main (low-risk doc change).
 
 # Pull-rebase-retry push pattern (parallel-safe for direct main commits)
@@ -1992,22 +2023,29 @@ try:
 except: print('')
 " 2>/dev/null || echo "")
 
-VISION_PRS=$(gh pr list --repo $REPO --state merged --limit 30 \
-  --json title,mergedAt \
-  --jq "[.[] | select(
-    (.title | test(\"^feat|^fix|^refactor\"; \"i\")) and
-    (.title | test(\"^chore\\\\(sm\\\\)|metrics|session complete|PRs merged\"; \"i\") | not)
-  ) | .title] | length" 2>/dev/null || echo "0")
+# Use VISION_PRS and SESSION_OUTCOME from §4b if already set; recompute if not (§4f called standalone)
+if [ -z "${VISION_PRS+x}" ]; then
+  VISION_PRS=$(gh pr list --repo $REPO --state merged --limit 30 \
+    --json title,mergedAt \
+    --jq "[.[] | select(
+      (.title | test(\"^feat|^fix|^refactor\"; \"i\")) and
+      (.title | test(\"^chore\\\\(sm\\\\)|metrics|session complete|PRs merged|batch \"; \"i\") | not)
+    ) | .title] | length" 2>/dev/null || echo "0")
+  SESSION_OUTCOME="unknown"
+fi
 
-# Throughput signal: AMBER if this run shipped 0 vision PRs
-[ "${VISION_PRS:-0}" -eq 0 ] && HEALTH="AMBER" && THROUGHPUT_WARN=" ⚠️ 0 vision PRs this run"
+# Throughput signal: AMBER if session_outcome is chore-only (design doc 35 §O4)
+if [ "${SESSION_OUTCOME:-unknown}" = "chore-only" ] || [ "${VISION_PRS:-0}" -eq 0 ]; then
+  HEALTH="AMBER"
+  THROUGHPUT_WARN=" ⚠️ ${SESSION_OUTCOME:-chore-only} session (0 vision PRs)"
+fi
 
 ACTION="Active"
 [ "${TODO_COUNT:-0}" -lt 5 ] && ACTION="Refilling queue"
 [ "${TODO_COUNT:-0}" -eq 0 ] && ACTION="Queue empty — running vision+learn"
 
 gh issue comment $REPORT_ISSUE --repo $REPO \
-  --body "[🔄 SDM | ${MY_SESSION_ID:-sess-unknown} | otherness@${OTHERNESS_VERSION:-unknown}] Batch ${SM_CYCLE:-?}. Health: ${HEALTH} | Vision PRs this run: ${VISION_PRS:-0}${THROUGHPUT_WARN:-} | Queue: ${TODO_COUNT:-0} todo ${IN_REVIEW:-0} in_review | Action: ${ACTION}" 2>/dev/null
+  --body "[🔄 SDM | ${MY_SESSION_ID:-sess-unknown} | otherness@${OTHERNESS_VERSION:-unknown}] Batch ${SM_CYCLE:-?}. Health: ${HEALTH} | Outcome: ${SESSION_OUTCOME:-unknown} | Vision PRs: ${VISION_PRS:-0}${THROUGHPUT_WARN:-} | Queue: ${TODO_COUNT:-0} todo ${IN_REVIEW:-0} in_review | Action: ${ACTION}" 2>/dev/null
 
 # §4f-progress: Update docs/aide/progress.md with current state
 # Design ref: docs/design/06-command-surface.md §Future (🔲 → ✅)

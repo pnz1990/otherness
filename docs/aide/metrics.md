@@ -15,13 +15,15 @@
 | `skills_count` | Total skill files in agents/skills/ (excl. PROVENANCE, README) | ↑ (knowledge) |
 | `todo_shipped` | Backlog items moved to done this batch | ↑ (velocity) |
 | `time_to_merge_avg_min` | Average minutes from PR open to merge (excl. CRITICAL tier wait) | ↓ (efficiency) |
+| `vision_prs` | PRs merged that moved a 🔲 Future item to ✅ Present in a design doc | ↑ (product impact) |
+| `session_outcome` | Session classification: `feature-rich` / `mixed` / `chore-only` based on vision_prs ratio | → feature-rich |
 
 ---
 
 ## Batch Log
 
-| Date | Batch | prs_merged | needs_human | ci_red_hours | skills_count | todo_shipped | time_to_merge_avg_min | Notes |
-|---|---|---|---|---|---|---|---|---|
+| Date | Batch | prs_merged | needs_human | ci_red_hours | skills_count | todo_shipped | time_to_merge_avg_min | vision_prs | session_outcome | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|
 | 2026-04-14 | 1 | 1 | 1 | ~0.5 | 4 | 0 | — | Bootstrap: CI fix PR; CRITICAL tier PRs awaiting review |
 | 2026-04-14 | 2 | 4 | 2 | 0 | 5 | 4 | ~12 | Shipped #11 #12 #14 #15; CRITICAL #13 #16 pending human |
 | 2026-04-14 | 3 | 5 | 0 | 0 | 5 | 6 | ~8 | Merged all CRITICAL PRs; shipped #17 #18; Stage 1 complete |
