@@ -82,10 +82,10 @@ No human action. No re-running setup. No manual file operations.
 
 ## Present (✅)
 
-- ✅ `standalone.md` SELF-UPDATE: two-way sync — add new `otherness.*`, remove stale; content-diff before copy; silent if unchanged (PR #332, 2026-04-19)
-- ✅ `bounded-standalone.md`: identical sync step (PR #332, 2026-04-19)
-- ✅ `.opencode/command/otherness.setup.md` Step 4: full two-way sync replaces "skip if exists" (PR #332, 2026-04-19)
-- ✅ `.github/workflows/otherness-scheduled.yml`: "Sync otherness command files" step added after clone (PR #332, 2026-04-19)
+- ✅ `standalone.md` SELF-UPDATE: two-way sync — add new `otherness.*`, remove stale; content-diff before copy; silent if unchanged (PR #332, 2026-04-19) ⚠️ Stale — referenced file not found
+- ✅ `bounded-standalone.md`: identical sync step (PR #332, 2026-04-19) ⚠️ Stale — referenced file not found
+- ✅ `.opencode/command/otherness.setup.md` Step 4: full two-way sync replaces "skip if exists" (PR #332, 2026-04-19) ⚠️ Stale — referenced file not found
+- ✅ `.github/workflows/otherness-scheduled.yml`: "Sync otherness command files" step added after clone (PR #332, 2026-04-19) ⚠️ Stale — referenced file not found
 
 ## Future (🔲)
 
