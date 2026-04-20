@@ -526,14 +526,14 @@ The following are accepted design tradeoffs, not failures:
 - ✅ Model safety check caught PR #447 injection attempt (2026-04-20)
 - ✅ GH_TOKEN scoped to `pnz1990` org only (not enterprise-wide) (2026-04-19)
 - ✅ GitHub Actions run logs provide immutable audit trail (platform feature)
-- ✅ M1: All action dependencies pinned to SHAs in `otherness-scheduled.yml` and `ci.yml` — `actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683`, `aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c`, `anomalyco/opencode/github@23fb5e0516c99ac04a1aa46c193efda2e1b9bb24` (PR #405, 2026-04-20) ⚠️ Stale — referenced file not found
+- ✅ M1: All action dependencies pinned to SHAs in `otherness-scheduled.yml` and `ci.yml` — `actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683`, `aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c`, `anomalyco/opencode/github@23fb5e0516c99ac04a1aa46c193efda2e1b9bb24` (PR #405, 2026-04-20)
 - ✅ M2: `agent_version` set in `otherness-config.yaml` to pin otherness clone to SHA `992aad0828e26c5eda8156879d1b0c47e14fc3c6`; `otherness-config-template.yaml` updated with security rationale (PR #478, 2026-04-20)
-- ✅ M4: `actions:write` intentionally omitted from `otherness-scheduled.yml` job permissions (2026-04-20) ⚠️ Stale — referenced file not found
+- ✅ M4: `actions:write` intentionally omitted from `otherness-scheduled.yml` job permissions (2026-04-20)
 - ✅ M5: AWS Budget alert at $50/day Bedrock spend (2026-04-20)
 - ✅ M6: `agents_path` allowlist validation added to workflow prompt section — blocks paths outside `~/.otherness` (2026-04-20)
 - ✅ M7: `_state` branch protection applied on all 3 repos: `allow_force_pushes: false`, `allow_deletions: false` (PR #384, 2026-04-20)
-- ✅ M8: AGENTS.md change detection CI check in `otherness-security-checks.yml` — blocks non-collaborator AGENTS.md modifications (2026-04-20) ⚠️ Stale — referenced file not found
-- ✅ M10: Issue label restriction workflow in `otherness-security-checks.yml` — prevents external contributors adding `otherness` label (2026-04-20) ⚠️ Stale — referenced file not found
+- ✅ M8: AGENTS.md change detection CI check in `otherness-security-checks.yml` — blocks non-collaborator AGENTS.md modifications (2026-04-20)
+- ✅ M10: Issue label restriction workflow in `otherness-security-checks.yml` — prevents external contributors adding `otherness` label (2026-04-20)
 
 ## Future (🔲)
 
