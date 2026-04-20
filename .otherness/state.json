@@ -488,14 +488,18 @@
       ]
     },
     "403": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Anchor score comment format: PDCA posts `[ANCHOR | kardinal-promoter | DATE] coverage: N/M",
-      "status": "todo"
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
     },
     "404": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Anchor score comment: E2E workflow posts `[ANCHOR | kro-ui | DATE] journeys: J | pass: A f",
-      "status": "todo"
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
     },
     "405": {
       "state": "todo",
@@ -543,39 +547,53 @@
       "status": "todo"
     },
     "414": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: PDCA runs daily (not weekly)",
-      "status": "todo"
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
     },
     "415": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Infrastructure reliability: retry logic for S1 reconcile wait + ArgoCD sync timeout increa",
-      "status": "todo"
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
     },
     "416": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Scenario 7: config-only promotion",
-      "status": "todo"
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
     },
     "417": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Scenario 8: full multi-stage assertion",
-      "status": "todo"
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
     },
     "418": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Scenario 9: health check failure blocks promotion",
-      "status": "todo"
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
     },
     "419": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Scenarios 10-12: CLI completeness",
-      "status": "todo"
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
     },
     "420": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Scenarios 13-15: policy gate completeness",
-      "status": "todo"
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
     }
   },
   "engineer_slots": {
