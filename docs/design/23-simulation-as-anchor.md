@@ -168,7 +168,7 @@ docs/aide/metrics.md             — existing batch log (SM already writes this)
 ## Future (🔲)
 
 - 🔲 `SM §4e`: read `metrics.md`, calibrate `simulate.py` parameters against real data, write `.otherness/sim-prediction.json` — runs every 5 SM cycles (NOTE: calibration runs every 10; sim-prediction.json written by SM §4d after calibration)
-- 🔲 `scripts/simulate.py`: add `--calibrate` flag — reads metrics.md, grid-searches parameters, outputs best fit as JSON
+- 🚫 `scripts/simulate.py`: add `--calibrate` flag — DEPRECATED: \`scripts/calibrate.py\` provides this functionality as a standalone script. No duplication needed.
 - 🔲 `~/.otherness/scripts/sim-defaults.json`: fleet defaults — written by otherness SM, shipped to managed projects via self-update
 - 🔲 `otherness-config.yaml`: `simulation.calibration_cycles` field (default: 5) — how often SM re-calibrates
 - 🔲 Managed project adoption: kardinal-promoter and kro-ui SM inherit otherness defaults, re-calibrate after ≥5 batches
