@@ -216,3 +216,4 @@ anchor:
   stagnation_sessions: 3                               # sessions without anchor growth before COORD prioritizes it
   # upstream_version_file: go.mod                       # file to grep for upstream version (e.g. go.mod)
   # upstream_version_pattern: "github.com/awslabs/kro"  # pattern to find in the file (e.g. kro dependency line)
+  # journeys_dir: "test/e2e/journeys"                   # path to journey files; used by SM §4g-anchor-parity
