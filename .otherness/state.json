@@ -21,20 +21,9 @@
       "note": "deferred"
     },
     "issue-513": {
-      "state": "todo",
-      "status": "todo",
-      "title": "feat: Infrastructure reliability: retry logic for S1 reconcile wait + ArgoCD sync timeout increa",
-      "labels": [
-        "priority/medium",
-        "area/agent-loop",
-        "otherness",
-        "size/s",
-        "kind/enhancement"
-      ],
-      "priority": "medium",
-      "branch": null,
-      "worktree": null,
-      "file_spaces": []
+      "state": "done",
+      "status": "done",
+      "pr_number": 532
     },
     "issue-514": {
       "state": "todo",
