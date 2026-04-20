@@ -599,3 +599,77 @@ Without any of these, agents will either crash or produce wrong behavior.
 - `docs/aide/pr-template.md` — optional, agents open PRs without it
 - `.specify/memory/constitution.md` — recommended but gracefully absent; agent reads AGENTS.md instead
 - `.specify/memory/sdlc.md` — the process is embedded in `standalone.md`; this file is for the old multi-session model
+
+---
+
+## First-run smoke test
+
+After running `/otherness.run` for the first time, verify the system is working within 20 minutes:
+
+### 3 signals of a healthy first run
+
+**Signal 1 — Startup comment on report issue**
+```bash
+REPO=$(git remote get-url origin | sed 's|.*github.com[:/]||;s|\.git$||')
+REPORT_ISSUE=$(python3 -c "
+import re
+for line in open('AGENTS.md'):
+    m = re.match(r'^REPORT_ISSUE:\s*(\S+)', line.strip())
+    if m: print(m.group(1)); break
+" 2>/dev/null || echo "")
+gh issue view "$REPORT_ISSUE" --repo "$REPO" --comments \
+  --jq '.comments[-1].body' 2>/dev/null | head -3
+# Expected: "[STANDALONE | sess-XXXX | otherness@...] Session started. Repo: ..."
+```
+
+**Signal 2 — feat/* branch appeared on remote (item claimed)**
+```bash
+git fetch --prune --quiet 2>/dev/null
+git ls-remote --heads origin 'feat/*' | head -5
+# Expected: at least one feat/issue-XXXX branch
+```
+
+**Signal 3 — Open PR created**
+```bash
+gh pr list --repo "$REPO" --state open --json number,title,createdAt \
+  --jq '.[] | "#\(.number) \(.title[:60]) (\(.createdAt[:10]))"' 2>/dev/null | head -5
+# Expected: at least one open PR from this session
+```
+
+### If 20 minutes pass with no open PR and no [NEEDS HUMAN] issue
+
+1. **Check _state branch activity** (most reliable signal):
+   ```bash
+   gh api "repos/$REPO/branches/_state" \
+     --jq '.commit.commit.committer.date' 2>/dev/null
+   # If older than 30 minutes: session may have stalled or not started
+   ```
+
+2. **Check GitHub Actions run**:
+   ```bash
+   gh run list --repo "$REPO" --limit 3 \
+     --json status,conclusion,name,createdAt \
+     --jq '.[] | "\(.status) \(.conclusion) \(.name) \(.createdAt[:16])"'
+   # Look for in_progress or completed runs
+   ```
+
+3. **Check for [NEEDS HUMAN] issues**:
+   ```bash
+   gh issue list --repo "$REPO" --state open --label "needs-human" \
+     --json number,title --jq '.[] | "#\(.number) \(.title[:60])"' 2>/dev/null
+   # If present: read the issue — it will say exactly what failed
+   ```
+
+4. **If first run produces only a vision scan but no implementation**: Normal. The
+   dual-step workflow (Step A = vision, Step B = implementation) means the first
+   scheduled run generates the queue. The second run implements from it.
+
+### Common first-run failures on new projects
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| No startup comment on report issue | Agent did not start / wrong GH_TOKEN | Check GitHub Actions secrets |
+| Startup comment but no feat/* branch | No vision.md → empty queue | Run `/otherness.vibe-vision` first |
+| feat/* branch but no PR | Build/test failing | Check CI run for errors |
+| [NEEDS HUMAN: no vision] | docs/aide/vision.md empty | Run `/otherness.vibe-vision` |
+| PR opens but CI fails | scripts/validate.sh failing | Run validate.sh locally and fix |
