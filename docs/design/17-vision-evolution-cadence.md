@@ -109,6 +109,7 @@ system never freezes.
 - ✅ Marker conventions: `docs/design/00-marker-conventions.md` defines ✅/🔲/⚠️ Inferred/⚠️ Observed/🚫 (PR #307-310, 2026-04-19)
 
 ## Future (🔲)
+- 🔲 ⚠️ Inferred: competitive gap observation — Hermes/Multica agent loops have more sophisticated skill confidence scoring than otherness; consider PM §5c competitive observation to evaluate. (autonomous-vision, 2026-04-20)
 
 *(All planned vision evolution items shipped.)*
 
