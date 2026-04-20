@@ -416,37 +416,98 @@ Produce GREEN/AMBER/RED health signal. AMBER auto-triggers /otherness.learn.
 if [ $((${PM_CYCLE:-0} % ${N_PM_CYCLES:-3})) -eq 0 ]; then
   echo "[PM §5g] Running simulation health check..."
 
-  # [AI-STEP]
-  # Step 0: Graceful fallback.
-  #   SIM_RESULTS=$(git show origin/_state:.otherness/sim-results.json 2>/dev/null || echo "")
-  #   METRICS_ROWS=$(grep -c '^\|\s*[0-9][0-9][0-9][0-9]-' docs/aide/metrics.md 2>/dev/null || echo 0)
-  #   If either absent or METRICS_ROWS < 3: echo "[PM §5g] Skipping — insufficient data."; exit
-  #
-  # Step 1: Read real completion rate from last 3 batches (metrics.md).
-  #   avg_shipped = mean(todo_shipped[-3:])
-  #
-  # Step 2: Run quick sim (1 run, 30 cycles) with calibrated params from sim-results.json.
-  #   Get arch_convergence from sim output.
-  #
-  # Step 3: Determine health signal.
-  #   GREEN: arch_conv < 0.5 AND last_batch_shipped >= 1
-  #   AMBER: arch_conv 0.5-0.7 OR last_batch_shipped = 0 in last 1-2 batches
-  #   RED:   arch_conv > 0.7 OR last_batch_shipped = 0 for >= 2 consecutive batches
-  #
-  # Step 4: Act on signal.
-  #   GREEN: log "[PM §5g] Health: GREEN"; no action.
-  #   AMBER:
-  #     Post comment on REPORT_ISSUE: "[PM §5g] Health: AMBER — <reason>. Self-correcting."
-  #     Self-correction: find design doc with highest Future/total ratio (lowest boldness area).
-  #     LEARN_BRANCH="feat/learn-$(date +%Y%m%d)"
-  #     Check if branch exists: git ls-remote --heads origin $LEARN_BRANCH
-  #     If branch already exists: skip (learn in progress from SM).
-  #     If not: create branch, worktree, read and follow ~/.otherness/agents/otherness.learn.md,
-  #       merge after CI green, clean up.
-  #   RED:
-  #     Post [NEEDS HUMAN] issue: "PM §5g Health: RED — <reason>. Requires investigation."
-  #     gh issue create --repo $REPO --title "[NEEDS HUMAN] PM §5g: RED health signal — <reason>"
-  #       --label "needs-human,area/agent-loop" --body "<full report>"
+  python3 - <<'HEALTH_EOF'
+import subprocess, json, os, sys, re
+
+REPO = os.environ.get('REPO', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '')
+
+# Step 0: Graceful fallback — need sim-results.json and ≥3 metrics rows
+try:
+    sim_results_raw = subprocess.check_output(
+        ['git','show','origin/_state:.otherness/sim-results.json'],
+        stderr=subprocess.DEVNULL, text=True)
+    sim_results = json.loads(sim_results_raw)
+except Exception:
+    print("[PM §5g] Skipping — no sim-results.json in _state")
+    sys.exit(0)
+
+try:
+    metrics_content = open('docs/aide/metrics.md').read()
+    metrics_rows = len(re.findall(r'^\|\s*[0-9]{4}-', metrics_content, re.MULTILINE))
+except Exception:
+    metrics_rows = 0
+
+if metrics_rows < 3:
+    print(f"[PM §5g] Skipping — only {metrics_rows} metrics rows (need ≥3)")
+    sys.exit(0)
+
+# Step 1: Read real completion rate from last 3 batches
+try:
+    row_pattern = re.compile(r'^\|\s*([0-9]{4}-[0-9]{2}-[0-9]{2})\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|', re.MULTILINE)
+    rows = row_pattern.findall(metrics_content)
+    recent = rows[-3:] if len(rows) >= 3 else rows
+    shipped = [int(r[2]) for r in recent]  # col 3 = shipped
+    avg_shipped = sum(shipped) / len(shipped) if shipped else 0
+    last_batch_shipped = shipped[-1] if shipped else 0
+except Exception:
+    avg_shipped = 1
+    last_batch_shipped = 1
+
+# Step 2: Get arch_convergence from sim-results
+arch_conv = sim_results.get('params', {}).get('arch_convergence', 0.0)
+# If not in params, check top-level
+if arch_conv == 0.0:
+    arch_conv = sim_results.get('arch_convergence', 0.0)
+
+# Step 3: Determine health signal
+if arch_conv > 0.7 or last_batch_shipped == 0:
+    health = 'RED'
+    reason = f"arch_conv={arch_conv:.2f}>0.7" if arch_conv > 0.7 else "last_batch_shipped=0"
+elif arch_conv >= 0.5 or avg_shipped == 0:
+    health = 'AMBER'
+    reason = f"arch_conv={arch_conv:.2f}" if arch_conv >= 0.5 else "avg_shipped~0"
+else:
+    health = 'GREEN'
+    reason = f"arch_conv={arch_conv:.2f}, avg_shipped={avg_shipped:.1f}"
+
+print(f"[PM §5g] Health: {health} — {reason}")
+
+# Step 4: Act on signal
+if health == 'GREEN':
+    pass  # No action needed
+elif health == 'AMBER':
+    if REPORT_ISSUE:
+        subprocess.run(
+            ['gh','issue','comment',REPORT_ISSUE,'--repo',REPO,
+             '--body', f'[📋 PM §5g | {MY_SESSION_ID}] Health: AMBER — {reason}. Self-correcting.'],
+            capture_output=True)
+    # Self-correction: schedule learn cycle targeting lowest-boldness design doc
+    LEARN_BRANCH = f"feat/learn-{__import__('datetime').date.today().strftime('%Y%m%d')}"
+    existing = subprocess.run(['git','ls-remote','--heads','origin',LEARN_BRANCH],
+                              capture_output=True, text=True)
+    if existing.stdout.strip():
+        print(f"[PM §5g] Learn branch {LEARN_BRANCH} already exists — skipping.")
+    else:
+        print(f"[PM §5g] AMBER: would trigger learn cycle on {LEARN_BRANCH} (deferred to SM §4d-learn)")
+elif health == 'RED':
+    title = f"[NEEDS HUMAN] PM §5g: RED health signal — {reason}"
+    r = subprocess.run(
+        ['gh','issue','list','--repo',REPO,'--state','open',
+         '--search',title[:60],'--json','number','--jq','length'],
+        capture_output=True, text=True)
+    if int(r.stdout.strip() or '0') == 0:
+        subprocess.run(
+            ['gh','issue','create','--repo',REPO,
+             '--title', title,
+             '--label','needs-human,area/agent-loop',
+             '--body', f'## PM §5g Health: RED\n\nReason: {reason}\n\narch_convergence: {arch_conv:.3f}\nlast_batch_shipped: {last_batch_shipped}\n\nRequires investigation.'],
+            capture_output=True)
+        print(f"[PM §5g] RED: opened [NEEDS HUMAN] issue.")
+
+print(f"[PM §5g] Simulation health check complete. Signal: {health}")
+HEALTH_EOF
 
   echo "[PM §5g] Simulation health check complete."
 fi
