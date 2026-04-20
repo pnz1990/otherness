@@ -370,6 +370,79 @@ finally:
 subprocess.run(['git','worktree','prune'], capture_output=True)
 SIMRES_EOF
 
+        # Write sim-prediction.json to _state branch (design doc 23 §Step 2)
+        # Derives floor/ceiling from simulation run with calibrated parameters.
+        python3 - <<'SIMPRED_EOF'
+import subprocess, json, os, tempfile, datetime, shutil
+
+state_wt = os.path.join(tempfile.gettempdir(), 'otherness-simpred-' + str(os.getpid()))
+sm_cycle = os.environ.get('SM_CYCLE', '0')
+
+try:
+    params = json.load(open('scripts/sim-params.json'))
+except Exception:
+    print("[SM §4d] sim-params.json not found — skipping sim-prediction.json")
+    exit(0)
+
+try:
+    import sys as _sys; _sys.path.insert(0, '.')
+    from scripts.simulate import SimConfig, run_simulation
+    cfg = SimConfig(
+        n_agents=4, n_cycles=50, seed=42,
+        decay_rate=params.get('decay_rate', 0.92),
+        jump_multiplier=params.get('jump_multiplier', 1.6),
+        skill_boldness_coefficient=params.get('skill_boldness_coefficient', 0.015),
+    )
+    metrics, _ = run_simulation(cfg)
+    last_10 = [m.completion_rate for m in metrics[-10:]]
+    sorted_rates = sorted(last_10)
+    prs_floor = max(1, int(sorted_rates[1]))      # 10th percentile
+    prs_ceiling = max(prs_floor + 1, int(sorted_rates[-2]) + 1)  # 90th percentile
+    arch_conv = round(metrics[-1].mean_arch_convergence, 3)
+    skill_growth = round(
+        (metrics[-1].skill_diversity - metrics[-5].skill_diversity) / 5
+        if len(metrics) >= 5 else 0.0, 3)
+except Exception as e:
+    print(f"[SM §4d] sim-prediction simulation error (non-fatal): {e}")
+    exit(0)
+
+prediction = {
+    "prs_next_batch_floor": prs_floor,
+    "prs_next_batch_ceiling": prs_ceiling,
+    "arch_convergence_score": arch_conv,
+    "skill_growth_rate": skill_growth,
+    "calibrated_params": {
+        "decay_rate": params.get("decay_rate"),
+        "jump_multiplier": params.get("jump_multiplier"),
+        "skill_boldness_coefficient": params.get("skill_boldness_coefficient"),
+    },
+    "calibrated_at": datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+}
+
+try:
+    if os.path.exists(state_wt):
+        subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
+    subprocess.run(['git','worktree','add','--no-checkout',state_wt,'origin/_state'],
+                   capture_output=True, check=True)
+    target = os.path.join(state_wt, '.otherness', 'sim-prediction.json')
+    os.makedirs(os.path.dirname(target), exist_ok=True)
+    json.dump(prediction, open(target, 'w'), indent=2)
+    subprocess.run(['git','-C',state_wt,'add',target], capture_output=True)
+    subprocess.run(['git','-C',state_wt,'commit',
+                    '-m', f'calibration: sim-prediction.json (sm_cycle={sm_cycle})'],
+                   capture_output=True)
+    subprocess.run(['git','-C',state_wt,'push','origin','HEAD:_state'], capture_output=True)
+    print(f"[SM §4d] sim-prediction.json written: floor={prs_floor}, ceiling={prs_ceiling}, "
+          f"arch_conv={arch_conv}, skill_growth={skill_growth}")
+except Exception as e:
+    print(f"[SM §4d] sim-prediction write error (non-fatal): {e}")
+finally:
+    try:
+        subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
+    except: pass
+subprocess.run(['git','worktree','prune'], capture_output=True)
+SIMPRED_EOF
+
         # Read arch_convergence from latest sim-params.json
         ARCH_CONV=$(python3 -c "
 import json, os
