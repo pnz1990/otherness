@@ -813,8 +813,8 @@
       "done_at": "2026-04-20T23:09:49Z"
     },
     "issue-624": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `agents/onboard.md` vision inference quality: after writing `vision.md`, run the vision do",
       "labels": [
         "priority/medium",
@@ -823,7 +823,10 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 672,
+      "done_at": "2026-04-20T23:46:29Z"
     },
     "issue-623": {
       "state": "done",
