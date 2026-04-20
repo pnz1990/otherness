@@ -213,10 +213,10 @@ The agent reads this pattern to track coverage ratio across sessions.
 - ✅ Scenarios 10-12: CLI completeness — `kardinal get bundles` (S10), `kardinal delete bundle` (S11), `kardinal get steps` (S12) all in PDCA (2026-04-20; design doc corrected PR #533)
 - ✅ Scenarios 13-15: policy gate completeness — S13 (multiple gates, prod blocked on weekend), S14 (custom expression soak gate simulate), S15 (emergency override K-09 command) added to kardinal-promoter PDCA (PR #874, 2026-04-20)
 - ✅ Scenarios 16-18: health adapter coverage — S16 (pipeline stages API structural check), S17 (MetricCheck CRD presence for Prometheus adapter), S18 (pipeline spec dry-run validation for custom health config) added to kardinal-promoter PDCA (PR #874, 2026-04-20)
+- ✅ Scenarios 19-21: real-world complexity — S19 (3+ concurrent bundles), S20 (app with bad image / readiness failure), S21 (SRE explain+rollback full flow) added to kardinal-promoter PDCA (PR #874, 2026-04-20)
 
 ## Future (🔲)
 
-- 🔲 Scenarios 19-21: real-world complexity — 3+ concurrent bundles, app readiness failure, SRE rollback+explain flow
 - 🔲 Scenarios 22-24: persona journeys — developer full lifecycle, platform engineer pipeline setup, SRE incident response
 - 🔲 Playwright integration in PDCA — first 3 UI scenarios (bundle status, pipeline graph, rollback button)
 - 🔲 Feature→scenario gap detection: SM §4g-anchor reads ✅ Present items from docs/design/*.md, diffs against this coverage matrix, opens anchor-growth issues for uncovered features
