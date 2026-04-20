@@ -149,3 +149,5 @@
 | 2026-04-20 | 75 | 17 | 2 | 0 | 12 | 10 | ~2 | PRs #375-#384: SM simulation loop complete, anchor framework, security M7. 10 items shipped. |
 
 | 2026-04-20 | 76 | 2 | 0 | 0 | 12 | 2 | ~5 | #387 fix(ci) security-checks push-noop. #393 feat(coord) §1c roadmap source. CI gate unblocked. Queue: 50+ design doc items. |
+
+| 2026-04-20 | 77 | 36 | 1 | 0 | 12 | 5 | ~10 | #400 fix ci YAML, #421 SM §4e calibration, #422 anchor template, #423 calibration_cycles, #424 Anchor section, #425 pin SHA. CI unblocked. |
