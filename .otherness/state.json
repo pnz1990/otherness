@@ -772,8 +772,8 @@
       "priority": "medium"
     },
     "issue-627": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `docs/aide/progress.md` automated update: SM \u00a74f must update `progress.md` after every bat",
       "labels": [
         "priority/medium",
@@ -782,7 +782,10 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 674,
+      "done_at": "2026-04-20T23:50:58Z"
     },
     "issue-626": {
       "state": "done",
