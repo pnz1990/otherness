@@ -826,8 +826,8 @@
       "priority": "medium"
     },
     "issue-623": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `onboarding-existing-project.md` + `onboarding-new-project.md`: add a \"first-run smoke tes",
       "labels": [
         "priority/medium",
@@ -836,7 +836,10 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 671,
+      "done_at": "2026-04-20T23:44:04Z"
     },
     "issue-622": {
       "state": "done",
