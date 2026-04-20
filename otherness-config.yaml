@@ -65,6 +65,6 @@ monitor:
 # Set up: add ANTHROPIC_API_KEY (or your provider key) to GitHub repo secrets.
 # See .github/workflows/otherness-scheduled.yml and docs/design/19-scheduled-execution.md
 schedule:
-  cron: "0 */6 * * *"       # every 6 hours — adjust per project cadence
+  cron: "0 * * * *"         # HOURLY — locked. Do not change to */6 or slower.
   model: "amazon-bedrock/global.anthropic.claude-sonnet-4-6"
   api_key_secret: "ANTHROPIC_API_KEY"   # GitHub Actions secret name containing the API key
