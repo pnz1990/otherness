@@ -314,6 +314,89 @@ with open('.otherness/state.json') as f: s = json.load(f)
 s['sm_cycle_count'] = s.get('sm_cycle_count', 0) + 1
 with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
 " 2>/dev/null
+
+# §4c: Explicit 14-day learn-cadence enforcement (design doc 31 §Future → ✅)
+# The Type B rate trigger (§4d-learn) is necessary but not sufficient.
+# This check enforces a hard 14-day floor regardless of Type B rate.
+python3 - <<'LEARN_CADENCE_EOF'
+import re, datetime, os, subprocess
+
+REPO = os.environ.get('REPO', '')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+MAX_DAYS = 14
+
+# Step 1: Read last PROVENANCE.md entry date
+try:
+    content = open(os.path.expanduser('~/.otherness/agents/skills/PROVENANCE.md')).read()
+    dates = re.findall(r'^## (\d{4}-\d{2}-\d{2})', content, re.MULTILINE)
+    if dates:
+        last_date = datetime.date.fromisoformat(sorted(dates)[-1])
+        days_since = (datetime.date.today() - last_date).days
+    else:
+        days_since = 999
+except Exception:
+    days_since = 999  # PROVENANCE.md missing — treat as overdue
+
+print(f'[SM §4c] Learn cadence: {days_since}d since last PROVENANCE.md entry (max={MAX_DAYS}d)')
+
+if days_since < MAX_DAYS:
+    print(f'[SM §4c] Learn cadence OK — {days_since}d < {MAX_DAYS}d floor. No action needed.')
+else:
+    # Step 2: Check if a learn issue is already open or a learn branch is active
+    try:
+        open_learn = subprocess.run(
+            ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+             '--search', 'learn(arch)', '--json', 'number', '--jq', 'length'],
+            capture_output=True, text=True, timeout=15)
+        open_count = int(open_learn.stdout.strip() or '0')
+    except Exception:
+        open_count = 0
+
+    try:
+        learn_branch = subprocess.run(
+            ['git', 'ls-remote', '--heads', 'origin'],
+            capture_output=True, text=True, timeout=10)
+        branch_active = any(
+            'feat/learn' in line
+            for line in learn_branch.stdout.splitlines()
+        )
+    except Exception:
+        branch_active = False
+
+    if open_count > 0:
+        print(f'[SM §4c] Learn issue already open ({open_count}) — cadence reminder satisfied.')
+    elif branch_active:
+        print(f'[SM §4c] Learn branch active — cadence satisfied (in progress).')
+    else:
+        print(f'[SM §4c] Learn overdue ({days_since}d > {MAX_DAYS}d floor) — opening priority/high issue.')
+        title = f'learn(arch): cadence enforcement — PROVENANCE.md overdue ({days_since}d since last learn)'
+        body = (
+            f'## Learn cadence enforcement\n\n'
+            f'`PROVENANCE.md` last entry was {days_since} days ago. '
+            f'The 14-day floor (design doc 31 §Future) requires a learn session.\n\n'
+            f'This issue was opened automatically by SM §4c cadence enforcement.\n\n'
+            f'## What to do\n'
+            f'Run `/otherness.learn` in the next available session. '
+            f'Pick a repo from a different paradigm than the last session.\n\n'
+            f'Reported by SM §4c | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}'
+        )
+        r = subprocess.run(
+            ['gh', 'issue', 'create', '--repo', REPO,
+             '--title', title, '--label', 'otherness,priority/high,area/skills,kind/chore',
+             '--body', body],
+            capture_output=True, text=True, timeout=15)
+        if r.returncode == 0:
+            print(f'[SM §4c] Learn cadence issue created: {r.stdout.strip()}')
+            # Post to report issue
+            subprocess.run(
+                ['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO,
+                 '--body', f'[SM §4c | {MY_SESSION_ID}] Learn cadence overdue ({days_since}d). Created learn issue.'],
+                capture_output=True, timeout=10)
+        else:
+            print(f'[SM §4c] Failed to create learn issue: {r.stderr.strip()[:100]}')
+LEARN_CADENCE_EOF
 ```
 
 ---
