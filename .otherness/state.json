@@ -541,7 +541,7 @@
       "done_at": "2026-04-20T00:34:40Z"
     },
     "340": {
-      "state": "assigned",
+      "state": "done",
       "title": "feat(config): add maqa.session_item_limit field to otherness-config.yaml and template",
       "design_doc": "21-session-throughput.md",
       "depends_on": [],
@@ -557,7 +557,9 @@
       "file_spaces": [
         "otherness-config.yaml",
         "otherness-config-template.yaml"
-      ]
+      ],
+      "pr_merged": true,
+      "done_at": "2026-04-20T00:41:04Z"
     }
   },
   "engineer_slots": {
