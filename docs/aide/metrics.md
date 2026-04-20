@@ -187,3 +187,4 @@
 | 2026-04-20 | 92 | 1 | 0 | 0 | 12 | 1 | ~25 min | PR #605 security(m3): GitHub App token support. M3 ✅ — attack vectors 3E and 4C mitigated. Health: GREEN. |
 
 | 2026-04-20 | 93 | 1 | 0 | 0 | 12 | 1 | ~30 min | PR #629 feat(coord): queue refusal guard §1c-guard — enrich chore-only queues before claiming; design doc 35 created. Health: GREEN. |
+| 2026-04-20 | 94 | 1 | 0 | 0 | 12 | 1 | ~35 min | PR #663 feat(sm): condensed §4f batch report — 8-line format with details block. Health: GREEN. |
