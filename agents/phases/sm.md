@@ -422,6 +422,89 @@ if [ $((${BATCH_COUNT:-0} % 10)) -eq 0 ] && [ "${BATCH_COUNT:-0}" -gt 0 ]; then
   # Do NOT modify any skill file. Do NOT post [NEEDS HUMAN].
   # Example comment: "[SM] Skill confidence: 12 skills checked. unreferenced: [X]. stale: [Y]."
 fi
+
+# §4c: Skill decay tracking (design doc 31 §Future → ✅)
+# Skills added >90 days ago without a PROVENANCE.md mention are candidates for revision.
+if [ $((${BATCH_COUNT:-0} % 10)) -eq 0 ] && [ "${BATCH_COUNT:-0}" -gt 0 ]; then
+  python3 - <<'DECAY_EOF'
+import os, datetime, re, subprocess
+
+REPO = os.environ.get('REPO', '')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
+SKILLS_DIR = os.path.expanduser('~/.otherness/agents/skills')
+PROVENANCE = os.path.join(SKILLS_DIR, 'PROVENANCE.md')
+DECAY_DAYS = 90
+now = datetime.date.today()
+
+if not os.path.isdir(SKILLS_DIR):
+    print('[SM §4c-decay] Skills dir not found — skipping.')
+    exit(0)
+
+# Read PROVENANCE.md for skill name mentions (last 90 days)
+recent_mentions = set()
+try:
+    prov = open(PROVENANCE).read()
+    # Find all YYYY-MM-DD headers and collect text in subsequent 30 lines
+    blocks = re.split(r'^## (\d{4}-\d{2}-\d{2})', prov, flags=re.MULTILINE)
+    for i in range(1, len(blocks), 2):
+        try:
+            block_date = datetime.date.fromisoformat(blocks[i])
+            if (now - block_date).days <= DECAY_DAYS and i+1 < len(blocks):
+                # Extract skill file mentions from this block
+                mentions = re.findall(r'\b([\w-]+\.md)\b', blocks[i+1])
+                recent_mentions.update(m.replace('.md','') for m in mentions)
+                # Also check for skill name mentions (without .md)
+                for fname in os.listdir(SKILLS_DIR):
+                    if fname.endswith('.md') and fname not in ('PROVENANCE.md','README.md'):
+                        skill_name = fname.replace('.md','')
+                        if skill_name in blocks[i+1]:
+                            recent_mentions.add(skill_name)
+        except Exception:
+            pass
+except Exception:
+    pass
+
+# Check each skill file age via git log
+stale_skills = []
+try:
+    for fname in sorted(os.listdir(SKILLS_DIR)):
+        if fname in ('PROVENANCE.md', 'README.md') or not fname.endswith('.md'):
+            continue
+        fpath = os.path.join(SKILLS_DIR, fname)
+        skill_name = fname.replace('.md', '')
+        try:
+            r = subprocess.run(
+                ['git', '-C', SKILLS_DIR, 'log', '--format=%ci', '-1', '--', fname],
+                capture_output=True, text=True, timeout=10)
+            if r.stdout.strip():
+                date_str = r.stdout.strip()[:10]
+                file_date = datetime.date.fromisoformat(date_str)
+                age_days = (now - file_date).days
+            else:
+                age_days = 0
+        except Exception:
+            age_days = 0
+
+        if age_days >= DECAY_DAYS and skill_name not in recent_mentions:
+            stale_skills.append((skill_name, age_days))
+except Exception as e:
+    print(f'[SM §4c-decay] Error scanning skills: {e}')
+    exit(0)
+
+if stale_skills:
+    stale_list = ', '.join(f'{n} ({d}d)' for n, d in stale_skills[:5])
+    msg = (f'[SM §4c-decay | {MY_SESSION_ID}] Skill decay check: '
+           f'{len(stale_skills)} skill(s) not reinforced in {DECAY_DAYS}d: {stale_list}. '
+           f'Consider refreshing via the next learn session.')
+    print(f'[SM §4c-decay] {len(stale_skills)} stale skills: {stale_list}')
+    subprocess.run(
+        ['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO, '--body', msg],
+        capture_output=True, timeout=10)
+else:
+    print(f'[SM §4c-decay] All skills reinforced within {DECAY_DAYS} days. No decay detected.')
+DECAY_EOF
+fi
 ```
 
 ---
