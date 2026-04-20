@@ -179,7 +179,7 @@ done
 ## Present (✅)
 
 - ✅ Design doc created (this file) (2026-04-20)
-- ✅ `otherness-scheduled.yml` in otherness repo: split into two OpenCode steps — Step 7: Vision scan (Step A, `continue-on-error: true`) + Step 8: Run otherness (Step B) (PR #440, 2026-04-20) ⚠️ Stale — referenced file not found
+- ✅ `otherness-scheduled.yml` in otherness repo: split into two OpenCode steps — Step 7: Vision scan (Step A, `continue-on-error: true`) + Step 8: Run otherness (Step B) (PR #440, 2026-04-20)
 - ✅ `otherness-config-template.yaml`: `schedule.vibe_vision_step: true` field added with comment (PR #456, 2026-04-20)
 - ✅ `scripts/validate.sh`: check that scheduled workflow has ≥2 opencode steps when `vibe_vision_step: true` — exits with error if only 1 step found (PR #464, 2026-04-20)
 

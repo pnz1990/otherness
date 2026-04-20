@@ -936,12 +936,15 @@ if os.path.isdir('docs/design'):
                 file_refs = re.findall(r'\`([a-zA-Z0-9_./-]+\.[a-zA-Z]{1,6})\`', item)
                 for fref in file_refs:
                     # Check existence using the original path (handles dotfile paths like .opencode/, .specify/)
-                    # and a glob fallback for bare filenames that live in subdirectories (e.g. validate.sh → scripts/validate.sh)
+                    # and glob fallbacks for bare filenames in subdirectories or dotdirs (e.g. validate.sh → scripts/,
+                    # otherness-scheduled.yml → .github/workflows/)
                     import glob as _glob
                     _fref_exists = (
                         os.path.exists(fref) or
                         os.path.exists(f'./{fref}') or
-                        bool(_glob.glob(f'**/{fref}', recursive=True))
+                        bool(_glob.glob(f'**/{fref}', recursive=True)) or
+                        bool(_glob.glob(f'.github/**/{fref}', recursive=True)) or
+                        bool(_glob.glob(f'.opencode/**/{fref}', recursive=True))
                     )
                     if not _fref_exists:
                         title = f'hygiene: stale Present item in {fname} — {fref} not found'
