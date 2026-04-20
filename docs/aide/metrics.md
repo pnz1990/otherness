@@ -156,3 +156,5 @@
 
 | 2026-04-20 | 79 | 2 | 2 | 0 | 12 | 2 | ~4 | #448 §4g-anchor-score + #459 §4g-anchor-parity merged. Both CRITICAL-A; 5-check self-review passed. Conflict resolved. alibi _state stale (scheduled loop just added). Health: GREEN. |
 
+| 2026-04-20 | 80 | 3 | 0 | 0 | 12 | 5 | ~3 | #472 doc fix (design doc 24 ref), #473 false-positive stale markers removed (23 markers across 9 docs), #467 validate.sh dual-step check. 3 items closed as already-done (413, 405, hygiene). Health: GREEN. |
+
