@@ -523,22 +523,40 @@ The following are accepted design tradeoffs, not failures:
 
 - ✅ Workflow only runs on `schedule` + `workflow_dispatch` — not on PRs (2026-04-19)
 - ✅ OIDC credentials (no stored AWS keys) — expires in 1 hour (2026-04-19)
-- ✅ Model safety check caught PR #447 injection attempt (2026-04-20)
-- ✅ GH_TOKEN scoped to `pnz1990` org only (not enterprise-wide) (2026-04-19)
 - ✅ GitHub Actions run logs provide immutable audit trail (platform feature)
-- ✅ M1: All action dependencies pinned to SHAs in `otherness-scheduled.yml` and `ci.yml` — `actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683`, `aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c`, `anomalyco/opencode/github@23fb5e0516c99ac04a1aa46c193efda2e1b9bb24` (PR #405, 2026-04-20) ⚠️ Stale — referenced file not found
-- ✅ M2: `agent_version` set in `otherness-config.yaml` to pin otherness clone to SHA `992aad0828e26c5eda8156879d1b0c47e14fc3c6`; `otherness-config-template.yaml` updated with security rationale (PR #478, 2026-04-20)
-- ✅ M3: GitHub App token support added to `otherness-scheduled.yml` — uses `actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3` (v3.1.1, SHA-pinned) when `APP_ID` + `APP_PRIVATE_KEY` secrets are set; falls back to GH_TOKEN PAT for backward compatibility. `otherness-config-template.yaml` and `onboarding-new-project.md` updated with App setup instructions. Attack vectors 3E and 4C eliminated when App is configured. (PR #605, 2026-04-20)
-- ✅ M4: `actions:write` intentionally omitted from `otherness-scheduled.yml` job permissions (2026-04-20) ⚠️ Stale — referenced file not found
-- ✅ M5: AWS Budget alert at $50/day Bedrock spend (2026-04-20)
-- ✅ M6: `agents_path` allowlist validation added to workflow prompt section — blocks paths outside `~/.otherness` (2026-04-20)
-- ✅ M7: `_state` branch protection applied on all 3 repos: `allow_force_pushes: false`, `allow_deletions: false` (PR #384, 2026-04-20)
-- ✅ M8: AGENTS.md change detection CI check in `otherness-security-checks.yml` — blocks non-collaborator AGENTS.md modifications (2026-04-20) ⚠️ Stale — referenced file not found
-- ✅ M10: Issue label restriction workflow in `otherness-security-checks.yml` — prevents external contributors adding `otherness` label (2026-04-20) ⚠️ Stale — referenced file not found
+- ✅ M1: All action dependencies SHA-pinned in `otherness-scheduled.yml` on otherness, kardinal-promoter, and kro-ui. Pins: `actions/checkout@11bd71901...`, `aws-actions/configure-aws-credentials@ff717079...`, `anomalyco/opencode/github@23fb5e05...` (otherness/kp) and `@27db54c8...` (kro-ui). No `@latest` or floating tags anywhere. (2026-04-20)
+- ✅ M2: `agent_version` set in `otherness-config.yaml` on all 3 projects — pins otherness clone to a specific SHA. otherness: `992aad08...`, kardinal-promoter and kro-ui: `4daf5ea6...` (2026-04-20). **Requirement: must update `agent_version` when pulling otherness changes — it does not auto-advance.**
+- ✅ M3: GitHub App token support implemented in `otherness-scheduled.yml` — generates per-repo short-lived token when `OTHERNESS_USE_APP_TOKEN=true`. Falls back to GH_TOKEN PAT when App not configured. Attack vectors 3E and 4C are closed **only when App is configured**. PAT fallback leaves cross-repo blast radius open. (PR #605, 2026-04-20)
+- ✅ M4: `actions:write` intentionally omitted from `otherness-scheduled.yml` job permissions on all 3 projects. Agent triggers CI via git push, not Actions API. Workflow file modification via Actions API blocked. (2026-04-20)
+- ✅ M5: AWS Budget alert configured at $50/day Bedrock spend (2026-04-20). Bedrock Resource remains `*` — M5b (restrict to specific ARNs) deferred, see Future.
+- ✅ M6: `agents_path` allowlist validation in both Step A and Step B workflow prompts — refuses to execute if `agents_path` is outside `~/.otherness`. Applied on all 3 projects. (2026-04-20)
+- ✅ M7: `_state` branch protection on all 3 repos: `allow_force_pushes: false`, `allow_deletions: false`, `required_linear_history: true`. **Residual gap**: direct push by any repo collaborator is still possible on free/standard GitHub — restricting push to specific actors requires GitHub Enterprise or branch restrictions (paid feature). With M3 App token configured, the App identity is the only one with a legitimate reason to push `_state`; anomalous pushes are detectable in audit logs. (2026-04-20)
+- ✅ M8: AGENTS.md change detection in `otherness-security-checks.yml` — non-collaborator modification fails CI. Applied on all 3 projects. (2026-04-20)
+- ✅ M10: Issue label restriction in `otherness-security-checks.yml` — removes `otherness` label applied by non-collaborators. Applied on all 3 projects. (2026-04-20)
+- ✅ `docs/security.md` rewritten — no contradictions, residual risks explicitly stated, PAT fallback cross-repo risk documented, M7 partial mitigation documented (2026-04-20)
+
+## Risk matrix (current)
+
+| Attack vector | Likelihood | Impact | Status | Notes |
+|---|---|---|---|---|
+| 3A: anomalyco@latest supply chain | Medium | Critical | ✅ Closed | M1 — all SHAs pinned |
+| 3B: otherness clone unpinned | Low | Critical | ✅ Closed | M2 — agent_version set on all 3 projects |
+| 3E: GH_TOKEN cross-repo scope | Medium | High | ⚠️ Partial | M3 closes it when App configured; PAT fallback leaves it open |
+| 4C: cross-repo contamination | Medium | Medium | ⚠️ Partial | Same as 3E — App closes it |
+| 3F: actions:write workflow mod | Low | High | ✅ Closed | M4 — permissions block omits actions:write |
+| 1C: _state branch direct push | Low | Medium | ⚠️ Partial | M7 blocks force/delete; direct push by collaborator still possible on free plan |
+| 2B: agents_path injection | Low | Critical | ✅ Closed | M6 — allowlist check in both workflow prompts |
+| 2A: AGENTS.md prompt injection | Medium | High | ⚠️ Partial | M8 blocks non-collaborators; insider or merged PR still possible |
+| 2D: Issue queue injection | Medium | Low | ✅ Closed | M10 — label restriction workflow |
+| 3D: Bedrock Resource:* cost abuse | Low | Medium | ⚠️ Partial | Budget alert; no model ARN restriction (M5b deferred) |
+| 3C: bash:allow exfiltration | Low | Critical | ⚠️ Accepted | Required for function; reduced by M1+M2+M3 |
+| 4A: Audit trail forgery | Low | Low | ⚠️ Accepted | GA run logs immutable; issue comments are not |
 
 ## Future (🔲)
 
-- 🔲 🚫 M5b: Restrict Bedrock Resource to specific ARNs — DEFERRED. opencode uses cross-region inference profile ARNs (arn:aws:bedrock:<region>:<acct>:inference-profile/*) that vary by model version. Resource:* with Budget alert is the current mitigaton. Revisit when ARN patterns stabilize.
+- 🔲 🚫 M5b: Restrict Bedrock Resource to specific ARNs — DEFERRED. opencode uses cross-region inference profile ARNs (arn:aws:bedrock:<region>:<acct>:inference-profile/*) that vary by model version. Resource:* with Budget alert is the current mitigation. Revisit when ARN patterns stabilize.
+- 🔲 M3 App adoption: explicitly track which managed projects have the GitHub App configured vs using PAT fallback. SM §4a should check and surface AMBER health signal when a project is running on PAT with cross-repo blast radius.
+- 🔲 M7 full close: when GitHub App (M3) is active, add a state write integrity check — validate that `state.json` pushes to `_state` originate from the App identity. Any push from a non-App identity triggers [NEEDS HUMAN].
 
 ---
 
