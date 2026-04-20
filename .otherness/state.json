@@ -939,8 +939,8 @@
       "done_at": "2026-04-20T22:46:24Z"
     },
     "issue-616": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `SM \u00a74e` / `PM \u00a75g`: simulation-behavior coupling gate",
       "labels": [
         "priority/medium",
@@ -949,7 +949,10 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 668,
+      "done_at": "2026-04-20T23:34:12Z"
     },
     "issue-615": {
       "state": "todo",
