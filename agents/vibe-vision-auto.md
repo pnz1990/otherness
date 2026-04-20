@@ -454,7 +454,9 @@ Scans performed:
 - Scan 1: promote shipped 🔲 Future → ✅ Present (matched against merged PRs)
 - Scan 2: flag stale ✅ Present items (referenced files missing)
 - Scan 3: infer 🔲 Future items from untracked TODO/FIXME in code
-- Scan 4: deprecate 🔲 Future items stale >90 days with no open issue" 2>/dev/null || true
+- Scan 4: deprecate 🔲 Future items stale >90 days with no open issue
+
+Signed-off-by: otherness[bot] <otherness[bot]@users.noreply.github.com>" 2>/dev/null || true
 
   echo "[VIBE-VISION-AUTO] Vision scan committed. Step B will see updated docs."
 
