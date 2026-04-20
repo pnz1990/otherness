@@ -158,6 +158,15 @@ _merge_pr() {
   local pr_num="$1"
   local repo="$2"
 
+  # Step 0 — update branch if behind main (strict status checks require up-to-date branches)
+  # gh pr update-branch merges main into the PR branch so required_status_checks.strict passes.
+  _MERGE_STATE=$(gh pr view "$pr_num" --repo "$repo" --json mergeStateStatus --jq '.mergeStateStatus' 2>/dev/null)
+  if [ "$_MERGE_STATE" = "BEHIND" ]; then
+    echo "[QA] Branch is BEHIND main — updating before merge attempt."
+    gh pr update-branch "$pr_num" --repo "$repo" 2>/dev/null || true
+    sleep 5  # let GitHub process the update
+  fi
+
   # Step 1 — try normal merge
   if gh pr merge "$pr_num" --repo "$repo" --squash --delete-branch 2>/dev/null; then
     return 0
