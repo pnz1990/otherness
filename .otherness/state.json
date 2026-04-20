@@ -998,6 +998,18 @@
     },
     "issue-482": {
       "state": "done"
+    },
+    "issue-488": {
+      "state": "done"
+    },
+    "issue-490": {
+      "state": "done"
+    },
+    "issue-491": {
+      "state": "done"
+    },
+    "issue-493": {
+      "state": "done"
     }
   },
   "engineer_slots": {
@@ -1035,6 +1047,11 @@
       "last_seen": "2026-04-20T07:24:51Z",
       "item": "coord-batch79",
       "cycle": 1
+    },
+    "sess-f8eb3339": {
+      "last_seen": "2026-04-20T10:19:36Z",
+      "item": "session_complete",
+      "cycle": 10
     }
   },
   "handoff": null,
