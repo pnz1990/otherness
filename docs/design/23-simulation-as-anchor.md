@@ -166,12 +166,12 @@ docs/aide/metrics.md             — existing batch log (SM already writes this)
 - ✅ `SM §4d`: write `sim-prediction.json` to `_state` after each calibration — fields: `prs_next_batch_floor`, `prs_next_batch_ceiling`, `arch_convergence_score`, `skill_growth_rate`, `calibrated_params`, `calibrated_at` (PR #349, 2026-04-20) ⚠️ Stale — referenced file not found
 - ✅ `scripts/sim-defaults.json`: fleet defaults — written by otherness SM §4d after calibration (otherness-repo-only gate); shipped to managed projects via `git -C ~/.otherness pull` self-update (PR #353, 2026-04-20)
 - ✅ `SM §4e-i`: per-N-cycle calibration update — reads `metrics.md`, runs `calibrate.py --runs 2`, writes `sim-prediction.json` to `_state` every `simulation.calibration_cycles` cycles (default: 5); frequency configurable via `otherness-config.yaml` (PR #401, 2026-04-20)
+- ✅ `otherness-config.yaml`: `simulation.calibration_cycles` field (default: 5) — controls SM §4e-i re-calibration frequency (PR #408, 2026-04-20)
 
 ## Future (🔲)
 
 
 - 🚫 `scripts/simulate.py`: add `--calibrate` flag — DEPRECATED: `scripts/calibrate.py` provides this functionality as a standalone script. No duplication needed.
-- 🔲 `otherness-config.yaml`: `simulation.calibration_cycles` field (default: 5) — how often SM re-calibrates
 - 🔲 Managed project adoption: kardinal-promoter and kro-ui SM inherit otherness defaults, re-calibrate after ≥5 batches
 
 ---
