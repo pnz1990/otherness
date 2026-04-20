@@ -477,9 +477,15 @@
       ]
     },
     "402": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: `otherness-config-template.yaml`: add `anchor:` section (workflow, score_pattern, coverage",
-      "status": "todo"
+      "status": "done",
+      "pr_number": 422,
+      "pr_merged": true,
+      "done_at": "2026-04-20T06:14:03Z",
+      "areas": [
+        "area/onboarding"
+      ]
     },
     "403": {
       "state": "todo",
