@@ -358,7 +358,7 @@
       "assigned_at": "2026-04-20T14:54:19Z"
     },
     "issue-560": {
-      "state": "assigned",
+      "state": "done",
       "title": "feat(definition-of-done): Journey 9 \u2014 autonomous vision synthesis loop",
       "priority": "low",
       "labels": [
@@ -373,11 +373,23 @@
       "assigned_at": "2026-04-20T15:01:55Z"
     },
     "issue-561": {
-      "state": "todo",
+      "state": "done",
       "title": "docs(design): add docs/design/34-stage-9-autonomous-vision.md \u2014 stage-level doc",
       "priority": "low",
       "labels": [
         "otherness"
+      ],
+      "branch": null,
+      "worktree": null,
+      "file_spaces": []
+    },
+    "issue-565": {
+      "state": "done",
+      "title": "chore(pm): PM \u00a75c \u2014 research Hermes/Multica skill confidence scoring patterns",
+      "priority": "low",
+      "labels": [
+        "otherness",
+        "kind/chore"
       ],
       "branch": null,
       "worktree": null,
