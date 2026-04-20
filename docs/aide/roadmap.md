@@ -1,8 +1,54 @@
 # otherness: Development Roadmap
 
 > Based on: docs/aide/vision.md
+> Last updated: 2026-04-20
 
-The build order is: tooling first, then agent loop improvements, then the self-improvement flywheel, then the eternal loop, then autonomous vision.
+The build order is: tooling first, then agent loop improvements, then the self-improvement flywheel, then the eternal loop, then autonomous vision, then perpetual vision pressure.
+
+---
+
+## ✅ Stage 9: Autonomous Vision Synthesis — COMPLETE (2026-04-20)
+
+The loop never stalls when the queue empties. `agents/autonomous-vision.md` runs when queue is empty, synthesises `🔲 ⚠️ Inferred` items, COORD picks them up. Validated: batch 87 queue emptied, 4 ⚠️ Inferred items synthesised, 2 shipped same batch.
+
+---
+
+## ✅ Stage 10: Scheduled Execution — COMPLETE (2026-04-20)
+
+`/otherness.run` executes on a schedule without human action. GitHub Actions cron runs hourly. Dual-step workflow (Step A: vibe-vision-auto, Step B: run) deployed on otherness, kardinal-promoter, kro-ui. Vision pressure context injected into Step A prompts.
+
+---
+
+## Stage 11: Perpetual Vision Pressure — The Agent Raises Its Own Bar
+
+**Goal:** The human never needs to manually update the vision pressure prompts. The agent reads what shipped, scores the current pressure context against reality, and rewrites the bar when it has been substantially met. Vision pressure compounds rather than decays.
+
+### Why this stage exists
+
+Today the pressure context was written by a human in one session. It will become stale
+within days. Without this stage, the loop eventually exhaust the named items and drifts
+back to chores — the same failure mode we observed before the pressure prompts were added.
+
+### Deliverables
+
+- `agents/vibe-vision-auto.md` SCAN 5: score current pressure context, rewrite when >60% addressed or >30 days old (design doc 37)
+- SM §4f: vision alignment signal — AMBER when 0 design-doc-backed PRs shipped in session (design doc 35)
+- COORD §1b: vision-pressure-aware claiming — prefer items backed by current design doc Future items; `vision_backed_todo` replaces `total_todo` for queue-depth guard (design doc 36)
+- `state.json`: `vision_aligned` boolean per batch (design doc 35)
+- SM §4a: two-consecutive-AMBER triggers automatic queue audit issue (design doc 35)
+- Cross-project pressure propagation: pattern identified across ≥2 managed projects updates all affected project pressure prompts (design doc 37)
+
+### The threshold for "Stage 11 is working"
+
+The human has not touched a pressure prompt in 14 days. The pressure prompts on all
+three managed projects have been rewritten at least once by SCAN 5. The SM health
+signal correctly shows AMBER for at least one session that shipped only chores.
+The human reads the latest pressure blocks and finds them sharper than what was written
+on 2026-04-20 — reflecting what has actually shipped since then.
+
+### Dependencies
+
+Stage 10 (dual-step workflow must be running for SCAN 5 to have a context to rewrite)
 
 ---
 
