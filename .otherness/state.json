@@ -395,13 +395,12 @@
       "worktree": null,
       "file_spaces": []
     },
-    "issue-576": {
+    "issue-577": {
       "state": "done",
       "status": "done",
-      "title": "feat: spatial collision detection",
       "pr_merged": true,
-      "pr_number": 580,
-      "done_at": "2026-04-20T16:10:56Z"
+      "pr_number": 582,
+      "done_at": "2026-04-20T16:17:57Z"
     }
   },
   "sm_cycle_count": 3,
