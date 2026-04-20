@@ -32,8 +32,8 @@ generically, for any project using otherness.
 - ✅ Deprecated marker `🚫` — COORD queue-gen skips `🔲` items containing `🚫` (PR #209, 2026-04-17)
 - ✅ Self-seeding check in COORD startup — §1b vision check: opens [NEEDS HUMAN] issue once when docs/aide/vision.md absent, proceeds with empty queue (PR #244, 2026-04-18)
 - ✅ Codebase hygiene scan — SM §4g: scans agents/*.md and scripts/*.{sh,py} every 20 SM cycles; files with no design doc coverage get kind/chore issues; duplicate-suppressed; graceful fallback (PR #258, 2026-04-18)
-- ✅ PM §5f: periodic doc health scan — Steps 0-5: Present item PR ref check, Future item shipping check, freshness metric (>60d stale); duplicate-suppressed; graceful fallback (PR #287 integration, 2026-04-19)
-- ✅ Design doc freshness metric — Step 5 in PM §5f: git log age per design doc, stale docs get kind/docs issue; PR #287 integration, 2026-04-19)
+- ✅ PM §5f: periodic doc health scan — Steps 0-5: Present item PR ref check, Future item shipping check, freshness metric (>60d stale); duplicate-suppressed; graceful fallback; merge conflict resolved (PR #287 integration, 2026-04-19; fix PR #208, 2026-04-20)
+- ✅ Design doc freshness metric — Step 5 in PM §5f: git log age per design doc, stale docs get kind/docs issue (PR #287 integration, 2026-04-19; fix PR #208, 2026-04-20)
 - ✅ Codebase hygiene scan — SM §4g: every 20 cycles, agents/+scripts/ coverage check; PR #287 integration, 2026-04-19)
 - ✅ Self-seeding check in COORD startup — §1b vision check gate; PR #244, 2026-04-18)
 

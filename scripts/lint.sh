@@ -47,6 +47,19 @@ if b'\x00' in content:
     ERRORS=$((ERRORS+1))
   fi
 
+  # Check for git merge conflict markers
+  if python3 -c "
+import sys, re
+content = open('$file').read()
+if re.search(r'^<{7} |^={7}$|^>{7} ', content, re.MULTILINE):
+    sys.exit(1)
+" 2>/dev/null; then
+    :
+  else
+    echo "  ERROR: $filename contains git merge conflict markers"
+    ERRORS=$((ERRORS+1))
+  fi
+
 done
 
 # Check that standalone.md has the required phase headers
