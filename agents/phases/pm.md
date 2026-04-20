@@ -512,25 +512,36 @@ Suggest /otherness.vibe-vision when the vision hasn't been updated and queue is 
 if [ $((${PM_CYCLE:-0} % ${N_PM_CYCLES:-3})) -eq 0 ]; then
   echo "[PM §5k] Checking vision age..."
 
-  # [AI-STEP]
-  # Step 1: Check if queue is empty AND design docs have no recent activity.
-  #   TODO_COUNT=$(python3 -c "import json; s=json.load(open('.otherness/state.json')); print(len([d for d in s.get('features',{}).values() if d.get('state')=='todo']))")
-  #   if [ "${TODO_COUNT:-0}" -gt 0 ]: echo "[PM §5k] Queue active — skipping vision age check."; exit
-  #
-  # Step 2: Check last design doc activity (git log on docs/design/).
-  #   LAST_DESIGN_COMMIT=$(git log -1 --format=%ct -- docs/design/ 2>/dev/null || echo "0")
-  #   DESIGN_AGE_DAYS=$(python3 -c "import time; print(int((time.time() - int('$LAST_DESIGN_COMMIT')) / 86400))")
-  #
-  # Step 3: If DESIGN_AGE_DAYS > 30 (queue empty AND no new design activity):
-  #   TITLE="[📋 PM] Vision may need updating — queue has been empty and no new design activity in ${DESIGN_AGE_DAYS}d"
-  #   EXISTING=$(gh issue list --repo $REPO --state open --search "Vision may need updating" --json number --jq 'length')
-  #   if [ "$EXISTING" -eq 0 ]:
-  #     gh issue comment $REPORT_ISSUE --repo $REPO \
-  #       --body "[📋 PM §5k] The vision has not been updated in ${DESIGN_AGE_DAYS}d and the queue is empty.
-  #               Consider running /otherness.vibe-vision to expand the roadmap.
-  #               (This is a suggestion, not a blocker — the loop continues in standby.)"
-  #
-  # Step 4: If DESIGN_AGE_DAYS <= 30: echo "[PM §5k] Vision active (${DESIGN_AGE_DAYS}d ago)."; exit
+  TODO_COUNT=$(python3 -c "
+import json
+try:
+    s = json.load(open('.otherness/state.json'))
+    print(len([d for d in s.get('features',{}).values() if d.get('status')=='todo']))
+except: print(0)
+" 2>/dev/null || echo "0")
+
+  if [ "${TODO_COUNT:-0}" -gt 0 ]; then
+    echo "[PM §5k] Queue active (${TODO_COUNT} todo) — skipping vision age check."
+  else
+    LAST_DESIGN_COMMIT=$(git log -1 --format=%ct -- docs/design/ 2>/dev/null || echo "0")
+    DESIGN_AGE_DAYS=$(python3 -c "import time; print(int((time.time() - int('$LAST_DESIGN_COMMIT')) / 86400))" 2>/dev/null || echo "0")
+
+    if [ "${DESIGN_AGE_DAYS:-0}" -gt 30 ]; then
+      EXISTING=$(gh issue list --repo $REPO --state open \
+        --search "Vision may need updating" --json number --jq 'length' 2>/dev/null || echo "1")
+      if [ "${EXISTING:-1}" -eq 0 ]; then
+        gh issue comment $REPORT_ISSUE --repo $REPO \
+          --body "[📋 PM §5k] The vision has not been updated in ${DESIGN_AGE_DAYS}d and the queue is empty.
+Consider running \`/otherness.vibe-vision\` to expand the roadmap with new direction.
+(This is a suggestion — the loop continues in standby.)" 2>/dev/null
+        echo "[PM §5k] Vision stale (${DESIGN_AGE_DAYS}d) — posted vibe-vision suggestion."
+      else
+        echo "[PM §5k] Vision stale (${DESIGN_AGE_DAYS}d) — suggestion already posted, skipping."
+      fi
+    else
+      echo "[PM §5k] Vision active (${DESIGN_AGE_DAYS}d since last design doc update)."
+    fi
+  fi
 
   echo "[PM §5k] Vision age check complete."
 fi
