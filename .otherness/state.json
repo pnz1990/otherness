@@ -500,6 +500,19 @@
       "priority": "low",
       "pr_merged": false,
       "done_at": "already-implemented"
+    },
+    "issue-595": {
+      "title": "M3: Replace GH_TOKEN PAT with GitHub App",
+      "state": "done",
+      "pr_merged": true,
+      "pr_number": 605,
+      "done_at": "2026-04-20T18:39:31Z",
+      "priority": "medium",
+      "labels": [
+        "priority/medium",
+        "area/tooling",
+        "kind/enhancement"
+      ]
     }
   },
   "sm_cycle_count": 3,
