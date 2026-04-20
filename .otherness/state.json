@@ -343,13 +343,14 @@
       "done_at": "2026-04-20T13:54:53Z"
     }
   },
-  "sm_cycle_count": 2,
-  "last_sm_at": "2026-04-20T12:15:00Z",
+  "sm_cycle_count": 3,
+  "last_sm_at": "2026-04-20T13:57:42Z",
   "session_heartbeats": {
     "sess-5327084f": {
       "last_seen": "2026-04-20T13:12:45Z",
       "item": "sm-complete",
       "cycle": 1
     }
-  }
+  },
+  "pm_cycle_count": 1
 }
