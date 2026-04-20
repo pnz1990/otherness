@@ -674,30 +674,33 @@ _candidates.sort(key=lambda x: _item_sort_key(x[0], x[1]))
 
 for id, d in _candidates:
     # Spatial collision detection: skip if item's file_spaces overlap with active claims
-    # [AI-STEP]
-    # AREA_TO_SPACES = {
-    #   'area/ui': ['src/components/', 'src/styles/', 'src/hooks/'],
-    #   'area/controller': ['internal/', 'pkg/', 'api/'],
-    #   'area/cli': ['cmd/', 'internal/cli/'],
-    #   'area/docs': ['docs/', 'README.md'],
-    #   'area/release': ['.github/workflows/', 'Makefile'],
-    #   'area/graph': ['internal/graph/', 'scripts/'],
-    #   'area/agent-loop': ['agents/', 'scripts/'],
-    # }
-    # candidate_spaces = []
-    # for label in d.get('labels', []) + [d.get('design_doc','')]:
-    #     candidate_spaces += AREA_TO_SPACES.get(label, [])
-    #
-    # active_spaces = []
-    # for other_id, other_d in features.items():
-    #     if other_d.get('state') in ('assigned', 'in_review') and other_id != id:
-    #         active_spaces += other_d.get('file_spaces', [])
-    #
-    # def overlaps(a, b):
-    #     return any(x.startswith(y) or y.startswith(x) for x in a for y in b)
-    #
-    # if candidate_spaces and active_spaces and overlaps(candidate_spaces, active_spaces):
-    #     continue  # skip — spatial collision
+    AREA_TO_SPACES = {
+        'area/ui': ['src/components/', 'src/styles/', 'src/hooks/'],
+        'area/controller': ['internal/', 'pkg/', 'api/'],
+        'area/cli': ['cmd/', 'internal/cli/'],
+        'area/docs': ['docs/', 'README.md'],
+        'area/release': ['.github/workflows/', 'Makefile'],
+        'area/graph': ['internal/graph/', 'scripts/'],
+        'area/agent-loop': ['agents/', 'scripts/'],
+        'area/tooling': ['scripts/', '.github/'],
+        'area/onboarding': ['agents/onboard.md', 'onboarding-'],
+        'area/skills': ['agents/skills/'],
+    }
+    candidate_spaces = []
+    for label in d.get('labels', []):
+        candidate_spaces += AREA_TO_SPACES.get(label, [])
+
+    active_spaces = []
+    for other_id, other_d in features.items():
+        if other_d.get('state') in ('assigned', 'in_review') and other_id != id:
+            active_spaces += other_d.get('file_spaces', [])
+
+    def overlaps(a, b):
+        return any(x.startswith(y) or y.startswith(x) for x in a for y in b)
+
+    # Fail-open: if either side has no spaces, no collision detected
+    if candidate_spaces and active_spaces and overlaps(candidate_spaces, active_spaces):
+        continue  # skip — spatial collision with active item
     print(id); break
 " 2>/dev/null)
 
@@ -829,20 +832,23 @@ s['features']['$ITEM_ID'].update({
     'branch': '$MY_BRANCH',
     'worktree': '$MY_WORKTREE',
     # Spatial coordination: declare file_spaces at claim time
-    # [AI-STEP] Estimate file spaces from item labels and design doc area:
-    # AREA_TO_SPACES = {'area/ui': ['src/components/','src/styles/','src/hooks/'],
-    #   'area/controller': ['internal/','pkg/','api/'],
-    #   'area/cli': ['cmd/','internal/cli/'],
-    #   'area/docs': ['docs/','README.md'],
-    #   'area/release': ['.github/workflows/','Makefile'],
-    #   'area/graph': ['internal/graph/','scripts/'],
-    #   'area/agent-loop': ['agents/','scripts/']}
-    # item_labels = s['features']['$ITEM_ID'].get('labels', [])
-    # file_spaces = []
-    # for lbl in item_labels:
-    #     file_spaces += AREA_TO_SPACES.get(lbl, [])
-    # s['features']['$ITEM_ID']['file_spaces'] = file_spaces
-    'file_spaces': [],  # populated by the [AI-STEP] above at runtime
+    _AREA_TO_SPACES = {
+        'area/ui': ['src/components/', 'src/styles/', 'src/hooks/'],
+        'area/controller': ['internal/', 'pkg/', 'api/'],
+        'area/cli': ['cmd/', 'internal/cli/'],
+        'area/docs': ['docs/', 'README.md'],
+        'area/release': ['.github/workflows/', 'Makefile'],
+        'area/graph': ['internal/graph/', 'scripts/'],
+        'area/agent-loop': ['agents/', 'scripts/'],
+        'area/tooling': ['scripts/', '.github/'],
+        'area/onboarding': ['agents/onboard.md', 'onboarding-'],
+        'area/skills': ['agents/skills/'],
+    }
+    _item_labels = s['features']['$ITEM_ID'].get('labels', [])
+    _file_spaces = []
+    for _lbl in _item_labels:
+        _file_spaces += _AREA_TO_SPACES.get(_lbl, [])
+    'file_spaces': list(set(_file_spaces)),
 })
 s.setdefault('session_heartbeats', {})['$MY_SESSION_ID'] = {
     'last_seen': datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),

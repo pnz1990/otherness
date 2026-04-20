@@ -91,7 +91,7 @@ spread across the codebase.
 - ✅ AREA_TO_SPACES: configurable in otherness-config-template.yaml as `maqa.area_file_spaces` (PR #299-300, 2026-04-19)
 
 ## Future (🔲)
-- 🔲 ⚠️ Inferred: spatial collision detection — coord.md §1e [AI-STEP] is a comment block, not executable; actual AREA_TO_SPACES map and overlap check should be implemented as executable Python in coord.md §1e claim block (agents/phases/coord.md, 2026-04-20)
+- ✅ ⚠️ Inferred: spatial collision detection — coord.md §1e [AI-STEP] converted to executable Python: AREA_TO_SPACES map + overlap check in candidate selection, file_spaces computation in claim block (PR #TBD, 2026-04-20)
 
 *(All planned spatial coordination items shipped.)*
 
