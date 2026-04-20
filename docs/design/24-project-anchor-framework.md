@@ -166,8 +166,8 @@ toward completeness rather than claiming completeness it doesn't have.
 
 ## Future (🔲)
 
-- 🔲 `docs/design/25-anchor-kardinal-promoter.md` — kardinal-promoter anchor design (PDCA expansion matrix, CLI/UI surface, infrastructure reliability, feature→scenario gap)
-- 🔲 `docs/design/26-anchor-kro-ui.md` — kro-ui anchor design (E2E journey suite growth, feature→journey coverage, kro API surface, persona coverage)
+- ✅ `docs/design/25-anchor-kardinal-promoter.md` — kardinal-promoter anchor design (PDCA expansion matrix, CLI/UI surface, infrastructure reliability, feature→scenario gap) (2026-04-20)
+- ✅ `docs/design/26-anchor-kro-ui.md` — kro-ui anchor design (E2E journey suite growth, feature→journey coverage, kro API surface, persona coverage) (2026-04-20)
 
 ---
 
