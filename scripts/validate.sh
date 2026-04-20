@@ -219,6 +219,43 @@ if [ -n "$SCHEDULE_CRON" ]; then
     exit 1
   else
     echo "  OK: scheduled workflow present (cron: $SCHEDULE_CRON)"
+
+    # Check dual-step workflow when vibe_vision_step is true
+    # Design ref: docs/design/28-dual-step-scheduled-workflow.md
+    VIBE_VISION_STEP=$(python3 -c "
+import re
+try:
+    section = None
+    for line in open('otherness-config.yaml'):
+        s = re.match(r'^(\w[\w_]*):', line)
+        if s: section = s.group(1)
+        if section == 'schedule':
+            m = re.match(r'\s+vibe_vision_step:\s*(true|false)', line)
+            if m: print(m.group(1)); break
+except: pass
+" 2>/dev/null || echo "true")  # default: true
+
+    if [ "${VIBE_VISION_STEP:-true}" = "true" ]; then
+      # Count 'uses: anomalyco/opencode' steps in the workflow
+      OPENCODE_STEP_COUNT=$(python3 -c "
+import re
+try:
+    content = open('$WORKFLOW_FILE').read()
+    # Count step blocks that use the opencode action
+    steps = re.findall(r'uses:\s*anomalyco/opencode', content)
+    print(len(steps))
+except:
+    print(0)
+" 2>/dev/null || echo "0")
+
+      if [ "${OPENCODE_STEP_COUNT:-0}" -lt 2 ]; then
+        echo "  ERROR: schedule.vibe_vision_step=true but $WORKFLOW_FILE has only ${OPENCODE_STEP_COUNT} opencode step(s) (need ≥2)."
+        echo "         Add Step A (vibe-vision) before Step B (run). See docs/design/28-dual-step-scheduled-workflow.md."
+        exit 1
+      else
+        echo "  OK: scheduled workflow has ${OPENCODE_STEP_COUNT} opencode steps (dual-step: vision + run)"
+      fi
+    fi
   fi
 fi
 
