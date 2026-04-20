@@ -134,13 +134,69 @@ if [ $((${PM_CYCLE:-0} % 10)) -eq 0 ] && [ "${PM_CYCLE:-0}" -gt 0 ]; then
   #    If an idea has a complexity tag of 'small' or 'xs' and hasn't been opened as an issue:
   #    open it now with a [PM proposal] prefix.
   # 6. Competitive observation: for each competitor version update found in PM §5 competitive
-  #    scan — write a ⚠️ Inferred stub to docs/design/ if the capability is not covered:
-  #    INFERRED_FILE="docs/design/<area>-competitive-gaps.md"
-  #    If file doesn't exist: create it with standard template + Present (empty) + Future section.
-  #    Append: "- 🔲 ⚠️ Inferred: <capability> — competitor <name> has this, we do not. (PM §5c, <date>)"
-  #    This makes the gap visible to COORD queue gen immediately.
+  #    scan — write a ⚠️ Inferred stub to docs/design/ if the capability is not covered.
+  #    Use the write_inferred_stub helper below.
   # If only 1 project in monitor: log "[PM] Need ≥2 projects for cross-project analysis."
 fi
+```
+
+**`write_inferred_stub` helper** — call this from §5c and any PM phase that needs to
+write a `⚠️ Inferred` entry to a design doc. Creates the file if absent.
+
+```bash
+# Usage: write_inferred_stub <area> <capability_desc> <competitor_name>
+# Example: write_inferred_stub "observability" "distributed tracing" "Hermes v2.1"
+write_inferred_stub() {
+  local AREA="$1" DESC="$2" COMPETITOR="$3"
+  local TODAY=$(date +%Y-%m-%d)
+  local INFERRED_FILE="docs/design/${AREA}-competitive-gaps.md"
+  local STUB="- 🔲 ⚠️ Inferred: ${DESC} — ${COMPETITOR} has this, we do not. (PM §5c, ${TODAY})"
+
+  # Create file if absent
+  if [ ! -f "$INFERRED_FILE" ]; then
+    cat > "$INFERRED_FILE" << DOCEOF
+# Competitive Gap Analysis: ${AREA}
+
+> Status: Active | Created: ${TODAY} | Source: PM §5c automated observation
+
+---
+
+## Present (✅)
+
+*(No items yet — gaps discovered autonomously by PM §5c)*
+
+## Future (🔲)
+
+DOCEOF
+    echo "[PM §5c] Created competitive gaps doc: $INFERRED_FILE"
+  fi
+
+  # Deduplicate: skip if stub already present
+  if grep -qF "$DESC" "$INFERRED_FILE" 2>/dev/null; then
+    echo "[PM §5c] Stub already present for: $DESC — skipping."
+    return 0
+  fi
+
+  # Append after the "## Future" line
+  python3 - <<PYEOF
+content = open('$INFERRED_FILE').read()
+stub = '$STUB'
+if '## Future' in content:
+    content = content.replace('## Future\n', f'## Future\n\n{stub}\n', 1) if '\n\n$' not in content else content
+    # Simple append after ## Future section
+    lines = content.split('\n')
+    for i, line in enumerate(lines):
+        if line.strip() == '## Future (🔲)' or line.strip() == '## Future':
+            lines.insert(i+1, '')
+            lines.insert(i+2, stub)
+            break
+    open('$INFERRED_FILE', 'w').write('\n'.join(lines))
+    print(f'[PM §5c] Wrote ⚠️ Inferred stub: $DESC')
+else:
+    open('$INFERRED_FILE', 'a').write(f'\n{stub}\n')
+    print(f'[PM §5c] Appended ⚠️ Inferred stub: $DESC')
+PYEOF
+}
 ```
 
 ---
@@ -361,34 +417,97 @@ Also detect emergent patterns: Present items with no design doc coverage.
 if [ $((${PM_CYCLE:-0} % ${N_PM_CYCLES:-3})) -eq 0 ]; then
   echo "[PM §5h] Scanning for validation criteria gaps and emergent patterns..."
 
-  # [AI-STEP]
-  # Step 0: Read definition-of-done.md content. If absent: skip.
-  #   DOD_CONTENT=$(cat docs/aide/definition-of-done.md 2>/dev/null || echo "")
-  #   if [ -z "$DOD_CONTENT" ]: echo "[PM §5h] No definition-of-done.md — skipping."; exit
-  #
-  # Step 1: For each docs/design/*.md file, read ✅ Present items.
-  #   present_items = re.findall(r'^- ✅ (.+)', content, re.MULTILINE)
-  #
-  # Step 2: For each Present item, check if its description (first 40 chars)
-  #   appears in definition-of-done.md (case-insensitive substring).
-  #   If not found: this is a validation gap.
-  #   title = f"docs: definition-of-done.md missing journey for: {item_desc[:60]}"
-  #   open_if_absent(title, "kind/docs,otherness,priority/low")
-  #
-  # Step 3: Duplicate suppression (open_if_absent pattern).
-  #
-  # Step 4: Emergent pattern detection (⚠️ Observed — new in this version):
-  #   merged_pr_titles = gh pr list --repo $REPO --state merged --limit 200 --json title
-  #   design_covered_terms = set of words from all docs/design/ Present + Future items
-  #   for pr_title in merged_pr_titles:
-  #     if not any(term in pr_title.lower() for term in design_covered_terms):
-  #       # This PR shipped something with no design doc coverage
-  #       # Candidate for ⚠️ Observed entry
-  #       title = f"docs: ⚠️ Observed — '{pr_title[:50]}' shipped with no design doc coverage"
-  #       open_if_absent(title, "kind/docs,otherness,priority/low")
-  #   Note: only flag PRs merged >14 days ago (recent PRs may still have design docs in draft)
-  #
-  # Step 5: Post count: "[PM §5h] Validation gaps: <N>. Emergent patterns: <M>."
+  DOD_CONTENT=$(cat docs/aide/definition-of-done.md 2>/dev/null || echo "")
+  if [ -z "$DOD_CONTENT" ]; then
+    echo "[PM §5h] No definition-of-done.md — skipping."
+  else
+    python3 - <<'PYEOF'
+import subprocess, re, json, os
+
+REPO = os.environ.get('REPO', '')
+gaps = 0
+observed = 0
+
+# Read all design doc Present items
+design_terms = set()
+present_items = []
+for fname in sorted(os.listdir('docs/design')):
+    if not fname.endswith('.md'): continue
+    content = open(f'docs/design/{fname}').read()
+    items = re.findall(r'^- ✅ (.+)', content, re.MULTILINE)
+    for item in items:
+        desc = item.split(' — ')[0].strip().lower()
+        design_terms.update(desc.split())
+        present_items.append(item)
+
+dod = open('docs/aide/definition-of-done.md').read().lower()
+
+def issue_exists(title_fragment):
+    r = subprocess.run(
+        ['gh','issue','list','--repo',REPO,'--state','open',
+         '--search', title_fragment[:60], '--json','number','--jq','length'],
+        capture_output=True, text=True)
+    try: return int(r.stdout.strip()) > 0
+    except: return True  # safe default — don't duplicate
+
+# Step 1-3: Validation gaps
+for item in present_items[:30]:  # limit to avoid rate limits
+    desc = item.split(' — ')[0].strip()
+    key = desc[:40].lower()
+    # Skip if already in DoD or too short to check
+    if len(key) < 10: continue
+    first_word = key.split()[0] if key.split() else ''
+    if first_word in dod: continue
+    title = f"docs: definition-of-done.md missing journey for: {desc[:60]}"
+    if not issue_exists(title[:50]):
+        subprocess.run(
+            ['gh','issue','create','--repo',REPO,
+             '--title', title,
+             '--label','kind/docs,otherness,priority/low,size/xs',
+             '--body', f'## Design reference\n- **Design doc**: see docs/design/ Present items\n- **Implements**: definition-of-done.md journey coverage (PM §5h)\n\nPresent item `{desc}` has no corresponding journey in `definition-of-done.md`. Add a journey or confirm this feature is intentionally uncovered.'],
+            capture_output=True)
+        gaps += 1
+
+# Step 4: Emergent pattern detection
+r = subprocess.run(
+    ['gh','pr','list','--repo',REPO,'--state','merged','--limit','200',
+     '--json','title,mergedAt'],
+    capture_output=True, text=True)
+prs = json.loads(r.stdout) if r.returncode == 0 else []
+
+import time
+cutoff = time.time() - 14 * 86400  # 14 days ago
+
+for pr in prs:
+    merged_ts = pr.get('mergedAt','')
+    # Only flag PRs merged >14 days ago
+    try:
+        import datetime
+        ts = datetime.datetime.fromisoformat(merged_ts.replace('Z','+00:00')).timestamp()
+        if ts > cutoff: continue
+    except: continue
+    title = pr['title']
+    # Skip bot/infra/docs PRs
+    if any(x in title.lower() for x in ['[bot]','dependabot','otherness@','docs:','fix(ci)','chore']): continue
+    words = re.findall(r'\w+', title.lower())
+    # Check if any substantial word appears in design terms
+    substantial = [w for w in words if len(w) > 4]
+    if not substantial: continue
+    if any(w in design_terms for w in substantial): continue
+    # No design doc coverage found
+    stub_title = f"docs: ⚠️ Observed — '{title[:50]}' shipped with no design doc coverage"
+    if not issue_exists(stub_title[:50]):
+        subprocess.run(
+            ['gh','issue','create','--repo',REPO,
+             '--title', stub_title,
+             '--label','kind/docs,otherness,priority/low,size/xs',
+             '--body', f'## Design reference\n- **Design doc**: docs/design/00-marker-conventions.md §⚠️ Observed\n- **Implements**: PM §5h emergent pattern detection\n\nPR `{title}` was merged but no design doc covers this area. Either:\n1. Add a design doc entry for this feature (⚠️ Observed → ✅)\n2. Mark as intentional infrastructure (close this issue)\n\nTriaged by PM §5h on {merged_ts[:10]}'],
+            capture_output=True)
+        observed += 1
+
+print(f"[PM §5h] Validation gaps: {gaps}. Emergent patterns: {observed}.")
+PYEOF
+  fi
 
   echo "[PM §5h] Self-generating validation criteria check complete."
 fi
@@ -512,25 +631,36 @@ Suggest /otherness.vibe-vision when the vision hasn't been updated and queue is 
 if [ $((${PM_CYCLE:-0} % ${N_PM_CYCLES:-3})) -eq 0 ]; then
   echo "[PM §5k] Checking vision age..."
 
-  # [AI-STEP]
-  # Step 1: Check if queue is empty AND design docs have no recent activity.
-  #   TODO_COUNT=$(python3 -c "import json; s=json.load(open('.otherness/state.json')); print(len([d for d in s.get('features',{}).values() if d.get('state')=='todo']))")
-  #   if [ "${TODO_COUNT:-0}" -gt 0 ]: echo "[PM §5k] Queue active — skipping vision age check."; exit
-  #
-  # Step 2: Check last design doc activity (git log on docs/design/).
-  #   LAST_DESIGN_COMMIT=$(git log -1 --format=%ct -- docs/design/ 2>/dev/null || echo "0")
-  #   DESIGN_AGE_DAYS=$(python3 -c "import time; print(int((time.time() - int('$LAST_DESIGN_COMMIT')) / 86400))")
-  #
-  # Step 3: If DESIGN_AGE_DAYS > 30 (queue empty AND no new design activity):
-  #   TITLE="[📋 PM] Vision may need updating — queue has been empty and no new design activity in ${DESIGN_AGE_DAYS}d"
-  #   EXISTING=$(gh issue list --repo $REPO --state open --search "Vision may need updating" --json number --jq 'length')
-  #   if [ "$EXISTING" -eq 0 ]:
-  #     gh issue comment $REPORT_ISSUE --repo $REPO \
-  #       --body "[📋 PM §5k] The vision has not been updated in ${DESIGN_AGE_DAYS}d and the queue is empty.
-  #               Consider running /otherness.vibe-vision to expand the roadmap.
-  #               (This is a suggestion, not a blocker — the loop continues in standby.)"
-  #
-  # Step 4: If DESIGN_AGE_DAYS <= 30: echo "[PM §5k] Vision active (${DESIGN_AGE_DAYS}d ago)."; exit
+  TODO_COUNT=$(python3 -c "
+import json
+try:
+    s = json.load(open('.otherness/state.json'))
+    print(len([d for d in s.get('features',{}).values() if d.get('status')=='todo']))
+except: print(0)
+" 2>/dev/null || echo "0")
+
+  if [ "${TODO_COUNT:-0}" -gt 0 ]; then
+    echo "[PM §5k] Queue active (${TODO_COUNT} todo) — skipping vision age check."
+  else
+    LAST_DESIGN_COMMIT=$(git log -1 --format=%ct -- docs/design/ 2>/dev/null || echo "0")
+    DESIGN_AGE_DAYS=$(python3 -c "import time; print(int((time.time() - int('$LAST_DESIGN_COMMIT')) / 86400))" 2>/dev/null || echo "0")
+
+    if [ "${DESIGN_AGE_DAYS:-0}" -gt 30 ]; then
+      EXISTING=$(gh issue list --repo $REPO --state open \
+        --search "Vision may need updating" --json number --jq 'length' 2>/dev/null || echo "1")
+      if [ "${EXISTING:-1}" -eq 0 ]; then
+        gh issue comment $REPORT_ISSUE --repo $REPO \
+          --body "[📋 PM §5k] The vision has not been updated in ${DESIGN_AGE_DAYS}d and the queue is empty.
+Consider running \`/otherness.vibe-vision\` to expand the roadmap with new direction.
+(This is a suggestion — the loop continues in standby.)" 2>/dev/null
+        echo "[PM §5k] Vision stale (${DESIGN_AGE_DAYS}d) — posted vibe-vision suggestion."
+      else
+        echo "[PM §5k] Vision stale (${DESIGN_AGE_DAYS}d) — suggestion already posted, skipping."
+      fi
+    else
+      echo "[PM §5k] Vision active (${DESIGN_AGE_DAYS}d since last design doc update)."
+    fi
+  fi
 
   echo "[PM §5k] Vision age check complete."
 fi

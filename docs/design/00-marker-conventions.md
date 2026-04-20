@@ -59,8 +59,8 @@ COORD skips all 🚫 items. They remain for history.
 
 - ✅ ✅/🔲 markers — original design doc vocabulary (introduced in Stage 3, 2026-04-14)
 - ✅ 🚫 Deprecated marker — COORD queue-gen skips deprecated items (PR #209, 2026-04-17)
-- ✅ ⚠️ Inferred marker — PM §5c writes competitive gap stubs with this prefix (PR #307-310, 2026-04-19)
-- ✅ ⚠️ Observed marker — PM §5h writes emergent pattern stubs with this prefix (PR #307-310, 2026-04-19)
+- ✅ ⚠️ Inferred marker — PM §5c writes competitive gap stubs with this prefix (PR #311, 2026-04-19)
+- ✅ ⚠️ Observed marker — PM §5h writes emergent pattern stubs with this prefix (PR #311, 2026-04-19)
 
 ## Future (🔲)
 
