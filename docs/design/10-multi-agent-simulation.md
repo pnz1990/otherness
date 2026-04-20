@@ -510,7 +510,7 @@ This is the primary falsification apparatus for the model itself.
 - ✅ External signal injection — `--learn-interval N` parameter, foreign skills flagged ≥10000 (PR #231, 2026-04-17)
 - ✅ Add architectural convergence variable — `mean_arch_convergence` tracks structural monoculture; decays when agents propose same type (PR #237, 2026-04-17)
 - ✅ Calibrate parameters against real metrics.md batch data — `scripts/calibrate.py` runs simulation against real batch history, commits sim-params.json (PR #240, 2026-04-18)
-- ✅ `scripts/vision.md` empirical grounding section — SM §4d reads arch_convergence alarm, triggers [NEEDS HUMAN] if > 0.7 (PR #241, 2026-04-18)
+- ✅ `scripts/vision.md` empirical grounding section — SM §4d reads arch_convergence alarm, triggers [NEEDS HUMAN] if > 0.7 (PR #241, 2026-04-18) ⚠️ Stale — referenced file not found
 
 ## Future (🔲)
 

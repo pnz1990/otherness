@@ -183,7 +183,7 @@ Until depth scoring is implemented, use:
 
 ## Present (✅)
 
-- ✅ E2E workflow: `.github/workflows/e2e.yml` — Playwright, runs on push/PR (2026-04-14)
+- ✅ E2E workflow: `.github/workflows/e2e.yml` — Playwright, runs on push/PR (2026-04-14) ⚠️ Stale — referenced file not found
 - ✅ 71 journey files covering 67 merged specs — high parity (2026-04-20)
 - ✅ Journey infrastructure: kind-less (uses mock fixtures), fast, reliable (2026-04-14)
 - ✅ Constitution §XIV E2E standards — anti-patterns documented (PR #311, 2026-04-15)
