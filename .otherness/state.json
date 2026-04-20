@@ -1,0 +1,426 @@
+{
+  "features": {
+    "issue-509": {
+      "state": "done",
+      "status": "done",
+      "pr_number": 529
+    },
+    "issue-510": {
+      "state": "done",
+      "status": "done",
+      "pr_number": 530
+    },
+    "issue-511": {
+      "state": "done",
+      "status": "done",
+      "pr_number": 531
+    },
+    "issue-512": {
+      "state": "done",
+      "status": "done",
+      "note": "deferred"
+    },
+    "issue-513": {
+      "state": "done",
+      "status": "done",
+      "pr_number": 532
+    },
+    "issue-514": {
+      "state": "done",
+      "status": "done",
+      "pr_number": 533
+    },
+    "issue-515": {
+      "state": "done",
+      "status": "done",
+      "pr_number": 533
+    },
+    "issue-516": {
+      "state": "done",
+      "status": "done",
+      "pr_number": 533
+    },
+    "issue-517": {
+      "state": "done",
+      "status": "done",
+      "pr_number": 533
+    },
+    "issue-518": {
+      "state": "done",
+      "status": "done",
+      "pr_number": 534
+    },
+    "issue-519": {
+      "state": "done",
+      "status": "done",
+      "pr_number": 535
+    },
+    "issue-520": {
+      "state": "done",
+      "status": "done",
+      "pr_number": 536
+    },
+    "issue-521": {
+      "state": "done",
+      "status": "done",
+      "pr_number": 537
+    },
+    "issue-522": {
+      "state": "done",
+      "status": "done",
+      "title": "feat: Playwright integration in PDCA",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "branch": "feat/issue-522",
+      "worktree": "../otherness.issue-522",
+      "file_spaces": [
+        "agents/"
+      ],
+      "assigned_to": "sess-5327084f",
+      "assigned_at": "2026-04-20T12:37:26Z",
+      "pr_number": 539,
+      "kp_pr_number": 876,
+      "pr_merged": true,
+      "done_at": "2026-04-20T12:46:24Z"
+    },
+    "issue-523": {
+      "state": "done",
+      "status": "done",
+      "title": "feat: Feature\u2192scenario gap detection: SM \u00a74g-anchor reads \u2705 Present items from docs/design/*.md,",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "branch": "feat/issue-523",
+      "worktree": "../otherness.issue-523",
+      "file_spaces": [
+        "agents/"
+      ],
+      "assigned_to": "sess-5327084f",
+      "assigned_at": "2026-04-20T12:47:53Z",
+      "pr_number": 540,
+      "pr_merged": true,
+      "done_at": "2026-04-20T12:52:02Z"
+    },
+    "issue-524": {
+      "state": "done",
+      "status": "done",
+      "title": "feat: otherness-config.yaml: `anchor:` section",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "branch": null,
+      "worktree": null,
+      "file_spaces": [],
+      "pr_number": 541,
+      "pr_merged": true,
+      "done_at": "2026-04-20T12:55:27Z"
+    },
+    "issue-525": {
+      "state": "done",
+      "status": "done",
+      "title": "feat: Journey depth: add error + empty state to all Tier 1 journeys (001-007)",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "branch": null,
+      "worktree": null,
+      "file_spaces": [],
+      "pr_number": 542,
+      "pr_merged": true,
+      "done_at": "2026-04-20T13:00:07Z"
+    },
+    "issue-526": {
+      "state": "done",
+      "status": "done",
+      "title": "feat: First persona journey: Operator",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "branch": null,
+      "worktree": null,
+      "file_spaces": [],
+      "pr_number": 543,
+      "pr_merged": true,
+      "done_at": "2026-04-20T13:02:33Z"
+    },
+    "issue-527": {
+      "state": "done",
+      "status": "done",
+      "title": "feat: Accessibility: run axe assertions on Tier 1 pages (RGD list, DAG, instance list, context s",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "branch": null,
+      "worktree": null,
+      "file_spaces": [],
+      "pr_number": 544,
+      "pr_merged": true,
+      "done_at": "2026-04-20T13:06:55Z"
+    },
+    "issue-528": {
+      "state": "done",
+      "status": "done",
+      "title": "feat: kro upstream tracking: when kro version bumps, SM opens anchor-growth issue for new API su",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "branch": null,
+      "worktree": null,
+      "file_spaces": [],
+      "pr_number": 545,
+      "pr_merged": true,
+      "done_at": "2026-04-20T13:11:06Z"
+    },
+    "issue-554": {
+      "state": "done",
+      "status": "todo",
+      "title": "feat: `/otherness.setup` and `/otherness.onboard`: deploy workflow during project setup",
+      "labels": [
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "priority/low",
+        "kind/enhancement"
+      ],
+      "priority": "low"
+    },
+    "issue-553": {
+      "state": "done",
+      "status": "todo",
+      "title": "feat: `scripts/validate.sh`: check scheduled workflow exists if `schedule.cron` set",
+      "labels": [
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "priority/low",
+        "kind/enhancement"
+      ],
+      "priority": "low"
+    },
+    "issue-552": {
+      "state": "done",
+      "status": "todo",
+      "title": "feat: `otherness-config-template.yaml`: `schedule` section added",
+      "labels": [
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "priority/low",
+        "kind/enhancement"
+      ],
+      "priority": "low"
+    },
+    "issue-551": {
+      "state": "done",
+      "status": "todo",
+      "title": "feat: `otherness-config.yaml`: `schedule.cron` and `schedule.model` fields",
+      "labels": [
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "priority/low",
+        "kind/enhancement"
+      ],
+      "priority": "low"
+    },
+    "issue-550": {
+      "state": "done",
+      "status": "todo",
+      "title": "feat: `.github/workflows/otherness-scheduled.yml` \u2014 cron workflow using",
+      "labels": [
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "priority/low",
+        "kind/enhancement"
+      ],
+      "priority": "low"
+    },
+    "issue-549": {
+      "state": "done",
+      "status": "todo",
+      "title": "feat: M3: Replace GH_TOKEN PAT with GitHub App",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-548": {
+      "state": "done",
+      "status": "todo",
+      "title": "feat: M5b: Restrict Bedrock Resource to specific ARNs",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-547": {
+      "state": "done",
+      "status": "todo",
+      "title": "feat: docs/design/: add design docs for major feature areas (RGD display, instance management, h",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-361": {
+      "state": "todo",
+      "status": "todo",
+      "title": "security(p2): replace GH_TOKEN PAT with GitHub App \u2014 per-repo scoped, non-exportable",
+      "labels": [
+        "priority/medium",
+        "risk/high",
+        "otherness",
+        "size/l",
+        "area/tooling",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-338": {
+      "state": "todo",
+      "status": "todo",
+      "title": "\ud83d\udcca Autonomous Team Reports \u2014 2026-04-20",
+      "labels": [
+        "otherness"
+      ],
+      "priority": "medium"
+    },
+    "issue-555": {
+      "state": "done",
+      "status": "done",
+      "title": "fix(validate): add vibe-vision-auto.md and autonomous-vision.md to required files check",
+      "pr_number": 556,
+      "pr_merged": true,
+      "done_at": "2026-04-20T13:54:53Z"
+    },
+    "issue-559": {
+      "state": "done",
+      "title": "feat(validate): check \u26a0\ufe0f Inferred items have source attribution format",
+      "priority": "medium",
+      "labels": [
+        "otherness"
+      ],
+      "branch": "feat/issue-559",
+      "worktree": "../otherness.issue-559",
+      "file_spaces": [
+        "scripts/"
+      ],
+      "assigned_to": "sess-034d8f59",
+      "assigned_at": "2026-04-20T14:54:19Z"
+    },
+    "issue-560": {
+      "state": "done",
+      "title": "feat(definition-of-done): Journey 9 \u2014 autonomous vision synthesis loop",
+      "priority": "low",
+      "labels": [
+        "otherness"
+      ],
+      "branch": "feat/issue-560",
+      "worktree": "../otherness.issue-560",
+      "file_spaces": [
+        "docs/aide/"
+      ],
+      "assigned_to": "sess-034d8f59",
+      "assigned_at": "2026-04-20T15:01:55Z"
+    },
+    "issue-561": {
+      "state": "done",
+      "title": "docs(design): add docs/design/34-stage-9-autonomous-vision.md \u2014 stage-level doc",
+      "priority": "low",
+      "labels": [
+        "otherness"
+      ],
+      "branch": null,
+      "worktree": null,
+      "file_spaces": []
+    },
+    "issue-565": {
+      "state": "done",
+      "title": "chore(pm): PM \u00a75c \u2014 research Hermes/Multica skill confidence scoring patterns",
+      "priority": "low",
+      "labels": [
+        "otherness",
+        "kind/chore"
+      ],
+      "branch": null,
+      "worktree": null,
+      "file_spaces": []
+    },
+    "issue-577": {
+      "state": "done",
+      "status": "done",
+      "pr_merged": true,
+      "pr_number": 582,
+      "done_at": "2026-04-20T16:17:57Z"
+    },
+    "issue-572": {
+      "state": "done",
+      "pr_number": 592,
+      "title": "docs(template): add journeys_dir to anchor: section"
+    },
+    "issue-583": {
+      "state": "done",
+      "title": "feat: M3: Replace GH_TOKEN PAT (duplicate of 361)"
+    }
+  },
+  "sm_cycle_count": 3,
+  "last_sm_at": "2026-04-20T13:57:42Z",
+  "session_heartbeats": {
+    "sess-5327084f": {
+      "last_seen": "2026-04-20T13:12:45Z",
+      "item": "sm-complete",
+      "cycle": 1
+    }
+  },
+  "pm_cycle_count": 1,
+  "last_auto_vision_cycle": 87
+}
