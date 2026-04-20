@@ -66,7 +66,7 @@
       "pr_number": 537
     },
     "issue-522": {
-      "state": "todo",
+      "state": "assigned",
       "status": "todo",
       "title": "feat: Playwright integration in PDCA",
       "labels": [
@@ -77,9 +77,13 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "branch": null,
-      "worktree": null,
-      "file_spaces": []
+      "branch": "feat/issue-522",
+      "worktree": "../otherness.issue-522",
+      "file_spaces": [
+        "agents/"
+      ],
+      "assigned_to": "sess-5327084f",
+      "assigned_at": "2026-04-20T12:37:26Z"
     },
     "issue-523": {
       "state": "todo",
@@ -179,5 +183,12 @@
     }
   },
   "sm_cycle_count": 1,
-  "last_sm_at": "2026-04-20T12:15:00Z"
+  "last_sm_at": "2026-04-20T12:15:00Z",
+  "session_heartbeats": {
+    "sess-5327084f": {
+      "last_seen": "2026-04-20T12:37:26Z",
+      "item": "issue-522",
+      "cycle": 1
+    }
+  }
 }
