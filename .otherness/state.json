@@ -685,7 +685,7 @@
     },
     "issue-614": {
       "title": "feat: `coord.md \u00a71c`: queue refusal guard",
-      "state": "todo",
+      "state": "done",
       "status": "todo",
       "labels": [
         "priority/medium",
@@ -694,7 +694,10 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 629,
+      "done_at": "2026-04-20T20:28:05Z"
     },
     "issue-613": {
       "title": "feat: `standalone.md` / `coord.md \u00a71e`: silent-session detection",
