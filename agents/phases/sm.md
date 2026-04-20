@@ -309,6 +309,178 @@ if [ $((${BATCH_COUNT:-0} % 5)) -eq 0 ] && [ "${BATCH_COUNT:-0}" -gt 0 ]; then
    #    gh issue create --repo $REPO --title "skill: <pattern>" --label otherness
   # If only 1 project or no patterns found: log "[SM] No cross-project patterns found."
 
+  # §4c-framelock: Frame-lock break protocol (design doc 35 §Future → ✅)
+  # When arch_convergence >= 0.65 for 3 consecutive calibrations, the learn target
+  # must be from an architecturally UNLIKE paradigm. This check detects frame-lock and
+  # opens a prioritized learn issue with arch-diversity guidance.
+  python3 - <<'FRAMELOCK_EOF'
+import json, os, subprocess, tempfile, re, datetime
+
+REPO = os.environ.get('REPO', '')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+
+FRAMELOCK_THRESHOLD = 0.65   # arch_convergence >= this for 3 consecutive calibrations
+FRAMELOCK_RESET_THRESHOLD = 0.55  # clear flag when convergence drops below this
+CONSECUTIVE_REQUIRED = 3
+
+# Step 1: Read last 3 arch_convergence values from _state sim-prediction.json git log
+arch_history = []
+state_wt = os.path.join(tempfile.gettempdir(), 'otherness-framelock-' + str(os.getpid()))
+try:
+    if os.path.exists(state_wt):
+        subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
+    subprocess.run(['git','worktree','add','--no-checkout',state_wt,'origin/_state'],
+                   capture_output=True, check=True)
+    log_r = subprocess.run(
+        ['git','-C',state_wt,'log','--format=%H',f'-{CONSECUTIVE_REQUIRED}',
+         '--','.otherness/sim-prediction.json'],
+        capture_output=True, text=True, timeout=10)
+    for sha in log_r.stdout.strip().splitlines():
+        try:
+            blob = subprocess.run(
+                ['git','-C',state_wt,'show',f'{sha}:.otherness/sim-prediction.json'],
+                capture_output=True, text=True, timeout=10)
+            if blob.returncode == 0:
+                pred = json.loads(blob.stdout)
+                arch_history.append(float(pred.get('arch_convergence_score', 0.0)))
+        except Exception:
+            pass
+except Exception as e:
+    print(f'[SM §4c-framelock] Could not read sim-prediction history (non-fatal): {e}')
+finally:
+    try:
+        subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
+    except: pass
+subprocess.run(['git','worktree','prune'], capture_output=True)
+
+if not arch_history:
+    print('[SM §4c-framelock] No arch_convergence history — skipping frame-lock check.')
+    exit(0)
+
+current_conv = arch_history[0] if arch_history else 0.0
+print(f'[SM §4c-framelock] arch_convergence history (most recent first): {[round(a,3) for a in arch_history]}')
+
+# Step 2: Read current frame_lock_detected flag from state.json
+try:
+    with open('.otherness/state.json') as f: s = json.load(f)
+    frame_lock_active = s.get('frame_lock_detected', False)
+except Exception:
+    s = {}
+    frame_lock_active = False
+
+# Step 3: Reset flag if convergence has dropped
+if frame_lock_active and current_conv < FRAMELOCK_RESET_THRESHOLD:
+    s['frame_lock_detected'] = False
+    with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
+    print(f'[SM §4c-framelock] Frame-lock cleared (arch_convergence={current_conv:.3f} < {FRAMELOCK_RESET_THRESHOLD})')
+    exit(0)
+
+# Step 4: Detect frame-lock condition
+frame_lock_now = (
+    len(arch_history) >= CONSECUTIVE_REQUIRED and
+    all(a >= FRAMELOCK_THRESHOLD for a in arch_history[:CONSECUTIVE_REQUIRED])
+)
+print(f'[SM §4c-framelock] Frame-lock condition: {frame_lock_now} '
+      f'({len(arch_history)}/{CONSECUTIVE_REQUIRED} readings >= {FRAMELOCK_THRESHOLD})')
+
+if not frame_lock_now:
+    exit(0)
+
+# Step 5: Set frame_lock_detected flag
+s['frame_lock_detected'] = True
+with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
+
+# Step 6: Check if a frame-lock learn issue already exists
+try:
+    existing = subprocess.run(
+        ['gh','issue','list','--repo',REPO,'--state','open',
+         '--search','frame-lock','--json','number','--jq','length'],
+        capture_output=True, text=True, timeout=15)
+    if int(existing.stdout.strip() or '0') > 0:
+        print('[SM §4c-framelock] Frame-lock learn issue already open — skipping.')
+        exit(0)
+except Exception:
+    pass
+
+# Step 7: Detect current skill category distribution for the learn issue body
+skill_categories = {'agent-loop': 0, 'data-pipeline': 0, 'frontend': 0,
+                    'backend-service': 0, 'devops': 0, 'ml-training': 0}
+try:
+    provenance = open(os.path.expanduser('~/.otherness/agents/skills/PROVENANCE.md')).read()
+    sources = re.findall(r'source:\s*([^\s,\n]+)', provenance, re.IGNORECASE)
+    sources += re.findall(r'github\.com/([^/\s]+/[^/\s]+)', provenance)
+    for s_repo in sources:
+        s_lower = s_repo.lower()
+        if any(k in s_lower for k in ['agent','autonomous','bot','opencode']):
+            skill_categories['agent-loop'] += 1
+        elif any(k in s_lower for k in ['pipeline','etl','stream','kafka']):
+            skill_categories['data-pipeline'] += 1
+        elif any(k in s_lower for k in ['ui','react','vue','frontend','web']):
+            skill_categories['frontend'] += 1
+        elif any(k in s_lower for k in ['api','service','backend','server']):
+            skill_categories['backend-service'] += 1
+        elif any(k in s_lower for k in ['docker','k8s','deploy','infra','terraform']):
+            skill_categories['devops'] += 1
+        elif any(k in s_lower for k in ['ml','model','train','torch','llm']):
+            skill_categories['ml-training'] += 1
+except Exception:
+    pass
+
+dominated_category = max(skill_categories, key=skill_categories.get)
+min_count = min(skill_categories.values())
+underrepresented = [k for k, v in skill_categories.items() if v == min_count]
+today = datetime.date.today().isoformat()
+
+# Step 8: Open a frame-lock learn issue with arch-diversity guidance
+title = f'learn(arch): frame-lock detected — arch_convergence={current_conv:.3f} for {CONSECUTIVE_REQUIRED} calibrations'
+body = (
+    f'## Frame-lock break required\n\n'
+    f'SM §4c-framelock detected **architectural monoculture** (frame-lock):\n'
+    f'- arch_convergence history: {[round(a,3) for a in arch_history[:CONSECUTIVE_REQUIRED]]}\n'
+    f'- All ≥ {FRAMELOCK_THRESHOLD} for {CONSECUTIVE_REQUIRED} consecutive calibrations\n\n'
+    f'## Current skill category distribution\n\n'
+    f'```\n'
+    + '\n'.join(f'{k}: {v}' for k, v in sorted(skill_categories.items(), key=lambda x: -x[1]))
+    + f'\n```\n\n'
+    f'**Dominated by**: `{dominated_category}` ({skill_categories[dominated_category]} sources)\n'
+    f'**Underrepresented**: `{", ".join(underrepresented)}`\n\n'
+    f'## What to do\n\n'
+    f'Run `/otherness.learn` and activate **arch-diverse mode** by choosing a target from:\n'
+    f'`{underrepresented[0] if underrepresented else "data-pipeline"}` category\n\n'
+    f'See `agents/otherness.learn.md §1b-arch-diverse` for the "unlike" heuristic and '
+    f'category-to-search-terms mapping.\n\n'
+    f'The monoculture problem cannot be solved by learning more of the same.\n\n'
+    f'Reported by SM §4c-framelock | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION} | {today}'
+)
+
+try:
+    r = subprocess.run(
+        ['gh','issue','create','--repo',REPO,
+         '--title',title,'--label','otherness,priority/high,area/skills,kind/chore',
+         '--body',body],
+        capture_output=True, text=True, timeout=20)
+    if r.returncode == 0:
+        issue_url = r.stdout.strip()
+        print(f'[SM §4c-framelock] Frame-lock issue opened: {issue_url}')
+        # Post audit to report issue
+        subprocess.run(
+            ['gh','issue','comment',REPORT_ISSUE,'--repo',REPO,
+             '--body', (
+                 f'[SM §4c-framelock | {MY_SESSION_ID}] '
+                 f'Frame-lock detected: arch_convergence={current_conv:.3f} for {CONSECUTIVE_REQUIRED} calibrations. '
+                 f'Skills dominated by: {dominated_category}. '
+                 f'Learn issue opened: {issue_url}'
+             )],
+            capture_output=True, timeout=15)
+    else:
+        print(f'[SM §4c-framelock] Could not open issue: {r.stderr[:100]}')
+except Exception as e:
+    print(f'[SM §4c-framelock] Issue create error (non-fatal): {e}')
+
+FRAMELOCK_EOF
+
   # §4c-propagate: Cross-project pressure propagation (design doc 28 §Future → ✅)
   # When a pattern is detected across ≥2 monitored projects, flag the pressure context
   # in each affected project so their next vibe-vision scan targets the shared gap.
