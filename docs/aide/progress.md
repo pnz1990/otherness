@@ -1,13 +1,14 @@
 # otherness: Current Progress
 
-> Updated by standalone agent after each batch.
+> Updated automatically by SM §4f every batch. Last update: 2026-04-20
 
 ## Current State
 
-- **Active queue**: Batch 22 — docs housekeeping; most improvements from future-ideas.md implemented
-- **Completed stages**: 0, 1, 2, 3, 4 (via autonomous loop)
-- **Current stage**: 5 — Versioned Release Model (pending human trigger)
-- **Batch**: 22 (2026-04-17)
+- **Health**: 🟢 GREEN
+- **Last shipped**: feat(sm): automated docs/aide/progress.md update in SM §4f (2026-04-20)
+- **Queue depth**: 40 todo, 0 in_review
+- **Vision PRs this batch**: 15
+- **SM cycle**: 6 | Agent: otherness@e541da8
 
 ## Stage Completion
 
