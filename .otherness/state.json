@@ -113,8 +113,8 @@
       "done_at": "2026-04-20T12:52:02Z"
     },
     "issue-524": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: otherness-config.yaml: `anchor:` section",
       "labels": [
         "priority/medium",
@@ -126,7 +126,10 @@
       "priority": "medium",
       "branch": null,
       "worktree": null,
-      "file_spaces": []
+      "file_spaces": [],
+      "pr_number": 541,
+      "pr_merged": true,
+      "done_at": "2026-04-20T12:55:27Z"
     },
     "issue-525": {
       "state": "todo",
