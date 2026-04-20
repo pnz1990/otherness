@@ -176,3 +176,5 @@
 | 2026-04-20 | 88 | 2 | 2 | 0 | 12 | 2 | ~25 min | PR #571 (anchor: section in kro-ui otherness-config.yaml — kro-ui PR #526), PR #573 (kro-ui design docs 28-31 for major feature areas — kro-ui PR #528). Queue cleanup: closed deferred/duplicate issues (569, 570). Triage: alibi Journey 2 still stalled (GH_TOKEN), [NEEDS HUMAN] #342 updated. issue-361 (GitHub App) posted [NEEDS HUMAN] — requires human to create App. Health: AMBER (Journey 2 stalled). |
 
 | 2026-04-20 | 89 | 5 | 1 | 0 | 12 | 5 | ~30 min | PRs #580 (spatial collision §1e), #581 (D4 intake classification §1e), #582 (cross-project improvement §5c) + kro-ui: #526 (anchor config), #528 (design docs 28-31). 3 ⚠️ Inferred items synthesized. [NEEDS HUMAN]: alibi GH_TOKEN, GitHub App M3. Health: AMBER. |
+
+| 2026-04-20 | 90 | 1 | 1 | 0 | 14 | 1 | ~15 min | PR #592 docs(template): add journeys_dir to anchor: section. Queue-gen: closed 8 already-implemented Stage 9/10 issues; closed 1 duplicate (583). [NEEDS HUMAN]: Journey 2 stalled (alibi, 140h), GitHub App M3 (361). Health: AMBER (Journey 2 stalled). |
