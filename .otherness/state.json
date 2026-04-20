@@ -484,27 +484,27 @@
       "done_at": "2026-04-19T16:45:41Z"
     },
     "issue-316": {
-      "status": "todo",
+      "status": "done",
       "title": "feat: COORD queue gen: treat \u26a0\ufe0f Inferred items identically to \ud83d\udd32 Future"
     },
     "issue-307": {
-      "status": "todo",
+      "status": "done",
       "title": "feat: PM \u00a75: vision age check"
     },
     "issue-310": {
-      "status": "todo",
+      "status": "done",
       "title": "feat: docs/design/: add \u26a0\ufe0f Inferred and \u26a0\ufe0f Observed marker conventions"
     },
     "issue-309": {
-      "status": "todo",
+      "status": "done",
       "title": "feat: PM \u00a75h extension: detect emergent patterns in \u2705 Present items"
     },
     "issue-308": {
-      "status": "todo",
+      "status": "done",
       "title": "feat: PM \u00a75c: write competitive gap findings as \u26a0\ufe0f Inferred design doc entries"
     },
     "issue-314": {
-      "status": "todo",
+      "status": "done",
       "title": "feat: SM phase trigger"
     }
   },
