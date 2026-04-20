@@ -161,9 +161,12 @@ echo "[SM §4b] Session outcome: ${SESSION_OUTCOME} (vision_prs=${VISION_PRS}, p
 # Append row to metrics.md
 DATE=$(date +%Y-%m-%d)
 # [AI-STEP] Append a new row to docs/aide/metrics.md with today's metrics.
-# Row format (as of PR that added vision_prs + session_outcome):
-#   | $DATE | $BATCH | $MERGED | $NEEDS_HUMAN | 0 | $SKILLS | $TODO_SHIPPED | ~Xmin | $VISION_PRS | $SESSION_OUTCOME | <notes> |
-# Historical rows (before this PR) have only 9 columns — do not modify them.
+# Row format (as of PR that added arch_convergence + sim_floor_delta):
+#   | $DATE | $BATCH | $MERGED | $NEEDS_HUMAN | 0 | $SKILLS | $TODO_SHIPPED | ~Xmin | $VISION_PRS | $SESSION_OUTCOME | $ARCH_CONVERGENCE | $SIM_FLOOR_DELTA | <notes> |
+# $ARCH_CONVERGENCE: from scripts/sim-params.json arch_convergence_score field (default: — if calibration not run)
+# $SIM_FLOOR_DELTA: $MERGED - sim_predicted_floor from scripts/sim-params.json (default: — if missing)
+# Historical rows (before PR #655) have only 9 columns — do not modify them.
+# Historical rows from PR #655 (vision_prs + session_outcome) have 11 columns — do not modify them.
 # Use the pull-rebase-retry pattern to push directly to main (low-risk doc change).
 
 # Pull-rebase-retry push pattern (parallel-safe for direct main commits)
