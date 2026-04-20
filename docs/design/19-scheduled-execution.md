@@ -281,7 +281,7 @@ project-specific deployment record.
 - ✅ `otherness-config-template.yaml` — `schedule` section with setup instructions (2026-04-19)
 - ✅ `scripts/validate.sh` — checks scheduled workflow exists when `schedule.cron` is set (2026-04-19)
 - ✅ `scripts/setup-github-bedrock-key.sh` — idempotent OIDC setup: creates provider, IAM role, Bedrock policy, pushes secrets to GitHub (2026-04-19)
-- ✅ IAM OIDC provider `token.actions.githubusercontent.com` in account 569190534191 — trust scoped to `pnz1990/*` (2026-04-19) ⚠️ Stale — referenced file not found
+- ✅ IAM OIDC provider `token.actions.githubusercontent.com` in account 569190534191 — trust scoped to `pnz1990/*` (2026-04-19)
 - ✅ IAM role `github-bedrock-key` — OIDC trust for `pnz1990/*`, inline `BedrockInvoke` policy (2026-04-19)
 - ✅ kardinal-promoter deployed — hourly cron, all secrets set, PR #828 (2026-04-19)
 - ✅ `/otherness.setup` and `/otherness.onboard`: add "activate scheduled loop" section that runs `setup-github-bedrock-key.sh` and copies the workflow template automatically — currently requires manual steps

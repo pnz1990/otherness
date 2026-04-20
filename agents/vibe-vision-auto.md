@@ -186,9 +186,12 @@ for fname in sorted(os.listdir(design_dir)):
 
     for item in present_items:
         # Look for file path references like scripts/foo.sh, agents/phases/bar.md
-        # Skip hostnames (multiple dots without slashes) and refs without a file extension
+        # Only accept refs with recognized file extensions — excludes hostnames like
+        # token.actions.githubusercontent.com (ext=com, not a file extension).
+        _FILE_EXTS = {'md','sh','yml','yaml','json','py','go','ts','js','tsx','jsx',
+                      'txt','toml','lock','env','template','html','css','rs','kt','java'}
         file_refs = [r for r in re.findall(r'`([a-zA-Z0-9_./-]+\.[a-zA-Z]{1,6})`', item)
-                     if r.count('.') == 1 or '/' in r]
+                     if r.rsplit('.',1)[-1].lower() in _FILE_EXTS]
         for fref in file_refs:
             # Determine if the file reference exists in the repository.
             # Strategy:
