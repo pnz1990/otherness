@@ -348,6 +348,102 @@ mkdir -p docs/design
 
 ---
 
+## STEP 4c — Vision quality gate (design doc 35 §Future → ✅)
+
+After writing `docs/aide/vision.md`, run this quality gate inline.
+A vision under 100 words or without a named user is too abstract for the agent loop.
+
+```bash
+echo "[ONBOARD §4c] Running vision quality gate..."
+VISION_QUALITY_OK=true
+
+# Check 1: Word count >= 100
+VISION_WORDS=$(python3 -c "
+try:
+    words = open('docs/aide/vision.md').read().split()
+    print(len(words))
+except: print(0)
+" 2>/dev/null || echo "0")
+
+if [ "${VISION_WORDS:-0}" -lt 100 ]; then
+  echo "  [GATE FAIL] vision.md has only ${VISION_WORDS} words (minimum: 100)"
+  echo "  [FIX] The vision is too abstract — expanding with more specific content..."
+  # [AI-STEP] Read docs/aide/vision.md and README.md again. Expand the "What This Is"
+  # paragraph to ≥100 words by adding: (1) the specific technical mechanism the project
+  # uses, (2) the specific pain point it eliminates, (3) the specific constraint it works under.
+  # Rewrite docs/aide/vision.md in place with the expanded content.
+  VISION_QUALITY_OK=false
+fi
+
+# Check 2: Named user/operator present
+VISION_HAS_USER=$(python3 -c "
+import re
+try:
+    text = open('docs/aide/vision.md').read().lower()
+    # User nouns: who uses this product
+    USER_NOUNS = ['engineer', 'developer', 'operator', 'admin', 'user', 'team',
+                  'company', 'customer', 'researcher', 'scientist', 'analyst',
+                  'architect', 'platform', 'organization', 'stakeholder', 'maintainer']
+    found = [u for u in USER_NOUNS if u in text]
+    print('yes' if found else 'no')
+    if found: print(','.join(found[:3]))
+except: print('no')
+" 2>/dev/null | head -1)
+
+if [ "$VISION_HAS_USER" = "no" ]; then
+  echo "  [GATE FAIL] vision.md does not name a specific user or operator"
+  echo "  [FIX] Rewriting 'What This Is' paragraph to name who uses this product..."
+  # [AI-STEP] Read the codebase context (README, AGENTS.md) and identify who the primary
+  # user of this project is. Rewrite the first paragraph of docs/aide/vision.md to name
+  # this user explicitly. Example: "Used by DevOps engineers to..." or "For platform teams..."
+  VISION_QUALITY_OK=false
+fi
+
+# Check 3: Specificity — not only generic language
+VISION_SPECIFICITY=$(python3 -c "
+import re
+try:
+    text = open('docs/aide/vision.md').read().lower()
+    words = text.split()
+    if not words: print('generic'); exit()
+    # Generic phrases that any project could use
+    GENERIC = ['manage', 'manages', 'managed', 'efficiently', 'easier', 'easier', 'helps',
+               'improve', 'improves', 'support', 'supports', 'provide', 'provides', 'enable',
+               'enables', 'allow', 'allows', 'simplif', 'automat', 'streamlin']
+    generic_count = sum(1 for w in words if any(g in w for g in GENERIC))
+    ratio = generic_count / len(words) if words else 0
+    # A vision is too generic if >35% of its words are generic filler
+    print('generic' if ratio > 0.35 else 'specific')
+    print(f'generic_ratio={ratio:.2f}')
+except: print('unknown')
+" 2>/dev/null | head -1)
+
+if [ "$VISION_SPECIFICITY" = "generic" ]; then
+  echo "  [GATE WARN] vision.md language is mostly generic (>35% filler words)"
+  echo "  [FIX] Adding a specificity paragraph with the project's unique mechanism..."
+  # [AI-STEP] Read the codebase (key source files, README technical sections) and add
+  # a "## Differentiator" paragraph to docs/aide/vision.md that names:
+  # (1) the specific technical approach (e.g. "uses a GitOps reconciler that...")
+  # (2) what competing approaches do NOT do ("unlike manual Helm deployments...")
+  # This paragraph makes the vision useful for queue generation and prioritization.
+  VISION_QUALITY_OK=false
+fi
+
+if [ "$VISION_QUALITY_OK" = "true" ]; then
+  echo "[ONBOARD §4c] Vision quality gate PASSED (${VISION_WORDS} words, user named, specific)."
+else
+  # Recheck after [AI-STEP] revisions above
+  REVISED_WORDS=$(python3 -c "
+try:
+    print(len(open('docs/aide/vision.md').read().split()))
+except: print(0)
+" 2>/dev/null || echo "0")
+  echo "[ONBOARD §4c] Vision revised — now ${REVISED_WORDS} words. Human review recommended."
+fi
+```
+
+---
+
 ## STEP 5 — Seed `.otherness/state.json`
 
 ```bash
