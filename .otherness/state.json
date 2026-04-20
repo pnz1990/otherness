@@ -203,7 +203,7 @@
       "note": "Duplicate \u2014 covered by in-review PR"
     },
     "251": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Issue body must identify design doc Future item",
       "design_doc": "01-declarative-design-driven-development.md",
       "depends_on": [],
@@ -231,7 +231,7 @@
       "done_at": "2026-04-18T21:28:40Z"
     },
     "254": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Cross-check README/AGENTS.md claims against code",
       "design_doc": "04-documentation-health.md",
       "depends_on": [],
@@ -454,6 +454,562 @@
       "pr_number": 384,
       "pr_merged": true,
       "done_at": "2026-04-20T04:48:36Z"
+    },
+    "388": {
+      "title": "feat(coord): \u00a71c roadmap source",
+      "state": "done",
+      "pr_merged": true,
+      "pr_number": 393,
+      "done_at": "2026-04-20T05:37:25Z",
+      "areas": [
+        "area/agent-loop"
+      ],
+      "design_doc": "22-queue-richness.md"
+    },
+    "401": {
+      "state": "done",
+      "title": "feat: SM \u00a74e per-5-cycle calibration update + sim-prediction.json write",
+      "pr_number": 421,
+      "pr_merged": true,
+      "done_at": "2026-04-20T06:09:54Z",
+      "areas": [
+        "area/agent-loop"
+      ]
+    },
+    "402": {
+      "state": "done",
+      "title": "feat: `otherness-config-template.yaml`: add `anchor:` section (workflow, score_pattern, coverage",
+      "status": "done",
+      "pr_number": 422,
+      "pr_merged": true,
+      "done_at": "2026-04-20T06:14:03Z",
+      "areas": [
+        "area/onboarding"
+      ]
+    },
+    "403": {
+      "state": "done",
+      "title": "feat: Anchor score comment format: PDCA posts `[ANCHOR | kardinal-promoter | DATE] coverage: N/M",
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
+    },
+    "404": {
+      "state": "done",
+      "title": "feat: Anchor score comment: E2E workflow posts `[ANCHOR | kro-ui | DATE] journeys: J | pass: A f",
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
+    },
+    "405": {
+      "state": "done",
+      "status": "done",
+      "title": "fix(ci): pin actions/checkout SHA in ci.yml",
+      "pr_number": 425,
+      "pr_merged": true,
+      "done_at": "2026-04-20T06:25:15Z",
+      "areas": [
+        "area/tooling"
+      ]
+    },
+    "406": {
+      "state": "done",
+      "status": "done",
+      "title": "feat: otherness-scheduled.yml split into two OpenCode steps",
+      "done_at": "2026-04-20T06:25:48Z",
+      "note": "Already implemented \u2014 otherness-scheduled.yml already has Step A (vibe-vision) and Step B (run)"
+    },
+    "407": {
+      "state": "done",
+      "title": "feat: `agents/phases/sm.md \u00a74h`: add hygiene scan block (executable, not [AI-STEP])",
+      "status": "done",
+      "done_at": "2026-04-20T06:16:38Z",
+      "note": "Hygiene scan already implemented as \u00a74g in sm.md (section numbering shifted)"
+    },
+    "408": {
+      "state": "done",
+      "status": "done",
+      "pr_number": 423,
+      "pr_merged": true,
+      "done_at": "2026-04-20T06:22:40Z"
+    },
+    "409": {
+      "state": "done",
+      "title": "feat: Managed project adoption: kardinal-promoter and kro-ui SM inherit otherness defaults, re-c",
+      "status": "done",
+      "done_at": "2026-04-20T06:16:38Z",
+      "note": "Cross-project item \u2014 managed project adoption requires work in managed repos"
+    },
+    "410": {
+      "state": "done",
+      "title": "feat: `COORD \u00a71c`: anchor-growth gate",
+      "status": "done",
+      "done_at": "2026-04-20T06:16:38Z",
+      "note": "Already shipped \u2014 COORD \u00a71c anchor-growth gate in PR #356"
+    },
+    "411": {
+      "state": "done",
+      "title": "feat: `docs/design/25-anchor-kardinal-promoter.md`",
+      "status": "done",
+      "done_at": "2026-04-20T06:16:38Z",
+      "note": "docs/design/25-anchor-kardinal-promoter.md already exists on main"
+    },
+    "412": {
+      "state": "done",
+      "title": "feat: `docs/design/26-anchor-kro-ui.md`",
+      "status": "done",
+      "done_at": "2026-04-20T06:16:38Z",
+      "note": "docs/design/26-anchor-kro-ui.md already exists on main"
+    },
+    "413": {
+      "state": "done",
+      "status": "done",
+      "title": "feat: onboarding AGENTS.md template Anchor section",
+      "pr_number": 424,
+      "pr_merged": true,
+      "done_at": "2026-04-20T06:22:16Z",
+      "areas": [
+        "area/onboarding"
+      ]
+    },
+    "414": {
+      "state": "done",
+      "title": "feat: PDCA runs daily (not weekly)",
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
+    },
+    "415": {
+      "state": "done",
+      "title": "feat: Infrastructure reliability: retry logic for S1 reconcile wait + ArgoCD sync timeout increa",
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
+    },
+    "416": {
+      "state": "done",
+      "title": "feat: Scenario 7: config-only promotion",
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
+    },
+    "417": {
+      "state": "done",
+      "title": "feat: Scenario 8: full multi-stage assertion",
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
+    },
+    "418": {
+      "state": "done",
+      "title": "feat: Scenario 9: health check failure blocks promotion",
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
+    },
+    "419": {
+      "state": "done",
+      "title": "feat: Scenarios 10-12: CLI completeness",
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
+    },
+    "420": {
+      "state": "done",
+      "title": "feat: Scenarios 13-15: policy gate completeness",
+      "status": "done",
+      "done_at": "2026-04-20T06:14:40Z",
+      "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
+    },
+    "issue-438": {
+      "state": "done",
+      "issue": 438,
+      "title": "issue-438",
+      "created_at": "2026-04-20T07:00:41Z",
+      "pr_number": 448,
+      "pr_url": "https://github.com/pnz1990/otherness/pull/448",
+      "pr_merged": true,
+      "done_at": "2026-04-20T07:50:00Z"
+    },
+    "issue-439": {
+      "state": "done",
+      "issue": 439,
+      "title": "issue-439",
+      "created_at": "2026-04-20T07:00:41Z",
+      "pr_merged": true,
+      "pr_number": 449,
+      "done_at": "2026-04-20T07:11:13Z"
+    },
+    "issue-440": {
+      "state": "done",
+      "issue": 440,
+      "title": "issue-440",
+      "created_at": "2026-04-20T07:00:41Z",
+      "pr_merged": true,
+      "pr_number": 450,
+      "done_at": "2026-04-20T07:13:50Z"
+    },
+    "issue-441": {
+      "state": "done",
+      "issue": 441,
+      "title": "issue-441",
+      "created_at": "2026-04-20T07:00:41Z",
+      "pr_merged": true,
+      "pr_number": 451,
+      "done_at": "2026-04-20T07:16:12Z"
+    },
+    "issue-442": {
+      "state": "done",
+      "issue": 442,
+      "title": "issue-442",
+      "created_at": "2026-04-20T07:00:41Z",
+      "pr_merged": true,
+      "pr_number": 452,
+      "done_at": "2026-04-20T07:18:43Z"
+    },
+    "issue-443": {
+      "state": "done",
+      "issue": 443,
+      "title": "issue-443",
+      "created_at": "2026-04-20T07:00:41Z",
+      "pr_merged": false,
+      "note": "closed-out-of-scope",
+      "done_at": "2026-04-20T07:20:56Z"
+    },
+    "issue-444": {
+      "state": "done",
+      "issue": 444,
+      "title": "issue-444",
+      "created_at": "2026-04-20T07:00:41Z",
+      "pr_merged": false,
+      "note": "closed-out-of-scope",
+      "done_at": "2026-04-20T07:20:56Z"
+    },
+    "issue-445": {
+      "state": "done",
+      "issue": 445,
+      "title": "issue-445",
+      "created_at": "2026-04-20T07:00:41Z",
+      "pr_merged": false,
+      "note": "closed-out-of-scope",
+      "done_at": "2026-04-20T07:20:56Z"
+    },
+    "issue-446": {
+      "state": "done",
+      "issue": 446,
+      "title": "issue-446",
+      "created_at": "2026-04-20T07:00:41Z",
+      "pr_merged": false,
+      "note": "closed-out-of-scope",
+      "done_at": "2026-04-20T07:20:56Z"
+    },
+    "issue-447": {
+      "state": "done",
+      "issue": 447,
+      "title": "issue-447",
+      "created_at": "2026-04-20T07:00:41Z",
+      "pr_merged": false,
+      "note": "closed-out-of-scope",
+      "done_at": "2026-04-20T07:20:56Z"
+    },
+    "issue-454": {
+      "state": "done",
+      "issue": 454,
+      "title": "issue-454",
+      "created_at": "2026-04-20T07:25:51Z",
+      "pr_merged": false,
+      "note": "closed-duplicate",
+      "done_at": "2026-04-20T07:27:32Z"
+    },
+    "issue-455": {
+      "state": "done",
+      "issue": 455,
+      "title": "issue-455",
+      "created_at": "2026-04-20T07:25:51Z",
+      "pr_number": 459,
+      "pr_merged": true,
+      "done_at": "2026-04-20T07:50:25Z"
+    },
+    "issue-456": {
+      "state": "done",
+      "issue": 456,
+      "title": "issue-456",
+      "created_at": "2026-04-20T07:25:51Z",
+      "pr_merged": true,
+      "pr_number": 460,
+      "done_at": "2026-04-20T07:32:46Z"
+    },
+    "issue-457": {
+      "state": "done",
+      "issue": 457,
+      "title": "issue-457",
+      "created_at": "2026-04-20T07:25:51Z",
+      "pr_number": 461,
+      "pr_merged": true,
+      "done_at": "2026-04-20T07:36:37Z"
+    },
+    "issue-458": {
+      "state": "done",
+      "issue": 458,
+      "title": "issue-458",
+      "created_at": "2026-04-20T07:25:51Z",
+      "pr_merged": false,
+      "note": "closed-duplicate",
+      "done_at": "2026-04-20T07:27:32Z"
+    },
+    "issue-464": {
+      "state": "done",
+      "issue": 464,
+      "title": "feat: validate.sh check for 2-step scheduled workflow",
+      "created_at": "2026-04-20T07:59:23Z",
+      "areas": [
+        "area/tooling"
+      ],
+      "priority": "medium",
+      "size": "s",
+      "assigned_to": "sess-4dcd2a42",
+      "assigned_at": "2026-04-20T08:09:15Z",
+      "branch": "feat/issue-464",
+      "worktree": "/home/runner/work/otherness/otherness.issue-464",
+      "pr_number": 467,
+      "pr_merged": true,
+      "done_at": "2026-04-20T08:10:02Z"
+    },
+    "issue-413": {
+      "state": "done",
+      "issue": 413,
+      "title": "feat: AGENTS.md template anchor section",
+      "created_at": "2026-04-20T07:59:23Z",
+      "areas": [
+        "area/onboarding"
+      ],
+      "priority": "medium",
+      "size": "s",
+      "pr_number": 472,
+      "pr_merged": true,
+      "done_at": "2026-04-20T08:02:44Z",
+      "note": "Already done in PR #424 \u2014 issue-413 was doc fix (PR ref correction)"
+    },
+    "issue-405": {
+      "state": "done",
+      "issue": 405,
+      "title": "security: M1 pin opencode and aws-credentials SHA in workflows",
+      "created_at": "2026-04-20T07:59:23Z",
+      "areas": [
+        "area/tooling"
+      ],
+      "priority": "high",
+      "size": "s",
+      "done_at": "2026-04-20T08:05:26Z"
+    },
+    "issue-469": {
+      "state": "done",
+      "issue": 469,
+      "title": "hygiene: fix stale Present ref d4/translation.md",
+      "created_at": "2026-04-20T07:59:23Z",
+      "areas": [
+        "area/docs"
+      ],
+      "priority": "low",
+      "size": "xs",
+      "assigned_to": "sess-4dcd2a42",
+      "assigned_at": "2026-04-20T08:05:34Z",
+      "branch": "feat/issue-469",
+      "worktree": "/home/runner/work/otherness/otherness.issue-469",
+      "pr_number": 473,
+      "pr_merged": true,
+      "done_at": "2026-04-20T08:08:35Z"
+    },
+    "issue-470": {
+      "state": "done",
+      "issue": 470,
+      "title": "hygiene: fix stale Present ref otherness.upgrade.md",
+      "created_at": "2026-04-20T07:59:23Z",
+      "areas": [
+        "area/docs"
+      ],
+      "priority": "low",
+      "size": "xs",
+      "pr_number": 473,
+      "pr_merged": true,
+      "done_at": "2026-04-20T08:08:35Z"
+    },
+    "issue-471": {
+      "state": "done",
+      "issue": 471,
+      "title": "hygiene: fix stale Present ref validate.sh in d4-enforcement",
+      "created_at": "2026-04-20T07:59:23Z",
+      "areas": [
+        "area/docs"
+      ],
+      "priority": "low",
+      "size": "xs",
+      "pr_number": 473,
+      "pr_merged": true,
+      "done_at": "2026-04-20T08:08:35Z"
+    },
+    "issue-398": {
+      "state": "done",
+      "issue": 398,
+      "title": "docs: README missing /otherness.learn and /otherness.status commands",
+      "created_at": "2026-04-20T08:16:08Z",
+      "areas": [
+        "area/docs"
+      ],
+      "priority": "medium",
+      "size": "s",
+      "done_at": "2026-04-20T08:19:39Z"
+    },
+    "issue-394": {
+      "state": "done",
+      "issue": 394,
+      "title": "docs(design): create design doc for Stage 0: Scaffolding",
+      "created_at": "2026-04-20T08:16:08Z",
+      "areas": [
+        "area/docs"
+      ],
+      "priority": "low",
+      "size": "s",
+      "done_at": "2026-04-20T08:19:39Z"
+    },
+    "issue-302": {
+      "state": "done",
+      "issue": 302,
+      "title": "feat: PM \u00a75g journey 2 AMBER/RED health check",
+      "created_at": "2026-04-20T08:16:08Z",
+      "areas": [
+        "area/agent-loop"
+      ],
+      "priority": "medium",
+      "size": "s",
+      "assigned_to": "sess-4dcd2a42",
+      "assigned_at": "2026-04-20T08:21:03Z",
+      "branch": "feat/issue-302",
+      "worktree": "/home/runner/work/otherness/otherness.issue-302",
+      "pr_number": 475,
+      "pr_merged": true,
+      "done_at": "2026-04-20T08:25:48Z"
+    },
+    "issue-336": {
+      "state": "done",
+      "issue": 336,
+      "title": "feat: proactive vision expansion when queue drops below threshold",
+      "created_at": "2026-04-20T08:16:08Z",
+      "areas": [
+        "area/agent-loop"
+      ],
+      "priority": "medium",
+      "size": "s",
+      "assigned_to": "sess-4dcd2a42",
+      "assigned_at": "2026-04-20T08:27:12Z",
+      "branch": "feat/issue-336",
+      "worktree": "/home/runner/work/otherness/otherness.issue-336",
+      "pr_merged": false,
+      "done_at": "2026-04-20T08:28:56Z",
+      "note": "Already done per design docs \u2014 closed without new PR"
+    },
+    "issue-315": {
+      "state": "done",
+      "issue": 315,
+      "title": "feat: PM \u00a75m \u26a0\ufe0f Inferred ratio check",
+      "created_at": "2026-04-20T08:16:08Z",
+      "areas": [
+        "area/agent-loop"
+      ],
+      "priority": "low",
+      "size": "s",
+      "pr_merged": false,
+      "done_at": "2026-04-20T08:28:56Z",
+      "note": "Already done per design docs \u2014 closed without new PR"
+    },
+    "issue-395": {
+      "state": "done",
+      "issue": 395,
+      "title": "docs(design): create design doc for Stage 2: Skills Expansion",
+      "created_at": "2026-04-20T08:31:52Z",
+      "areas": [
+        "area/docs"
+      ],
+      "priority": "low",
+      "size": "s",
+      "assigned_to": "sess-4dcd2a42",
+      "assigned_at": "2026-04-20T08:32:19Z",
+      "branch": "feat/issue-395",
+      "worktree": "/home/runner/work/otherness/otherness.issue-395",
+      "pr_number": 476,
+      "pr_merged": true,
+      "done_at": "2026-04-20T08:35:13Z"
+    },
+    "issue-396": {
+      "state": "done",
+      "issue": 396,
+      "title": "docs(design): create design doc for Stage 3: Onboarding Quality",
+      "created_at": "2026-04-20T08:31:52Z",
+      "areas": [
+        "area/docs"
+      ],
+      "priority": "low",
+      "size": "s",
+      "pr_number": 476,
+      "pr_merged": true,
+      "done_at": "2026-04-20T08:35:13Z"
+    },
+    "issue-397": {
+      "state": "done",
+      "issue": 397,
+      "title": "docs(design): create design doc for Stage 4: Self-Improvement Metrics",
+      "created_at": "2026-04-20T08:31:52Z",
+      "areas": [
+        "area/docs"
+      ],
+      "priority": "low",
+      "size": "s",
+      "pr_number": 476,
+      "pr_merged": true,
+      "done_at": "2026-04-20T08:35:13Z"
+    },
+    "issue-478": {
+      "title": "feat(security): M2 \u2014 agent_version pin",
+      "state": "done",
+      "pr_number": 480,
+      "pr_merged": true,
+      "done_at": "2026-04-20T09:09:24Z",
+      "areas": [
+        "area/tooling"
+      ]
+    },
+    "issue-479": {
+      "state": "done",
+      "pr_number": 484,
+      "pr_merged": true,
+      "done_at": "2026-04-20T09:22:13Z",
+      "areas": [
+        "area/agent-loop"
+      ]
+    },
+    "issue-483": {
+      "state": "done",
+      "title": "fix: hygiene scanner false positives",
+      "pr_merged": true,
+      "done_at": "2026-04-20T09:53:15Z"
+    },
+    "issue-481": {
+      "state": "done"
+    },
+    "issue-482": {
+      "state": "done"
+    },
+    "issue-488": {
+      "state": "done"
+    },
+    "issue-490": {
+      "state": "done"
+    },
+    "issue-491": {
+      "state": "done"
+    },
+    "issue-493": {
+      "state": "done"
     }
   },
   "engineer_slots": {
@@ -481,10 +1037,25 @@
       "last_seen": "2026-04-20T04:49:33Z",
       "item": "sm-phase-75",
       "cycle": 6
+    },
+    "sess-8b135f6b": {
+      "last_seen": "2026-04-20T06:27:49Z",
+      "item": "sm-phase-54",
+      "cycle": 54
+    },
+    "sess-6d590a23": {
+      "last_seen": "2026-04-20T07:24:51Z",
+      "item": "coord-batch79",
+      "cycle": 1
+    },
+    "sess-f8eb3339": {
+      "last_seen": "2026-04-20T10:19:36Z",
+      "item": "session_complete",
+      "cycle": 10
     }
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 52,
-  "pm_cycle_count": 25
+  "sm_cycle_count": 63,
+  "pm_cycle_count": 36
 }
