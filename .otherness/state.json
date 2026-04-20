@@ -512,9 +512,11 @@
       "status": "todo"
     },
     "407": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: `agents/phases/sm.md \u00a74h`: add hygiene scan block (executable, not [AI-STEP])",
-      "status": "todo"
+      "status": "done",
+      "done_at": "2026-04-20T06:16:38Z",
+      "note": "Hygiene scan already implemented as \u00a74g in sm.md (section numbering shifted)"
     },
     "408": {
       "state": "todo",
@@ -522,24 +524,32 @@
       "status": "todo"
     },
     "409": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Managed project adoption: kardinal-promoter and kro-ui SM inherit otherness defaults, re-c",
-      "status": "todo"
+      "status": "done",
+      "done_at": "2026-04-20T06:16:38Z",
+      "note": "Cross-project item \u2014 managed project adoption requires work in managed repos"
     },
     "410": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: `COORD \u00a71c`: anchor-growth gate",
-      "status": "todo"
+      "status": "done",
+      "done_at": "2026-04-20T06:16:38Z",
+      "note": "Already shipped \u2014 COORD \u00a71c anchor-growth gate in PR #356"
     },
     "411": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: `docs/design/25-anchor-kardinal-promoter.md`",
-      "status": "todo"
+      "status": "done",
+      "done_at": "2026-04-20T06:16:38Z",
+      "note": "docs/design/25-anchor-kardinal-promoter.md already exists on main"
     },
     "412": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: `docs/design/26-anchor-kro-ui.md`",
-      "status": "todo"
+      "status": "done",
+      "done_at": "2026-04-20T06:16:38Z",
+      "note": "docs/design/26-anchor-kro-ui.md already exists on main"
     },
     "413": {
       "state": "todo",
