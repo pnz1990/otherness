@@ -622,12 +622,14 @@
       "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
     },
     "issue-438": {
-      "state": "in_review",
+      "state": "done",
       "issue": 438,
       "title": "issue-438",
       "created_at": "2026-04-20T07:00:41Z",
       "pr_number": 448,
-      "pr_url": "https://github.com/pnz1990/otherness/pull/448"
+      "pr_url": "https://github.com/pnz1990/otherness/pull/448",
+      "pr_merged": true,
+      "done_at": "2026-04-20T07:50:00Z"
     },
     "issue-439": {
       "state": "done",
@@ -720,11 +722,13 @@
       "done_at": "2026-04-20T07:27:32Z"
     },
     "issue-455": {
-      "state": "in_review",
+      "state": "done",
       "issue": 455,
       "title": "issue-455",
       "created_at": "2026-04-20T07:25:51Z",
-      "pr_number": 459
+      "pr_number": 459,
+      "pr_merged": true,
+      "done_at": "2026-04-20T07:50:25Z"
     },
     "issue-456": {
       "state": "done",
