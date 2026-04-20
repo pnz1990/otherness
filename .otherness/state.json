@@ -986,6 +986,18 @@
       "areas": [
         "area/agent-loop"
       ]
+    },
+    "issue-483": {
+      "state": "done",
+      "title": "fix: hygiene scanner false positives",
+      "pr_merged": true,
+      "done_at": "2026-04-20T09:53:15Z"
+    },
+    "issue-481": {
+      "state": "done"
+    },
+    "issue-482": {
+      "state": "done"
     }
   },
   "engineer_slots": {
