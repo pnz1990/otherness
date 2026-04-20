@@ -370,56 +370,103 @@ else:
         print("SOURCE: no roadmap or design docs found")
 PYEOF
 
-    # [AI-STEP] For each ITEM line above:
-    # 1. Check for an existing open issue with the same title (avoid duplicates).
-    #    gh issue list --repo $REPO --state open --search "<title>" --json number --jq 'length'
-    #    Skip if result > 0.
-    #
-    # 2. Build the issue body. Design reference is REQUIRED in the body (same format as spec.md):
-    #
-    #    If item came from a design doc ([from <filename>] in the ITEM line):
-    #      ## Design reference
-    #      - **Design doc**: `docs/design/<filename>`
-    #      - **Section**: `§ Future`
-    #      - **Implements**: <item description> (🔲 → ✅)
-    #
-    #      ## Summary
-    #      <one paragraph describing what this item implements and why>
-    #
-    #    If item came from roadmap (no design doc):
-    #      ## Design reference
-    #      - N/A — roadmap item with no docs/design/ file yet.
-    #      - **Note**: Creating a `docs/design/<area>.md` file should be part of this item's work
-    #        (see eng.md §2b O1). The design doc gate: no spec before design doc.
-     #
-     #      ## Summary
-     #      <one paragraph>
-     #
-     # 3. Spatial diversity preference: before creating issues, sort new_items to prefer
-     #    items from different area labels. This reduces parallel session file collisions.
-     #    [AI-STEP]
-     #    AREA_TO_SPACES_CONFIG = python3 read from otherness-config.yaml maqa.area_file_spaces if present
-     #    seen_areas = set()
-     #    sorted_items = []
-     #    # First pass: one item per area
-     #    for item in new_items:
-     #        area = <derive from item labels or design doc name>
-     #        if area not in seen_areas:
-     #            sorted_items.append(item)
-     #            seen_areas.add(area)
-     #    # Second pass: remaining items (same area — no deadlock)
-     #    for item in new_items:
-     #        if item not in sorted_items:
-     #            sorted_items.append(item)
-     #    new_items = sorted_items
-     #
-     # 4. Create max 20 issues from sorted_items. Prefer size/s or size/xs labels.
-     #    Rationale: with multi-item sessions (§1f), a session can consume 10+ items.
-     #    A cap of 5 causes the queue to empty in a single session, wasting the next
-     #    session on queue-gen overhead instead of implementation work.
-     #    gh issue create --repo $REPO --title "feat(<area>): <desc>" \
-     #      --label "otherness,kind/enhancement,area/<area>,size/s,priority/medium" \
-     #      --body "<body from step 2>"
+    # Create GitHub issues from design_items
+    python3 - <<'ISSUE_GEN'
+import subprocess, re, json, os
+
+REPO = os.environ.get('REPO', '')
+
+# Re-collect design items (same logic as above — idempotent)
+def is_done_check(desc, done_titles, merged_prs):
+    d = desc.lower().strip()
+    d = re.sub(r'^⚠️\s*(inferred|observed):\s*', '', d)
+    if d in done_titles: return True
+    key = d[:60]
+    for pr in merged_prs:
+        if key in pr: return True
+    return False
+
+try:
+    state = json.load(open('.otherness/state.json'))
+    done_titles = set(
+        v.get('title','').lower() for v in state.get('features',{}).values()
+        if v.get('state') == 'done' and v.get('title')
+    )
+except:
+    done_titles = set()
+
+try:
+    merged_prs = subprocess.check_output(
+        ['gh','pr','list','--repo',REPO,'--state','merged','--limit','100',
+         '--json','title','--jq','.[].title'], text=True).lower().splitlines()
+except:
+    merged_prs = []
+
+design_dir = 'docs/design'
+new_items = []
+if os.path.isdir(design_dir):
+    for fname in sorted(os.listdir(design_dir)):
+        if not fname.endswith('.md'): continue
+        try:
+            content = open(f'{design_dir}/{fname}').read()
+            m = re.search(r'^## Future.*?\n(.*?)(?=^## |\Z)', content,
+                          re.MULTILINE | re.DOTALL)
+            if m:
+                items = re.findall(r'^- 🔲 (?!.*🚫)(.+)', m.group(1), re.MULTILINE)
+                for item in items:
+                    desc = re.sub(r'\s*—.*$', '', item).strip()
+                    if not is_done_check(desc, done_titles, merged_prs):
+                        new_items.append({'source': fname, 'desc': desc, 'item': item})
+        except Exception:
+            pass
+
+# Spatial diversity: one item per source first, then remaining
+seen_sources = set()
+sorted_items = []
+for it in new_items:
+    if it['source'] not in seen_sources:
+        sorted_items.append(it)
+        seen_sources.add(it['source'])
+for it in new_items:
+    if it not in sorted_items:
+        sorted_items.append(it)
+
+def open_if_absent(title, labels, body):
+    r = subprocess.run(
+        ['gh','issue','list','--repo',REPO,'--state','open',
+         '--search',title[:60],'--json','number','--jq','length'],
+        capture_output=True, text=True)
+    if int(r.stdout.strip() or '0') == 0:
+        r2 = subprocess.run(
+            ['gh','issue','create','--repo',REPO,
+             '--title',title,'--label',labels,'--body',body],
+            capture_output=True, text=True)
+        if r2.returncode == 0:
+            num = r2.stdout.strip().split('/')[-1]
+            return num
+    return None
+
+created = 0
+for it in sorted_items[:20]:
+    if created >= 20: break
+    fname = it['source']
+    desc = it['desc']
+    item = it['item']
+    title = f"feat: {desc[:90]}"
+    body = (f"## Design reference\n"
+            f"- **Design doc**: `docs/design/{fname}`\n"
+            f"- **Section**: `§ Future`\n"
+            f"- **Implements**: {desc} (🔲 → ✅)\n\n"
+            f"## Summary\n\n"
+            f"Implements the design doc Future item from `docs/design/{fname}`.\n\n"
+            f"Full item: {item}")
+    result = open_if_absent(title, 'otherness,kind/enhancement,area/agent-loop,size/s,priority/medium', body)
+    if result:
+        created += 1
+        print(f"[COORD §1c] Created issue #{result}: {title[:60]}")
+
+print(f"[COORD §1c] Queue-gen complete: {created} issues created from {len(sorted_items)} candidates.")
+ISSUE_GEN
 
     # Write state, release lock, post summary
     export STATE_MSG="[COORD] queue generated"
