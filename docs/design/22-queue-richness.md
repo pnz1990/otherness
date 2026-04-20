@@ -87,7 +87,7 @@ The trigger sequence:
 
 ## Future (🔲)
 
-- 🔲 `coord.md §1c`: roadmap source — when design doc items exhausted, read `docs/aide/roadmap.md` deliverables and create issues from unimplemented stages
+- ✅ `coord.md §1c`: roadmap source — when design doc items ≤5, ISSUE_GEN reads `docs/aide/roadmap.md` earliest incomplete stage, creates up to 5 issues at `priority/low`; deduplicates; includes `## Design reference` pointing to roadmap (PR #388, 2026-04-20)
 - ✅ `coord.md §1c`: queue-gen issue creation executable — python3 block creates up to 20 issues from design doc Future items; deduplicates vs open issues; spatial diversity sort (one per source first); proper ## Design reference body template (PR #372, 2026-04-20)
 - 🚫 `coord.md §1f`: minimum queue depth guard executable — when QUEUE_REMAINING < 5, inline trigger next source (currently prose, not executable) — Implemented (PR #370, 2026-04-20). Deprecating Future marker.
 - ✅ `coord.md §1f`: minimum queue depth guard — inline queue-gen: acquires lock, generates up to 10 issues from design doc Future items, releases lock. Non-blocking. (PR #370, 2026-04-20)
