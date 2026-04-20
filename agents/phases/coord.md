@@ -773,9 +773,89 @@ if [ "${QUEUE_REMAINING:-5}" -lt 5 ]; then
   LOCK_EXISTS=$(git ls-remote --heads origin otherness/queue-gen 2>/dev/null | wc -l | tr -d ' ')
   if [ "${LOCK_EXISTS:-0}" -eq 0 ]; then
     echo "[COORD §1f] Queue depth low (${QUEUE_REMAINING} items) — triggering queue-gen now."
-    # Re-enter §1c queue generation inline (acquire lock, generate, release)
-    # This prevents the queue from hitting zero before the next scheduled session.
-    # [AI-STEP: execute §1c queue generation block here]
+    # Acquire queue-gen lock
+    QUEUE_LOCK_BRANCH="otherness/queue-gen"
+    if git push origin "HEAD:refs/heads/$QUEUE_LOCK_BRANCH" 2>/dev/null; then
+      echo "[COORD §1f] Queue-gen lock acquired. Generating items inline..."
+      python3 - <<'INLINE_QGEN'
+import subprocess, re, json, os
+
+REPO = os.environ.get('REPO', '')
+
+try:
+    state = json.load(open('.otherness/state.json'))
+    done_titles = set(
+        v.get('title','').lower() for v in state.get('features',{}).values()
+        if v.get('state') == 'done' and v.get('title')
+    )
+except:
+    done_titles = set()
+
+try:
+    merged_prs = subprocess.check_output(
+        ['gh','pr','list','--repo',REPO,'--state','merged','--limit','100',
+         '--json','title','--jq','.[].title'], text=True).lower()
+except:
+    merged_prs = ''
+
+def is_done(d):
+    d_lower = d.lower().strip()
+    d_lower = re.sub(r'^⚠️\s*(inferred|observed):\s*', '', d_lower)
+    if d_lower in done_titles: return True
+    desc_key = d_lower[:60]
+    for pr_title in merged_prs.splitlines():
+        if desc_key in pr_title.strip(): return True
+    return False
+
+def open_if_absent(title, labels, body):
+    r = subprocess.run(['gh','issue','list','--repo',REPO,'--state','open',
+                        '--search',title[:60],'--json','number','--jq','length'],
+                       capture_output=True, text=True)
+    if int(r.stdout.strip() or '0') == 0:
+        r2 = subprocess.run(['gh','issue','create','--repo',REPO,
+                             '--title',title,'--label',labels,'--body',body],
+                            capture_output=True, text=True)
+        if r2.returncode == 0:
+            return r2.stdout.strip().split('/')[-1]
+    return None
+
+design_dir = 'docs/design'
+new_items = 0
+if os.path.isdir(design_dir):
+    for fname in sorted(os.listdir(design_dir)):
+        if not fname.endswith('.md'): continue
+        if new_items >= 10: break
+        try:
+            content = open(f'{design_dir}/{fname}').read()
+            m = re.search(r'^## Future.*?\n(.*?)(?=^## |\Z)', content, re.MULTILINE | re.DOTALL)
+            if m:
+                items = re.findall(r'^- 🔲 (?!.*🚫)(.+)', m.group(1), re.MULTILINE)
+                for item in items:
+                    if new_items >= 10: break
+                    desc = re.sub(r'\s*—.*$', '', item).strip()
+                    if is_done(desc): continue
+                    title = f"feat: {desc[:80]}"
+                    body = (f"## Design reference\n"
+                            f"- **Design doc**: `docs/design/{fname}`\n"
+                            f"- **Section**: `§ Future`\n"
+                            f"- **Implements**: {desc} (🔲 → ✅)\n\n"
+                            f"## Summary\n\n"
+                            f"Implements the design doc Future item from `docs/design/{fname}`.\n\n"
+                            f"Full item: {item}")
+                    result = open_if_absent(title, 'otherness,kind/enhancement,area/agent-loop,size/s,priority/medium', body)
+                    if result:
+                        new_items += 1
+                        print(f"[COORD §1f] Created issue #{result}: {title[:60]}")
+        except Exception as e:
+            print(f"[COORD §1f] queue-gen error for {fname}: {e}")
+
+print(f"[COORD §1f] Inline queue-gen complete: {new_items} issues created.")
+INLINE_QGEN
+      git push origin --delete "$QUEUE_LOCK_BRANCH" 2>/dev/null || true
+      echo "[COORD §1f] Queue-gen lock released."
+    else
+      echo "[COORD §1f] Could not acquire queue-gen lock (another session may have just acquired it)."
+    fi
   else
     echo "[COORD §1f] Queue depth low but queue-gen already running — skipping."
   fi

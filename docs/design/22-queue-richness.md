@@ -89,7 +89,8 @@ The trigger sequence:
 
 - 🔲 `coord.md §1c`: roadmap source — when design doc items exhausted, read `docs/aide/roadmap.md` deliverables and create issues from unimplemented stages
 - 🔲 `coord.md §1c`: source priority cascade — explicit ordered fallback: design docs → roadmap → PM §5h/§5c backlog → SM §4g backlog → autonomous vision
-- 🔲 `coord.md §1f`: minimum queue depth guard executable — when QUEUE_REMAINING < 5, inline trigger next source (currently prose, not executable)
+- 🚫 `coord.md §1f`: minimum queue depth guard executable — when QUEUE_REMAINING < 5, inline trigger next source (currently prose, not executable) — Implemented (PR #370, 2026-04-20). Deprecating Future marker.
+- ✅ `coord.md §1f`: minimum queue depth guard — inline queue-gen: acquires lock, generates up to 10 issues from design doc Future items, releases lock. Non-blocking. (PR #370, 2026-04-20)
 
 ---
 
