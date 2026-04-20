@@ -506,6 +506,35 @@
     "issue-314": {
       "status": "done",
       "title": "feat: SM phase trigger"
+    },
+    "339": {
+      "state": "assigned",
+      "title": "feat(ci): token expiry preflight \u2014 validate GH_TOKEN scopes before push",
+      "design_doc": "19-scheduled-execution.md",
+      "depends_on": [],
+      "areas": [
+        "area/tooling"
+      ],
+      "priority": "medium",
+      "size": "s",
+      "assigned_to": "sess-c63ae0fd",
+      "assigned_at": "2026-04-20T00:31:30Z",
+      "branch": "feat/339",
+      "worktree": "../otherness.339",
+      "file_spaces": [
+        ".github/workflows/"
+      ]
+    },
+    "340": {
+      "state": "todo",
+      "title": "feat(config): add maqa.session_item_limit field to otherness-config.yaml and template",
+      "design_doc": "21-session-throughput.md",
+      "depends_on": [],
+      "areas": [
+        "area/tooling"
+      ],
+      "priority": "medium",
+      "size": "xs"
     }
   },
   "engineer_slots": {
@@ -527,6 +556,11 @@
     "sess-5aedff9f": {
       "last_seen": "2026-04-19T16:41:29Z",
       "item": "328",
+      "cycle": 1
+    },
+    "sess-c63ae0fd": {
+      "last_seen": "2026-04-20T00:31:30Z",
+      "item": "339",
       "cycle": 1
     }
   },
