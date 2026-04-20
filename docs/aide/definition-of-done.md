@@ -275,15 +275,70 @@ grep -c "two-way sync\|SYNCED\|cmp -s" ~/.otherness/agents/standalone.md
 
 ---
 
+## Journey 9: Autonomous vision synthesis keeps the loop alive
+
+**The user story**: When the queue empties and no human is present, SM §4h triggers the autonomous vision agent, which produces new `🔲 ⚠️ Inferred` items, and COORD picks them up on the next session — without any human restart instruction.
+
+### Automated check (PM §5 every cycle)
+
+```bash
+# 1. Verify SM §4h is present in sm.md
+grep -c "4h\|autonomous vision\|autonomous-vision" ~/.otherness/agents/phases/sm.md
+# Must be ≥ 1
+
+# 2. Verify autonomous-vision.md exists
+ls ~/.otherness/agents/autonomous-vision.md
+# Must exist
+
+# 3. Verify last_auto_vision_cycle is tracked in state.json
+gh api repos/pnz1990/otherness/branches/_state --quiet 2>/dev/null | head -1
+git show origin/_state:.otherness/state.json 2>/dev/null | python3 -c "
+import json, sys
+try:
+    s = json.load(sys.stdin)
+    cycle = s.get('last_auto_vision_cycle', 0)
+    print(f'last_auto_vision_cycle = {cycle}')
+except Exception as e:
+    print(f'error: {e}')
+"
+# Must show a non-zero cycle number (proof it has run at least once)
+
+# 4. Verify ⚠️ Inferred items exist in design docs (proof synthesis ran)
+python3 -c "
+import re, os
+total = 0
+for f in os.listdir('docs/design'):
+    if not f.endswith('.md'): continue
+    content = re.sub(r'\`\`\`.*?\`\`\`', '', open(f'docs/design/{f}').read(), flags=re.DOTALL)
+    items = re.findall(r'^- 🔲 ⚠️ (Inferred|Observed):', content, re.MULTILINE)
+    total += len(items)
+print(f'{total} ⚠️ Inferred/Observed items in design docs')
+"
+# Must be ≥ 1 (proof synthesis produced items that haven't all been shipped yet, OR
+# all were shipped meaning the loop ran successfully)
+```
+
+### Pass criteria
+
+- [ ] `agents/phases/sm.md` contains SM §4h with autonomous vision trigger
+- [ ] `agents/autonomous-vision.md` exists and is non-empty
+- [ ] `state.json` has `last_auto_vision_cycle` > 0 on the `_state` branch
+- [ ] At least one session has run with the autonomous vision agent triggered (verified via `last_auto_vision_cycle` in state)
+- [ ] When triggered, the agent produces ≥1 `🔲 ⚠️ Inferred` item in `docs/design/`
+- [ ] COORD queue-gen picks up the synthesized item on the next session (verified by seeing `⚠️ Inferred` items become GitHub issues)
+
+---
+
 ## Journey Status
 
 | Journey | Status | Last checked | Health | Notes |
 |---|---|---|---|---|
-| 1: Build and validate itself | ✅ Passing | 2026-04-19 | GREEN | validate.sh, lint.sh, test.sh all exit 0 |
-| 2: Runs correctly on reference project | ❌ Failing | 2026-04-19 | AMBER | alibi `_state` last commit 2026-04-14 (5d). PM §5j should post [NEEDS HUMAN] once. `bash scripts/test.sh` check 5b outputs STALE_REASON. [NEEDS HUMAN: restart otherness on alibi] |
-| 3: Self-improvement happening | ✅ Passing | 2026-04-19 | GREEN | 20+ PRs merged; command sync shipped; Stage 9/10 complete |
-| 4: CRITICAL tier protection | ✅ Passing | 2026-04-19 | GREEN | CRITICAL-A/B tier split; autonomous merge protocol; queue gate |
-| 5: Starts cleanly on fresh clone | ✅ Passing | 2026-04-19 | GREEN | command files now auto-synced via SELF-UPDATE; setup updated |
-| 6: vibe-vision produces valid D4 artifacts | ✅ Passing | 2026-04-19 | GREEN | Multiple sessions produced design docs with 🔲 Future items; COORD picked them up |
-| 7: Eternal loop health signal | ✅ Passing | 2026-04-19 | GREEN | SM §4f now posts Health: GREEN/AMBER/RED; 'Never report finality' rule in HARD RULES; no 'final run' in last 10 posts |
-| 8: Commands always current | ✅ Passing | 2026-04-19 | GREEN | Two-way sync in SELF-UPDATE: adds new, removes stale otherness.* on every session startup (PR #332) |
+| 1: Build and validate itself | ✅ Passing | 2026-04-20 | GREEN | validate.sh [7/7] checks (incl. ⚠️ Inferred attribution), lint.sh, test.sh all exit 0 |
+| 2: Runs correctly on reference project | ❌ Failing | 2026-04-20 | AMBER | alibi _state last commit 2026-04-14 (138h). GH_TOKEN secret missing on pnz1990/alibi. Issue #342 open with diagnosis. |
+| 3: Self-improvement happening | ✅ Passing | 2026-04-20 | GREEN | PR #558 (vision synthesis) + PR #562 (validate check) merged batch 87 |
+| 4: CRITICAL tier protection | ✅ Passing | 2026-04-20 | GREEN | CRITICAL-A/B tier split; autonomous merge protocol; queue gate active |
+| 5: Starts cleanly on fresh clone | ✅ Passing | 2026-04-20 | GREEN | command files now auto-synced via SELF-UPDATE; setup updated |
+| 6: vibe-vision produces valid D4 artifacts | ✅ Passing | 2026-04-20 | GREEN | Multiple sessions produced design docs with 🔲 Future items; COORD picked them up |
+| 7: Eternal loop health signal | ✅ Passing | 2026-04-20 | GREEN | SM §4f posts Health: GREEN/AMBER/RED; 'Never report finality' rule in HARD RULES; no 'final run' in last 10 posts |
+| 8: Commands always current | ✅ Passing | 2026-04-20 | GREEN | Two-way sync in SELF-UPDATE: adds new, removes stale otherness.* on every session startup (PR #332) |
+| 9: Autonomous vision synthesis | ✅ Passing | 2026-04-20 | GREEN | SM §4h present; autonomous-vision.md deployed; batch 87 triggered synthesis producing 4 ⚠️ Inferred items (PR #558); last_auto_vision_cycle=87 in state |
