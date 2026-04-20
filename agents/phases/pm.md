@@ -850,28 +850,59 @@ Surface when machine-generated items dominate — human direction may be needed.
 if [ $((${PM_CYCLE:-0} % ${N_PM_CYCLES:-3})) -eq 0 ]; then
   echo "[PM §5m] Checking ⚠️ Inferred ratio..."
 
-  # [AI-STEP]
-  # Step 1: Count total 🔲 Future items and ⚠️ Inferred subset across all docs/design/*.md.
-  #   total_future = 0; inferred_count = 0
-  #   for each docs/design/*.md (excluding code blocks):
-  #     items = re.findall(r'^- 🔲 (?!.*🚫)(.+)', future_section, re.MULTILINE)
-  #     total_future += len(items)
-  #     inferred_count += sum(1 for i in items if '⚠️ inferred' in i.lower() or '⚠️ observed' in i.lower())
-  #
-  # Step 2: If total_future == 0: echo "[PM §5m] No Future items — skipping."; exit
-  #
-  # Step 3: ratio = inferred_count / total_future
-  #   If ratio > 0.8 (>80% machine-generated):
-  #     TITLE="[📋 PM §5m] ⚠️ Inferred items are ${ratio*100:.0f}% of the queue — human direction may be needed"
-  #     EXISTING=$(gh issue list --repo $REPO --state open --search "Inferred items are" --json number --jq 'length')
-  #     if [ "$EXISTING" -eq 0 ]:
-  #       gh issue comment $REPORT_ISSUE --repo $REPO \
-  #         --body "[📋 PM §5m] ${inferred_count} of ${total_future} Future items (${ratio*100:.0f}%) are ⚠️ Inferred (machine-generated).
-  #                 The system is filling the queue autonomously, but human vision direction would strengthen it.
-  #                 Consider running /otherness.vibe-vision.
-  #                 (This is a suggestion — the loop continues.)"
-  #   fi
-  #   Else: echo "[PM §5m] Inferred ratio OK: ${ratio*100:.0f}% (${inferred_count}/${total_future})"
+  python3 - <<'INFERRED_EOF'
+import re, os, subprocess
+
+REPO = os.environ.get('REPO', '')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'PM')
+
+design_dir = 'docs/design'
+total_future = 0
+inferred_count = 0
+
+if os.path.isdir(design_dir):
+    for fname in sorted(os.listdir(design_dir)):
+        if not fname.endswith('.md'): continue
+        try:
+            content = open(f'{design_dir}/{fname}').read()
+            m = re.search(r'^## Future.*?\n(.*?)(?=^## |\Z)', content, re.MULTILINE | re.DOTALL)
+            if m:
+                items = re.findall(r'^- 🔲 (?!.*🚫)(.+)', m.group(1), re.MULTILINE)
+                total_future += len(items)
+                inferred_count += sum(
+                    1 for item in items
+                    if '⚠️ inferred' in item.lower() or '⚠️ observed' in item.lower()
+                )
+        except Exception:
+            pass
+
+if total_future == 0:
+    print('[PM §5m] No Future items — skipping.')
+    exit(0)
+
+ratio = inferred_count / total_future
+print(f'[PM §5m] Inferred ratio: {inferred_count}/{total_future} ({ratio*100:.0f}%)')
+
+if ratio > 0.8:
+    print(f'[PM §5m] ⚠️ Ratio > 80% — posting vibe-vision suggestion')
+    body = (
+        f"[📋 PM §5m | {MY_SESSION_ID}] "
+        f"{inferred_count} of {total_future} Future items ({ratio*100:.0f}%) are ⚠️ Inferred (machine-generated).\n\n"
+        f"The system is filling the queue autonomously. Human vision direction would strengthen it.\n\n"
+        f"Consider running `/otherness.vibe-vision` to add declarative design intent.\n\n"
+        f"(This is a suggestion — the loop continues.)"
+    )
+    r = subprocess.run(
+        ['gh','issue','comment', REPORT_ISSUE, '--repo', REPO, '--body', body],
+        capture_output=True, text=True)
+    if r.returncode == 0:
+        print('[PM §5m] Vibe-vision suggestion posted.')
+    else:
+        print(f'[PM §5m] Could not post suggestion (non-fatal): {r.stderr[:100]}')
+else:
+    print(f'[PM §5m] Inferred ratio OK: {ratio*100:.0f}% (below 80% threshold)')
+INFERRED_EOF
 
   echo "[PM §5m] ⚠️ Inferred ratio check complete."
 fi
