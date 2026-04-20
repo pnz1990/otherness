@@ -394,6 +394,58 @@
       "branch": null,
       "worktree": null,
       "file_spaces": []
+    },
+    "issue-567": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: otherness-config.yaml: `anchor:` section",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-568": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: docs/design/: add design docs for major feature areas (RGD display, instance management, h",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-569": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: M5b: Restrict Bedrock Resource to specific ARNs",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-570": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: M3: Replace GH_TOKEN PAT with GitHub App",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
     }
   },
   "sm_cycle_count": 3,
