@@ -61,20 +61,9 @@
       "pr_number": 536
     },
     "issue-521": {
-      "state": "todo",
-      "status": "todo",
-      "title": "feat: Scenarios 22-24: persona journeys",
-      "labels": [
-        "priority/medium",
-        "area/agent-loop",
-        "otherness",
-        "size/s",
-        "kind/enhancement"
-      ],
-      "priority": "medium",
-      "branch": null,
-      "worktree": null,
-      "file_spaces": []
+      "state": "done",
+      "status": "done",
+      "pr_number": 537
     },
     "issue-522": {
       "state": "todo",
