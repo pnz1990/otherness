@@ -923,7 +923,7 @@
       "note": "Already done per design docs \u2014 closed without new PR"
     },
     "issue-395": {
-      "state": "todo",
+      "state": "done",
       "issue": 395,
       "title": "docs(design): create design doc for Stage 2: Skills Expansion",
       "created_at": "2026-04-20T08:31:52Z",
@@ -931,10 +931,17 @@
         "area/docs"
       ],
       "priority": "low",
-      "size": "s"
+      "size": "s",
+      "assigned_to": "sess-4dcd2a42",
+      "assigned_at": "2026-04-20T08:32:19Z",
+      "branch": "feat/issue-395",
+      "worktree": "/home/runner/work/otherness/otherness.issue-395",
+      "pr_number": 476,
+      "pr_merged": true,
+      "done_at": "2026-04-20T08:35:13Z"
     },
     "issue-396": {
-      "state": "todo",
+      "state": "done",
       "issue": 396,
       "title": "docs(design): create design doc for Stage 3: Onboarding Quality",
       "created_at": "2026-04-20T08:31:52Z",
@@ -942,10 +949,13 @@
         "area/docs"
       ],
       "priority": "low",
-      "size": "s"
+      "size": "s",
+      "pr_number": 476,
+      "pr_merged": true,
+      "done_at": "2026-04-20T08:35:13Z"
     },
     "issue-397": {
-      "state": "todo",
+      "state": "done",
       "issue": 397,
       "title": "docs(design): create design doc for Stage 4: Self-Improvement Metrics",
       "created_at": "2026-04-20T08:31:52Z",
@@ -953,7 +963,10 @@
         "area/docs"
       ],
       "priority": "low",
-      "size": "s"
+      "size": "s",
+      "pr_number": 476,
+      "pr_merged": true,
+      "done_at": "2026-04-20T08:35:13Z"
     }
   },
   "engineer_slots": {
@@ -995,6 +1008,6 @@
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 61,
-  "pm_cycle_count": 34
+  "sm_cycle_count": 62,
+  "pm_cycle_count": 35
 }
