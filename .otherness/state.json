@@ -312,7 +312,7 @@
       "priority": "medium"
     },
     "issue-361": {
-      "state": "todo",
+      "state": "assigned",
       "status": "todo",
       "title": "security(p2): replace GH_TOKEN PAT with GitHub App \u2014 per-repo scoped, non-exportable",
       "labels": [
@@ -323,7 +323,15 @@
         "area/tooling",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "assigned_to": "sess-65e84058",
+      "assigned_at": "2026-04-20T18:31:22Z",
+      "branch": "feat/issue-361",
+      "worktree": "../otherness.issue-361",
+      "file_spaces": [
+        "scripts/",
+        ".github/"
+      ]
     },
     "issue-338": {
       "state": "done",
@@ -492,9 +500,22 @@
       "priority": "low",
       "pr_merged": false,
       "done_at": "already-implemented"
+    },
+    "issue-595": {
+      "title": "M3: Replace GH_TOKEN PAT with GitHub App",
+      "state": "done",
+      "pr_merged": true,
+      "pr_number": 605,
+      "done_at": "2026-04-20T18:39:31Z",
+      "priority": "medium",
+      "labels": [
+        "priority/medium",
+        "area/tooling",
+        "kind/enhancement"
+      ]
     }
   },
-  "sm_cycle_count": 3,
+  "sm_cycle_count": 4,
   "last_sm_at": "2026-04-20T13:57:42Z",
   "session_heartbeats": {
     "sess-5327084f": {
@@ -506,6 +527,11 @@
       "last_seen": "2026-04-20T17:36:53Z",
       "item": "coord",
       "cycle": 2
+    },
+    "sess-65e84058": {
+      "last_seen": "2026-04-20T18:31:22Z",
+      "item": "issue-361",
+      "cycle": 1
     }
   },
   "pm_cycle_count": 1,
