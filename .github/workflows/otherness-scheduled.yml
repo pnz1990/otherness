@@ -107,7 +107,8 @@ jobs:
               --label "needs-human" 2>/dev/null || true
             exit 1
           fi
-          if ! GH_TOKEN="$EFFECTIVE_TOKEN" gh api user --jq '.login' >/dev/null 2>&1; then
+          # App tokens cannot call /user — use /repos/:repo instead (works for both App and PAT)
+          if ! GH_TOKEN="$EFFECTIVE_TOKEN" gh api "repos/$REPO" --jq '.full_name' >/dev/null 2>&1; then
             echo "::error::Auth token is invalid or expired (mode: $AUTH_MODE)."
             GITHUB_TOKEN="$GITHUB_TOKEN" gh issue create --repo "$REPO" \
               --title "[NEEDS HUMAN] Auth token invalid — otherness cannot run" \
@@ -115,7 +116,7 @@ jobs:
               --label "needs-human" 2>/dev/null || true
             exit 1
           fi
-          echo "[preflight] Auth OK (mode: $AUTH_MODE) for: $(GH_TOKEN="$EFFECTIVE_TOKEN" gh api user --jq '.login')"
+          echo "[preflight] Auth OK (mode: $AUTH_MODE) repo: $(GH_TOKEN="$EFFECTIVE_TOKEN" gh api "repos/$REPO" --jq '.full_name')"
 
       # ── Step 3: Install agent files ──────────────────────────────────────
       # Clones pnz1990/otherness to ~/.otherness on the runner.
