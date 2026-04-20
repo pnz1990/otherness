@@ -224,6 +224,7 @@ git commit -m "<type>(<scope>): <description>
 
 Design doc updated: docs/design/<N>-<area>.md (🔲 → ✅)
 
+Signed-off-by: otherness[bot] <otherness[bot]@users.noreply.github.com>
 🤖 Generated with [Claude Code](https://claude.ai/code)"
 
 git push origin $MY_BRANCH
