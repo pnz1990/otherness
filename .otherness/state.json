@@ -891,7 +891,7 @@
       "done_at": "2026-04-20T08:25:48Z"
     },
     "issue-336": {
-      "state": "todo",
+      "state": "done",
       "issue": 336,
       "title": "feat: proactive vision expansion when queue drops below threshold",
       "created_at": "2026-04-20T08:16:08Z",
@@ -899,10 +899,17 @@
         "area/agent-loop"
       ],
       "priority": "medium",
-      "size": "s"
+      "size": "s",
+      "assigned_to": "sess-4dcd2a42",
+      "assigned_at": "2026-04-20T08:27:12Z",
+      "branch": "feat/issue-336",
+      "worktree": "/home/runner/work/otherness/otherness.issue-336",
+      "pr_merged": false,
+      "done_at": "2026-04-20T08:28:56Z",
+      "note": "Already done per design docs \u2014 closed without new PR"
     },
     "issue-315": {
-      "state": "todo",
+      "state": "done",
       "issue": 315,
       "title": "feat: PM \u00a75m \u26a0\ufe0f Inferred ratio check",
       "created_at": "2026-04-20T08:16:08Z",
@@ -910,7 +917,10 @@
         "area/agent-loop"
       ],
       "priority": "low",
-      "size": "s"
+      "size": "s",
+      "pr_merged": false,
+      "done_at": "2026-04-20T08:28:56Z",
+      "note": "Already done per design docs \u2014 closed without new PR"
     }
   },
   "engineer_slots": {
@@ -952,6 +962,6 @@
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 60,
-  "pm_cycle_count": 33
+  "sm_cycle_count": 61,
+  "pm_cycle_count": 34
 }
