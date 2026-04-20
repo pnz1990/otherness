@@ -1152,6 +1152,122 @@ fi
 
 ---
 
+## 4g-anchor-parity. Spec→journey parity check (every 10 SM cycles)
+
+For projects with a journey test suite: read the spec inventory from AGENTS.md
+§Anchor (Merged rows), diff against existing journey file names, open anchor-growth
+issues for specs with no journey. Skip gracefully if not configured.
+
+**Design ref**: `docs/design/26-anchor-kro-ui.md §Feature→journey parity`.
+
+```bash
+JOURNEYS_DIR=$(python3 -c "
+import re
+section = None
+for line in open('otherness-config.yaml'):
+    s = re.match(r'^(\w[\w_]*):', line)
+    if s: section = s.group(1)
+    if section == 'anchor':
+        m = re.match(r'\s+journeys_dir:\s*(\S+)', line)
+        if m: print(m.group(1)); break
+" 2>/dev/null || echo "")
+
+if [ -n "$JOURNEYS_DIR" ] && [ $((SM_CYCLE % 10)) -eq 0 ] && [ "${SM_CYCLE:-0}" -gt 0 ]; then
+  echo "[SM §4g-anchor-parity] Running spec→journey parity check..."
+
+  python3 - <<'PARITYEOF'
+import re, os, subprocess, json
+
+REPO = os.environ.get('REPO', '')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'SM')
+PR_LABEL = os.environ.get('PR_LABEL', 'otherness')
+JOURNEYS_DIR = os.environ.get('JOURNEYS_DIR', '')
+
+# Step 1: Check for AGENTS.md §Anchor section with spec inventory
+try:
+    agents_content = open('AGENTS.md').read()
+    anchor_m = re.search(r'^## Anchor\s*\n(.*?)(?=^## |\Z)', agents_content,
+                         re.MULTILINE | re.DOTALL)
+    if not anchor_m:
+        print('[SM §4g-anchor-parity] No ## Anchor section in AGENTS.md — skipping.')
+        exit(0)
+    anchor_section = anchor_m.group(1)
+except Exception as e:
+    print(f'[SM §4g-anchor-parity] AGENTS.md read error (skipping): {e}')
+    exit(0)
+
+# Step 2: Extract merged spec names from §Anchor section
+# Looks for lines with ✅ or [x] entries in a coverage matrix or spec list
+spec_names = re.findall(r'^[-*|]\s*(?:✅|\[x\])\s*([^\|]+)', anchor_section,
+                        re.MULTILINE | re.IGNORECASE)
+spec_names = [s.strip()[:60] for s in spec_names if len(s.strip()) > 3]
+
+if not spec_names:
+    print('[SM §4g-anchor-parity] No ✅ spec entries in §Anchor — skipping.')
+    exit(0)
+
+# Step 3: Read journey file names from JOURNEYS_DIR
+journey_files = []
+if os.path.isdir(JOURNEYS_DIR):
+    for fname in os.listdir(JOURNEYS_DIR):
+        if fname.endswith(('.ts', '.js', '.spec.ts', '.spec.js', '.py', '.md')):
+            journey_files.append(fname.lower())
+else:
+    print(f'[SM §4g-anchor-parity] Journeys dir {JOURNEYS_DIR} not found — skipping.')
+    exit(0)
+
+# Step 4: Fuzzy match: for each spec, check if a journey file covers it
+def is_journeyed(spec_name):
+    fn = re.sub(r'[^a-z0-9]', '', spec_name.lower())[:20]
+    return any(fn in jf or jf[:20] in fn for jf in journey_files if len(fn) > 3)
+
+covered = [s for s in spec_names if is_journeyed(s)]
+uncovered = [s for s in spec_names if not is_journeyed(s)]
+parity_pct = int(len(covered) / len(spec_names) * 100) if spec_names else 100
+
+# Step 5: Post parity ratio
+ratio_body = (
+    f"[SM §4g-anchor-parity | {MY_SESSION_ID}] "
+    f"Spec→journey parity: {len(covered)}/{len(spec_names)} ({parity_pct}%)"
+)
+subprocess.run(['gh','issue','comment',REPORT_ISSUE,'--repo',REPO,'--body',ratio_body],
+               capture_output=True)
+print(f'[SM §4g-anchor-parity] {ratio_body}')
+
+# Step 6: Open anchor-growth issues for uncovered specs (cap at 3)
+issues_opened = 0
+for spec in uncovered[:3]:
+    title = f"anchor: add journey for '{spec[:50]}'"
+    existing = subprocess.run(
+        ['gh','issue','list','--repo',REPO,'--state','open',
+         '--search',spec[:30],'--json','number','--jq','length'],
+        capture_output=True, text=True)
+    if int(existing.stdout.strip() or '0') > 0:
+        continue
+    body = (f"## Spec→journey parity gap\n\n"
+            f"Spec: {spec}\n\n"
+            f"This merged spec has no corresponding journey file in `{JOURNEYS_DIR}`.\n\n"
+            f"**Action**: Add a journey file that exercises this spec's features end-to-end.\n"
+            f"See `docs/design/26-anchor-kro-ui.md §Feature→journey parity`.")
+    r = subprocess.run(
+        ['gh','issue','create','--repo',REPO,'--title',title,
+         '--label',f'{PR_LABEL},kind/chore,area/tooling,priority/low','--body',body],
+        capture_output=True, text=True)
+    if r.returncode == 0:
+        issues_opened += 1
+        print(f'[SM §4g-anchor-parity] Opened: {title[:60]}')
+
+print(f'[SM §4g-anchor-parity] Parity check done: {issues_opened} issues opened, '
+      f'{len(uncovered)} uncovered specs.')
+PARITYEOF
+
+  echo "[SM §4g-anchor-parity] Spec→journey parity check complete."
+fi
+```
+
+---
+
 ## 4h. Autonomous vision trigger (every SM cycle)
 
 When the queue is empty and the system has been stable for ≥3 cycles, run the
