@@ -57,11 +57,11 @@ operation. They should be documented as internal/advanced.
 - ✅ Update `otherness.setup.md` — removed stale .maqa migration; added D4 artifact stubs (this PR, 2026-04-17) ⚠️ Stale — referenced file not found
 - ✅ Update `otherness.upgrade.md` — derives otherness repo from git remote; no hardcoded slug (PR #221, 2026-04-17) ⚠️ Stale — referenced file not found
 - ✅ Update README command table — PRIMARY/SETUP/INTERNAL taxonomy; vibe-vision first; cross-agent-monitor removed (PR #209, 2026-04-17)
+- ✅ Automated `docs/aide/progress.md` update in SM §4f: SM now updates `progress.md` every batch with health signal, last-shipped PR, queue depth, and batch counter. Committed directly to main via pull-rebase-retry pattern. (issue-643, 2026-04-20)
 
 ## Future (🔲)
 
 - 🔲 `/otherness.status` single-page health summary that a human can read in 30 seconds: the current command output is too verbose and technical — it lists state.json fields and raw branch names. A human looking at GitHub right now should be able to answer in one glance: (1) is the system healthy, (2) what did it ship today, (3) is it moving toward the vision or spinning. Required output format: 3-line summary (health signal, last-shipped item, queue depth), then optional detail. Report issue comments must be condensed to the same 3-line format. Everything else is noise. ⚠️ Inferred from visibility lens: no clean single-page health dashboard; report issue comments too verbose and technical.
-- 🔲 Automated `docs/aide/progress.md` update in SM §4f: `progress.md` currently reflects the state at the time a human last wrote it. SM must update it automatically every batch to reflect: current stage, last-shipped PR title and date, queue depth, health signal. A human who reads `progress.md` should see reality, not history. ⚠️ Inferred from visibility lens: human cannot quickly tell if system is moving toward vision or spinning in circles.
 
 ---
 
