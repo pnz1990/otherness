@@ -26,68 +26,24 @@
       "pr_number": 532
     },
     "issue-514": {
-      "state": "todo",
-      "status": "todo",
-      "title": "feat: Scenario 7: config-only promotion",
-      "labels": [
-        "priority/medium",
-        "area/agent-loop",
-        "otherness",
-        "size/s",
-        "kind/enhancement"
-      ],
-      "priority": "medium",
-      "branch": null,
-      "worktree": null,
-      "file_spaces": []
+      "state": "done",
+      "status": "done",
+      "pr_number": 533
     },
     "issue-515": {
-      "state": "todo",
-      "status": "todo",
-      "title": "feat: Scenario 8: full multi-stage assertion",
-      "labels": [
-        "priority/medium",
-        "area/agent-loop",
-        "otherness",
-        "size/s",
-        "kind/enhancement"
-      ],
-      "priority": "medium",
-      "branch": null,
-      "worktree": null,
-      "file_spaces": []
+      "state": "done",
+      "status": "done",
+      "pr_number": 533
     },
     "issue-516": {
-      "state": "todo",
-      "status": "todo",
-      "title": "feat: Scenario 9: health check failure blocks promotion",
-      "labels": [
-        "priority/medium",
-        "area/agent-loop",
-        "otherness",
-        "size/s",
-        "kind/enhancement"
-      ],
-      "priority": "medium",
-      "branch": null,
-      "worktree": null,
-      "file_spaces": []
+      "state": "done",
+      "status": "done",
+      "pr_number": 533
     },
     "issue-517": {
-      "state": "todo",
-      "status": "todo",
-      "title": "feat: Scenarios 10-12: CLI completeness",
-      "labels": [
-        "priority/medium",
-        "area/agent-loop",
-        "otherness",
-        "size/s",
-        "kind/enhancement"
-      ],
-      "priority": "medium",
-      "branch": null,
-      "worktree": null,
-      "file_spaces": []
+      "state": "done",
+      "status": "done",
+      "pr_number": 533
     },
     "issue-518": {
       "state": "todo",
