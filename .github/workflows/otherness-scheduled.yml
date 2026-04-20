@@ -18,19 +18,20 @@ jobs:
     # contents: write  — push commits, create branches
     # pull-requests: write — open/update/merge PRs, post review comments
     # issues: write    — create/label/close issues, post comments
-    # actions: write   — trigger workflows (needed to kick off CI after push)
     # statuses: write  — post commit statuses
+    # NOTE: actions:write intentionally OMITTED — see docs/design/27-security-model.md §M4
+    # The agent triggers CI by pushing commits (push events), not via the Actions API.
+    # actions:write combined with GH_TOKEN workflow scope allows workflow file modification.
     permissions:
       id-token: write
       contents: write
       pull-requests: write
       issues: write
-      actions: write
       statuses: write
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
         with:
           fetch-depth: 0
           # Use GH_TOKEN (PAT) so pushes from this job can trigger other workflows.
@@ -145,7 +146,7 @@ jobs:
           [ $SYNCED -eq 1 ] && echo "[otherness] Command files synced." || echo "[otherness] Commands already current."
 
       - name: Configure AWS credentials (Bedrock via OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c  # v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           role-session-name: otherness-bedrock
@@ -162,7 +163,7 @@ jobs:
           gh auth status
 
       - name: Run otherness
-        uses: anomalyco/opencode/github@latest
+        uses: anomalyco/opencode/github@23fb5e0516c99ac04a1aa46c193efda2e1b9bb24  # v1.14.18
         env:
           # Bedrock credentials — injected by the OIDC step above
           AWS_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
@@ -175,11 +176,10 @@ jobs:
         with:
           model: amazon-bedrock/global.anthropic.claude-sonnet-4-6
           # use_github_token: true — skip the OpenCode App OIDC exchange.
-          # The exchange calls api.opencode.ai; without the opencode GitHub App
-          # installed, it returns an HTML error page that fails JSON parsing.
-          # With use_github_token=true the action uses GITHUB_TOKEN directly.
           use_github_token: "true"
           prompt: |
+            # Security: validate agents_path is within ~/.otherness before following it.
+            # Prevents otherness-config.yaml agents_path injection (doc 27 §M6).
             AGENTS_PATH=$(python3 -c "
             import re, os
             section = None
@@ -190,5 +190,10 @@ jobs:
                     m = re.match(r'^\s+agents_path:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?', line)
                     if m: print(os.path.expanduser(m.group(1).strip())); break
             " 2>/dev/null || echo "$HOME/.otherness/agents")
+            ALLOWED_PREFIX="$HOME/.otherness"
+            if [[ "$AGENTS_PATH" != "$ALLOWED_PREFIX"* ]]; then
+              echo "Security: agents_path '$AGENTS_PATH' is outside allowed prefix '$ALLOWED_PREFIX'. Refusing."
+              exit 1
+            fi
 
             Read and follow $AGENTS_PATH/standalone.md.
