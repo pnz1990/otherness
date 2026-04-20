@@ -508,7 +508,7 @@
       "title": "feat: SM phase trigger"
     },
     "339": {
-      "state": "assigned",
+      "state": "done",
       "title": "feat(ci): token expiry preflight \u2014 validate GH_TOKEN scopes before push",
       "design_doc": "19-scheduled-execution.md",
       "depends_on": [],
@@ -523,7 +523,9 @@
       "worktree": "../otherness.339",
       "file_spaces": [
         ".github/workflows/"
-      ]
+      ],
+      "pr_merged": true,
+      "done_at": "2026-04-20T00:34:40Z"
     },
     "340": {
       "state": "todo",
