@@ -1468,6 +1468,152 @@ echo "[SM §4g-anchor-design-gap] Feature→design-doc scenario gap check comple
 
 ---
 
+## 4g-anchor-upstream. Upstream version tracking — open anchor-growth issue on version bump (every SM cycle)
+
+When a managed project's upstream dependency version bumps, SM opens an anchor-growth
+issue to ensure the new API surface gets coverage. Configurable via `otherness-config.yaml`
+`anchor.upstream_version_file` and `anchor.upstream_version_pattern`. Skips gracefully if
+not configured.
+
+**Design ref**: `docs/design/26-anchor-kro-ui.md §Future`
+(kro upstream tracking: when kro version bumps, SM opens anchor-growth issue for new API surface)
+
+```bash
+UPSTREAM_VERSION_FILE=$(python3 -c "
+import re
+section = None
+for line in open('otherness-config.yaml'):
+    s = re.match(r'^(\w[\w_]*):', line)
+    if s: section = s.group(1)
+    if section == 'anchor':
+        m = re.match(r'\s+upstream_version_file:\s*(\S+)', line)
+        if m: print(m.group(1).strip()); break
+" 2>/dev/null || echo "")
+
+UPSTREAM_VERSION_PATTERN=$(python3 -c "
+import re
+section = None
+for line in open('otherness-config.yaml'):
+    s = re.match(r'^(\w[\w_]*):', line)
+    if s: section = s.group(1)
+    if section == 'anchor':
+        m = re.match(r'\s+upstream_version_pattern:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?', line)
+        if m: print(m.group(1).strip()); break
+" 2>/dev/null || echo "")
+
+if [ -n "$UPSTREAM_VERSION_FILE" ] && [ -n "$UPSTREAM_VERSION_PATTERN" ] && [ -f "$UPSTREAM_VERSION_FILE" ]; then
+  echo "[SM §4g-anchor-upstream] Checking upstream version in $UPSTREAM_VERSION_FILE..."
+
+  python3 - <<'UPSTREAMEOF'
+import re, os, subprocess, json, tempfile, time
+
+REPO = os.environ.get('REPO', '')
+PR_LABEL = os.environ.get('PR_LABEL', 'otherness')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'SM')
+version_file = os.environ.get('UPSTREAM_VERSION_FILE', '')
+version_pattern = os.environ.get('UPSTREAM_VERSION_PATTERN', '')
+
+# Step 1: Extract current upstream version from file
+current_version = None
+try:
+    content = open(version_file).read()
+    # Search for pattern: the line containing the pattern, extract the version string
+    # Expected patterns: "github.com/foo/bar v1.2.3", "kro v0.9.1", etc.
+    m = re.search(r'(' + re.escape(version_pattern) + r')\s+v?([\d]+\.[\d]+\.?[\d]*)', content)
+    if not m:
+        # Fallback: search for version in the same line as pattern
+        for line in content.splitlines():
+            if version_pattern in line:
+                vm = re.search(r'v?([\d]+\.[\d]+\.?[\d]*)', line)
+                if vm:
+                    current_version = vm.group(1)
+                    break
+    else:
+        current_version = m.group(2)
+except Exception as e:
+    print(f'[SM §4g-anchor-upstream] Error reading version file (skipping): {e}')
+    exit(0)
+
+if not current_version:
+    print(f'[SM §4g-anchor-upstream] No version found matching "{version_pattern}" in {version_file} — skipping.')
+    exit(0)
+
+print(f'[SM §4g-anchor-upstream] Current upstream version: {current_version}')
+
+# Step 2: Read last-known version from state.json
+try:
+    with open('.otherness/state.json') as f: state = json.load(f)
+except Exception:
+    state = {}
+
+last_version = state.get('anchor_upstream_version', {}).get(version_pattern)
+print(f'[SM §4g-anchor-upstream] Last known version: {last_version or "none"}')
+
+# Step 3: Persist current version to state (always update)
+state.setdefault('anchor_upstream_version', {})[version_pattern] = current_version
+try:
+    with open('.otherness/state.json', 'w') as f: json.dump(state, f, indent=2)
+except Exception as e:
+    print(f'[SM §4g-anchor-upstream] State write error (non-fatal): {e}')
+
+# Step 4: If version unchanged or no previous: skip
+if not last_version or last_version == current_version:
+    if not last_version:
+        print(f'[SM §4g-anchor-upstream] First run — recording version {current_version}.')
+    else:
+        print(f'[SM §4g-anchor-upstream] Version unchanged ({current_version}) — no action.')
+    exit(0)
+
+# Step 5: Version bumped — open anchor-growth issue (deduplicated)
+title = f'anchor-growth: {version_pattern} bumped from {last_version} to {current_version}'
+# Deduplication: skip if open issue with same title prefix exists
+existing = subprocess.run(
+    ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+     '--search', title[:50], '--json', 'number', '--jq', 'length'],
+    capture_output=True, text=True, timeout=15)
+try:
+    if int(existing.stdout.strip() or '0') > 0:
+        print(f'[SM §4g-anchor-upstream] Anchor-growth issue already open — skipping duplicate.')
+        exit(0)
+except Exception:
+    pass
+
+body = (
+    f"## Upstream version bump detected\n\n"
+    f"SM §4g-anchor-upstream detected a version bump:\n\n"
+    f"- **Dependency**: `{version_pattern}`\n"
+    f"- **Previous version**: `{last_version}`\n"
+    f"- **New version**: `{current_version}`\n\n"
+    f"## Action required\n\n"
+    f"Review the changelog for `{version_pattern}` between `{last_version}` and `{current_version}` "
+    f"and identify new API surface that should be covered by this project's anchor suite.\n\n"
+    f"For each new API feature:\n"
+    f"1. Add a spec entry in the appropriate design doc\n"
+    f"2. Create or update an E2E journey to exercise the new surface\n\n"
+    f"**Reference**: `docs/design/` — anchor design doc for this project"
+)
+
+r = subprocess.run(
+    ['gh', 'issue', 'create', '--repo', REPO,
+     '--title', title,
+     '--label', f'{PR_LABEL},kind/chore,area/tooling,priority/medium',
+     '--body', body],
+    capture_output=True, text=True, timeout=15)
+
+if r.returncode == 0:
+    print(f'[SM §4g-anchor-upstream] Opened anchor-growth issue: {r.stdout.strip()}')
+else:
+    print(f'[SM §4g-anchor-upstream] Failed to open issue (non-fatal): {r.stderr.strip()[:100]}')
+UPSTREAMEOF
+
+  echo "[SM §4g-anchor-upstream] Upstream version check complete."
+else
+  echo "[SM §4g-anchor-upstream] anchor.upstream_version_file/pattern not configured — skipping."
+fi
+```
+
+---
+
 ## 4g-anchor-score. Anchor workflow score reading (every SM cycle)
 
 Read the latest `[ANCHOR | * | *]` comment from the project's report issue.
