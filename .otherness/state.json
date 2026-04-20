@@ -426,8 +426,8 @@
       "done_at": "2026-04-20T15:54:07Z"
     },
     "issue-569": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: M5b: Restrict Bedrock Resource to specific ARNs",
       "labels": [
         "priority/medium",
@@ -436,11 +436,12 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "note": "closed: deferred or duplicate"
     },
     "issue-570": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: M3: Replace GH_TOKEN PAT with GitHub App",
       "labels": [
         "priority/medium",
@@ -449,7 +450,8 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "note": "closed: deferred or duplicate"
     }
   },
   "sm_cycle_count": 3,
