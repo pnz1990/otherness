@@ -159,6 +159,7 @@ hygiene:
 
 - ✅ Design doc created (this file) (2026-04-20)
 - ✅ `agents/phases/sm.md §4g` (formerly §4h): hygiene scan block implemented — executable Python, not [AI-STEP]; 3 check categories (stale design doc refs, unresolved TODO/FIXME/HACK, build artifacts); cap at `max_issues_per_scan`; `priority/low` labels (PR #441, 2026-04-20)
+- ✅ `agents/skills/hygiene-scan.py`: standalone Python script implementing Checks 2-5 (orphaned TODOs, dead exports, stale generated files, design drift) — callable directly or loaded by SM §4g (PR #457, 2026-04-20)
 
 ## Future (🔲)
 

@@ -205,10 +205,10 @@ The agent reads this pattern to track coverage ratio across sessions.
 - ✅ PDCA workflow — 6 scenarios, weekly execution, posts results to issue #1 (2026-04-19)
 - ✅ Demo-validate workflow — nightly, broader demo surface (2026-04-19)
 - ✅ test infrastructure: kind + krocodile + ArgoCD + kardinal-test-app (2026-04-09)
+- ✅ Anchor score comment format: SM §4g-anchor-score reads `[ANCHOR | kardinal-promoter | DATE] coverage: N/M (X%) | PASS=A FAIL=B` from report issue, tracks stagnation across sessions (PR #438, 2026-04-20)
 
 ## Future (🔲)
 
-- 🔲 Anchor score comment format: PDCA posts `[ANCHOR | kardinal-promoter | DATE] coverage: N/M (X%) | PASS=A FAIL=B` to issue #1 after every run
 - 🔲 PDCA runs daily (not weekly) — change cron to `0 2 * * *` matching demo-validate cadence
 - 🔲 Infrastructure reliability: retry logic for S1 reconcile wait + ArgoCD sync timeout increase
 - 🔲 Scenario 7: config-only promotion — `kardinal apply` with no image change, verify PromotionStep created

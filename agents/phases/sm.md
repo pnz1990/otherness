@@ -1268,6 +1268,157 @@ fi
 
 ---
 
+## 4g-anchor-score. Anchor workflow score reading (every SM cycle)
+
+Read the latest `[ANCHOR | * | *]` comment from the project's report issue.
+Track coverage trend for stagnation detection. Skip gracefully if no anchor configured.
+
+**Design ref**: `docs/design/25-anchor-kardinal-promoter.md §The anchor score comment format`.
+
+```bash
+ANCHOR_WORKFLOW=$(python3 -c "
+import re
+section = None
+for line in open('otherness-config.yaml'):
+    s = re.match(r'^(\w[\w_]*):', line)
+    if s: section = s.group(1)
+    if section == 'anchor':
+        m = re.match(r'\s+workflow:\s*(\S+)', line)
+        if m: print(m.group(1)); break
+" 2>/dev/null || echo "")
+
+if [ -n "$ANCHOR_WORKFLOW" ]; then
+  echo "[SM §4g-anchor-score] Reading anchor scores from report issue..."
+
+  python3 - <<'SCOREEOF'
+import re, os, subprocess, json, datetime
+
+REPO = os.environ.get('REPO', '')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'SM')
+
+# Read score_pattern and stagnation_sessions from otherness-config.yaml
+score_pattern = None
+stagnation_sessions = 3
+try:
+    section = None
+    for line in open('otherness-config.yaml'):
+        s = re.match(r'^(\w[\w_]*):', line)
+        if s: section = s.group(1)
+        if section == 'anchor':
+            m = re.match(r'\s+score_pattern:\s*["\']?([^"\'#\n]+)["\']?', line)
+            if m: score_pattern = m.group(1).strip()
+            m2 = re.match(r'\s+stagnation_sessions:\s*(\d+)', line)
+            if m2: stagnation_sessions = int(m2.group(1))
+except Exception:
+    pass
+
+# Fetch last 20 comments from report issue to find ANCHOR score comments
+try:
+    r = subprocess.run(
+        ['gh', 'issue', 'view', REPORT_ISSUE, '--repo', REPO,
+         '--json', 'comments', '--jq', '[.comments[-20:][].body]'],
+        capture_output=True, text=True, timeout=30)
+    comments = json.loads(r.stdout) if r.returncode == 0 else []
+except Exception:
+    comments = []
+
+# Parse anchor score comments: [ANCHOR | <project> | DATE] coverage: N/M (X%) | ...
+anchor_comments = []
+for body in comments:
+    m = re.search(
+        r'\[ANCHOR\s*\|[^\|]+\|\s*(\d{4}-\d{2}-\d{2})\]\s*coverage:\s*(\d+)/(\d+)\s*\((\d+)%\)',
+        body)
+    if m:
+        entry = {
+            'date': m.group(1),
+            'pass_count': int(m.group(2)),
+            'total': int(m.group(3)),
+            'coverage_pct': int(m.group(4)),
+            'pass': None,
+            'fail': None,
+        }
+        # Also extract PASS=A FAIL=B if score_pattern is set
+        if score_pattern:
+            try:
+                sm = re.search(score_pattern, body)
+                if sm and len(sm.groups()) >= 2:
+                    entry['pass'] = int(sm.group(1))
+                    entry['fail'] = int(sm.group(2))
+            except Exception:
+                pass
+        anchor_comments.append(entry)
+
+if not anchor_comments:
+    print('[SM §4g-anchor-score] No anchor score comments found in report issue — skipping.')
+    exit(0)
+
+latest = anchor_comments[-1]
+
+# Load state for stagnation tracking
+try:
+    with open('.otherness/state.json') as f: state = json.load(f)
+except Exception:
+    state = {}
+
+anchor_scores = state.setdefault('anchor_scores', {}).setdefault(REPO, [])
+
+# Append latest score (deduplicate by date)
+if not anchor_scores or anchor_scores[-1].get('date') != latest['date']:
+    anchor_scores.append(latest)
+    # Keep only last 5 scores
+    state['anchor_scores'][REPO] = anchor_scores[-5:]
+    with open('.otherness/state.json', 'w') as f: json.dump(state, f, indent=2)
+
+# Stagnation check: last N scores all have same or lower coverage_pct
+scores_window = state['anchor_scores'][REPO]
+stagnating = False
+if len(scores_window) >= stagnation_sessions:
+    window = scores_window[-stagnation_sessions:]
+    if all(w.get('coverage_pct', 0) <= window[0].get('coverage_pct', 0)
+           for w in window[1:]):
+        stagnating = True
+
+stagnation_count = 0
+if len(scores_window) >= 2:
+    for sc in reversed(scores_window):
+        if sc.get('coverage_pct', 0) <= scores_window[-1].get('coverage_pct', 0):
+            stagnation_count += 1
+        else:
+            break
+
+# Build summary comment
+pass_str = f"PASS={latest['pass']} FAIL={latest['fail']}" if latest['pass'] is not None else ""
+score_summary = (
+    f"[SM §4g-anchor-score | {MY_SESSION_ID}] "
+    f"Latest anchor: coverage {latest['pass_count']}/{latest['total']} "
+    f"({latest['coverage_pct']}%)"
+    + (f" | {pass_str}" if pass_str else "")
+    + f" | stagnation={stagnation_count}/{stagnation_sessions}"
+)
+subprocess.run(['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO,
+                '--body', score_summary], capture_output=True)
+print(f'[SM §4g-anchor-score] {score_summary}')
+
+# Stagnation warning
+if stagnating:
+    warn = (
+        f"[ANCHOR | stagnation] coverage has not improved in {stagnation_sessions} sessions "
+        f"({scores_window[-stagnation_sessions]['coverage_pct']}% → "
+        f"{latest['coverage_pct']}%). "
+        f"Consider prioritizing anchor-growth items."
+    )
+    subprocess.run(['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO,
+                    '--body', warn], capture_output=True)
+    print(f'[SM §4g-anchor-score] Stagnation warning posted.')
+SCOREEOF
+
+  echo "[SM §4g-anchor-score] Anchor score read complete."
+fi
+```
+
+---
+
 ## 4h. Autonomous vision trigger (every SM cycle)
 
 When the queue is empty and the system has been stable for ≥3 cycles, run the
