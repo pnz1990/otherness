@@ -161,12 +161,12 @@ docs/aide/metrics.md             — existing batch log (SM already writes this)
 - ✅ `docs/aide/metrics.md` — real batch data tracked by SM (2026-04-14)
 - ✅ `docs/design/10-multi-agent-simulation.md` — simulation design and falsification (2026-04-17)
 - ✅ `docs/design/11-simulation-feedback-loop.md` — feedback loop design (2026-04-17)
+- ✅ `SM §4d`: `arch_convergence > 0.7` → open `learn(arch):` issue labeled `otherness,area/agent-loop,kind/chore` with deduplication check; replaces `[NEEDS HUMAN]` escalation (PR #351, 2026-04-20)
 
 ## Future (🔲)
 
 - 🔲 `SM §4e`: read `metrics.md`, calibrate `simulate.py` parameters against real data, write `.otherness/sim-prediction.json` — runs every 5 SM cycles
 - 🔲 `SM §4e`: compare actual `todo_shipped` to predicted floor — post `[⚠️ Simulation divergence]` after 3 consecutive below-floor batches
-- 🔲 `SM §4e`: `arch_convergence > 0.7` → open learn trigger issue automatically
 - 🔲 `SM §4e`: write calibrated parameters to `.otherness/sim-prediction.json` for persistence across sessions
 - 🔲 `scripts/simulate.py`: add `--calibrate` flag — reads metrics.md, grid-searches parameters, outputs best fit as JSON
 - 🔲 `~/.otherness/scripts/sim-defaults.json`: fleet defaults — written by otherness SM, shipped to managed projects via self-update
