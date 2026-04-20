@@ -568,40 +568,107 @@ Opens `kind/docs priority/high` issues for false claims.
 
 ```bash
 if [ $((${PM_CYCLE:-0} % ${N_PM_CYCLES:-3})) -eq 0 ]; then
-  echo "[PM §5g] Cross-checking README/AGENTS.md claims..."
+  echo "[PM §5i] Cross-checking README/AGENTS.md claims..."
 
-  # [AI-STEP]
-  # Step 1: File existence claims — command files in .opencode/command/.
-  #   For each command listed in the README.md command table
-  #   (lines matching /^\| `\/otherness\.\w+`/):
-  #   Extract the command name (e.g. /otherness.run → otherness.run.md).
-  #   Verify: os.path.exists(f".opencode/command/{cmd_file}")
-  #   If missing: open kind/docs priority/high issue:
-  #     "docs: README lists /otherness.<name> but .opencode/command/<name>.md is missing"
-  #
-  # Step 2: File existence claims — Package Layout section in AGENTS.md.
-  #   Find the Package Layout fenced code block in AGENTS.md.
-  #   For each line matching /^\s+\S+\.md/ (markdown files listed):
-  #   Verify the file exists relative to the repo root.
-  #   If missing: open kind/docs issue: "docs: AGENTS.md Package Layout lists <file> but it does not exist"
-  #   (Lower priority than step 1 — use priority/medium)
-  #
-  # Step 3: validate.sh step count claim.
-  #   Count actual steps: grep -c 'echo "\[' scripts/validate.sh
-  #   Find claimed count in AGENTS.md (look for "validate.sh performs" or "[N/N]" pattern).
-  #   If mismatch: open kind/docs issue: "docs: validate.sh step count mismatch (README claims N, actual M)"
-  #
-  # Step 4: BUILD_COMMAND/TEST_COMMAND/LINT_COMMAND scripts exist.
-  #   Read BUILD_COMMAND, TEST_COMMAND, LINT_COMMAND from AGENTS.md.
-  #   For each: if it references a local script (starts with "bash scripts/"), verify the script exists.
-  #   If missing: open kind/docs priority/high issue.
-  #
-  # Step 5: Duplicate suppression.
-  #   Use open_if_absent pattern (same as §5f):
-  #     gh issue list --repo $REPO --state open --search "<title[:60]>" --json number --jq length
-  #     Open only if count == 0.
+  python3 - <<'CROSS_EOF'
+import subprocess, re, os, sys
 
-  echo "[PM §5g] README/AGENTS.md claims cross-check complete."
+REPO = os.environ.get('REPO', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
+issues_opened = 0
+
+def open_if_absent(title, labels):
+    global issues_opened
+    try:
+        r = subprocess.run(
+            ['gh','issue','list','--repo',REPO,'--state','open',
+             '--search', title[:60], '--json','number','--jq','length'],
+            capture_output=True, text=True)
+        if int(r.stdout.strip() or '0') == 0:
+            subprocess.run(
+                ['gh','issue','create','--repo',REPO,
+                 '--title', title, '--label', labels,
+                 '--body', f'## Design reference\n- **Design doc**: `docs/design/04-documentation-health.md`\n- **Implements**: O5 README/AGENTS.md claims verification\n\nPM §5i cross-check finding:\n\n{title}'],
+                capture_output=True)
+            issues_opened += 1
+            print(f"[PM §5i] Opened: {title[:80]}")
+    except Exception as e:
+        print(f"[PM §5i] open_if_absent error: {e}")
+
+# Step 1: Command file existence — README command table.
+try:
+    readme = open('README.md').read()
+    cmd_matches = re.findall(r'`(/otherness\.\w+)`', readme)
+    for cmd in set(cmd_matches):
+        cmd_file = cmd.lstrip('/') + '.md'
+        cmd_path = f'.opencode/command/{cmd_file}'
+        if not os.path.exists(cmd_path):
+            title = f"docs: README lists {cmd} but {cmd_path} is missing"
+            open_if_absent(title, 'kind/docs,otherness,priority/high')
+except Exception as e:
+    print(f"[PM §5i] Step 1 error: {e}")
+
+# Step 2: Package Layout file existence — AGENTS.md code block.
+try:
+    agents_md = open('AGENTS.md').read()
+    # Find Package Layout fenced code block
+    layout_m = re.search(r'## Package Layout.*?```\n(.*?)```', agents_md, re.DOTALL)
+    if layout_m:
+        for line in layout_m.group(1).splitlines():
+            # Match indented markdown file references (e.g. "  standalone.md", "  vision.md")
+            m = re.match(r'\s+(\S+\.md)\s', line)
+            if m:
+                fname = m.group(1)
+                # Strip ← comments
+                fname = fname.split('←')[0].strip()
+                # Only check short relative paths (skip paths with placeholders)
+                if '/' not in fname and fname and not fname.startswith('<'):
+                    # These are listed as relative to the package root, not project root — skip
+                    pass
+                elif fname.startswith('agents/') or fname.startswith('docs/') or \
+                     fname.startswith('scripts/') or fname.startswith('.opencode/'):
+                    if not os.path.exists(fname):
+                        title = f"docs: AGENTS.md Package Layout lists {fname} but file is missing"
+                        open_if_absent(title, 'kind/docs,otherness,priority/medium')
+except Exception as e:
+    print(f"[PM §5i] Step 2 error: {e}")
+
+# Step 3: validate.sh step count.
+try:
+    validate_content = open('scripts/validate.sh').read()
+    actual_steps = len(re.findall(r'echo "\[(\d+)/\d+\]', validate_content))
+    if actual_steps == 0:
+        actual_steps = len(re.findall(r'^\[', validate_content, re.MULTILINE))
+    # Look for claim in AGENTS.md (e.g. "performs N checks", "[N/N]" patterns)
+    agents_md = open('AGENTS.md').read()
+    claimed_m = re.search(r'performs (?:these )?(\d+) structural checks', agents_md)
+    if claimed_m:
+        claimed = int(claimed_m.group(1))
+        if claimed != actual_steps and actual_steps > 0:
+            title = f"docs: validate.sh step count mismatch (AGENTS.md claims {claimed}, actual {actual_steps})"
+            open_if_absent(title, 'kind/docs,otherness,priority/medium')
+except Exception as e:
+    print(f"[PM §5i] Step 3 error: {e}")
+
+# Step 4: BUILD/TEST/LINT scripts exist.
+try:
+    agents_md = open('AGENTS.md').read()
+    for cmd_key in ('BUILD_COMMAND', 'TEST_COMMAND', 'LINT_COMMAND'):
+        m = re.search(rf'^{cmd_key}:\s*(.+)', agents_md, re.MULTILINE)
+        if m:
+            cmd_val = m.group(1).strip()
+            if cmd_val.startswith('bash scripts/'):
+                script = cmd_val.split(' ', 1)[1]
+                if not os.path.exists(script):
+                    title = f"docs: AGENTS.md {cmd_key}={cmd_val} references missing script {script}"
+                    open_if_absent(title, 'kind/docs,otherness,priority/high')
+except Exception as e:
+    print(f"[PM §5i] Step 4 error: {e}")
+
+print(f"[PM §5i] README/AGENTS.md cross-check complete. {issues_opened} issues opened.")
+CROSS_EOF
+
+  echo "[PM §5i] README/AGENTS.md claims cross-check complete."
 fi
 ```
 
