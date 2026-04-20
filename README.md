@@ -95,7 +95,72 @@ In the steady state, your role is:
 
 That's it. No PR reviews. No sprint planning. No release ceremonies.
 
-See **[docs/steering.md](./docs/steering.md)** for the full monitoring and steering guide.
+---
+
+## How it runs (perpetual execution)
+
+otherness runs on GitHub Actions infrastructure — no laptop required. Every hour, two steps fire automatically:
+
+```
+Step A — Vision scan (~7 min)
+  The autonomous vision agent reads the pressure context injected in the
+  workflow prompt. It finds gaps against the bar you set and writes new
+  🔲 Future items to docs/design/. continue-on-error — Step B always runs.
+
+Step B — SDLC loop (~30–50 min)
+  COORD claims the highest-priority design-backed queue item.
+  ENG implements it in an isolated branch.
+  QA polls until ALL CI checks pass — never merges on a red build.
+  SM posts health signal. Session branch merges to main.
+```
+
+The vision pressure context is injected directly into the Step A prompt — describing
+what's still not good enough about the product. When ~60% of the named gaps have been
+addressed, the agent rewrites the pressure block itself (design doc 37). The bar raises
+without human input.
+
+Sessions are isolated and self-recovering. If CI breaks, QA reads the failure log and
+fixes it before merging. If the queue empties, the vision scan refills it. If a session
+is killed mid-run, the next one picks up where it left off.
+
+See **[docs/perpetual-execution.md](./docs/perpetual-execution.md)** for the full execution model, session lifecycle, and concurrency details.
+
+---
+
+## How you steer it
+
+**Read the health signal** — the report issue receives a comment after every batch:
+```
+Health: GREEN | Vision PRs this run: 2 | Queue: 8 todo | Action: Active
+```
+GREEN means CI passing and at least one design-doc-backed PR shipped this run.
+AMBER means something needs attention (queue drifted, token issue, CI flaky).
+RED means CI has been broken for >24h.
+
+**Give new direction** — run a vision session from your project directory:
+```bash
+cd your-project && /otherness.vibe-vision
+```
+Describe what you want the product to become. The agent writes `🔲 Future` items to
+`docs/design/`. COORD picks them up next run. No task creation, no issue wrangling.
+
+**Monitor a fleet:**
+```bash
+/otherness.status --fleet
+gh run list --repo your-org/your-project --workflow otherness-scheduled.yml --limit 3
+gh issue list --repo your-org/your-project --label needs-human --state open
+```
+
+**Trigger a run immediately:**
+```bash
+gh workflow run otherness-scheduled.yml --repo your-org/your-project
+```
+
+**Unblock `[NEEDS HUMAN]` issues** — these appear when the agent has exhausted
+autonomous options: token expired, branch protection blocking merge, genuine design
+conflict. Each issue states the exact problem and what to do.
+
+See **[docs/steering.md](./docs/steering.md)** for the full guide: reading reports, giving direction, adjusting throughput, and what not to do.
 
 ---
 
@@ -169,12 +234,23 @@ See **[onboarding-new-project.md](./onboarding-new-project.md)** and
 The workflow that runs on GitHub Actions is in `.github/workflows/otherness-scheduled.yml`.
 It is deployed by `/otherness.setup` and `/otherness.onboard` automatically.
 
-**Authentication options:**
+**Authentication — use GitHub App.** A per-repo short-lived token that expires every
+hour and cannot access your other repositories. Set up once:
 
-| Option | Security | Setup |
-|---|---|---|
-| GitHub App (recommended) | Per-repo token, 1-hour lifetime, not exportable | Create App, add `APP_ID` + `APP_PRIVATE_KEY` secrets |
-| Personal Access Token | All-repo access, long-lived | Add `GH_TOKEN` secret with `repo+workflow` scopes |
+```bash
+# 1. Create a GitHub App at github.com/settings/apps/new
+#    Permissions: Contents (rw), Issues (rw), Pull requests (rw), Commit statuses (rw), Administration (rw)
+#    Webhook: disabled. Installation: Only on this account.
+# 2. Generate a private key. Install the App on your repo.
+# 3. Add secrets + variable:
+gh secret set APP_ID          --repo your-org/your-project   # App's numeric ID
+gh secret set APP_PRIVATE_KEY --repo your-org/your-project   # contents of the .pem file
+gh variable set OTHERNESS_USE_APP_TOKEN --body "true" --repo your-org/your-project
+```
+
+**Fallback:** if the App is not configured, add `GH_TOKEN` (PAT with `repo+workflow`
+scope) as a repository secret. This works but has cross-repo blast radius — a
+compromised session can access all your repos. See `docs/security.md`.
 
 See **[docs/security.md](./docs/security.md)** for the full security model, threat analysis,
 and hardening checklist.
