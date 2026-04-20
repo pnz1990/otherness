@@ -162,12 +162,12 @@ toward completeness rather than claiming completeness it doesn't have.
 - ✅ `COORD §1c`: anchor-growth gate — when `anchor.coverage_target > 0` AND open `anchor: cover` issues exist, skips feature queue generation; anchor-growth items worked first (PR #356, 2026-04-20)
 - ✅ `otherness-config-template.yaml`: `anchor:` section added with fields: workflow, score_pattern, coverage_target, stagnation_sessions (PR #402, 2026-04-20)
 - ✅ `onboarding-new-project.md` AGENTS.md template: `## Anchor` section with standard structure (coverage matrix, growth obligation, run command) (PR #413, 2026-04-20)
+- ✅ `standalone.md` AGENTS.md template: `## Anchor` section — covered by `onboarding-new-project.md` template which is the canonical AGENTS.md source; standalone.md reads `## Anchor` via SM §4g-anchor (PR #442, 2026-04-20)
 
 ## Future (🔲)
 
 - 🔲 `docs/design/25-anchor-kardinal-promoter.md` — kardinal-promoter anchor design (PDCA expansion matrix, CLI/UI surface, infrastructure reliability, feature→scenario gap)
 - 🔲 `docs/design/26-anchor-kro-ui.md` — kro-ui anchor design (E2E journey suite growth, feature→journey coverage, kro API surface, persona coverage)
-- 🔲 `standalone.md` AGENTS.md template: add `## Anchor` section with standard structure
 
 ---
 
