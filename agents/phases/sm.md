@@ -2008,6 +2008,123 @@ ACTION="Active"
 
 gh issue comment $REPORT_ISSUE --repo $REPO \
   --body "[🔄 SDM | ${MY_SESSION_ID:-sess-unknown} | otherness@${OTHERNESS_VERSION:-unknown}] Batch ${SM_CYCLE:-?}. Health: ${HEALTH} | Vision PRs this run: ${VISION_PRS:-0}${THROUGHPUT_WARN:-} | Queue: ${TODO_COUNT:-0} todo ${IN_REVIEW:-0} in_review | Action: ${ACTION}" 2>/dev/null
+
+# §4f-progress: Update docs/aide/progress.md with current state
+# Design ref: docs/design/06-command-surface.md §Future (🔲 → ✅)
+# Runs every batch — always reflects current reality, not stale history.
+python3 - <<'PROGRESS_EOF'
+import subprocess, json, os, re, datetime
+
+REPO = os.environ.get('REPO', '')
+HEALTH = os.environ.get('HEALTH', 'GREEN')
+TODO_COUNT = os.environ.get('TODO_COUNT', '0')
+IN_REVIEW = os.environ.get('IN_REVIEW', '0')
+VISION_PRS = os.environ.get('VISION_PRS', '0')
+SM_CYCLE = os.environ.get('SM_CYCLE', '?')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+
+progress_path = 'docs/aide/progress.md'
+if not os.path.exists(progress_path):
+    print(f"[SM §4f] {progress_path} not found — skipping progress update (non-fatal)")
+    exit(0)
+
+# Get last shipped PR (non-chore, non-session)
+last_pr_title = '(none this session)'
+last_pr_date = ''
+try:
+    r = subprocess.run(
+        ['gh', 'pr', 'list', '--repo', REPO, '--state', 'merged', '--limit', '20',
+         '--json', 'title,mergedAt',
+         '--jq', '[.[] | select(.title | test("^feat|^fix|^refactor"; "i")) | select(.title | test("^chore\\\\(sm\\\\)|metrics|session complete|PRs merged"; "i") | not)][0]'],
+        capture_output=True, text=True, timeout=15)
+    if r.returncode == 0 and r.stdout.strip() and r.stdout.strip() != 'null':
+        pr = json.loads(r.stdout.strip())
+        last_pr_title = pr.get('title', '(none)')[:80]
+        merged_at = pr.get('mergedAt', '')
+        if merged_at:
+            last_pr_date = merged_at[:10]
+except Exception as e:
+    print(f"[SM §4f] last-PR lookup failed (non-fatal): {e}")
+
+# Read current progress.md to extract current stage (preserve human-authored stage info)
+try:
+    content = open(progress_path).read()
+except Exception as e:
+    print(f"[SM §4f] progress.md read error (non-fatal): {e}")
+    exit(0)
+
+today = datetime.date.today().isoformat()
+health_icon = '🟢' if HEALTH == 'GREEN' else '🟡' if HEALTH == 'AMBER' else '🔴'
+
+# Build new header block — overwrite only the dynamic fields
+new_header = f"""# otherness: Current Progress
+
+> Updated automatically by SM §4f every batch. Last update: {today}
+
+## Current State
+
+- **Health**: {health_icon} {HEALTH}
+- **Last shipped**: {last_pr_title}{' (' + last_pr_date + ')' if last_pr_date else ''}
+- **Queue depth**: {TODO_COUNT} todo, {IN_REVIEW} in_review
+- **Vision PRs this batch**: {VISION_PRS}
+- **SM cycle**: {SM_CYCLE} | Agent: otherness@{OTHERNESS_VERSION}
+"""
+
+# Replace the header block (everything up to and including ## Stage Completion or ## Key milestones)
+# Keep the rest of the file (stage table, milestones) intact
+m = re.search(r'^## (Stage Completion|Stage [0-9]|Key milestones)', content, re.MULTILINE)
+if m:
+    tail = content[m.start():]
+    new_content = new_header + '\n' + tail
+else:
+    # Fallback: replace the first ## Current State section only
+    new_content = re.sub(
+        r'^# otherness: Current Progress.*?(?=^## Stage Completion|^## Key milestones|\Z)',
+        new_header + '\n',
+        content,
+        count=1,
+        flags=re.MULTILINE | re.DOTALL
+    )
+    if new_content == content:
+        # No match — prepend header
+        new_content = new_header + '\n' + content
+
+try:
+    with open(progress_path, 'w') as f:
+        f.write(new_content)
+    print(f"[SM §4f] progress.md updated: {HEALTH} | queue={TODO_COUNT} | last-PR={last_pr_title[:40]}")
+except Exception as e:
+    print(f"[SM §4f] progress.md write error (non-fatal): {e}")
+    exit(0)
+
+# Commit and push directly to main (low-risk doc change — same pattern as §4b metrics.md)
+try:
+    subprocess.run(['git', 'add', progress_path], capture_output=True)
+    cr = subprocess.run(
+        ['git', 'commit', '-m',
+         f'chore(sm): update progress.md — {HEALTH} batch {SM_CYCLE} [{today}]'],
+        capture_output=True, text=True)
+    if cr.returncode != 0 and 'nothing to commit' in cr.stdout + cr.stderr:
+        print("[SM §4f] progress.md unchanged — no commit needed")
+    elif cr.returncode != 0:
+        print(f"[SM §4f] progress.md commit error (non-fatal): {cr.stderr[:100]}")
+    else:
+        for i in range(1, 4):
+            pull_r = subprocess.run(
+                ['git', 'pull', '--rebase', 'origin', 'main', '--quiet'],
+                capture_output=True)
+            push_r = subprocess.run(
+                ['git', 'push', 'origin', 'main'],
+                capture_output=True)
+            if push_r.returncode == 0:
+                print(f"[SM §4f] progress.md committed and pushed to main")
+                break
+            import time; time.sleep(i * 2)
+        else:
+            print("[SM §4f] progress.md push failed after 3 retries (non-fatal)")
+except Exception as e:
+    print(f"[SM §4f] progress.md commit/push error (non-fatal): {e}")
+PROGRESS_EOF
 ```
 
 ---

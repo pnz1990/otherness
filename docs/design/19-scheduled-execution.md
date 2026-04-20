@@ -290,6 +290,8 @@ project-specific deployment record.
 
 ## Future (🔲)
 
+- 🔲 Graceful partial handoff on GitHub Actions job timeout: GitHub Actions jobs have a default 6-hour limit. If the agent is mid-implementation when the runner hits the time limit, the job is killed with no cleanup — the worktree is abandoned, the branch is left in an inconsistent state, and `_state` may show an item as `in_progress` with no active session. The fix: (1) `otherness-scheduled.yml` must set `timeout-minutes: 330` (5.5 hours) and add a cleanup step that runs `if: always()` — this step reads `_state`, finds any item with `state: in_progress` matching the current branch prefix, resets it to `todo`, and pushes the state update; (2) the cleanup step must post a report issue comment: "⚠️ Session timed out. In-flight item reset to queue. Next session will reattempt." This prevents the stale `in_progress` watchdog from being the only recovery mechanism and eliminates the 30-minute stale window. ⚠️ Inferred from reliability lens: a session that times out leaves state corrupt and the next session may skip the item or collide with the abandoned branch.
+
 ---
 
 ## Zone 1 — Obligations
