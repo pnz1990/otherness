@@ -14,11 +14,11 @@ improve decision quality across all projects.
 
 ## Present (✅)
 
-- ✅ `/otherness.learn` command deployed — `agents/otherness.learn.md` + `.opencode/command/otherness.learn.md` (2026-04-14)
+- ✅ `/otherness.learn` command deployed — `agents/otherness.learn.md` + `.opencode/command/otherness.learn.md` (2026-04-14) ⚠️ Stale — referenced file not found
 - ✅ Skills library reached ≥10: currently 12 skills in `agents/skills/` (2026-04-20)
-- ✅ `PROVENANCE.md` — audit trail for each learning session: what was learned, what was rejected, why (2026-04-14)
+- ✅ `PROVENANCE.md` — audit trail for each learning session: what was learned, what was rejected, why (2026-04-14) ⚠️ Stale — referenced file not found
 - ✅ `agents/skills/README.md` — skill index listing all skills and when to load them (2026-04-14)
-- ✅ SM §4c: autonomous learn scheduling — SM runs `/otherness.learn` when Type B rate drops; monitors skill quality (2026-04-14)
+- ✅ SM §4c: autonomous learn scheduling — SM runs `/otherness.learn` when Type B rate drops; monitors skill quality (2026-04-14) ⚠️ Stale — referenced file not found
 - ✅ Quality gate enforced: skills are specific, falsifiable, novel, transferable — PROVENANCE.md records rejections (2026-04-14)
 
 ## Future (🔲)

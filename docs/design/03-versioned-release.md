@@ -28,7 +28,7 @@ The versioning model:
 
 - ✅ `agent_version` field in otherness-config.yaml — semver string; empty/absent = latest (standalone.md SELF-UPDATE + otherness-config-template.yaml, 2026-04-18)
 - ✅ Self-update respects version pin — standalone.md SELF-UPDATE block: `git checkout <version>` when agent_version set (standalone.md, 2026-04-18)
-- ✅ `/otherness.upgrade` command — `.opencode/command/otherness.upgrade.md` deployed (2026-04-17)
+- ✅ `/otherness.upgrade` command — `.opencode/command/otherness.upgrade.md` deployed (2026-04-17) ⚠️ Stale — referenced file not found
 - ✅ Git tags established — `v0.1.0` tag exists; tagging pattern in use (2026-04-17)
 
 ## Planned (🔲 — Stage 5 trigger required)
