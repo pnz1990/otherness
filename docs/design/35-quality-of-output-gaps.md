@@ -39,12 +39,12 @@ commits to a specific item.
 
 ## Present (✅)
 
-- ✅ `coord.md §1c`: queue refusal guard — when all todo items are `kind/chore` or `kind/docs`, trigger enrichment before claiming; enrichment follows design doc → roadmap → vision sequence; posts report comment when triggered (PR #TBD, 2026-04-20) — implemented in this PR
+- ✅ `coord.md §1c`: queue refusal guard — when all todo items are `kind/chore` or `kind/docs`, trigger enrichment before claiming; enrichment follows design doc → roadmap → vision sequence; posts report comment when triggered (PR #629, 2026-04-20)
+- ✅ `SM §4b`: session outcome classification — classify sessions as `feature-rich` / `mixed` / `chore-only` based on vision_prs ratio; write `vision_prs` and `session_outcome` columns to metrics.md; `session_outcome=chore-only` triggers AMBER health signal in §4f (PR #TBD, 2026-04-20)
 
 ## Future (🔲)
 
 - 🔲 `coord.md §1c`: track guard-firing frequency in session metrics (metrics.md schema — see docs/design/33-stage-4-self-improvement-metrics.md)
-- 🔲 `SM §4b`: session outcome classification — label sessions as "chore-only", "mixed", or "feature-rich" based on item type distribution
 
 ---
 
