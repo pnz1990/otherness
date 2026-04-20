@@ -502,14 +502,22 @@
       "note": "Cross-project item \u2014 work belongs in managed project repo, not otherness repo"
     },
     "405": {
-      "state": "todo",
-      "title": "feat: M1: Pin `anomalyco/opencode`, `actions/checkout`, `aws-actions/configure-aws-credentials`",
-      "status": "todo"
+      "state": "done",
+      "status": "done",
+      "title": "fix(ci): pin actions/checkout SHA in ci.yml",
+      "pr_number": 425,
+      "pr_merged": true,
+      "done_at": "2026-04-20T06:25:15Z",
+      "areas": [
+        "area/tooling"
+      ]
     },
     "406": {
-      "state": "todo",
-      "title": "feat: `otherness-scheduled.yml` in otherness repo: split into two OpenCode steps (Step A: vibe-v",
-      "status": "todo"
+      "state": "done",
+      "status": "done",
+      "title": "feat: otherness-scheduled.yml split into two OpenCode steps",
+      "done_at": "2026-04-20T06:25:48Z",
+      "note": "Already implemented \u2014 otherness-scheduled.yml already has Step A (vibe-vision) and Step B (run)"
     },
     "407": {
       "state": "done",
@@ -519,9 +527,11 @@
       "note": "Hygiene scan already implemented as \u00a74g in sm.md (section numbering shifted)"
     },
     "408": {
-      "state": "todo",
-      "title": "feat: `otherness-config.yaml`: `simulation.calibration_cycles` field (default: 5)",
-      "status": "todo"
+      "state": "done",
+      "status": "done",
+      "pr_number": 423,
+      "pr_merged": true,
+      "done_at": "2026-04-20T06:22:40Z"
     },
     "409": {
       "state": "done",
@@ -554,9 +564,13 @@
     "413": {
       "state": "done",
       "status": "done",
+      "title": "feat: onboarding AGENTS.md template Anchor section",
       "pr_number": 424,
       "pr_merged": true,
-      "done_at": "2026-04-20T06:22:34Z"
+      "done_at": "2026-04-20T06:22:16Z",
+      "areas": [
+        "area/onboarding"
+      ]
     },
     "414": {
       "state": "done",
