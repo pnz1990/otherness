@@ -166,3 +166,5 @@
 | 2026-04-20 | 83 | 0 | 0 | 0 | 12 | 2 | ~1 | Issues 336 and 315 closed as already-done (SM §4h and PM §5m already implement these). Queue empty — generating new batch. Health: GREEN. |
 
 | 2026-04-20 | 84 | 1 | 1 | 0 | 12 | 1 | ~25 min | #480 feat(security): M2 agent_version pin — HIGH tier config change, autonomous merge. Issue 342 diagnosed (alibi GH_TOKEN missing). Health: GREEN. |
+
+| 2026-04-20 | 85 | 1 | 0 | 0 | 12 | 1 | ~30 min | PR #506 fix(vibe-vision-auto): SCAN 2 stale detection false positives — 33 false-positive stale markers removed from 15 design docs. 7 stale session PRs merged/closed. Health: GREEN. |
