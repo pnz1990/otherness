@@ -533,7 +533,7 @@ The following are accepted design tradeoffs, not failures:
 - 🔲 M2: Set `agent_version` in all 3 `otherness-config.yaml` files to pin otherness clone
 - 🔲 M4: Remove `actions:write` from all 3 workflow job permissions
 - 🔲 M6: Add `agents_path` allowlist validation in workflow prompt section (1 line bash check)
-- 🔲 M7: Add branch protection to `_state` branches on all 3 repos (restrict to App push after M3)
+- ✅ M7: `_state` branch protection applied on all 3 repos (otherness, alibi, kardinal-promoter, kro-ui): `allow_force_pushes: false`, `allow_deletions: false` — prevents state poisoning via force-push (direct-push by agent still allowed; PR requirement deferred until M3) (2026-04-20)
 - 🔲 M8: AGENTS.md change detection CI check — block non-collaborator AGENTS.md modifications
 - ✅ M5: AWS Budget alert at $50/day Bedrock spend — posted to rrroizma@amazon.com (2026-04-20)
 - 🔲 M5b: Restrict Bedrock Resource to specific ARNs — DEFERRED. opencode uses cross-region inference profile ARNs (arn:aws:bedrock:<region>:<acct>:inference-profile/*) that vary by model version. Resource:* with Budget alert is the current mitigaton. Revisit when ARN patterns stabilize.
