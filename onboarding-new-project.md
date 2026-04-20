@@ -504,6 +504,63 @@ gh label create "area/api"        --color "5319E7" --repo my-org/my-project
 
 ---
 
+## Step 9b — Set up authentication (choose one option)
+
+The scheduled workflow needs a token to push commits, open PRs, and post comments.
+Choose one option. Option A (GitHub App) is recommended for new projects.
+
+### Option A — GitHub App (recommended, M3 security model)
+
+A GitHub App issues short-lived per-repo tokens that cannot be used outside the
+installation. This is more secure than a PAT because it cannot be exfiltrated to other
+repos and automatically rotates every hour.
+
+```bash
+# 1. Create the GitHub App
+#    Go to: https://github.com/settings/apps/new
+#    Name: "otherness-agent" (or any name)
+#    Homepage URL: your repo URL
+#    Permissions (Repository):
+#      - Contents: Read and write
+#      - Pull requests: Read and write
+#      - Issues: Read and write
+#      (Do NOT grant Workflows permission — stays within M4 security model)
+#    Click "Create GitHub App" and note the App ID.
+#
+# 2. Generate a private key
+#    On the App settings page → "Generate a private key"
+#    Download the .pem file.
+#
+# 3. Install the App on this repo
+#    On the App settings page → "Install App" → select this repo
+#
+# 4. Add secrets to the repo
+REPO="my-org/my-project"
+APP_ID="123456"         # replace with your App's numeric ID
+# Replace APP_PRIVATE_KEY_CONTENT with the full contents of the .pem file
+gh secret set APP_ID --repo $REPO --body "$APP_ID"
+gh secret set APP_PRIVATE_KEY --repo $REPO < path/to/your-app.private-key.pem
+
+# 5. Verify: the workflow auto-detects APP_ID and switches to App token mode.
+#    No changes to otherness-config.yaml needed.
+```
+
+### Option B — Personal Access Token / PAT (legacy, simpler)
+
+A PAT with `repo+workflow` scopes. Simpler to set up but scoped to all repos
+the owner has access to (not just this one).
+
+```bash
+REPO="my-org/my-project"
+# 1. Create a PAT at https://github.com/settings/tokens/new
+#    Scopes: repo, workflow
+# 2. Add it as GH_TOKEN secret:
+gh secret set GH_TOKEN --repo $REPO
+# (paste the token when prompted)
+```
+
+---
+
 ## Step 10 — First run
 
 ```bash

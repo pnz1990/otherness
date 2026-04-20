@@ -9,6 +9,8 @@ name: otherness scheduled run
 #
 # Security controls applied:
 #   M1: All action dependencies pinned to SHAs (no @latest, no @vN tags)
+#   M3: GitHub App token used when APP_ID + APP_PRIVATE_KEY are configured
+#       (per-repo scoped, non-exportable, short-lived); falls back to GH_TOKEN PAT
 #   M4: actions:write OMITTED — agent triggers CI via push, not Actions API
 #   M6: agents_path validated against allowlist before agent executes
 #   M7: _state branch protection enforced via CODEOWNERS
@@ -49,14 +51,36 @@ jobs:
       statuses: write
 
     steps:
+      # ── Step 0: Generate GitHub App token (M3) ───────────────────────────
+      # When APP_ID + APP_PRIVATE_KEY are configured, generate a short-lived
+      # installation token scoped to this repo only. This is more secure than
+      # a PAT (per-repo, non-exportable, auto-rotates every hour).
+      #
+      # Fallback: if APP_ID is not set, use GH_TOKEN PAT (backward compatible).
+      # Projects without the App configured continue to work as before.
+      #
+      # To enable: create a GitHub App with contents/pull-requests/issues write
+      # permissions, install it on this repo, and add APP_ID + APP_PRIVATE_KEY
+      # as repository secrets. See onboarding-new-project.md §GitHub App setup.
+      #
+      # SHA-pinned (security: doc 27 §M1 + §M3).
+      - name: Generate GitHub App token (M3 — if APP_ID configured)
+        id: app-token
+        if: ${{ secrets.APP_ID != '' }}
+        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3  # v3.1.1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       # ── Step 1: Checkout ──────────────────────────────────────────────────
       # SHA-pinned (security: doc 27 §M1 — no @latest or floating tags)
-      # GH_TOKEN used so commits from this job trigger downstream CI workflows.
+      # Uses App token when available (M3), falls back to GH_TOKEN PAT.
+      # The token used here must have push access so downstream CI triggers.
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
         with:
           fetch-depth: 0
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ steps.app-token.outputs.token || secrets.GH_TOKEN }}
 
       - name: Configure git identity
         run: |
@@ -64,31 +88,34 @@ jobs:
           git config --global user.email "otherness[bot]@users.noreply.github.com"
 
       # ── Step 2: Token preflight ──────────────────────────────────────────
-      # Validates GH_TOKEN before spending Bedrock tokens on a run that will fail.
-      # Posts a [NEEDS HUMAN] issue if the token is missing or expired.
-      - name: Validate GH_TOKEN
+      # Validates the active token (App or PAT) before spending Bedrock tokens
+      # on a run that will fail. Posts a [NEEDS HUMAN] issue if auth is broken.
+      - name: Validate auth token
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          # In App mode: use the App token. In PAT mode: use GH_TOKEN.
+          # EFFECTIVE_TOKEN resolves to whichever is available.
+          EFFECTIVE_TOKEN: ${{ steps.app-token.outputs.token || secrets.GH_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
+          AUTH_MODE: ${{ steps.app-token.outputs.token != '' && 'app' || 'pat' }}
         run: |
-          if [ -z "$GH_TOKEN" ]; then
-            echo "::error::GH_TOKEN secret is not set."
-            GH_TOKEN="" gh issue create --repo "$REPO" \
-              --title "[NEEDS HUMAN] GH_TOKEN missing — otherness cannot run" \
-              --body "GH_TOKEN is not configured. Add a PAT with repo+workflow scopes as GH_TOKEN secret." \
+          if [ -z "$EFFECTIVE_TOKEN" ]; then
+            echo "::error::No auth token available. Configure either APP_ID+APP_PRIVATE_KEY (M3/GitHub App) or GH_TOKEN (PAT)."
+            GITHUB_TOKEN="$GITHUB_TOKEN" gh issue create --repo "$REPO" \
+              --title "[NEEDS HUMAN] No auth token — otherness cannot run" \
+              --body "Neither APP_ID/APP_PRIVATE_KEY (GitHub App) nor GH_TOKEN (PAT) is configured. See onboarding-new-project.md §GitHub App setup or §Token setup." \
               --label "needs-human" 2>/dev/null || true
             exit 1
           fi
-          if ! GH_TOKEN="$GH_TOKEN" gh api user --jq '.login' >/dev/null 2>&1; then
-            echo "::error::GH_TOKEN is invalid or expired."
-            GH_TOKEN="" gh issue create --repo "$REPO" \
-              --title "[NEEDS HUMAN] GH_TOKEN expired — otherness cannot run" \
-              --body "GH_TOKEN is set but authentication failed. Rotate the PAT and update the secret." \
+          if ! GH_TOKEN="$EFFECTIVE_TOKEN" gh api user --jq '.login' >/dev/null 2>&1; then
+            echo "::error::Auth token is invalid or expired (mode: $AUTH_MODE)."
+            GITHUB_TOKEN="$GITHUB_TOKEN" gh issue create --repo "$REPO" \
+              --title "[NEEDS HUMAN] Auth token invalid — otherness cannot run" \
+              --body "Active auth token (mode: $AUTH_MODE) failed validation. If using App: check APP_ID and APP_PRIVATE_KEY secrets. If using PAT: rotate GH_TOKEN." \
               --label "needs-human" 2>/dev/null || true
             exit 1
           fi
-          echo "[preflight] GH_TOKEN valid for: $(GH_TOKEN="$GH_TOKEN" gh api user --jq '.login')"
+          echo "[preflight] Auth OK (mode: $AUTH_MODE) for: $(GH_TOKEN="$EFFECTIVE_TOKEN" gh api user --jq '.login')"
 
       # ── Step 3: Install agent files ──────────────────────────────────────
       # Clones pnz1990/otherness to ~/.otherness on the runner.
@@ -144,7 +171,7 @@ jobs:
       # ── Step 6: gh CLI auth ──────────────────────────────────────────────
       - name: Authenticate gh CLI
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token || secrets.GH_TOKEN }}
         run: |
           gh auth setup-git
           gh auth status
@@ -158,8 +185,8 @@ jobs:
         uses: anomalyco/opencode/github@23fb5e0516c99ac04a1aa46c193efda2e1b9bb24  # v1.14.18
         env:
           AWS_REGION:          us-east-1
-          GH_TOKEN:            ${{ secrets.GH_TOKEN }}
-          GITHUB_TOKEN:        ${{ secrets.GH_TOKEN }}
+          GH_TOKEN:            ${{ steps.app-token.outputs.token || secrets.GH_TOKEN }}
+          GITHUB_TOKEN:        ${{ steps.app-token.outputs.token || secrets.GH_TOKEN }}
           OPENCODE_PERMISSION: '{"bash":"allow","read":"allow","edit":"allow","write":"allow","glob":"allow","grep":"allow","list":"allow","external_directory":"allow","webfetch":"allow","task":"allow","todowrite":"allow","skill":"allow"}'
         with:
           model: amazon-bedrock/global.anthropic.claude-sonnet-4-6
@@ -188,12 +215,13 @@ jobs:
       # ── Step 8: Run otherness (Step B) ──────────────────────────────────
       # SHA-pinned (security: doc 27 §M1 — critical supply chain mitigation).
       # agents_path validated against allowlist before agent reads it (doc 27 §M6).
+      # Uses App token when available (M3), falls back to GH_TOKEN PAT.
       - name: Run otherness
         uses: anomalyco/opencode/github@23fb5e0516c99ac04a1aa46c193efda2e1b9bb24  # v1.14.18
         env:
           AWS_REGION:          us-east-1
-          GH_TOKEN:            ${{ secrets.GH_TOKEN }}
-          GITHUB_TOKEN:        ${{ secrets.GH_TOKEN }}
+          GH_TOKEN:            ${{ steps.app-token.outputs.token || secrets.GH_TOKEN }}
+          GITHUB_TOKEN:        ${{ steps.app-token.outputs.token || secrets.GH_TOKEN }}
           # Pre-approve all tool permissions — no interactive TTY on runners.
           # ctx.ask() blocks indefinitely without this (doc 19 — confirmed fix).
           OPENCODE_PERMISSION: '{"bash":"allow","read":"allow","edit":"allow","write":"allow","glob":"allow","grep":"allow","list":"allow","external_directory":"allow","webfetch":"allow","task":"allow","todowrite":"allow","skill":"allow"}'
