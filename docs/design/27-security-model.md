@@ -530,6 +530,7 @@ The following are accepted design tradeoffs, not failures:
 ## Future (🔲)
 
 - 🔲 M1: Pin `anomalyco/opencode`, `actions/checkout`, `aws-actions/configure-aws-credentials` to SHAs in all 3 workflow files
+- ✅ M1 (partial): `actions/checkout` in `otherness` repo `ci.yml` pinned to SHA (v4.2.2: `11bd71901bbe5b1630ceea73d27597364c9af683`) — `otherness-scheduled.yml` already pinned (PR #405, 2026-04-20)
 - 🔲 M2: Set `agent_version` in all 3 `otherness-config.yaml` files to pin otherness clone
 - 🔲 M4: Remove `actions:write` from all 3 workflow job permissions
 - 🔲 M6: Add `agents_path` allowlist validation in workflow prompt section (1 line bash check)
