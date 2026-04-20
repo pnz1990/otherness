@@ -22,7 +22,7 @@ opens proactive improvement issues.
 
 ## Future (🔲)
 
-*(Stage 4 is complete. All deliverables shipped.)*
+- 🔲 Metrics trend surfacing in SM health comment: metrics are collected every batch but SM only posts the most recent row in its health comment. A human reading the report sees a snapshot, not a trajectory. SM §4f must compute and post a 5-batch rolling trend for the two most actionable metrics: `time_to_merge_avg_min` and `needs_human`. Format: "⬆️ time-to-merge up 40% over last 5 batches (trend: bad)" or "⬇️ needs-human down 60% over last 5 batches (trend: good)". The trend is computed from the last 5 rows of `docs/aide/metrics.md`. If a trend is unfavorable for 3 consecutive batches (worsening): SM must open a `kind/chore priority/high` issue flagging the specific metric and the observed slope. Collecting metrics without surfacing trends is the same as not collecting them — the human never gets the "is it getting better or worse?" signal they need. ⚠️ Inferred from honesty lens: metrics are being collected but not acted on; no mechanism converts trend data into agent behavior change.
 
 ---
 
