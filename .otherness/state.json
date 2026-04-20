@@ -758,7 +758,7 @@
       "done_at": "2026-04-20T07:27:32Z"
     },
     "issue-464": {
-      "state": "todo",
+      "state": "done",
       "issue": 464,
       "title": "feat: validate.sh check for 2-step scheduled workflow",
       "created_at": "2026-04-20T07:59:23Z",
@@ -766,7 +766,14 @@
         "area/tooling"
       ],
       "priority": "medium",
-      "size": "s"
+      "size": "s",
+      "assigned_to": "sess-4dcd2a42",
+      "assigned_at": "2026-04-20T08:09:15Z",
+      "branch": "feat/issue-464",
+      "worktree": "/home/runner/work/otherness/otherness.issue-464",
+      "pr_number": 467,
+      "pr_merged": true,
+      "done_at": "2026-04-20T08:10:02Z"
     },
     "issue-413": {
       "state": "done",
