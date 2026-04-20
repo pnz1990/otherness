@@ -746,8 +746,8 @@
       "priority": "medium"
     },
     "issue-633": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: Graceful partial handoff on GitHub Actions job timeout: GitHub Actions jobs have a default",
       "labels": [
         "priority/medium",
@@ -756,7 +756,11 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": false,
+      "pr_number": 676,
+      "note": "needs-human-workflow-push",
+      "done_at": "2026-04-20T23:55:51Z"
     },
     "issue-632": {
       "state": "done",
@@ -1097,8 +1101,8 @@
       "priority": "low"
     }
   },
-  "sm_cycle_count": 8,
-  "last_sm_at": "2026-04-20T23:30:00Z",
+  "sm_cycle_count": 9,
+  "last_sm_at": "2026-04-20T23:55:51Z",
   "session_heartbeats": {
     "sess-5327084f": {
       "last_seen": "2026-04-20T13:12:45Z",
