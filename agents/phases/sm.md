@@ -412,46 +412,85 @@ fi
 
 Check whether non-trivial agent and script files have design doc coverage.
 Opens `kind/chore` issues for files with no coverage. Nothing deleted autonomously.
+**Runs on every managed project generically** — not otherness-specific.
 
 ```bash
 if [ $((SM_CYCLE % 20)) -eq 0 ] && [ "${SM_CYCLE:-0}" -gt 0 ]; then
   echo "[SM §4g] Running codebase hygiene scan..."
 
-  # [AI-STEP]
-  # Step 0: Graceful fallback if docs/design/ is missing or empty.
-  #   if [ ! -d "docs/design" ] || [ -z "$(ls docs/design/*.md 2>/dev/null)" ]; then
-  #     echo "[SM §4g] No design docs — skipping."; skip; fi
-  #
-  # Step 1: Build coverage set from all docs/design/*.md files.
-  #   For each docs/design/*.md: read all ✅ Present and 🔲 Future item text.
-  #   Extract a set of covered names (filenames, base names, key terms).
-  #   covered_terms = set of words extracted from Present/Future item text.
-  #
-  # Step 2: Scan agents/*.md (excluding agents/skills/, agents/phases/ — those have
-  #   their own coverage via standalone.md and coord/eng/qa/sm/pm.md).
-  #   Also scan scripts/*.sh and scripts/*.py.
-  #   Exempt: PROVENANCE.md, README.md, any file with "template" in name.
-  #
-  # Step 3: For each non-trivial file (size > 0):
-  #   basename = os.path.basename(filepath).replace('.md','').replace('.sh','').replace('.py','')
-  #   Check if basename appears in any design doc Present or Future item text.
-  #   If no coverage found:
-  #     title = f"chore: uncovered file — {filepath} has no design doc entry"
-  #     open_if_absent(title, "kind/chore,otherness,priority/low")
-  #     Post: "[NEEDS HUMAN: confirm documentation or deletion]"
-  #
-  # Step 4: Duplicate suppression.
-  #   def open_if_absent(title, labels):
-  #     r = subprocess.run(['gh','issue','list','--repo',REPO,'--state','open',
-  #                         '--search',title[:60],'--json','number','--jq','length'],
-  #                        capture_output=True, text=True)
-  #     if int(r.stdout.strip() or '0') == 0:
-  #       subprocess.run(['gh','issue','create','--repo',REPO,
-  #                       '--title',title,'--label',labels,
-  #                       '--body',f'SM §4g codebase hygiene: {title}'], capture_output=True)
-  #
-  # Step 5: Post summary.
-  #   echo "[SM §4g] Codebase hygiene scan complete. <N> uncovered files found."
+  if [ ! -d "docs/design" ] || [ -z "$(ls docs/design/*.md 2>/dev/null)" ]; then
+    echo "[SM §4g] No design docs — skipping hygiene scan."
+  else
+    python3 - <<'PYEOF'
+import re, os, subprocess, json
+
+REPO = os.environ.get('REPO', '')
+
+# Step 1: Build coverage set from all design docs
+covered_terms = set()
+for fname in os.listdir('docs/design'):
+    if not fname.endswith('.md'): continue
+    try:
+        content = open(f'docs/design/{fname}').read()
+        # Extract words from Present and Future item lines
+        items = re.findall(r'^- [✅🔲⚠️].+', content, re.MULTILINE)
+        for item in items:
+            words = re.findall(r'[a-z][a-z0-9_-]{3,}', item.lower())
+            covered_terms.update(words)
+    except: pass
+
+# Step 2: Determine scan targets based on project type
+scan_targets = []
+# Agent files (otherness-specific)
+if os.path.isdir('agents'):
+    for f in os.listdir('agents'):
+        if f.endswith('.md') and f not in ('PROVENANCE.md', 'README.md'):
+            scan_targets.append(f'agents/{f}')
+
+# Command files
+if os.path.isdir('.opencode/command'):
+    for f in os.listdir('.opencode/command'):
+        if f.endswith('.md'): scan_targets.append(f'.opencode/command/{f}')
+
+# Scripts
+for d in ['scripts']:
+    if os.path.isdir(d):
+        for f in os.listdir(d):
+            if f.endswith(('.sh','.py')) and 'template' not in f:
+                scan_targets.append(f'{d}/{f}')
+
+# Step 3: Check coverage for each file
+uncovered = 0
+
+def issue_exists(title_frag):
+    r = subprocess.run(['gh','issue','list','--repo',REPO,'--state','open',
+        '--search',title_frag[:60],'--json','number'],
+        capture_output=True, text=True)
+    try: return len(json.loads(r.stdout)) > 0
+    except: return True  # safe default
+
+for filepath in scan_targets:
+    if not os.path.exists(filepath): continue
+    if os.path.getsize(filepath) == 0: continue
+    basename = re.sub(r'\.(md|sh|py)$','', os.path.basename(filepath)).lower()
+    basename = re.sub(r'[^a-z0-9]','-',basename)
+    # Check if any design doc covers this file by name
+    name_words = re.findall(r'[a-z][a-z0-9]{2,}', basename)
+    if any(w in covered_terms for w in name_words):
+        continue  # covered
+    # Not covered — open issue
+    title = f'chore: uncovered file — {filepath} has no design doc entry'
+    if not issue_exists(title[:55]):
+        subprocess.run(['gh','issue','create','--repo',REPO,
+            '--title', title,
+            '--label', 'kind/chore,priority/low,size/xs',
+            '--body', f'SM §4g codebase hygiene scan found `{filepath}` with no corresponding ✅ Present or 🔲 Future entry in any docs/design/*.md file.\n\nOptions:\n1. Add a design doc entry documenting this file''s purpose\n2. Delete the file if it is no longer needed\n\nNothing has been deleted. This issue is a candidate for human decision.'],
+            capture_output=True)
+        uncovered += 1
+
+print(f'[SM §4g] Codebase hygiene scan complete. {uncovered} uncovered files found.')
+PYEOF
+  fi
 
   echo "[SM §4g] Codebase hygiene scan complete."
 fi

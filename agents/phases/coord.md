@@ -766,3 +766,18 @@ fi
 **Minimum queue depth guard**: if `QUEUE_REMAINING < 5` AND queue-gen is not already
 locked, trigger queue-gen immediately (don't wait for next session) so the queue
 never hits zero mid-session.
+
+```bash
+# Minimum queue depth guard — run after each §1f check
+if [ "${QUEUE_REMAINING:-5}" -lt 5 ]; then
+  LOCK_EXISTS=$(git ls-remote --heads origin otherness/queue-gen 2>/dev/null | wc -l | tr -d ' ')
+  if [ "${LOCK_EXISTS:-0}" -eq 0 ]; then
+    echo "[COORD §1f] Queue depth low (${QUEUE_REMAINING} items) — triggering queue-gen now."
+    # Re-enter §1c queue generation inline (acquire lock, generate, release)
+    # This prevents the queue from hitting zero before the next scheduled session.
+    # [AI-STEP: execute §1c queue generation block here]
+  else
+    echo "[COORD §1f] Queue depth low but queue-gen already running — skipping."
+  fi
+fi
+```

@@ -584,6 +584,30 @@ PHASE 3 — [🔍 QA]
 Read and follow: ~/.otherness/agents/phases/qa.md
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+§1f GATE — MULTI-ITEM CHECK (runs after every QA completion)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ITEMS_COMPLETED=$((${ITEMS_COMPLETED:-0} + 1))
+SESSION_LIMIT=$(python3 -c "
+import re
+for line in open('otherness-config.yaml'):
+    m = re.match(r'^\s+session_item_limit:\s*(\d+)', line)
+    if m: print(m.group(1)); break
+" 2>/dev/null || echo "10")
+QUEUE_REMAINING=$(python3 -c "
+import json
+try:
+    s=json.load(open('.otherness/state.json'))
+    print(len([v for v in s.get('features',{}).values() if v.get('status')=='todo']))
+except: print(0)
+" 2>/dev/null || echo "0")
+echo "[LOOP] Item ${ITEMS_COMPLETED}/${SESSION_LIMIT} complete. Queue remaining: ${QUEUE_REMAINING}."
+# DECISION:
+# If ITEMS_COMPLETED < SESSION_LIMIT AND QUEUE_REMAINING > 0:
+#   → GOTO PHASE 1 (skip SM/PM — loop back immediately for next item)
+# Else:
+#   → continue to PHASE 4 (SM/PM gate has fired — run triage and metrics)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PHASE 4 — [🔄 SDM]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Read and follow: ~/.otherness/agents/phases/sm.md

@@ -123,12 +123,12 @@ need for Fix D sooner.
 
 ## Future (🔲)
 
-- 🔲 `coord.md`: after BATCH COMPLETE, check queue for next item before entering SM/PM — loop back to §1e if items remain and `session_item_limit` not reached
-- 🔲 `coord.md`: SM/PM gate — only run after queue empty or `session_item_limit` reached, not after every item
-- 🔲 `coord.md`: queue generation cap raised from 5 → 20 items
-- 🔲 `coord.md`: minimum queue depth guard — trigger vision synthesis when queue drops below 5 and no design doc items remain
+- ✅ `coord.md`: after BATCH COMPLETE, check queue for next item before entering SM/PM — loop back to §1e if items remain and `session_item_limit` not reached
+- ✅ `coord.md`: SM/PM gate — only run after queue empty or `session_item_limit` reached, not after every item
+- ✅ `coord.md`: queue generation cap raised from 5 → 20 items
+- ✅ `coord.md`: minimum queue depth guard — trigger vision synthesis when queue drops below 5 and no design doc items remain
 - ✅ `otherness-config.yaml` + `otherness-config-template.yaml`: add `maqa.session_item_limit` field (default: 10) — pre-shipped
-- 🔲 `docs/design/22-queue-richness.md`: design doc for Fix C (richer queue sources)
+- ✅ `docs/design/22-queue-richness.md`: design doc for Fix C — richer queue sources (2026-04-20)es)
 
 ---
 
