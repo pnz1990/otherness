@@ -467,9 +467,14 @@
       "design_doc": "22-queue-richness.md"
     },
     "401": {
-      "state": "todo",
-      "title": "feat: `SM \u00a74e`: read `metrics.md`, calibrate `simulate.py` parameters against real data, write `",
-      "status": "todo"
+      "state": "done",
+      "title": "feat: SM \u00a74e per-5-cycle calibration update + sim-prediction.json write",
+      "pr_number": 421,
+      "pr_merged": true,
+      "done_at": "2026-04-20T06:09:54Z",
+      "areas": [
+        "area/agent-loop"
+      ]
     },
     "402": {
       "state": "todo",
