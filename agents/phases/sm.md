@@ -714,7 +714,71 @@ PREDEOF
       echo "[SM §4e] Only ${METRICS_ROWS} metric rows — need ≥5 for calibration. Skipping."
     fi
   else
-    echo "[SM §4e] calibrate.py or metrics.md missing — skipping calibration (non-fatal)."
+    # Fleet defaults fallback: when calibrate.py is absent (managed project), inherit
+    # sim-defaults.json from the otherness fleet and write it as sim-prediction.json.
+    # This satisfies the managed project adoption design:
+    # "kardinal-promoter and kro-ui SM inherit otherness defaults, re-calibrate after ≥5 batches"
+    # Design ref: docs/design/23-simulation-as-anchor.md §Per-project calibration and fleet defaults
+    FLEET_DEFAULTS="$HOME/.otherness/scripts/sim-defaults.json"
+    if [ -f "$FLEET_DEFAULTS" ]; then
+      echo "[SM §4e] calibrate.py absent — inheriting fleet defaults from sim-defaults.json"
+      python3 - <<'FLEETPREDEOF'
+import json, os, subprocess, tempfile, datetime
+
+sm_cycle = int(os.environ.get('SM_CYCLE', '0'))
+fleet_path = os.path.expanduser('~/.otherness/scripts/sim-defaults.json')
+try:
+    defaults = json.load(open(fleet_path))
+    prediction = {
+        'prs_next_batch_floor': defaults.get('prs_next_batch_floor', 1),
+        'prs_next_batch_ceiling': defaults.get('prs_next_batch_ceiling', 10),
+        'arch_convergence_score': defaults.get('arch_convergence_score', 0.3),
+        'skill_growth_rate': round(float(defaults.get('skills_growth_per_batch',
+                                        defaults.get('skill_growth_rate', 0.1))), 4),
+        'calibrated_params': {
+            'decay_rate': defaults.get('decay_rate'),
+            'skill_boldness_coefficient': defaults.get('skill_boldness_coefficient'),
+            'jump_multiplier': defaults.get('jump_multiplier'),
+        },
+        'calibrated_at': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+        'source': 'fleet-defaults',
+        'fleet_calibrated_at': defaults.get('fleet_calibrated_at'),
+        'sm_cycle': sm_cycle,
+    }
+    state_wt = os.path.join(tempfile.gettempdir(), 'otherness-pred4e-fleet-' + str(os.getpid()))
+    try:
+        if os.path.exists(state_wt):
+            subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
+        subprocess.run(['git','worktree','add','--no-checkout',state_wt,'origin/_state'],
+                       capture_output=True, check=True)
+        target = os.path.join(state_wt, '.otherness', 'sim-prediction.json')
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+        subprocess.run(['git','-C',state_wt,'checkout','_state','--','.otherness/sim-prediction.json'],
+                       capture_output=True)
+        json.dump(prediction, open(target, 'w'), indent=2)
+        subprocess.run(['git','-C',state_wt,'add',target], capture_output=True)
+        subprocess.run(['git','-C',state_wt,'commit',
+                        '-m', f'4e-fleet-defaults: sim-prediction.json (sm_cycle={sm_cycle})'],
+                       capture_output=True)
+        r = subprocess.run(['git','-C',state_wt,'push','origin','HEAD:_state'],
+                           capture_output=True)
+        if r.returncode == 0:
+            print(f"[SM §4e] fleet sim-prediction.json written (source=fleet-defaults, sm_cycle={sm_cycle})")
+        else:
+            print("[SM §4e] fleet sim-prediction.json push failed (non-fatal)")
+    except Exception as e:
+        print(f"[SM §4e] fleet sim-prediction write error (non-fatal): {e}")
+    finally:
+        try:
+            subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
+        except: pass
+    subprocess.run(['git','worktree','prune'], capture_output=True)
+except Exception as e:
+    print(f"[SM §4e] fleet defaults fallback error (non-fatal): {e}")
+FLEETPREDEOF
+    else
+      echo "[SM §4e] calibrate.py and fleet sim-defaults.json both absent — skipping (non-fatal)."
+    fi
   fi
 else
   echo "[SM §4e] Calibration skipped (sm_cycle=${SM_CYCLE:-0}, every ${CALIB_CYCLES_4E} cycles)."

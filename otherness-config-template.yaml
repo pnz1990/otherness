@@ -181,6 +181,15 @@ monitor:
 #                           # infers Future items from TODO/FIXME in code.
 #                           # Set false to disable (e.g. projects with human-only vision).
 
+# ── Simulation calibration ────────────────────────────────────────────────────
+# Controls how often SM §4e re-calibrates simulation parameters against real batch
+# history. Managed projects inherit otherness fleet defaults on startup and
+# re-calibrate against local metrics once ≥5 batches are available.
+# See docs/design/23-simulation-as-anchor.md for the full design.
+#
+# simulation:
+#   calibration_cycles: 5   # re-calibrate every N SM cycles (default: 5)
+
 # ── Continuous code hygiene ────────────────────────────────────────────────────
 # SM §4h runs a hygiene scan every N batches to detect dead code, stale docs,
 # orphaned TODOs, and stale Future items. Opens chore issues for cleanup.
