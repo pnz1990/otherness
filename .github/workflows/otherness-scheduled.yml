@@ -120,11 +120,19 @@ jobs:
 
       # ── Step 3: Install agent files ──────────────────────────────────────
       # Clones pnz1990/otherness to ~/.otherness on the runner.
-      # The agent_version field in otherness-config.yaml pins to a specific SHA.
+      # Resolves the version to run:
+      #   1. If upgrade_policy allows a newer release → upgrade to it (same session)
+      #   2. Else if agent_version is set → checkout that version
+      #   3. Else → use HEAD (latest main)
+      # Upgrades rewrite agent_version in otherness-config.yaml so the session
+      # commits the new pin at batch end via the session branch PR (SM §4g).
+      # Design ref: docs/design/03-versioned-release.md
       - name: Install otherness agent files
         run: |
           git clone --quiet --depth 1 https://github.com/pnz1990/otherness.git ~/.otherness
-          # If agent_version is set in config, checkout that specific version
+          export GIT_TERMINAL_PROMPT=0
+
+          # ── Read config values ──────────────────────────────────────────
           AGENT_VERSION=$(python3 -c "
           import re
           for line in open('otherness-config.yaml'):
@@ -132,15 +140,60 @@ jobs:
               if m and m.group(1) not in ('','\"\"',\"''\"):
                   print(m.group(1)); break
           " 2>/dev/null || echo "")
-          if [ -n "$AGENT_VERSION" ]; then
-            export GIT_TERMINAL_PROMPT=0
+
+          UPGRADE_POLICY=$(python3 -c "
+          import re
+          for line in open('otherness-config.yaml'):
+              m = re.match(r'^\s+upgrade_policy:\s*[\"\'']?([^\"\'#\n\s]+)[\"\'']?', line)
+              if m and m.group(1) not in ('','\"\"',\"''\"):
+                  print(m.group(1)); break
+          " 2>/dev/null || echo "")
+
+          echo "[otherness] agent_version=${AGENT_VERSION:-unset} upgrade_policy=${UPGRADE_POLICY:-none}"
+
+          # ── Auto-upgrade if policy allows ──────────────────────────────
+          RESOLVED_VERSION="$AGENT_VERSION"
+
+          if [ -n "$UPGRADE_POLICY" ] && [ -n "$AGENT_VERSION" ]; then
+            git -C ~/.otherness fetch --tags --quiet 2>/dev/null || true
+
+            # Decode and run semver policy-matching script (base64 avoids YAML indent issues)
+            _POLICY_SCRIPT="aW1wb3J0IHN5cywgcmUKY3VycmVudD1zeXMuYXJndlsxXS5sc3RyaXAoInYiKTsgcG9saWN5PXN5cy5hcmd2WzJdCm1haj1pbnQoY3VycmVudC5zcGxpdCgiLiIpWzBdKQpkZWYgb2sodCxwLG0pOgogICAgdj10LmxzdHJpcCgidiIpOyBwYXJ0cz12LnNwbGl0KCIuIikKICAgIGlmIGxlbihwYXJ0cykhPTMgb3IgaW50KHBhcnRzWzBdKSE9bTogcmV0dXJuIEZhbHNlCiAgICByZXR1cm4gYm9vbChyZS5tYXRjaCgiXiIrcmUuZXNjYXBlKHApLnJlcGxhY2UoIngiLCJbMC05XSsiKSsiJCIsdikpCmRlZiBndChhLGIpOiByZXR1cm4gW2ludCh4KSBmb3IgeCBpbiBhLmxzdHJpcCgidiIpLnNwbGl0KCIuIildPltpbnQoeCkgZm9yIHggaW4gYi5sc3RyaXAoInYiKS5zcGxpdCgiLiIpXQpmb3IgbGluZSBpbiBzeXMuc3RkaW46CiAgICB0PWxpbmUuc3RyaXAoKQogICAgaWYgb2sodCxwb2xpY3ksbWFqKSBhbmQgZ3QodCxjdXJyZW50KTogcHJpbnQodCk7IGJyZWFrCg=="
+            echo "$_POLICY_SCRIPT" | base64 -d > /tmp/op.py
+
+            NEWEST=$(git -C ~/.otherness tag --sort=-version:refname | \
+              grep -E "^v[0-9]+\.[0-9]+\.[0-9]+$" | \
+              python3 /tmp/op.py "$AGENT_VERSION" "$UPGRADE_POLICY" 2>/dev/null || echo "")
+
+            if [ -n "$NEWEST" ]; then
+              echo "[otherness] Auto-upgrading $AGENT_VERSION -> $NEWEST (policy: $UPGRADE_POLICY)"
+              if git -C ~/.otherness checkout "$NEWEST" --quiet 2>/dev/null; then
+                RESOLVED_VERSION="$NEWEST"
+                # Rewrite agent_version so session branch PR commits the upgrade
+                python3 -c "import re,sys; c=open('otherness-config.yaml').read(); c=re.sub(r'(\s+agent_version:\s*)[\"\'\'']?v[0-9]+\.[0-9]+\.[0-9]+[\"\'\'']?',lambda m:m.group(1)+sys.argv[1],c,count=1); open('otherness-config.yaml','w').write(c); print('[otherness] agent_version -> '+sys.argv[1])" "$NEWEST" 2>/dev/null || echo "::warning::Could not rewrite agent_version"
+              else
+                echo "::warning::Could not checkout $NEWEST -- staying on $AGENT_VERSION"
+              fi
+            else
+              echo "[otherness] Already at newest allowed version ($AGENT_VERSION)"
+            fi
+          fi
+            else
+              echo "[otherness] Already at newest allowed version ($AGENT_VERSION)"
+            fi
+          fi
+
+          # ── Checkout pinned version (no upgrade case) ──────────────────
+          if [ "$RESOLVED_VERSION" = "$AGENT_VERSION" ] && [ -n "$AGENT_VERSION" ]; then
             git -C ~/.otherness fetch --tags --quiet 2>/dev/null || true
             git -C ~/.otherness checkout "$AGENT_VERSION" --quiet 2>/dev/null \
               && echo "[otherness] Pinned to $AGENT_VERSION" \
               || echo "::warning::Could not checkout $AGENT_VERSION — using HEAD"
-          else
+          elif [ -z "$AGENT_VERSION" ]; then
             echo "[otherness] Using HEAD: $(git -C ~/.otherness rev-parse --short HEAD)"
           fi
+
+          echo "[otherness] Active version: $(git -C ~/.otherness describe --tags --exact-match 2>/dev/null || git -C ~/.otherness rev-parse --short HEAD)"
 
       # ── Step 4: Sync command files ───────────────────────────────────────
       - name: Sync otherness command files
