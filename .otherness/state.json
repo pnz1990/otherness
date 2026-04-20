@@ -515,8 +515,8 @@
       ]
     }
   },
-  "sm_cycle_count": 4,
-  "last_sm_at": "2026-04-20T13:57:42Z",
+  "sm_cycle_count": 5,
+  "last_sm_at": "2026-04-20T20:29:58Z",
   "session_heartbeats": {
     "sess-5327084f": {
       "last_seen": "2026-04-20T13:12:45Z",
@@ -532,8 +532,13 @@
       "last_seen": "2026-04-20T18:31:22Z",
       "item": "issue-361",
       "cycle": 1
+    },
+    "sess-7f699d99": {
+      "last_seen": "2026-04-20T20:29:58Z",
+      "item": "sm-complete",
+      "cycle": 5
     }
   },
-  "pm_cycle_count": 1,
+  "pm_cycle_count": 2,
   "last_auto_vision_cycle": 87
 }
