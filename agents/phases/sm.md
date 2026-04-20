@@ -2213,8 +2213,78 @@ ACTION="Active"
 [ "${TODO_COUNT:-0}" -lt 5 ] && ACTION="Refilling queue"
 [ "${TODO_COUNT:-0}" -eq 0 ] && ACTION="Queue empty — running vision+learn"
 
-gh issue comment $REPORT_ISSUE --repo $REPO \
-  --body "[🔄 SDM | ${MY_SESSION_ID:-sess-unknown} | otherness@${OTHERNESS_VERSION:-unknown}] Batch ${SM_CYCLE:-?}. Health: ${HEALTH} | Outcome: ${SESSION_OUTCOME:-unknown} | Vision PRs: ${VISION_PRS:-0}${THROUGHPUT_WARN:-} | Queue: ${TODO_COUNT:-0} todo ${IN_REVIEW:-0} in_review | Action: ${ACTION}" 2>/dev/null
+# §4f: Condensed report format (design doc 35 §Future → ✅)
+# Headline: Batch N | Health: X | Progress: X | Vision PRs: N | Chores: N | Queue: N remaining | Journeys: N✅ N❌ | Next: [title]
+# Verbose details go into a <details> block. Human can scan 10 comments in 30 seconds.
+
+# Progress classification (O4)
+PROGRESS_CLASS="ADVANCING"
+[ "${VISION_PRS:-0}" -eq 0 ] && [ "${MERGED:-0}" -gt 0 ] && PROGRESS_CLASS="STEADY"
+[ "${MERGED:-0}" -eq 0 ] && PROGRESS_CLASS="STALLED"
+
+# Chores count: MERGED minus VISION_PRS (non-negative)
+CHORES_COUNT=$(python3 -c "
+merged = int('${MERGED:-0}') if '${MERGED:-0}'.isdigit() else 0
+vision = int('${VISION_PRS:-0}') if '${VISION_PRS:-0}'.isdigit() else 0
+print(max(0, merged - vision))
+" 2>/dev/null || echo "0")
+
+# Next item title (O6)
+NEXT_ITEM=$(python3 -c "
+import json
+try:
+    s = json.load(open('.otherness/state.json'))
+    PRIORITY_MAP = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}
+    candidates = []
+    for id, d in s.get('features', {}).items():
+        if d.get('state') != 'todo': continue
+        pri = PRIORITY_MAP.get(d.get('priority'), 4)
+        title = d.get('title', '').lower()
+        labels = d.get('labels', [])
+        is_hygiene = title.startswith('hygiene:') or 'kind/chore' in labels
+        candidates.append((pri + (10 if is_hygiene else 0), d.get('title', '(none)')))
+    candidates.sort()
+    print(candidates[0][1][:40] if candidates else '(queue empty)')
+except: print('(?)')
+" 2>/dev/null || echo "(?)")
+
+# Journey counts (O5): count ## sections in definition-of-done.md
+JOURNEY_OK=$(python3 -c "
+import re
+try:
+    content = open('docs/aide/definition-of-done.md').read()
+    # Count journey sections marked ✅ in their header or body
+    sections = re.findall(r'^##\s+.+', content, re.MULTILINE)
+    ok = sum(1 for s in sections if '✅' in s)
+    print(ok)
+except: print('?')
+" 2>/dev/null || echo "?")
+
+JOURNEY_FAIL=$(python3 -c "
+import re
+try:
+    content = open('docs/aide/definition-of-done.md').read()
+    sections = re.findall(r'^##\s+.+', content, re.MULTILINE)
+    fail = sum(1 for s in sections if '❌' in s)
+    print(fail)
+except: print('?')
+" 2>/dev/null || echo "?")
+
+REPORT_BODY=$(cat <<BODY_EOF
+Batch ${SM_CYCLE:-?} | Health: ${HEALTH} | Progress: ${PROGRESS_CLASS} | Vision PRs: ${VISION_PRS:-0} | Chores: ${CHORES_COUNT} | Queue: ${TODO_COUNT:-0} remaining | Journeys: ${JOURNEY_OK}✅ ${JOURNEY_FAIL}❌ | Next: [${NEXT_ITEM}]
+
+<details><summary>Details</summary>
+
+- Session: \`${MY_SESSION_ID:-sess-unknown}\` | Agent: otherness@${OTHERNESS_VERSION:-unknown}
+- Outcome: ${SESSION_OUTCOME:-unknown}${THROUGHPUT_WARN:-}
+- In-review: ${IN_REVIEW:-0} | Action: ${ACTION}
+- Needs-human open: ${NEEDS_HUMAN_COUNT:-0}
+
+</details>
+BODY_EOF
+)
+
+gh issue comment $REPORT_ISSUE --repo $REPO --body "$REPORT_BODY" 2>/dev/null
 
 # §4f: Silent-session detection (design doc 35 §Future → ✅)
 # A silent session: 0 PRs merged AND 0 open PRs. Two consecutive silent sessions → escalate.
