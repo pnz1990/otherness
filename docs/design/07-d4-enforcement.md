@@ -144,6 +144,7 @@ The message names the correct command. The human knows exactly what to do.
 - ✅ CRITICAL-A/B tier split — standalone.md HARD RULES: git diff classifier separates logic changes (CRITICAL-A, human review) from [AI-STEP]-comment additions (CRITICAL-B, autonomous merge); queue gate at ≥3 in_review (PR #288, 2026-04-19)
 
 ## Future (🔲)
+- 🔲 ⚠️ Inferred: D4 classification at issue intake — coord.md §1e reads issue title/body, posts [📋 D4 TRANSLATION] if IMPERATIVE, waits 60s; [AI-STEP] in coord.md not yet executable (agents/phases/coord.md, 2026-04-20)
 
 *(All D4 enforcement items implemented. doc 13 governs autonomous merge strategy. Future extensions should be opened as new issues.)*
 
