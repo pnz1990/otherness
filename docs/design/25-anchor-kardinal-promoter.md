@@ -218,7 +218,7 @@ The agent reads this pattern to track coverage ratio across sessions.
 
 ## Future (🔲)
 
-- 🔲 Playwright integration in PDCA — first 3 UI scenarios (bundle status, pipeline graph, rollback button)
+- ✅ Playwright integration in PDCA — first 3 UI scenarios (bundle status S25, pipeline graph S26, rollback button S27) — Journey 011 added, PDCA workflow updated with Node.js/Playwright steps (PR #876, 2026-04-20)
 - 🔲 Feature→scenario gap detection: SM §4g-anchor reads ✅ Present items from docs/design/*.md, diffs against this coverage matrix, opens anchor-growth issues for uncovered features
 - 🔲 otherness-config.yaml: `anchor:` section — workflow, score_pattern, coverage_target: 80, stagnation_sessions: 3
 
