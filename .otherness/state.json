@@ -603,7 +603,7 @@
       "priority": "medium"
     },
     "issue-643": {
-      "state": "todo",
+      "state": "assigned",
       "status": "todo",
       "title": "feat: Automated `docs/aide/progress.md` update in SM \u00a74f: `progress.md` currently reflects the s",
       "labels": [
@@ -613,7 +613,15 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "assigned_to": "sess-8bb57abd",
+      "assigned_at": "2026-04-20T21:25:34Z",
+      "branch": "feat/issue-643",
+      "worktree": "../otherness.issue-643",
+      "file_spaces": [
+        "agents/",
+        "scripts/"
+      ]
     },
     "issue-642": {
       "state": "todo",
@@ -1050,6 +1058,11 @@
       "last_seen": "2026-04-20T20:29:58Z",
       "item": "sm-complete",
       "cycle": 5
+    },
+    "sess-8bb57abd": {
+      "last_seen": "2026-04-20T21:25:34Z",
+      "item": "issue-643",
+      "cycle": 1
     }
   },
   "pm_cycle_count": 2,
