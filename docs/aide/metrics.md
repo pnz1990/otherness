@@ -181,3 +181,5 @@
 
 | 2026-04-20 | 91 | 1 | 0 | 0 | 12 | 1 | ~5 min | PR #601 docs(security): mark M5b 🚫 DEFERRED so queue-gen skips it. Closed 5 already-done Stage 10 issues. Queue: only issue-361 (GitHub App, awaiting human). Health: GREEN. |
 | 2026-04-20 | 92 | 1 | 0 | 0 | 12 | 1 | ~25 min | PR #605 security(m3): GitHub App token support. M3 ✅ — attack vectors 3E and 4C mitigated. Health: GREEN. |
+
+| 2026-04-20 | 93 | 1 | 0 | 0 | 12 | 1 | ~30 min | PR #629 feat(coord): queue refusal guard §1c-guard — enrich chore-only queues before claiming; design doc 35 created. Health: GREEN. |
