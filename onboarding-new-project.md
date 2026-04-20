@@ -140,6 +140,26 @@ This project enforces D4. Agents may only act within their declared mode.
 
 Any agent that attempts to act outside its mode must stop and print:
   [🚫 D4 GATE] <zone> writes require <command>. Current session: <mode>.
+
+## Anchor
+
+> Optional — add this section if your project has an automated quality signal (CI workflow
+> that measures product coverage or correctness). Delete this section if not applicable.
+
+**Anchor type**: `<demo | e2e-journey-suite | integration-scenario | benchmark>`
+**Coverage target**: ≥ 80% of ✅ Present features validated end-to-end
+**Growth obligation**: every merged feature PR must have a corresponding anchor entry within 2 sessions
+**Run command**: `gh workflow run <anchor-workflow>.yml --repo <owner/repo>`
+**Score field**: the workflow posts a coverage line to issue #<N> matching:
+  `[ANCHOR] coverage: <N>/<M> (<X>%) scenarios passing`
+**Stagnation threshold**: if anchor score does not improve in 3 consecutive sessions,
+  COORD generates anchor-growth items before any feature items
+
+### Coverage Matrix
+
+| Feature area | Anchor entries | Status |
+|---|---|---|
+| <area> | <N> scenarios | ✅ covered / ⚠️ partial / ❌ none |
 ```
 
 ---
