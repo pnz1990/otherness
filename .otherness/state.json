@@ -312,7 +312,7 @@
       "priority": "medium"
     },
     "issue-361": {
-      "state": "assigned",
+      "state": "todo",
       "status": "todo",
       "title": "security(p2): replace GH_TOKEN PAT with GitHub App \u2014 per-repo scoped, non-exportable",
       "labels": [
@@ -324,14 +324,11 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "assigned_to": "sess-65e84058",
-      "assigned_at": "2026-04-20T18:31:22Z",
-      "branch": "feat/issue-361",
-      "worktree": "../otherness.issue-361",
-      "file_spaces": [
-        "scripts/",
-        ".github/"
-      ]
+      "assigned_to": null,
+      "assigned_at": null,
+      "branch": null,
+      "worktree": null,
+      "file_spaces": []
     },
     "issue-338": {
       "state": "done",
@@ -513,6 +510,522 @@
         "area/tooling",
         "kind/enhancement"
       ]
+    },
+    "issue-650": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: Learn session completion must be verified, not just queued: the current flow is \"SM detect",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-649": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: Architectural monoculture breakout mechanism: the simulation identified that all agents sh",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-648": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: Cross-project pressure propagation: when otherness identifies a pattern (e.g. \"test covera",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-647": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: Simulation calibration staleness visible in health signal: `sim-prediction.json` stores a ",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-646": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: SM health signal must distinguish real GREEN from stall-GREEN: the current GREEN health si",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-645": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: Same-session recovery when no PR ships in first 20 minutes: `coord.md` must detect mid-ses",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-644": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: Meaningful-work rate tracked as a first-class metric: `docs/aide/metrics.md` must add a `m",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-643": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: Automated `docs/aide/progress.md` update in SM \u00a74f: `progress.md` currently reflects the s",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-642": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: 38.1",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-641": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: 37.1",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-640": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: 36.1",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-639": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: 35.1",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-638": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: `coord.md \u00a71c`: track guard-firing frequency in session metrics (metrics.md schema",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-637": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: End-to-end onboarding smoke test on a live fresh repo: `scripts/check-onboarding.sh` valid",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-636": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: Autonomous `/otherness.learn` cadence enforcement with measurable trigger: SM \u00a74c must che",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-635": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: Simulation predictions must visibly change agent behavior: today the simulation runs, prod",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-634": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: Session defect diagnosis: when a session completes with 0 meaningful items (only metrics c",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-633": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: Graceful partial handoff on GitHub Actions job timeout: GitHub Actions jobs have a default",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-632": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: `/otherness.status` single-page health summary that a human can read in 30 seconds: the cu",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-627": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: `docs/aide/progress.md` automated update: SM \u00a74f must update `progress.md` after every bat",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-626": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: New command `/otherness.status` enhanced output: the command currently exists but its outp",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-625": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: `SM \u00a74f` batch report condensed format: the report issue comment must fit in 8 lines; curr",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-624": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: `agents/onboard.md` vision inference quality: after writing `vision.md`, run the vision do",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-623": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: `onboarding-existing-project.md` + `onboarding-new-project.md`: add a \"first-run smoke tes",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-622": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: `agents/onboard.md` post-run validation: after generating `docs/aide/`, run a structural s",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-621": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: `agents/otherness.learn.md`: diversity-first learn target selection",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-620": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: `agents/skills/README.md` + `SM \u00a74c`: skill decay tracking",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-619": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: `agents/otherness.learn.md` / `SM \u00a74c`: frame-lock break protocol",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-618": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: `SM \u00a74c` learn-cadence enforcement: add an explicit check",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-617": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: `docs/aide/metrics.md` schema: add `arch_convergence` and `sim_floor_delta` columns to bat",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-616": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: `SM \u00a74e` / `PM \u00a75g`: simulation-behavior coupling gate",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-615": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: `SM \u00a74f` batch report format: replace generic GREEN/AMBER/RED with a two-axis signal: `pro",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-614": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: `coord.md \u00a71c`: queue refusal guard",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-613": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: `standalone.md` / `coord.md \u00a71e`: silent-session detection",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-612": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: `SM \u00a74b`: session outcome classification",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-611": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: Cross-project pressure propagation: when otherness identifies a pattern (e.g. \"test covera",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-610": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: `SM \u00a74b` / `PM \u00a75`: meaningful-work gate",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-609": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: Self-updating pressure prompts: Step A should read its own current pressure context, evalu",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-608": {
+      "state": "todo",
+      "status": "todo",
+      "title": "\ud83d\udcca Autonomous Team Reports \u2014 2026-04-20",
+      "labels": [
+        "otherness"
+      ],
+      "priority": "medium"
+    },
+    "issue-600": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: `/otherness.setup` and `/otherness.onboard`: deploy workflow during project setu",
+      "labels": [
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "priority/low",
+        "kind/enhancement"
+      ],
+      "priority": "low"
     }
   },
   "sm_cycle_count": 5,
