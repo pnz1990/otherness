@@ -208,12 +208,12 @@
       "done_at": "2026-04-20T13:11:06Z"
     }
   },
-  "sm_cycle_count": 1,
+  "sm_cycle_count": 2,
   "last_sm_at": "2026-04-20T12:15:00Z",
   "session_heartbeats": {
     "sess-5327084f": {
-      "last_seen": "2026-04-20T12:37:26Z",
-      "item": "issue-522",
+      "last_seen": "2026-04-20T13:12:45Z",
+      "item": "sm-complete",
       "cycle": 1
     }
   }
