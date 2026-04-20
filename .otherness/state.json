@@ -411,8 +411,8 @@
       "done_at": "2026-04-20T15:47:54Z"
     },
     "issue-568": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: docs/design/: add design docs for major feature areas (RGD display, instance management, h",
       "labels": [
         "priority/medium",
@@ -421,7 +421,9 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-20T15:54:07Z"
     },
     "issue-569": {
       "state": "todo",
