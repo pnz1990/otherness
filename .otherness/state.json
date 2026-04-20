@@ -151,8 +151,8 @@
       "done_at": "2026-04-20T13:00:07Z"
     },
     "issue-526": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: First persona journey: Operator",
       "labels": [
         "priority/medium",
@@ -164,7 +164,10 @@
       "priority": "medium",
       "branch": null,
       "worktree": null,
-      "file_spaces": []
+      "file_spaces": [],
+      "pr_number": 543,
+      "pr_merged": true,
+      "done_at": "2026-04-20T13:02:33Z"
     },
     "issue-527": {
       "state": "todo",
