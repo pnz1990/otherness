@@ -90,8 +90,8 @@
       "done_at": "2026-04-20T12:46:24Z"
     },
     "issue-523": {
-      "state": "assigned",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: Feature\u2192scenario gap detection: SM \u00a74g-anchor reads \u2705 Present items from docs/design/*.md,",
       "labels": [
         "priority/medium",
@@ -107,7 +107,10 @@
         "agents/"
       ],
       "assigned_to": "sess-5327084f",
-      "assigned_at": "2026-04-20T12:47:53Z"
+      "assigned_at": "2026-04-20T12:47:53Z",
+      "pr_number": 540,
+      "pr_merged": true,
+      "done_at": "2026-04-20T12:52:02Z"
     },
     "issue-524": {
       "state": "todo",
