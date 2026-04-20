@@ -206,11 +206,11 @@ The agent reads this pattern to track coverage ratio across sessions.
 - ✅ PDCA runs daily (not weekly) — cron `0 2 * * *` matching demo-validate cadence (already implemented in kardinal-promoter .github/workflows/pdca.yml; design doc corrected PR #510, 2026-04-20)- ✅ Demo-validate workflow — nightly, broader demo surface (2026-04-19)
 - ✅ test infrastructure: kind + krocodile + ArgoCD + kardinal-test-app (2026-04-09)
 - ✅ Anchor score comment format: SM §4g-anchor-score reads `[ANCHOR | kardinal-promoter | DATE] coverage: N/M (X%) | PASS=A FAIL=B` from report issue, tracks stagnation across sessions (PR #438, 2026-04-20)
+- ✅ Infrastructure reliability — S1 reconcile wait increased from 3min (12×15s) to 5min (20×15s) to reduce flaky failures on resource-constrained CI runners (kardinal-promoter PR #874, 2026-04-20; ArgoCD sync timeout deferred — no ArgoCD in current PDCA)
 
 ## Future (🔲)
 
-- 🔲 Infrastructure reliability: retry logic for S1 reconcile wait + ArgoCD sync timeout increase
-- 🔲 Scenario 7: config-only promotion — `kardinal apply` with no image change, verify PromotionStep created
+- 🔲 Scenario 7: config-only promotion- 🔲 Scenario 7: config-only promotion — `kardinal apply` with no image change, verify PromotionStep created
 - 🔲 Scenario 8: full multi-stage assertion — verify each stage independently (test health ✅, uat health ✅, prod gate ✅)
 - 🔲 Scenario 9: health check failure blocks promotion — deploy app with failing readiness probe, verify promotion pauses
 - 🔲 Scenarios 10-12: CLI completeness — `kardinal get bundles`, `kardinal delete bundle`, `kardinal get steps`
