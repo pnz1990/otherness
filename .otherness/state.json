@@ -312,8 +312,8 @@
       "priority": "medium"
     },
     "issue-361": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "security(p2): replace GH_TOKEN PAT with GitHub App \u2014 per-repo scoped, non-exportable",
       "labels": [
         "priority/medium",
@@ -328,7 +328,9 @@
       "assigned_at": null,
       "branch": null,
       "worktree": null,
-      "file_spaces": []
+      "file_spaces": [],
+      "note": "already-closed-pr-605",
+      "done_at": "2026-04-20T17:41:02Z"
     },
     "issue-338": {
       "state": "done",
@@ -939,8 +941,8 @@
       "priority": "medium"
     },
     "issue-614": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `coord.md \u00a71c`: queue refusal guard",
       "labels": [
         "priority/medium",
@@ -949,7 +951,9 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "note": "already-implemented-coord-1c-guard",
+      "done_at": "2026-04-20"
     },
     "issue-613": {
       "state": "todo",
@@ -1020,13 +1024,14 @@
       "priority": "medium"
     },
     "issue-608": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "\ud83d\udcca Autonomous Team Reports \u2014 2026-04-20",
       "labels": [
         "otherness"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "note": "report-issue-not-a-work-item"
     },
     "issue-600": {
       "state": "todo",
