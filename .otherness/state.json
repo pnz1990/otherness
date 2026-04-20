@@ -849,7 +849,7 @@
       "done_at": "2026-04-20T08:08:35Z"
     },
     "issue-398": {
-      "state": "todo",
+      "state": "done",
       "issue": 398,
       "title": "docs: README missing /otherness.learn and /otherness.status commands",
       "created_at": "2026-04-20T08:16:08Z",
@@ -857,10 +857,11 @@
         "area/docs"
       ],
       "priority": "medium",
-      "size": "s"
+      "size": "s",
+      "done_at": "2026-04-20T08:19:39Z"
     },
     "issue-394": {
-      "state": "todo",
+      "state": "done",
       "issue": 394,
       "title": "docs(design): create design doc for Stage 0: Scaffolding",
       "created_at": "2026-04-20T08:16:08Z",
@@ -868,7 +869,8 @@
         "area/docs"
       ],
       "priority": "low",
-      "size": "s"
+      "size": "s",
+      "done_at": "2026-04-20T08:19:39Z"
     },
     "issue-302": {
       "state": "todo",
@@ -943,6 +945,6 @@
   },
   "handoff": null,
   "report_issue": 2,
-  "sm_cycle_count": 58,
-  "pm_cycle_count": 31
+  "sm_cycle_count": 59,
+  "pm_cycle_count": 32
 }
