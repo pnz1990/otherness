@@ -193,7 +193,7 @@ Until depth scoring is implemented, use:
 
 ## Future (🔲)
 
-- 🔲 Journey depth: add error + empty state to all Tier 1 journeys (001-007)
+- ✅ Journey depth: add error + empty state to all Tier 1 journeys (001-007) — Steps 10-11 added to journey 006 (CEL highlighting error + empty CEL state), Steps 8-9 added to journey 007 (context switcher error + empty/single-context state) (kro-ui PR #TBD, 2026-04-20)
 - 🔲 First persona journey: Operator — deploy RGD via designer, verify instances appear, check health indicators
 - 🔲 Accessibility: run axe assertions on Tier 1 pages (RGD list, DAG, instance list, context switcher)
 - 🔲 kro upstream tracking: when kro version bumps, SM opens anchor-growth issue for new API surface
