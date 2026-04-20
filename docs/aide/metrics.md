@@ -158,3 +158,5 @@
 
 | 2026-04-20 | 80 | 3 | 0 | 0 | 12 | 5 | ~3 | #472 doc fix (design doc 24 ref), #473 false-positive stale markers removed (23 markers across 9 docs), #467 validate.sh dual-step check. 3 items closed as already-done (413, 405, hygiene). Health: GREEN. |
 
+| 2026-04-20 | 81 | 1 | 0 | 0 | 12 | 2 | ~3 | #474 design doc 30 Stage 0 Scaffolding. 17 stale issues closed (already done). README check: already had both commands. Health: GREEN. |
+
