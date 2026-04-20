@@ -905,8 +905,8 @@
       "done_at": "2026-04-20T22:42:29Z"
     },
     "issue-617": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `docs/aide/metrics.md` schema: add `arch_convergence` and `sim_floor_delta` columns to bat",
       "labels": [
         "priority/medium",
@@ -915,7 +915,17 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "assigned_to": "sess-fa7fdbde",
+      "branch": "feat/issue-617",
+      "worktree": "../otherness.issue-617",
+      "file_spaces": [
+        "docs/",
+        "agents/"
+      ],
+      "pr_number": 659,
+      "pr_merged": true,
+      "done_at": "2026-04-20T22:46:24Z"
     },
     "issue-616": {
       "state": "todo",
@@ -1004,17 +1014,10 @@
       "priority": "medium"
     },
     "issue-610": {
-      "state": "todo",
-      "status": "todo",
-      "title": "feat: `SM \u00a74b` / `PM \u00a75`: meaningful-work gate",
-      "labels": [
-        "priority/medium",
-        "area/agent-loop",
-        "otherness",
-        "size/s",
-        "kind/enhancement"
-      ],
-      "priority": "medium"
+      "state": "done",
+      "status": "done",
+      "note": "covered-by-pr-655",
+      "pr_number": 655
     },
     "issue-609": {
       "state": "done",
