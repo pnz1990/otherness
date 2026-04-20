@@ -158,10 +158,10 @@ hygiene:
 ## Present (✅)
 
 - ✅ Design doc created (this file) (2026-04-20)
+- ✅ `agents/phases/sm.md §4g` (formerly §4h): hygiene scan block implemented — executable Python, not [AI-STEP]; 3 check categories (stale design doc refs, unresolved TODO/FIXME/HACK, build artifacts); cap at `max_issues_per_scan`; `priority/low` labels (PR #441, 2026-04-20)
 
 ## Future (🔲)
 
-- 🔲 `agents/phases/sm.md §4h`: add hygiene scan block (executable, not [AI-STEP])
 - 🔲 `agents/skills/hygiene-scan.py`: standalone Python script implementing all 5 checks
 - 🔲 `otherness-config-template.yaml`: add `hygiene:` section with commented defaults
 - 🔲 `agents/phases/coord.md §1b`: route hygiene items with lower priority than features
