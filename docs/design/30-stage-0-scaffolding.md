@@ -24,9 +24,9 @@ autonomously improve itself.
 - ✅ `otherness-config.yaml` — project config with all required fields (2026-04-14)
 - ✅ `docs/aide/` — vision.md, roadmap.md, definition-of-done.md, progress.md, metrics.md (2026-04-14)
 - ✅ `.opencode/command/otherness.*.md` — all command files deployed and synced from `~/.otherness` (2026-04-14)
-- ✅ `_state` branch with seeded `state.json` — parallel sessions use it as distributed lock (2026-04-14) ⚠️ Stale — referenced file not found
+- ✅ `_state` branch with seeded `state.json` — parallel sessions use it as distributed lock (2026-04-14)
 - ✅ GitHub report issue #2 and all labels (kind/*, area/*, priority/*, size/*, risk/*, otherness, needs-human, blocked) (2026-04-14)
-- ✅ CI: `.github/workflows/ci.yml` — validate + lint on every PR (2026-04-14) ⚠️ Stale — referenced file not found
+- ✅ CI: `.github/workflows/ci.yml` — validate + lint on every PR (2026-04-14)
 - ✅ `otherness-config-template.yaml` — project config template for new projects (2026-04-17)
 
 ## Future (🔲)
