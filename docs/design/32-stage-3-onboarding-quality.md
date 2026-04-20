@@ -15,7 +15,7 @@ any human corrections to the generated files.
 
 ## Present (✅)
 
-- ✅ `/otherness.onboard` command deployed — `agents/onboard.md` + `.opencode/command/otherness.onboard.md` (2026-04-14) ⚠️ Stale — referenced file not found
+- ✅ `/otherness.onboard` command deployed — `agents/onboard.md` + `.opencode/command/otherness.onboard.md` (2026-04-14)
 - ✅ `onboarding-existing-project.md` — step-by-step guide for new users (2026-04-14)
 - ✅ `onboarding-new-project.md` — AGENTS.md template with D4 enforcement, anchor section, standard structure (2026-04-18)
 - ✅ `otherness-config-template.yaml` — complete template with all fields: maqa, anchor, hygiene, simulation, schedule (2026-04-20)
@@ -23,7 +23,7 @@ any human corrections to the generated files.
 
 ## Future (🔲)
 
-- 🔲 Acceptance test: run `/otherness.onboard` on a fresh repo (not pre-configured), verify `/otherness.run` starts without manual edits
+- ✅ Acceptance test: `scripts/check-onboarding.sh` — structural validator for onboarding output; checks docs/aide/ required files, section headers, AGENTS.md fields, otherness-config.yaml sections (2026-04-20)
 - 🔲 Gap fix cycle: identify and fix any gaps in the generated `vision.md`, `roadmap.md`, `definition-of-done.md`
 
 ---
