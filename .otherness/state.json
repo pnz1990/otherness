@@ -1039,8 +1039,8 @@
       "priority": "low"
     }
   },
-  "sm_cycle_count": 5,
-  "last_sm_at": "2026-04-20T20:29:58Z",
+  "sm_cycle_count": 6,
+  "last_sm_at": "2026-04-20T21:30:49Z",
   "session_heartbeats": {
     "sess-5327084f": {
       "last_seen": "2026-04-20T13:12:45Z",
