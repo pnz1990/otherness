@@ -61,9 +61,17 @@ maqa:
   # via `git pull` on the next scheduled run. The SELF-UPDATE block does
   # `git checkout $agent_version` when set, freezing agent behavior at a known state.
   # When empty: agent pulls latest main (convenient but less secure).
-  # To upgrade: run /otherness.upgrade to preview changelog and bump the pin.
   # Recommended: always set this for projects with scheduled autonomous runs.
-  agent_version: ""     # e.g. "v0.1.0" or full SHA — leave empty for latest (insecure)
+  agent_version: ""     # e.g. "v0.2.0" — leave empty for latest main (insecure)
+
+  # Auto-upgrade policy — controls which newer releases are adopted automatically
+  # at workflow Step 3, before the agent starts (same session gets the upgrade).
+  #   "0.2.x"  → auto-upgrade to any newer 0.2.* patch release
+  #   "0.x.x"  → auto-upgrade to any newer 0.*.* minor or patch release
+  #   ""        → no auto-upgrade (fully pinned; update agent_version manually)
+  # Major version boundary (0.x → 1.0) is NEVER crossed automatically.
+  # Design ref: docs/design/03-versioned-release.md
+  upgrade_policy: "0.x.x"  # recommended default: track all 0.* releases
 
   # D4 zone enforcement — enforces declarative design-driven development.
   # When true: guard.sh is called before file writes; guard-ci.sh runs in CI;

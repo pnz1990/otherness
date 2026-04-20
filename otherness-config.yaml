@@ -23,6 +23,7 @@ maqa:
   # The SELF-UPDATE block in standalone.md does `git checkout $agent_version` when set.
   # Update this value after reviewing changelog at: https://github.com/pnz1990/otherness/commits
   agent_version: v0.2.0  # pinned to stable release
+  upgrade_policy: "0.x.x"  # auto-upgrade any 0.* release. See docs/design/03
 
 ci:
   provider: github-actions

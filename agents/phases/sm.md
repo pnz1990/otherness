@@ -308,6 +308,165 @@ if [ $((${BATCH_COUNT:-0} % 5)) -eq 0 ] && [ "${BATCH_COUNT:-0}" -gt 0 ]; then
    # 5. If the pattern represents an entirely new failure class not yet in any skill file:
    #    gh issue create --repo $REPO --title "skill: <pattern>" --label otherness
   # If only 1 project or no patterns found: log "[SM] No cross-project patterns found."
+
+  # §4c-propagate: Cross-project pressure propagation (design doc 28 §Future → ✅)
+  # When a pattern is detected across ≥2 monitored projects, flag the pressure context
+  # in each affected project so their next vibe-vision scan targets the shared gap.
+  # This opens a GitHub issue on each monitored repo — the agent running there picks it up.
+  # Direct workflow edits are NOT made here (D4 design-first: issue → design doc → PR).
+  python3 - <<'PROPAGATE_EOF'
+import re, os, subprocess, datetime
+
+REPO = os.environ.get('REPO', '')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+
+# Step 1: Read monitor.projects
+monitored = []
+try:
+    in_monitor = in_projects = False
+    for line in open('otherness-config.yaml'):
+        if re.match(r'^monitor:', line): in_monitor = True
+        if in_monitor and re.match(r'\s+projects:', line): in_projects = True
+        if in_projects:
+            m = re.match(r'\s+- (.+)', line)
+            if m:
+                r = m.group(1).strip()
+                if r: monitored.append(r)
+        # Stop reading monitor section when we hit a new top-level key
+        if in_projects and re.match(r'^\w', line) and not re.match(r'^monitor:', line):
+            break
+except Exception as e:
+    print(f'[SM §4c-propagate] Config read error: {e}')
+
+if len(monitored) < 2:
+    print(f'[SM §4c-propagate] Fewer than 2 monitored projects — skipping cross-project propagation.')
+    exit(0)
+
+# Step 2: For each project, collect recent merged PR titles as a proxy for addressed areas
+project_pr_titles = {}
+for proj in monitored:
+    try:
+        result = subprocess.run(
+            ['gh', 'pr', 'list', '--repo', proj, '--state', 'merged',
+             '--limit', '20', '--json', 'title', '--jq', '.[].title'],
+            capture_output=True, text=True, timeout=20)
+        if result.returncode == 0:
+            project_pr_titles[proj] = result.stdout.lower().splitlines()
+        else:
+            project_pr_titles[proj] = []
+    except Exception:
+        project_pr_titles[proj] = []
+
+# Step 3: Find patterns — areas that appear as gaps across ≥2 projects
+# A "gap" = a known pressure category NOT mentioned in recent PRs for a project
+PRESSURE_CATEGORIES = [
+    ('test coverage', ['test', 'coverage', 'spec', 'unit test']),
+    ('error handling', ['error', 'handle', 'fallback', 'retry']),
+    ('ci stability', ['ci', 'workflow', 'pipeline', 'lint', 'build']),
+    ('documentation', ['doc', 'readme', 'comment', 'guide']),
+    ('performance', ['perf', 'speed', 'latency', 'slow', 'optim']),
+    ('security', ['security', 'auth', 'permission', 'token', 'secret']),
+]
+
+def has_coverage(pr_titles, keywords):
+    """Return True if any keyword appears in any PR title."""
+    return any(any(kw in title for kw in keywords) for title in pr_titles)
+
+# Identify categories missing from ≥2 projects
+shared_gaps = []
+for category_name, keywords in PRESSURE_CATEGORIES:
+    missing_in = [proj for proj in monitored
+                  if not has_coverage(project_pr_titles.get(proj, []), keywords)]
+    if len(missing_in) >= 2:
+        shared_gaps.append((category_name, keywords, missing_in))
+
+if not shared_gaps:
+    print('[SM §4c-propagate] No shared pressure gaps found across monitored projects.')
+    exit(0)
+
+print(f'[SM §4c-propagate] Shared gaps detected: {[g[0] for g in shared_gaps]}')
+
+# Step 4: For each monitored project with a shared gap, open a pressure issue
+today = datetime.date.today().isoformat()
+propagated = []
+
+for category_name, keywords, missing_in in shared_gaps[:2]:  # limit to top 2 gaps
+    for proj in missing_in:
+        title = f'feat: cross-project pressure — rewrite vision pressure context for {category_name}'
+        # Dedup: skip if similar issue already open
+        try:
+            existing = subprocess.run(
+                ['gh', 'issue', 'list', '--repo', proj, '--state', 'open',
+                 '--search', 'cross-project pressure', '--json', 'number', '--jq', 'length'],
+                capture_output=True, text=True, timeout=15)
+            if int(existing.stdout.strip() or '0') > 0:
+                print(f'[SM §4c-propagate] {proj}: pressure issue already open — skipping.')
+                continue
+        except Exception:
+            pass
+
+        body = (
+            f'## Cross-project pressure propagation\n\n'
+            f'**Pattern detected**: `{category_name}` is a shared gap across '
+            f'{len(missing_in)} monitored projects (no recent PRs addressing this area).\n\n'
+            f'**Action required**: Update the `Context for this vision scan:` block in '
+            f'this project\'s scheduled workflow to add explicit pressure on `{category_name}`.\n\n'
+            f'This issue was opened automatically by SM §4c-propagate on `{REPO}` as part of '
+            f'cross-project pressure propagation (design doc 28).\n\n'
+            f'## What to do\n'
+            f'1. Find the `otherness-scheduled.yml` (or equivalent) workflow.\n'
+            f'2. In the Step A (vibe-vision) `prompt:` block, add or strengthen:\n'
+            f'   ```\n'
+            f'   - Is {category_name} coverage sufficient?\n'
+            f'   ```\n'
+            f'3. Open a PR updating the workflow.\n\n'
+            f'Reported by SM §4c-propagate | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION} | {today}'
+        )
+
+        try:
+            r = subprocess.run(
+                ['gh', 'issue', 'create', '--repo', proj,
+                 '--title', title,
+                 '--label', 'otherness,kind/enhancement,priority/low,area/agent-loop',
+                 '--body', body],
+                capture_output=True, text=True, timeout=20)
+            if r.returncode == 0:
+                issue_url = r.stdout.strip()
+                print(f'[SM §4c-propagate] Created pressure issue on {proj}: {issue_url}')
+                propagated.append(f'{proj}: {category_name}')
+            else:
+                # Label may not exist on target repo — retry without label
+                r2 = subprocess.run(
+                    ['gh', 'issue', 'create', '--repo', proj,
+                     '--title', title, '--body', body],
+                    capture_output=True, text=True, timeout=20)
+                if r2.returncode == 0:
+                    print(f'[SM §4c-propagate] Created pressure issue (no label) on {proj}: {r2.stdout.strip()}')
+                    propagated.append(f'{proj}: {category_name}')
+        except Exception as e:
+            print(f'[SM §4c-propagate] Could not create issue on {proj}: {e}')
+
+# Step 5: Post audit comment to REPORT_ISSUE
+if propagated:
+    summary = '\n'.join(f'  - {p}' for p in propagated)
+    try:
+        subprocess.run(
+            ['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO,
+             '--body', (
+                 f'[SM §4c-propagate | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}] '
+                 f'Cross-project pressure propagation complete.\n'
+                 f'Shared gaps: {[g[0] for g in shared_gaps]}\n'
+                 f'Issues created:\n{summary}'
+             )],
+            capture_output=True, timeout=15)
+    except Exception:
+        pass
+else:
+    print('[SM §4c-propagate] No new pressure issues needed — all covered or already open.')
+
+PROPAGATE_EOF
 fi
 
 # Increment SM cycle count

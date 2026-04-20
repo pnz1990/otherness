@@ -189,7 +189,7 @@ done
 - ✅ Roll out to all managed projects (alibi, kardinal-promoter, kro-ui) — dual-step workflow deployed on all 3 projects (2026-04-20)
 - ✅ Vision pressure context injected into Step A workflow prompt for all 3 projects (2026-04-20)
 - ✅ `agents/vibe-vision-auto.md` SCAN 5: self-updating pressure prompts — evaluates whether the current workflow vision pressure context is substantially addressed (≥60% of keywords found in last 20 merged PR titles); when staleness threshold reached, injects a 🔲 Future item to trigger a pressure rewrite; agent does NOT directly modify workflow files (docs zone only) (PR #TBD, 2026-04-20)
-- 🔲 Cross-project pressure propagation: when otherness identifies a pattern (e.g. "test coverage at edge cases is weak across all 3 projects"), it should update all 3 project pressure prompts — not just its own. The pressure prompt for kro-ui should be informed by what kardinal-promoter learned about user adoption friction, and vice versa.
+- ✅ Cross-project pressure propagation: when otherness identifies a pattern (e.g. "test coverage at edge cases is weak across all 3 projects"), it should update all 3 project pressure prompts — not just its own. The pressure prompt for kro-ui should be informed by what kardinal-promoter learned about user adoption friction, and vice versa. (PR #TBD, 2026-04-20)
 
 ---
 
