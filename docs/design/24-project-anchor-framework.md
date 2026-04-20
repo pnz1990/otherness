@@ -157,10 +157,11 @@ toward completeness rather than claiming completeness it doesn't have.
 - ✅ SM §4g — codebase hygiene scan, surfaces undocumented files (2026-04-20, PR #347)
 - ✅ kardinal-promoter PDCA workflow — 6 scenarios, weekly execution (2026-04-19)
 - ✅ kro-ui E2E workflow — runs on push/PR, Playwright-based (2026-04-14)
+- ✅ `otherness-config.yaml`: `anchor:` section added (commented-out, for projects with anchor workflows) — fields: workflow, score_pattern, coverage_target, stagnation_sessions (PR #357, 2026-04-20)
 
 ## Future (🔲)
 
-- 🔲 `otherness-config.yaml` + template: add `anchor:` section (workflow, score_pattern, coverage_target, stagnation_sessions)
+- 🔲 `otherness-config-template.yaml`: add `anchor:` section (workflow, score_pattern, coverage_target, stagnation_sessions) — HIGH tier, requires human review
 - 🔲 `SM §4g-anchor`: feature→anchor gap detection — read Present items, diff against AGENTS.md §Anchor matrix, open anchor-growth issues for uncovered features
 - 🔲 `SM §4g-anchor`: post `[ANCHOR] coverage: N/M (X%)` to report issue after each gap scan
 - 🔲 `COORD §1c`: anchor-growth gate — when coverage < coverage_target, generate anchor-growth items before feature items
