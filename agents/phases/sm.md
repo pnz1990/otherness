@@ -935,8 +935,15 @@ if os.path.isdir('docs/design'):
                 if opened >= MAX_ISSUES: break
                 file_refs = re.findall(r'\`([a-zA-Z0-9_./-]+\.[a-zA-Z]{1,6})\`', item)
                 for fref in file_refs:
-                    fref_clean = fref.lstrip('./')
-                    if not os.path.exists(fref_clean) and not os.path.exists(f'./{fref_clean}'):
+                    # Check existence using the original path (handles dotfile paths like .opencode/, .specify/)
+                    # and a glob fallback for bare filenames that live in subdirectories (e.g. validate.sh → scripts/validate.sh)
+                    import glob as _glob
+                    _fref_exists = (
+                        os.path.exists(fref) or
+                        os.path.exists(f'./{fref}') or
+                        bool(_glob.glob(f'**/{fref}', recursive=True))
+                    )
+                    if not _fref_exists:
                         title = f'hygiene: stale Present item in {fname} — {fref} not found'
                         open_issue(title,
                             f'SM §4g hygiene scan: `{fname}` has a ✅ Present item referencing `{fref}` which no longer exists.\n\n'
