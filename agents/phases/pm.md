@@ -474,6 +474,28 @@ else:
 
 print(f"[PM §5g] Health: {health} — {reason}")
 
+# Step 3b: Override with JOURNEY2_HEALTH if set (from §5j or env)
+# JOURNEY2_HEALTH is set by §5j later in the same cycle; use os.environ fallback.
+# If not set yet: compute it inline from JOURNEY2_STALE_HOURS env (set by test.sh).
+journey2_health = os.environ.get('JOURNEY2_HEALTH', '')
+if not journey2_health:
+    stale_hours = int(os.environ.get('JOURNEY2_STALE_HOURS', '0') or '0')
+    if stale_hours > 168:
+        journey2_health = 'RED'
+    elif stale_hours > 72:
+        journey2_health = 'AMBER'
+    else:
+        journey2_health = 'OK'
+
+if journey2_health == 'RED' and health != 'RED':
+    health = 'RED'
+    reason = reason + f'; journey2=RED(stale>{stale_hours if stale_hours else "168"}h)'
+    print(f"[PM §5g] Health overridden to RED by Journey 2 stall")
+elif journey2_health == 'AMBER' and health == 'GREEN':
+    health = 'AMBER'
+    reason = reason + f'; journey2=AMBER(stale>{stale_hours if stale_hours else "72"}h)'
+    print(f"[PM §5g] Health overridden to AMBER by Journey 2 stall")
+
 # Step 4: Act on signal
 if health == 'GREEN':
     pass  # No action needed
@@ -743,53 +765,76 @@ Detect Journey 2 failure. Open [NEEDS HUMAN] issue once per stall.
 if [ $((${PM_CYCLE:-0} % ${N_PM_CYCLES:-3})) -eq 0 ]; then
   echo "[PM §5j] Checking reference project health..."
 
-  # [AI-STEP]
-  # Step 1: Read reference project from otherness-config.yaml.
-  #   REF_PROJECT=$(python3 -c "
-  #     import re
-  #     in_monitor = in_projects = False
-  #     for line in open('otherness-config.yaml'):
-  #         if re.match(r'^monitor:',line): in_monitor=True
-  #         if in_monitor and re.match(r'\s+projects:',line): in_projects=True
-  #         if in_projects:
-  #             m=re.match(r'\s+- (.+)',line)
-  #             if m:
-  #                 r=m.group(1).strip()
-  #                 if not r.endswith('/otherness'): print(r); break
-  #   " 2>/dev/null)
-  #   if [ -z "$REF_PROJECT" ]: echo "[PM §5j] No reference project found — skipping."; exit
-  #
-  # Step 2: Check _state branch age.
-  #   LAST_COMMIT=$(gh api "repos/$REF_PROJECT/branches/_state"
-  #     --jq '.commit.commit.committer.date' 2>/dev/null || echo "")
-  #   if [ -z "$LAST_COMMIT" ]: echo "[PM §5j] No _state branch on $REF_PROJECT — skipping."; exit
-  #   AGE_H=$(python3 -c "
-  #     import datetime
-  #     d = datetime.datetime.fromisoformat('$LAST_COMMIT'.replace('Z','+00:00'))
-  #     print(int((datetime.datetime.now(datetime.timezone.utc) - d).total_seconds() / 3600))
-  #   ")
-  #
-   # Step 3: If AGE_H > 72 (Journey 2 failing):
-   #   TITLE="[NEEDS HUMAN] Journey 2: reference project stalled >72h — restart otherness on $REF_PROJECT"
-   #   EXISTING=$(gh issue list --repo $REPO --state open --search "$TITLE" --json number --jq 'length')
-   #   if [ "$EXISTING" -eq 0 ]:
-   #     gh issue create --repo $REPO --title "$TITLE"
-   #       --label "needs-human,area/agent-loop"
-   #       --body "Reference project $REF_PROJECT has not had _state activity in ${AGE_H}h (threshold: 72h).
-   #               Journey 2 is failing. Run /otherness.run on $REF_PROJECT to restart."
-   #   fi
-   #
-   # Step 3b: AMBER/RED escalation based on stall duration (for PM §5g health signal):
-   #   If AGE_H > 72 AND AGE_H <= 168 (24–72h mapped to AMBER, >72h is already RED):
-   #     Set JOURNEY2_HEALTH="AMBER" (override if current HEALTH is GREEN)
-   #   If AGE_H > 168 (>7 days):
-   #     Set JOURNEY2_HEALTH="RED"
-   #   PM §5g reads JOURNEY2_HEALTH as an additional signal when computing overall health:
-   #     if JOURNEY2_HEALTH == "RED": overall HEALTH = "RED"
-   #     elif JOURNEY2_HEALTH == "AMBER" and overall HEALTH == "GREEN": overall HEALTH = "AMBER"
-   #
-   # Step 4: If AGE_H <= 72:
-   #   echo "[PM §5j] Journey 2 OK: $REF_PROJECT last active ${AGE_H}h ago."
+  # Step 1: Read reference project from otherness-config.yaml
+  REF_PROJECT=$(python3 -c "
+import re
+in_monitor = in_projects = False
+for line in open('otherness-config.yaml'):
+    if re.match(r'^monitor:',line): in_monitor=True
+    if in_monitor and re.match(r'\s+projects:',line): in_projects=True
+    if in_projects:
+        m=re.match(r'\s+- (.+)',line)
+        if m:
+            r=m.group(1).strip()
+            if not r.endswith('/otherness'): print(r); break
+" 2>/dev/null || echo "")
+
+  if [ -z "$REF_PROJECT" ]; then
+    echo "[PM §5j] No reference project found — skipping."
+  else
+    # Step 2: Check _state branch age
+    LAST_COMMIT=$(gh api "repos/$REF_PROJECT/branches/_state" \
+      --jq '.commit.commit.committer.date' 2>/dev/null || echo "")
+
+    if [ -z "$LAST_COMMIT" ]; then
+      echo "[PM §5j] No _state branch on $REF_PROJECT — skipping."
+    else
+      AGE_H=$(python3 -c "
+import datetime
+d = datetime.datetime.fromisoformat('$LAST_COMMIT'.replace('Z','+00:00'))
+print(int((datetime.datetime.now(datetime.timezone.utc) - d).total_seconds() / 3600))
+" 2>/dev/null || echo "0")
+
+      # Step 3: Open [NEEDS HUMAN] issue if stall > 72h
+      if [ "${AGE_H:-0}" -gt 72 ]; then
+        STALL_TITLE="[NEEDS HUMAN] Journey 2: reference project stalled >${AGE_H}h — restart otherness on $REF_PROJECT"
+        EXISTING=$(gh issue list --repo "$REPO" --state open \
+          --search "Journey 2: reference project stalled" \
+          --json number --jq 'length' 2>/dev/null || echo "1")
+        if [ "${EXISTING:-1}" -eq 0 ]; then
+          gh issue create --repo "$REPO" \
+            --title "$STALL_TITLE" \
+            --label "needs-human,area/agent-loop" \
+            --body "## Journey 2 failure detected by PM §5j
+
+The reference project \`$REF_PROJECT\` has not had \`_state\` activity in ${AGE_H}h (threshold: 72h).
+
+Journey 2 is failing. The scheduled loop on the reference project has stalled.
+
+**Action**: Run \`/otherness.run\` on \`$REF_PROJECT\` to restart.
+Or check if the scheduled workflow is enabled and has valid credentials." 2>/dev/null
+          echo "[PM §5j] Opened [NEEDS HUMAN] issue: Journey 2 stalled ${AGE_H}h."
+        else
+          echo "[PM §5j] Journey 2 stall issue already open — not duplicating."
+        fi
+
+        # Step 3b: Set JOURNEY2_HEALTH for §5g
+        if [ "${AGE_H:-0}" -gt 168 ]; then
+          JOURNEY2_HEALTH="RED"
+          echo "[PM §5j] Journey 2: RED (stalled ${AGE_H}h > 168h threshold)"
+        else
+          JOURNEY2_HEALTH="AMBER"
+          echo "[PM §5j] Journey 2: AMBER (stalled ${AGE_H}h > 72h threshold)"
+        fi
+      else
+        JOURNEY2_HEALTH="OK"
+        echo "[PM §5j] Journey 2 OK: $REF_PROJECT last active ${AGE_H}h ago."
+      fi
+    fi
+  fi
+
+  # Export JOURNEY2_HEALTH for PM §5g to consume
+  export JOURNEY2_HEALTH="${JOURNEY2_HEALTH:-OK}"
 
   echo "[PM §5j] Reference project health check complete."
 fi
