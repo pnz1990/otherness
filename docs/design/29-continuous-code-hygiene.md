@@ -165,7 +165,7 @@ hygiene:
 
 ## Future (🔲)
 
-- 🔲 Roll out hygiene config to all managed projects (alibi, kardinal-promoter, kro-ui)
+- ✅ Roll out hygiene config to all managed projects (alibi, kardinal-promoter, kro-ui) — `hygiene:` section deployed on all 3 projects (2026-04-20)
 
 ---
 

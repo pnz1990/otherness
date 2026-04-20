@@ -185,7 +185,7 @@ done
 
 ## Future (🔲)
 
-- 🔲 Roll out to all managed projects (alibi, kardinal-promoter, kro-ui)
+- ✅ Roll out to all managed projects (alibi, kardinal-promoter, kro-ui) — dual-step workflow deployed on all 3 projects (2026-04-20)
 
 ---
 
