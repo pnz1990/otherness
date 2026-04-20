@@ -51,20 +51,9 @@
       "pr_number": 534
     },
     "issue-519": {
-      "state": "todo",
-      "status": "todo",
-      "title": "feat: Scenarios 16-18: health adapter coverage",
-      "labels": [
-        "priority/medium",
-        "area/agent-loop",
-        "otherness",
-        "size/s",
-        "kind/enhancement"
-      ],
-      "priority": "medium",
-      "branch": null,
-      "worktree": null,
-      "file_spaces": []
+      "state": "done",
+      "status": "done",
+      "pr_number": 535
     },
     "issue-520": {
       "state": "todo",
