@@ -477,6 +477,135 @@ fi
 
 ---
 
+## 4e. Divergence detection (every SM cycle)
+
+Compare actual `todo_shipped` to the simulated prediction floor.
+Post `[⚠️ Simulation divergence]` after 3 consecutive below-floor batches.
+Divergence is informational — it does not block CI or open `[NEEDS HUMAN]` issues.
+
+**Design ref**: `docs/design/23-simulation-as-anchor.md §Step 3`.
+
+```bash
+python3 - <<'DIVEOF'
+import json, re, os, subprocess, datetime, tempfile, shutil
+
+REPO = os.environ.get('REPO', '')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'SM')
+
+# Step 1: Read predicted floor from scripts/sim-params.json
+pred_floor = 1  # fallback: 1 item per batch is the minimum healthy floor
+try:
+    params = json.load(open('scripts/sim-params.json'))
+    # Use observed_completion_rate × 0.5 as a conservative lower bound
+    obs_rate = float(params.get('observed_completion_rate', 1.0))
+    pred_floor = max(1, int(obs_rate * 0.5))
+except Exception:
+    pass  # Use fallback
+
+# Step 2: Read last row of docs/aide/metrics.md for actual todo_shipped
+actual_shipped = None
+try:
+    content = open('docs/aide/metrics.md').read()
+    rows = []
+    for line in content.splitlines():
+        if '|' not in line: continue
+        cells = [c.strip() for c in line.split('|')]
+        if len(cells) < 8: continue
+        if not cells[1].startswith('20'): continue
+        try:
+            shipped = int(cells[6]) if cells[6].isdigit() else -1
+            if shipped >= 0:
+                rows.append({'date': cells[1], 'batch': cells[2], 'todo_shipped': shipped})
+        except: pass
+    if rows:
+        actual_shipped = rows[-1]['todo_shipped']
+        batch_id = rows[-1]['batch']
+except Exception as e:
+    print(f'[SM §4e] Metrics read error (skipping): {e}')
+    exit(0)
+
+if actual_shipped is None:
+    print('[SM §4e] No metrics rows found — skipping divergence check.')
+    exit(0)
+
+print(f'[SM §4e] Divergence check: actual_shipped={actual_shipped}, pred_floor={pred_floor}')
+
+# Step 3: Read persistent consecutive count from _state
+state_wt = os.path.join(tempfile.gettempdir(), 'otherness-div-' + str(os.getpid()))
+div_path = None
+consecutive_count = 0
+try:
+    if os.path.exists(state_wt):
+        subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
+    subprocess.run(['git','worktree','add','--no-checkout',state_wt,'origin/_state'],
+                   capture_output=True, check=True)
+    div_path = os.path.join(state_wt, '.otherness', 'divergence_count.json')
+    os.makedirs(os.path.dirname(div_path), exist_ok=True)
+    subprocess.run(['git','-C',state_wt,'checkout','_state','--','.otherness/divergence_count.json'],
+                   capture_output=True)
+    if os.path.exists(div_path):
+        d = json.load(open(div_path))
+        consecutive_count = int(d.get('count', 0))
+except Exception as e:
+    print(f'[SM §4e] divergence_count read error (non-fatal): {e}')
+
+# Step 4: Increment or reset counter
+if actual_shipped < pred_floor:
+    consecutive_count += 1
+    print(f'[SM §4e] Below floor ({actual_shipped} < {pred_floor}), consecutive={consecutive_count}')
+else:
+    if consecutive_count > 0:
+        print(f'[SM §4e] At or above floor ({actual_shipped} >= {pred_floor}) — resetting consecutive count')
+    consecutive_count = 0
+
+# Step 5: Persist updated count to _state
+try:
+    if div_path:
+        json.dump({'count': consecutive_count,
+                   'updated_at': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+                   'last_pred_floor': pred_floor,
+                   'last_actual': actual_shipped},
+                  open(div_path, 'w'), indent=2)
+        subprocess.run(['git','-C',state_wt,'add',div_path], capture_output=True)
+        subprocess.run(['git','-C',state_wt,'commit','-m',f'sm: divergence_count={consecutive_count}'],
+                       capture_output=True)
+        subprocess.run(['git','-C',state_wt,'push','origin','HEAD:_state'], capture_output=True)
+        print(f'[SM §4e] divergence_count={consecutive_count} persisted to _state')
+except Exception as e:
+    print(f'[SM §4e] divergence_count persist error (non-fatal): {e}')
+finally:
+    try:
+        subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
+    except: pass
+subprocess.run(['git','worktree','prune'], capture_output=True)
+
+# Step 6: Post divergence signal after 3 consecutive below-floor batches
+if consecutive_count >= 3:
+    signal_body = (
+        f"[⚠️ Simulation divergence | SM §4e | {MY_SESSION_ID}] "
+        f"Actual shipped: {actual_shipped}/batch. Predicted floor: {pred_floor}. "
+        f"{consecutive_count} consecutive below-floor batches.\n\n"
+        f"Possible causes:\n"
+        f"- Queue stall (no unclaimed items)\n"
+        f"- Skill growth halt (arch_convergence approaching 1.0)\n"
+        f"- CI red blocking new work\n"
+        f"- Needs-human backlog consuming capacity\n\n"
+        f"The autonomous loop will self-correct. See "
+        f"`docs/design/23-simulation-as-anchor.md §Step 4`."
+    )
+    r = subprocess.run(
+        ['gh','issue','comment',REPORT_ISSUE,'--repo',REPO,'--body',signal_body],
+        capture_output=True, text=True)
+    if r.returncode == 0:
+        print(f'[SM §4e] Divergence signal posted (consecutive={consecutive_count})')
+    else:
+        print(f'[SM §4e] Could not post divergence signal (non-fatal)')
+DIVEOF
+```
+
+---
+
 ## 4g. Codebase hygiene scan (every 20 SM cycles)
 
 Check whether non-trivial agent and script files have design doc coverage.
