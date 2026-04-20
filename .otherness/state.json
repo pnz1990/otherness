@@ -333,6 +333,14 @@
         "otherness"
       ],
       "priority": "medium"
+    },
+    "issue-555": {
+      "state": "done",
+      "status": "done",
+      "title": "fix(validate): add vibe-vision-auto.md and autonomous-vision.md to required files check",
+      "pr_number": 556,
+      "pr_merged": true,
+      "done_at": "2026-04-20T13:54:53Z"
     }
   },
   "sm_cycle_count": 2,
