@@ -50,6 +50,8 @@ commits to a specific item.
 - ✅ `agents/onboard.md` STEP 7b: post-run structural validation — after generating docs/aide/, runs inline checks equivalent to `scripts/check-onboarding.sh`; auto-fixes missing section headers, empty files, missing Stage/Journey markers; warns (does not block) on missing AGENTS.md fields or otherness-config.yaml sections; applies fixes as amended commit before PR creation (PR #TBD, 2026-04-20)
 - ✅ `onboarding-existing-project.md` + `onboarding-new-project.md`: "First-run smoke test" section — 3 observable success signals (startup comment, feat/* branch, open PR); diagnosis commands for silent failure; common failure table (PR #TBD, 2026-04-20)
 
+- ✅ `agents/onboard.md` STEP 4c: vision quality gate — after writing vision.md, checks: (1) ≥100 words, (2) named user/operator present, (3) specificity ratio < 35% generic filler words; for each failing check, agent revises inline via [AI-STEP] before proceeding to STEP 5 (PR #TBD, 2026-04-20)
+
 ## Future (🔲)
 
 - 🔲 `coord.md §1c`: track guard-firing frequency in session metrics (metrics.md schema — see docs/design/33-stage-4-self-improvement-metrics.md)
