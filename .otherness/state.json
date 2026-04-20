@@ -66,8 +66,8 @@
       "pr_number": 537
     },
     "issue-522": {
-      "state": "assigned",
-      "status": "todo",
+      "state": "in_review",
+      "status": "in_review",
       "title": "feat: Playwright integration in PDCA",
       "labels": [
         "priority/medium",
@@ -83,7 +83,9 @@
         "agents/"
       ],
       "assigned_to": "sess-5327084f",
-      "assigned_at": "2026-04-20T12:37:26Z"
+      "assigned_at": "2026-04-20T12:37:26Z",
+      "pr_number": 539,
+      "kp_pr_number": 876
     },
     "issue-523": {
       "state": "todo",
