@@ -289,6 +289,34 @@ except: print(0)
   fi
 
   if [ "$QUEUE_GEN_WINNER" = "true" ]; then
+    # Anchor-growth gate (design doc 24 §O1): if anchor config exists AND open anchor-growth
+    # issues exist, skip feature generation this cycle and let anchor items be worked first.
+    ANCHOR_TARGET=$(python3 -c "
+import re
+section = None
+try:
+    for line in open('otherness-config.yaml'):
+        s = re.match(r'^(\w[\w_]*):', line)
+        if s: section = s.group(1)
+        if section == 'anchor':
+            m = re.match(r'\s+coverage_target:\s*(\d+)', line)
+            if m: print(m.group(1)); exit()
+except: pass
+print('0')
+" 2>/dev/null || echo "0")
+
+    if [ "${ANCHOR_TARGET:-0}" -gt 0 ]; then
+      OPEN_ANCHOR_ITEMS=$(gh issue list --repo "$REPO" --state open \
+        --search "anchor: cover" --json number --jq 'length' 2>/dev/null || echo "0")
+      if [ "${OPEN_ANCHOR_ITEMS:-0}" -gt 0 ]; then
+        echo "[COORD §1c-anchor] ${OPEN_ANCHOR_ITEMS} anchor-growth items in queue (coverage_target=${ANCHOR_TARGET}%) — skipping feature generation."
+        git push origin --delete "$QUEUE_LOCK_BRANCH" 2>/dev/null || true
+        QUEUE_GEN_WINNER=false
+      fi
+    fi
+  fi
+
+  if [ "$QUEUE_GEN_WINNER" = "true" ]; then
     # Queue generation: design docs are the PRIMARY source, roadmap is SECONDARY.
     # Read 🔲 Future items from docs/design/ files first.
     # Fall back to roadmap.md deliverables for stages without design docs yet.
