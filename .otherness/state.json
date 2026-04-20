@@ -519,12 +519,9 @@
       "note": "Hygiene scan already implemented as \u00a74g in sm.md (section numbering shifted)"
     },
     "408": {
-      "state": "done",
-      "status": "done",
-      "title": "feat: otherness-config.yaml simulation.calibration_cycles field",
-      "pr_number": 423,
-      "pr_merged": true,
-      "done_at": "2026-04-20T06:20:15Z"
+      "state": "todo",
+      "title": "feat: `otherness-config.yaml`: `simulation.calibration_cycles` field (default: 5)",
+      "status": "todo"
     },
     "409": {
       "state": "done",
@@ -555,9 +552,11 @@
       "note": "docs/design/26-anchor-kro-ui.md already exists on main"
     },
     "413": {
-      "state": "todo",
-      "title": "feat: `standalone.md` AGENTS.md template: add `## Anchor` section with standard structure",
-      "status": "todo"
+      "state": "done",
+      "status": "done",
+      "pr_number": 424,
+      "pr_merged": true,
+      "done_at": "2026-04-20T06:22:34Z"
     },
     "414": {
       "state": "done",
