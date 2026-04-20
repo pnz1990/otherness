@@ -189,10 +189,10 @@ Until depth scoring is implemented, use:
 - ✅ Constitution §XIV E2E standards — anti-patterns documented (PR #311, 2026-04-15)
 - ✅ Anchor score comment format defined: `[ANCHOR | kro-ui | DATE] journeys: J | pass: A fail: B` — SM §4g-anchor-score reads via `anchor.score_pattern` in `otherness-config.yaml` (PR #448, 2026-04-20)
 - ✅ Feature→journey parity check: SM §4g-anchor-parity reads AGENTS.md §Anchor spec inventory, diffs against `anchor.journeys_dir` files, opens anchor-growth issues for specs with no journey (PR #455, 2026-04-20)
+- ✅ Journey depth — error resilience tests added to journeys 063, 064, 065, 066: each file gets an "Error resilience" describe block that mocks the primary API to return 503 and asserts no crash + layout renders (kro-ui PR #504, 2026-04-20; journeys 067/068 absent, 069/070 already error-aware)
 
 ## Future (🔲)
 
-- 🔲 Journey depth: add error state coverage to journeys 063-070 (kro v0.9.1 features)
 - 🔲 Journey depth: add error + empty state to all Tier 1 journeys (001-007)
 - 🔲 First persona journey: Operator — deploy RGD via designer, verify instances appear, check health indicators
 - 🔲 Accessibility: run axe assertions on Tier 1 pages (RGD list, DAG, instance list, context switcher)
