@@ -160,3 +160,7 @@
 
 | 2026-04-20 | 81 | 1 | 0 | 0 | 12 | 2 | ~3 | #474 design doc 30 Stage 0 Scaffolding. 17 stale issues closed (already done). README check: already had both commands. Health: GREEN. |
 
+| 2026-04-20 | 82 | 1 | 0 | 0 | 12 | 1 | ~5 | #475 PM §5j Journey 2 AMBER/RED health escalation — CRITICAL-A, 5-check self-review passed. Journey 2 detection now operational. Health: GREEN. |
+
+
+| 2026-04-20 | 83 | 0 | 0 | 0 | 12 | 2 | ~1 | Issues 336 and 315 closed as already-done (SM §4h and PM §5m already implement these). Queue empty — generating new batch. Health: GREEN. |
