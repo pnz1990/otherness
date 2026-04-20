@@ -326,13 +326,15 @@
       "priority": "medium"
     },
     "issue-338": {
-      "state": "todo",
+      "state": "done",
       "status": "todo",
       "title": "\ud83d\udcca Autonomous Team Reports \u2014 2026-04-20",
       "labels": [
         "otherness"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": false,
+      "done_at": "report-issue-not-a-work-item"
     },
     "issue-555": {
       "state": "done",
@@ -410,6 +412,86 @@
     "issue-583": {
       "state": "done",
       "title": "feat: M3: Replace GH_TOKEN PAT (duplicate of 361)"
+    },
+    "issue-594": {
+      "state": "done",
+      "title": "feat: M5b: Restrict Bedrock Resource to specific ARNs",
+      "labels": [
+        "otherness",
+        "kind/enhancement",
+        "area/agent-loop",
+        "size/s",
+        "priority/medium"
+      ],
+      "priority": "medium",
+      "assigned_to": "sess-e97fab34",
+      "assigned_at": "2026-04-20T17:32:54Z",
+      "branch": "feat/issue-594",
+      "worktree": "../otherness.issue-594",
+      "file_spaces": [
+        "agents/",
+        "scripts/",
+        ".github/"
+      ],
+      "pr_number": 601,
+      "pr_merged": true,
+      "done_at": "2026-04-20T17:36:37Z"
+    },
+    "issue-596": {
+      "state": "done",
+      "title": "feat: otherness-scheduled.yml cron workflow",
+      "labels": [
+        "otherness",
+        "kind/enhancement",
+        "area/tooling",
+        "size/s",
+        "priority/low"
+      ],
+      "priority": "low",
+      "pr_merged": false,
+      "done_at": "already-implemented"
+    },
+    "issue-597": {
+      "state": "done",
+      "title": "feat: otherness-config.yaml schedule.cron and schedule.model fields",
+      "labels": [
+        "otherness",
+        "kind/enhancement",
+        "area/tooling",
+        "size/s",
+        "priority/low"
+      ],
+      "priority": "low",
+      "pr_merged": false,
+      "done_at": "already-implemented"
+    },
+    "issue-598": {
+      "state": "done",
+      "title": "feat: otherness-config-template.yaml schedule section",
+      "labels": [
+        "otherness",
+        "kind/enhancement",
+        "area/tooling",
+        "size/s",
+        "priority/low"
+      ],
+      "priority": "low",
+      "pr_merged": false,
+      "done_at": "already-implemented"
+    },
+    "issue-599": {
+      "state": "done",
+      "title": "feat: scripts/validate.sh check scheduled workflow",
+      "labels": [
+        "otherness",
+        "kind/enhancement",
+        "area/tooling",
+        "size/s",
+        "priority/low"
+      ],
+      "priority": "low",
+      "pr_merged": false,
+      "done_at": "already-implemented"
     }
   },
   "sm_cycle_count": 3,
@@ -419,6 +501,11 @@
       "last_seen": "2026-04-20T13:12:45Z",
       "item": "sm-complete",
       "cycle": 1
+    },
+    "sess-e97fab34": {
+      "last_seen": "2026-04-20T17:36:53Z",
+      "item": "coord",
+      "cycle": 2
     }
   },
   "pm_cycle_count": 1,
