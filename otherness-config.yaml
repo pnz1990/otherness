@@ -76,6 +76,13 @@ hygiene:
   max_issues_per_scan: 3
   cycle_interval: 3
 
+# ── Simulation calibration ─────────────────────────────────────────────────────
+# Controls how often SM §4e re-calibrates simulation parameters against real batch
+# history and writes .otherness/sim-prediction.json to the _state branch.
+# See docs/design/23-simulation-as-anchor.md for the full design.
+simulation:
+  calibration_cycles: 5             # re-calibrate every N SM cycles (default: 5)
+
 # ── Anchor framework ──────────────────────────────────────────────────────────
 # Optional: configure when this project has an anchor workflow (automated quality signal).
 # An anchor is a CI workflow that runs on a schedule and posts a score to a GitHub issue.
