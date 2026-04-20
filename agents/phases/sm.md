@@ -730,89 +730,187 @@ DIVEOF
 
 ---
 
-## 4g. Codebase hygiene scan (every 20 SM cycles)
+## 4g. Codebase hygiene scan (every 3 SM cycles)
 
-Check whether non-trivial agent and script files have design doc coverage.
-Opens `kind/chore` issues for files with no coverage. Nothing deleted autonomously.
+Runs dead code / stale file / stale doc checks. Opens `kind/chore` issues for cleanup.
+Nothing is deleted autonomously. Cap: `max_issues_per_scan` new issues per run (default 3).
 **Runs on every managed project generically** — not otherness-specific.
 
-```bash
-if [ $((SM_CYCLE % 20)) -eq 0 ] && [ "${SM_CYCLE:-0}" -gt 0 ]; then
-  echo "[SM §4g] Running codebase hygiene scan..."
+**Design ref**: `docs/design/29-continuous-code-hygiene.md`
 
-  if [ ! -d "docs/design" ] || [ -z "$(ls docs/design/*.md 2>/dev/null)" ]; then
-    echo "[SM §4g] No design docs — skipping hygiene scan."
-  else
-    python3 - <<'PYEOF'
-import re, os, subprocess, json
+```bash
+HYGIENE_INTERVAL=$(python3 -c "
+import re
+section = None
+for line in open('otherness-config.yaml'):
+    s = re.match(r'^(\w[\w_]*):', line)
+    if s: section = s.group(1)
+    if section == 'hygiene':
+        m = re.match(r'\s+cycle_interval:\s*(\d+)', line)
+        if m: print(m.group(1)); break
+" 2>/dev/null || echo "3")
+
+HYGIENE_ENABLED=$(python3 -c "
+import re
+section = None
+for line in open('otherness-config.yaml'):
+    s = re.match(r'^(\w[\w_]*):', line)
+    if s: section = s.group(1)
+    if section == 'hygiene':
+        m = re.match(r'\s+enabled:\s*(true|false)', line)
+        if m: print(m.group(1)); break
+" 2>/dev/null || echo "true")
+
+HYGIENE_MAX=$(python3 -c "
+import re
+section = None
+for line in open('otherness-config.yaml'):
+    s = re.match(r'^(\w[\w_]*):', line)
+    if s: section = s.group(1)
+    if section == 'hygiene':
+        m = re.match(r'\s+max_issues_per_scan:\s*(\d+)', line)
+        if m: print(m.group(1)); break
+" 2>/dev/null || echo "3")
+
+if [ "$HYGIENE_ENABLED" = "true" ] && [ $((${SM_CYCLE:-0} % ${HYGIENE_INTERVAL:-3})) -eq 0 ] && [ "${SM_CYCLE:-0}" -gt 0 ]; then
+  echo "[SM §4g] Running codebase hygiene scan (max $HYGIENE_MAX issues)..."
+
+  python3 - <<PYEOF
+import re, os, subprocess, json, datetime
 
 REPO = os.environ.get('REPO', '')
-
-# Step 1: Build coverage set from all design docs
-covered_terms = set()
-for fname in os.listdir('docs/design'):
-    if not fname.endswith('.md'): continue
-    try:
-        content = open(f'docs/design/{fname}').read()
-        # Extract words from Present and Future item lines
-        items = re.findall(r'^- [✅🔲⚠️].+', content, re.MULTILINE)
-        for item in items:
-            words = re.findall(r'[a-z][a-z0-9_-]{3,}', item.lower())
-            covered_terms.update(words)
-    except: pass
-
-# Step 2: Determine scan targets based on project type
-scan_targets = []
-# Agent files (otherness-specific)
-if os.path.isdir('agents'):
-    for f in os.listdir('agents'):
-        if f.endswith('.md') and f not in ('PROVENANCE.md', 'README.md'):
-            scan_targets.append(f'agents/{f}')
-
-# Command files
-if os.path.isdir('.opencode/command'):
-    for f in os.listdir('.opencode/command'):
-        if f.endswith('.md'): scan_targets.append(f'.opencode/command/{f}')
-
-# Scripts
-for d in ['scripts']:
-    if os.path.isdir(d):
-        for f in os.listdir(d):
-            if f.endswith(('.sh','.py')) and 'template' not in f:
-                scan_targets.append(f'{d}/{f}')
-
-# Step 3: Check coverage for each file
-uncovered = 0
+MAX_ISSUES = int(os.environ.get('HYGIENE_MAX', '3'))
+opened = 0
 
 def issue_exists(title_frag):
-    r = subprocess.run(['gh','issue','list','--repo',REPO,'--state','open',
+    r = subprocess.run(['gh','issue','list','--repo',REPO,'--state','all',
         '--search',title_frag[:60],'--json','number'],
-        capture_output=True, text=True)
+        capture_output=True, text=True, timeout=10)
     try: return len(json.loads(r.stdout)) > 0
     except: return True  # safe default
 
-for filepath in scan_targets:
-    if not os.path.exists(filepath): continue
-    if os.path.getsize(filepath) == 0: continue
-    basename = re.sub(r'\.(md|sh|py)$','', os.path.basename(filepath)).lower()
-    basename = re.sub(r'[^a-z0-9]','-',basename)
-    # Check if any design doc covers this file by name
-    name_words = re.findall(r'[a-z][a-z0-9]{2,}', basename)
-    if any(w in covered_terms for w in name_words):
-        continue  # covered
-    # Not covered — open issue
-    title = f'chore: uncovered file — {filepath} has no design doc entry'
-    if not issue_exists(title[:55]):
-        subprocess.run(['gh','issue','create','--repo',REPO,
-            '--title', title,
-            '--label', 'kind/chore,priority/low,size/xs',
-            '--body', f'SM §4g codebase hygiene scan found `{filepath}` with no corresponding ✅ Present or 🔲 Future entry in any docs/design/*.md file.\n\nOptions:\n1. Add a design doc entry documenting this file''s purpose\n2. Delete the file if it is no longer needed\n\nNothing has been deleted. This issue is a candidate for human decision.'],
-            capture_output=True)
-        uncovered += 1
+def open_issue(title, body):
+    global opened
+    if opened >= MAX_ISSUES: return
+    if issue_exists(title[:50]): return
+    subprocess.run(['gh','issue','create','--repo',REPO,
+        '--title', title,
+        '--label', 'kind/chore,priority/low,size/xs',
+        '--body', body],
+        capture_output=True, timeout=15)
+    opened += 1
+    print(f'[SM §4g] Opened issue: {title[:70]}')
 
-print(f'[SM §4g] Codebase hygiene scan complete. {uncovered} uncovered files found.')
+# ── Check 1: Stale Present items in design docs ──────────────────────────
+if os.path.isdir('docs/design'):
+    for fname in sorted(os.listdir('docs/design')):
+        if not fname.endswith('.md'): continue
+        if opened >= MAX_ISSUES: break
+        try:
+            content = open(f'docs/design/{fname}').read()
+            present_match = re.search(r'^## Present.*?\n(.*?)(?=^## |\Z)', content, re.MULTILINE | re.DOTALL)
+            if not present_match: continue
+            items = re.findall(r'^- ✅ .+', present_match.group(1), re.MULTILINE)
+            for item in items:
+                if opened >= MAX_ISSUES: break
+                file_refs = re.findall(r'\`([a-zA-Z0-9_./-]+\.[a-zA-Z]{1,6})\`', item)
+                for fref in file_refs:
+                    fref_clean = fref.lstrip('./')
+                    if not os.path.exists(fref_clean) and not os.path.exists(f'./{fref_clean}'):
+                        title = f'hygiene: stale Present item in {fname} — {fref} not found'
+                        open_issue(title,
+                            f'SM §4g hygiene scan: `{fname}` has a ✅ Present item referencing `{fref}` which no longer exists.\n\n'
+                            f'Item: `{item[:120]}`\n\nAction: update the design doc to reflect current state.')
+                        break
+        except: pass
+
+# ── Check 2: Orphaned TODO/FIXME/HACK comments (>14 days) ───────────────
+try:
+    result = subprocess.run(
+        ['git', 'grep', '-rn', '--no-color',
+         '-e', 'TODO:', '-e', 'FIXME:', '-e', 'HACK:',
+         '--', '*.py', '*.go', '*.ts', '*.tsx', '*.js', '*.sh'],
+        capture_output=True, text=True, timeout=20)
+    todos = []
+    for line in result.stdout.splitlines():
+        m = re.match(r'^([^:]+):(\d+):.*(TODO|FIXME|HACK)[:\s]+(.+)$', line)
+        if m:
+            fpath, lineno, kind, msg = m.groups()
+            msg_clean = msg.strip()[:80]
+            if len(msg_clean) > 15:
+                todos.append((fpath, lineno, kind, msg_clean))
+    if todos and opened < MAX_ISSUES:
+        # Check age of file via git log
+        for fpath, lineno, kind, msg in todos[:5]:
+            if opened >= MAX_ISSUES: break
+            age_r = subprocess.run(['git','log','--follow','--format=%ci','--',''+fpath],
+                                   capture_output=True, text=True, timeout=10)
+            dates = re.findall(r'(\d{4}-\d{2}-\d{2})', age_r.stdout)
+            age_days = 0
+            if dates:
+                try:
+                    oldest = datetime.datetime.fromisoformat(dates[-1])
+                    age_days = (datetime.datetime.utcnow() - oldest).days
+                except: pass
+            if age_days >= 14:
+                title = f'hygiene: unresolved {kind} in {os.path.basename(fpath)}:{lineno}'
+                open_issue(title,
+                    f'SM §4g hygiene: `{fpath}:{lineno}` has an unresolved {kind} comment ({age_days} days old).\n\n'
+                    f'Comment: `{msg[:100]}`\n\nAction: resolve, convert to an issue, or remove if stale.')
+except: pass
+
+# ── Check 3: Committed build artifacts ───────────────────────────────────
+ARTIFACT_PATTERNS = [
+    ('__pycache__/', 'Python bytecode cache'),
+    ('dist/', 'build output'),
+    ('.next/', 'Next.js build'),
+    ('node_modules/', 'node_modules'),
+    ('.pyc', 'compiled Python'),
+]
+if opened < MAX_ISSUES:
+    try:
+        tracked = subprocess.check_output(['git','ls-files'], text=True, timeout=15)
+        for pattern, desc in ARTIFACT_PATTERNS:
+            if opened >= MAX_ISSUES: break
+            matches = [f for f in tracked.splitlines() if pattern in f]
+            if matches:
+                title = f'hygiene: build artifact committed — {pattern} should be in .gitignore'
+                open_issue(title,
+                    f'SM §4g hygiene: found committed build artifact matching `{pattern}` ({desc}).\n\n'
+                    f'Examples: {", ".join(matches[:3])}\n\nAction: add to .gitignore and remove from tracking.')
+    except: pass
+
+# ── Check 4: Design docs with no Present items (Future-only docs) ────────
+if os.path.isdir('docs/design') and opened < MAX_ISSUES:
+    for fname in sorted(os.listdir('docs/design')):
+        if not fname.endswith('.md') or fname.startswith('00-'): continue
+        if opened >= MAX_ISSUES: break
+        try:
+            content = open(f'docs/design/{fname}').read()
+            present_items = re.findall(r'^- ✅', content, re.MULTILINE)
+            future_items = re.findall(r'^- 🔲', content, re.MULTILINE)
+            # Check age
+            age_r = subprocess.run(['git','log','--follow','--format=%ci','--',f'docs/design/{fname}'],
+                                   capture_output=True, text=True, timeout=10)
+            dates = re.findall(r'(\d{4}-\d{2}-\d{2})', age_r.stdout)
+            age_days = 0
+            if dates:
+                try:
+                    oldest = datetime.datetime.fromisoformat(dates[-1])
+                    age_days = (datetime.datetime.utcnow() - oldest).days
+                except: pass
+            # Flag: >30 days old design doc with Future items but no Present items
+            if len(present_items) == 0 and len(future_items) > 0 and age_days > 30:
+                title = f'hygiene: design doc {fname} has no Present items after {age_days}d'
+                open_issue(title,
+                    f'SM §4g hygiene: `docs/design/{fname}` has {len(future_items)} Future item(s) '
+                    f'but 0 Present items after {age_days} days.\n\n'
+                    f'Either these items have been shipped (design doc needs updating) '
+                    f'or they have stalled (needs re-evaluation).')
+        except: pass
+
+print(f'[SM §4g] Hygiene scan complete. {opened} new issue(s) opened.')
 PYEOF
-  fi
 
   echo "[SM §4g] Codebase hygiene scan complete."
 fi

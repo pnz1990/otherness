@@ -68,6 +68,13 @@ schedule:
   cron: "0 * * * *"         # HOURLY — locked. Do not change to */6 or slower.
   model: "amazon-bedrock/global.anthropic.claude-sonnet-4-6"
   api_key_secret: "ANTHROPIC_API_KEY"   # GitHub Actions secret name containing the API key
+  vibe_vision_step: true                # Step A: autonomous vision scan before each run
+
+# ── Continuous code hygiene ────────────────────────────────────────────────────
+hygiene:
+  enabled: true
+  max_issues_per_scan: 3
+  cycle_interval: 3
 
 # ── Anchor framework ──────────────────────────────────────────────────────────
 # Optional: configure when this project has an anchor workflow (automated quality signal).

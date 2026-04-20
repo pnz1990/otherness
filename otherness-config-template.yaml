@@ -173,3 +173,17 @@ monitor:
 #   cron: "0 */6 * * *"     # every 6 hours (default). Use https://crontab.guru to customize.
 #   model: ""               # LLM model to use. Defaults to the model in your opencode config.
 #   api_key_secret: "ANTHROPIC_API_KEY"   # GitHub Actions secret name for your LLM API key
+#   vibe_vision_step: true  # Step A: autonomous vision scan before each run. Default: true.
+#                           # Promotes shipped Future→Present, flags stale Present items,
+#                           # infers Future items from TODO/FIXME in code.
+#                           # Set false to disable (e.g. projects with human-only vision).
+
+# ── Continuous code hygiene ────────────────────────────────────────────────────
+# SM §4h runs a hygiene scan every N batches to detect dead code, stale docs,
+# orphaned TODOs, and stale Future items. Opens chore issues for cleanup.
+# See docs/design/29-continuous-code-hygiene.md
+#
+# hygiene:
+#   enabled: true            # default: true
+#   max_issues_per_scan: 3   # cap new issues per scan run (prevents queue flooding)
+#   cycle_interval: 3        # run every N SM cycles
