@@ -643,6 +643,23 @@ def deps_met(item_id):
 import os
 allowed_areas = [a.strip() for a in os.environ.get('ALLOWED_AREAS','').split(',') if a.strip()]
 
+# Priority ordering: critical=0, high=1, medium=2, low=3, unset=4
+# Hygiene items (kind/chore or title starts with 'hygiene:') get deprioritized by +10
+# so features always claim before hygiene items at the same priority level.
+# Design ref: docs/design/29-continuous-code-hygiene.md §Future O3
+PRIORITY_MAP = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}
+
+def _item_sort_key(item_id, item_data):
+    pri = PRIORITY_MAP.get(item_data.get('priority'), 4)
+    title = item_data.get('title', '').lower()
+    labels = item_data.get('labels', [])
+    is_hygiene = (title.startswith('hygiene:') or
+                  'kind/chore' in labels or
+                  any(l.startswith('kind/chore') for l in labels))
+    return (pri + (10 if is_hygiene else 0), item_id)
+
+# Build sorted candidates list (O1: features before hygiene; O2: priority-ordered)
+_candidates = []
 for id, d in features.items():
     if d.get('state') != 'todo': continue
     if id in claimed: continue
@@ -651,6 +668,11 @@ for id, d in features.items():
     if allowed_areas:
         item_areas = d.get('areas', [])
         if not any(a in item_areas for a in allowed_areas): continue
+    _candidates.append((id, d))
+
+_candidates.sort(key=lambda x: _item_sort_key(x[0], x[1]))
+
+for id, d in _candidates:
     # Spatial collision detection: skip if item's file_spaces overlap with active claims
     # [AI-STEP]
     # AREA_TO_SPACES = {
