@@ -3,7 +3,7 @@
 > Based on: docs/aide/vision.md
 > Last updated: 2026-04-20
 
-The build order is: tooling first, then agent loop improvements, then the self-improvement flywheel, then the eternal loop, then autonomous vision, then perpetual vision pressure.
+The build order is: tooling first, then agent loop improvements, then the self-improvement flywheel, then the eternal loop, then autonomous vision, then perpetual vision pressure, then living documentation and autonomous releases.
 
 ---
 
@@ -49,6 +49,40 @@ on 2026-04-20 — reflecting what has actually shipped since then.
 ### Dependencies
 
 Stage 10 (dual-step workflow must be running for SCAN 5 to have a context to rewrite)
+
+---
+
+## Stage 12: Living Documentation and Autonomous Releases
+
+**Goal:** READMEs stay current automatically. Releases are cut without human scheduling.
+The human's only remaining release responsibility: deciding what constitutes a major
+(breaking) change.
+
+### Deliverables
+
+- PM §5k: README staleness score + autonomous refresh — rewrites README from current
+  D4 artifacts when score ≥ 2.0 (≥30 days stale + ≥5 unmentioned features).
+  Opens PR labeled `kind/docs priority/low size/s`. (design doc 39)
+- PM §5l: patch release trigger — ≥3 fix/security/chore PRs + 7-day age + CI green +
+  no NEEDS HUMAN. Cuts automatically with curated release notes. (design doc 40)
+- PM §5l: minor release trigger — ≥3 feat PRs + ≥1 new Present item + CI green +
+  no open feature PRs. Cuts automatically. (design doc 40)
+- PM §5l: major release detection — opens `needs-human kind/release` issue with draft
+  notes. Never cuts autonomously. (design doc 40)
+- validate.sh: check `releases.major_human_only` is never set to `false` (design doc 40)
+- `otherness-config.yaml`: `pm.readme_refresh` and `releases:` config sections (docs 39, 40)
+
+### The threshold for "Stage 12 is working"
+
+The human has not manually touched a README or cut a release in 14 days. At least one
+README refresh PR has been opened and merged. At least one patch or minor release has
+been cut autonomously on a managed project. When a PR introduces a breaking change, a
+`[RELEASE] v2.0.0 candidate` issue appears within one batch without human prompting.
+
+### Dependencies
+
+Stage 11 (perpetual vision pressure — COORD must be routing queue items correctly before
+we can trust release readiness signals)
 
 ---
 
