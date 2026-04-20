@@ -864,37 +864,67 @@ PYEOF
     --body "[$MY_SESSION_ID | otherness@${OTHERNESS_VERSION:-unknown}] Starting implementation. Branch: \`$MY_BRANCH\`" 2>/dev/null
 
   # D4 classification at issue intake — classify the issue title/body before speccing.
-  # [AI-STEP]
-  # Step 1: Read the issue title and body.
-  #   ISSUE_DATA=$(gh issue view $ISSUE_NUM --repo $REPO --json title,body,comments \
-  #     --jq '{title: .title, body: .body, comments: [.comments[-5:][].body]}')
-  #
-  # Step 2: Classify the TITLE.
-  #   - DECLARATIVE: title matches /^(feat|fix|chore|docs|refactor|test|perf|ci|build)\(/ 
-  #     (conventional-commit format), OR title directly references a design doc 🔲 item.
-  #   - INFRA: title is clearly maintenance (bump, fix ci, fix lint, update dep, clean).
-  #   - IMPERATIVE: anything else — imperative verb in title (add, make, update, remove, etc.).
-  #   Title classification overrides body content — a feat(scope): title is DECLARATIVE
-  #   even if the body uses imperative language in examples or "what correct looks like" sections.
-  #
-  # Step 3: If IMPERATIVE (title only — do NOT re-classify DECLARATIVE issues):
-  #   Post a [📋 D4 TRANSLATION] block on the issue:
-  #     gh issue comment $ISSUE_NUM --repo $REPO --body "[📋 D4 TRANSLATION]
-  #   Heard:     \"<issue title verbatim>\"
-  #   Intent:    <one sentence — what this feature area achieves>
-  #   D4 layer:  <vision | roadmap | design doc | spec>
-  #   Artifact:  <exact text of the design doc entry or roadmap item this would create>
-  #   Proceeding in 60s unless you correct the translation."
-  #   Then: sleep 60
-  #
-  # Step 4: Scan the last 5 comments for human instructions not from the agent.
-  #   For each comment NOT starting with a role badge ([🎯 [🔨 [🔍 [🔄 [📋 [sess-):
-  #   If it contains imperative language (add, fix, update, change, make, create, remove):
-  #     Post a [📋 D4 TRANSLATION] block (as above, but for the comment text).
-  #     Wait 60s for human correction. Post the translation as a NEW GitHub issue.
-  #
-  # Step 5: If DECLARATIVE or INFRA (step 2), and no imperative comments (step 4):
-  #   No-op — proceed to Phase 2 immediately.
+  _D4_RESULT=$(python3 - <<'D4EOF'
+import subprocess, re, os, sys
+
+ISSUE_NUM = os.environ.get('ISSUE_NUM', '')
+REPO = os.environ.get('REPO', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', '')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+
+if not ISSUE_NUM or not REPO:
+    sys.exit(0)
+
+# Step 1: Read issue title and body
+try:
+    r = subprocess.run(
+        ['gh', 'issue', 'view', ISSUE_NUM, '--repo', REPO,
+         '--json', 'title,body', '--jq', '{title: .title, body: .body}'],
+        capture_output=True, text=True, timeout=15)
+    if r.returncode != 0:
+        sys.exit(0)
+    import json
+    data = json.loads(r.stdout.strip())
+    title = data.get('title', '')
+    body = data.get('body', '')
+except Exception:
+    sys.exit(0)
+
+# Step 2: Classify the title
+DECLARATIVE_PAT = re.compile(
+    r'^(feat|fix|chore|docs|refactor|test|perf|ci|build|security)(\([^)]+\))?:', re.IGNORECASE)
+INFRA_PAT = re.compile(
+    r'\b(bump|update dep|fix ci|fix lint|clean up|pin |unpin )\b', re.IGNORECASE)
+DESIGN_DOC_REF = re.compile(r'🔲|design doc|docs/design/', re.IGNORECASE)
+
+if DECLARATIVE_PAT.match(title) or DESIGN_DOC_REF.search(title):
+    classification = 'DECLARATIVE'
+elif INFRA_PAT.search(title):
+    classification = 'INFRA'
+else:
+    classification = 'IMPERATIVE'
+
+# Step 3: If IMPERATIVE, post D4 translation (no 60s wait — standalone.md §D4 says "Proceed immediately")
+if classification == 'IMPERATIVE':
+    # Infer intent from title
+    intent = f"Implement: {title}"
+    d4_layer = 'design doc'
+    artifact = f"docs/design/: 🔲 {title} — (intent inferred from imperative title)"
+    translation_body = (
+        f"[📋 D4 TRANSLATION]\n"
+        f"Heard:     \"{title}\"\n"
+        f"Intent:    {intent}\n"
+        f"D4 layer:  {d4_layer}\n"
+        f"Artifact:  {artifact}\n"
+        f"Proceeding immediately."
+    )
+    subprocess.run(
+        ['gh', 'issue', 'comment', ISSUE_NUM, '--repo', REPO, '--body', translation_body],
+        capture_output=True, timeout=15)
+
+# Step 5: If DECLARATIVE or INFRA — no-op, proceed
+D4EOF
+  ) 2>/dev/null || true
 
 else
   echo "[COORD] ⚡ $ITEM_ID already claimed — picking another."
