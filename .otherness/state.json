@@ -839,8 +839,8 @@
       "priority": "medium"
     },
     "issue-622": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `agents/onboard.md` post-run validation: after generating `docs/aide/`, run a structural s",
       "labels": [
         "priority/medium",
@@ -849,7 +849,10 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 670,
+      "done_at": "2026-04-20T23:41:48Z"
     },
     "issue-621": {
       "state": "todo",
