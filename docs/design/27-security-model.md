@@ -537,7 +537,7 @@ The following are accepted design tradeoffs, not failures:
 
 ## Future (🔲)
 
-- 🔲 M5b: Restrict Bedrock Resource to specific ARNs — DEFERRED. opencode uses cross-region inference profile ARNs (arn:aws:bedrock:<region>:<acct>:inference-profile/*) that vary by model version. Resource:* with Budget alert is the current mitigaton. Revisit when ARN patterns stabilize.
+- 🔲 🚫 M5b: Restrict Bedrock Resource to specific ARNs — DEFERRED. opencode uses cross-region inference profile ARNs (arn:aws:bedrock:<region>:<acct>:inference-profile/*) that vary by model version. Resource:* with Budget alert is the current mitigaton. Revisit when ARN patterns stabilize.
 - 🔲 M3: Replace GH_TOKEN PAT with GitHub App — per-repo scoped, non-exportable, auditable (issue #361)
 
 ---
