@@ -16,6 +16,7 @@ maqa:
   status_update_cycles: 5
   product_validation_cycles: 3
   autonomous_mode: true    # operator has authorized agent to act on their behalf
+  session_item_limit: 10   # max items to complete per session before SM/PM gate fires
 
 ci:
   provider: github-actions
