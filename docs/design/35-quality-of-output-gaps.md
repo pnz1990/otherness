@@ -44,6 +44,7 @@ commits to a specific item.
 - ✅ `SM §4f`: silent-session detection — when session ends with 0 merged PRs AND 0 open PRs, increment `silent_session_count` in state.json; when streak ≥ 2 consecutive sessions, open `[NEEDS HUMAN: silent-session-streak]` issue with diagnosis guide; resets to 0 when any PR ships (PR #657, 2026-04-20)
 - ✅ `docs/aide/metrics.md` schema: added `arch_convergence` and `sim_floor_delta` columns to batch log — tells the human whether the simulation is tracking reality; SM §4b [AI-STEP] updated to include these values (from sim-params.json) in new rows (PR #659, 2026-04-20)
 - ✅ `SM §4c`: skill decay tracking — every 10 SM cycles, check each skill file age (via git log) against PROVENANCE.md mentions in last 90 days; if skill not mentioned in 90 days, flag as stale; posts informational report to report issue; does NOT auto-delete skills (PR #TBD, 2026-04-20)
+- ✅ `SM §4f` batch report condensed format: report issue comment fits in ≤8 lines; structured terse format `Batch N | Health: X | Progress: X | Vision PRs: N | Chores: N | Queue: N remaining | Journeys: N✅ N❌ | Next: [title]`; verbose details in `<details>` block; Progress classifies as ADVANCING/STEADY/STALLED; Chores = MERGED − VISION_PRS; Next = first todo item title (PR #625, 2026-04-20)
 
 ## Future (🔲)
 
