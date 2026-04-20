@@ -539,6 +539,149 @@ ISSUE_GEN
       --body "[🎯 COORD | ${MY_SESSION_ID:-sess-unknown} | otherness@${OTHERNESS_VERSION:-unknown}] Queue generated." 2>/dev/null
   fi
 fi
+
+# §1c-guard: Queue refusal guard — design doc 35 §O1-O3
+# If ALL todo items are kind/chore or kind/docs (no kind/enhancement or kind/bug),
+# inject ≥1 enhancement item before claiming any work.
+# Design ref: docs/design/35-quality-of-output-gaps.md
+python3 - <<'GUARD_EOF'
+import json, subprocess, re, os
+
+REPO = os.environ.get('REPO', '')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+
+try:
+    with open('.otherness/state.json') as f: s = json.load(f)
+except Exception:
+    raise SystemExit(0)
+
+features = s.get('features', {})
+todo_items = [(k, v) for k, v in features.items() if v.get('state') == 'todo']
+
+if not todo_items:
+    raise SystemExit(0)
+
+CHORE_KINDS = {'kind/chore', 'kind/docs'}
+FEATURE_KINDS = {'kind/enhancement', 'kind/bug'}
+
+# items with no labels are treated as enhancement (unknown = not chore)
+has_feature = any(
+    any(l in FEATURE_KINDS for l in v.get('labels', ['kind/enhancement']))
+    for _, v in todo_items
+)
+
+if has_feature:
+    raise SystemExit(0)  # mixed or feature-rich queue — no guard needed
+
+# Chore-only queue detected
+chore_count = len(todo_items)
+print(f"[COORD §1c-guard] Chore-only queue detected ({chore_count} items — no kind/enhancement or kind/bug).")
+print("[COORD §1c-guard] Enriching queue from design docs before claiming...")
+
+# Enrichment: scan design docs for unclaimed 🔲 Future items
+done_titles = set(
+    v.get('title', '').lower() for v in features.values()
+    if v.get('state') == 'done' and v.get('title')
+)
+try:
+    merged_prs = subprocess.check_output(
+        ['gh', 'pr', 'list', '--repo', REPO, '--state', 'merged', '--limit', '100',
+         '--json', 'title', '--jq', '.[].title'], text=True).lower().splitlines()
+except Exception:
+    merged_prs = []
+
+def is_done(desc):
+    d = desc.lower().strip()
+    d = re.sub(r'^⚠️\s*(inferred|observed):\s*', '', d)
+    if d in done_titles: return True
+    key = d[:60]
+    return any(key in pr for pr in merged_prs)
+
+def open_if_absent(title, labels, body):
+    r = subprocess.run(['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+                        '--search', title[:60], '--json', 'number', '--jq', 'length'],
+                       capture_output=True, text=True)
+    if int(r.stdout.strip() or '0') == 0:
+        r2 = subprocess.run(['gh', 'issue', 'create', '--repo', REPO,
+                             '--title', title, '--label', labels, '--body', body],
+                            capture_output=True, text=True)
+        if r2.returncode == 0:
+            return r2.stdout.strip().split('/')[-1]
+    return None
+
+injected = 0
+design_dir = 'docs/design'
+if os.path.isdir(design_dir):
+    for fname in sorted(os.listdir(design_dir)):
+        if not fname.endswith('.md') or injected >= 3: break
+        try:
+            content = open(f'{design_dir}/{fname}').read()
+            m = re.search(r'^## Future.*?\n(.*?)(?=^## |\Z)', content, re.MULTILINE | re.DOTALL)
+            if m:
+                items = re.findall(r'^- 🔲 (?!.*🚫)(.+)', m.group(1), re.MULTILINE)
+                for item in items:
+                    if injected >= 3: break
+                    desc = re.sub(r'\s*—.*$', '', item).strip()
+                    if is_done(desc): continue
+                    title = f"feat: {desc[:90]}"
+                    body = (f"## Design reference\n"
+                            f"- **Design doc**: `docs/design/{fname}`\n"
+                            f"- **Section**: `§ Future`\n"
+                            f"- **Implements**: {desc} (🔲 → ✅)\n\n"
+                            f"## Summary\n\n"
+                            f"Queue refusal guard injected: chore-only queue enriched with vision item.\n\n"
+                            f"Full item: {item}")
+                    result = open_if_absent(
+                        title,
+                        'otherness,kind/enhancement,area/agent-loop,size/s,priority/medium',
+                        body)
+                    if result:
+                        injected += 1
+                        print(f"[COORD §1c-guard] Injected issue #{result}: {title[:60]}")
+        except Exception as e:
+            print(f"[COORD §1c-guard] scan error for {fname}: {e}")
+
+if injected == 0:
+    # Fallback: roadmap deliverables
+    try:
+        roadmap = open('docs/aide/roadmap.md').read()
+        stages = re.split(r'^## Stage', roadmap, flags=re.MULTILINE)
+        for stage in stages[1:]:
+            deliverables = re.findall(r'^- (.+)', stage, re.MULTILINE)
+            for d in deliverables:
+                if injected >= 3: break
+                if is_done(d.strip()): continue
+                title = f"feat: {d.strip()[:90]}"
+                body = (f"## Design reference\n"
+                        f"- **Design doc**: `docs/aide/roadmap.md`\n"
+                        f"- **Section**: `§ Stage {stage.strip().split(chr(10))[0].strip()}`\n"
+                        f"- **Implements**: {d.strip()[:80]} (roadmap deliverable)\n\n"
+                        f"## Summary\n\n"
+                        f"Queue refusal guard injected: chore-only queue enriched from roadmap.\n\n"
+                        f"Full item: {d.strip()}")
+                result = open_if_absent(
+                    title,
+                    'otherness,kind/enhancement,area/agent-loop,size/s,priority/low',
+                    body)
+                if result:
+                    injected += 1
+                    print(f"[COORD §1c-guard] Injected roadmap issue #{result}: {title[:60]}")
+            if injected > 0: break
+    except Exception as e:
+        print(f"[COORD §1c-guard] roadmap fallback error (non-fatal): {e}")
+
+if injected > 0:
+    print(f"[COORD §1c-guard] Enriched queue with {injected} enhancement item(s).")
+    subprocess.run(['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO,
+                    '--body', f"[COORD §1c-guard | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}] "
+                              f"Chore-only queue detected ({chore_count} items). "
+                              f"Injected {injected} enhancement item(s) from design docs/roadmap."],
+                   capture_output=True)
+else:
+    print("[COORD §1c-guard] No enhancement sources found — allowing chore claim to avoid stall (design doc 35 §O2).")
+GUARD_EOF
 ```
 
 ---

@@ -23,7 +23,8 @@ improve decision quality across all projects.
 
 ## Future (🔲)
 
-*(Stage 2 is complete. All deliverables shipped.)*
+- 🔲 Autonomous `/otherness.learn` cadence enforcement with measurable trigger: SM §4c must check PROVENANCE.md date of last learn session every batch. If last entry is >14 days ago, SM queues a learn session immediately — not as a suggestion but as a `priority/high` issue claiming the next session. The monoculture risk identified in `docs/aide/vision.md §What the simulation proved` requires active countermeasures, not passive availability of the command. Target: learn session runs at least once every 14 days, measured in PROVENANCE.md. ⚠️ Inferred from self-improvement lens: /otherness.learn runs rarely, agents not meaningfully smarter than two weeks ago.
+- 🔲 Architectural monoculture breakout mechanism: the simulation identified that all agents share `standalone.md` — the same reasoning framework — regardless of how diverse their skill sets are. Skill diversity ≠ conceptual diversity. The only current break is `/otherness.learn` importing foreign patterns. This must be made systematic: every learn session must explicitly target a repo from a different paradigm (functional, event-sourced, actor-model, etc.) than the last session. SM §4c must record the `paradigm_category` of each PROVENANCE.md entry and reject back-to-back sessions in the same category. This is the highest-priority investment for breaking frame-lock. ⚠️ Inferred from self-improvement lens: monoculture problem has not been addressed architecturally.
 
 ---
 

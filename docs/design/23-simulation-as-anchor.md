@@ -173,6 +173,8 @@ docs/aide/metrics.md             — existing batch log (SM already writes this)
 
 
 - 🚫 `scripts/simulate.py`: add `--calibrate` flag — DEPRECATED: `scripts/calibrate.py` provides this functionality as a standalone script. No duplication needed.
+- 🔲 Simulation predictions must visibly change agent behavior: today the simulation runs, produces predictions, and posts divergence signals — but the agent loop does not demonstrably adjust its behavior in the following batch based on those signals. SM §4e must write a `recovery_action` field to `sim-prediction.json` (one of: `trigger_learn`, `escalate_oldest_needs_human`, `prioritize_ci_fix`, `trigger_vision_synthesis`), and `coord.md §1b` must read this field at session start and adjust claim priority accordingly. The prediction is useless if no one acts on it. ⚠️ Inferred from honesty lens: simulation exists but its predictions are not visibly changing agent behavior.
+- 🔲 SM health signal must distinguish real GREEN from stall-GREEN: the current GREEN health signal fires when the batch completed and CI passed — it does not verify that meaningful work shipped. A batch where only a metrics commit merged is currently reported as GREEN. The health signal must be two-axis: `progress_signal` (ADVANCING / STALLING / STALLED) × `health_signal` (GREEN / AMBER / RED). ADVANCING requires ≥1 meaningful PR (Future→Present transition or validated fix). STALLING means 2 consecutive batches with 0 meaningful PRs. STALLED means 3+. The human should never see GREEN on a stalling system. ⚠️ Inferred from honesty lens: SM health signal says GREEN but products not advancing fast enough.
 
 ---
 
