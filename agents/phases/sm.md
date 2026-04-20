@@ -820,6 +820,120 @@ fi
 
 ---
 
+## 4g-anchor. Feature→anchor gap detection (every 10 SM cycles)
+
+Check how many ✅ Present features have anchor coverage. Post coverage ratio.
+Open anchor-growth issues for uncovered features. Skip gracefully if no §Anchor section.
+
+**Design ref**: `docs/design/24-project-anchor-framework.md §The feature → anchor gap`.
+
+```bash
+if [ $((SM_CYCLE % 10)) -eq 0 ] && [ "${SM_CYCLE:-0}" -gt 0 ]; then
+  echo "[SM §4g-anchor] Running feature→anchor gap detection..."
+
+  python3 - <<'ANCHOREOF'
+import re, os, subprocess
+
+REPO = os.environ.get('REPO', '')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'SM')
+PR_LABEL = os.environ.get('PR_LABEL', 'otherness')
+
+# Step 1: Check for AGENTS.md §Anchor section
+try:
+    agents_content = open('AGENTS.md').read()
+    anchor_m = re.search(r'^## Anchor\s*\n(.*?)(?=^## |\Z)', agents_content,
+                         re.MULTILINE | re.DOTALL)
+    if not anchor_m:
+        print('[SM §4g-anchor] No ## Anchor section in AGENTS.md — skipping.')
+        exit(0)
+    anchor_section = anchor_m.group(1)
+    print('[SM §4g-anchor] Found ## Anchor section in AGENTS.md')
+except Exception as e:
+    print(f'[SM §4g-anchor] AGENTS.md read error (skipping): {e}')
+    exit(0)
+
+# Step 2: Collect ✅ Present features from docs/design/*.md
+features = []
+design_dir = 'docs/design'
+if os.path.isdir(design_dir):
+    for fname in sorted(os.listdir(design_dir)):
+        if not fname.endswith('.md'): continue
+        try:
+            content = open(f'{design_dir}/{fname}').read()
+            m = re.search(r'^## Present.*?\n(.*?)(?=^## |\Z)', content,
+                          re.MULTILINE | re.DOTALL)
+            if m:
+                items = re.findall(r'^- ✅ (.+)', m.group(1), re.MULTILINE)
+                for item in items:
+                    # Extract short name (before '—' or '(PR')
+                    name = re.sub(r'\s*[—(].+$', '', item).strip()[:60]
+                    features.append({'full': item, 'name': name, 'source': fname})
+        except Exception:
+            pass
+
+total_features = len(features)
+if total_features == 0:
+    print('[SM §4g-anchor] No ✅ Present features found — skipping.')
+    exit(0)
+
+# Step 3: Count anchor-covered features (fuzzy match against §Anchor section)
+covered_names = re.findall(r'^[-*]\s*(?:✅|\[x\])\s*(.+)', anchor_section,
+                           re.MULTILINE | re.IGNORECASE)
+covered_names_lower = [n.lower()[:50] for n in covered_names]
+
+def is_covered(feature_name):
+    fn = feature_name.lower()[:30]
+    return any(fn in cn or cn[:30] in fn for cn in covered_names_lower)
+
+covered = [f for f in features if is_covered(f['name'])]
+uncovered = [f for f in features if not is_covered(f['name'])]
+coverage_pct = int(len(covered) / total_features * 100) if total_features else 100
+
+# Step 4: Post coverage ratio to REPORT_ISSUE
+ratio_body = (
+    f"[ANCHOR | SM §4g-anchor | {MY_SESSION_ID}] "
+    f"Feature→anchor coverage: {len(covered)}/{total_features} ({coverage_pct}%)"
+)
+subprocess.run(['gh','issue','comment',REPORT_ISSUE,'--repo',REPO,'--body',ratio_body],
+               capture_output=True)
+print(f'[SM §4g-anchor] Coverage: {len(covered)}/{total_features} ({coverage_pct}%)')
+
+# Step 5: Open anchor-growth issues for uncovered features (deduplicated)
+issues_opened = 0
+for feat in uncovered[:5]:  # cap at 5 per cycle to avoid flooding
+    title = f"anchor: cover '{feat['name'][:50]}'"
+    # Deduplication check
+    existing = subprocess.run(
+        ['gh','issue','list','--repo',REPO,'--state','open',
+         '--search',feat['name'][:30],'--json','number','--jq','length'],
+        capture_output=True, text=True)
+    if int(existing.stdout.strip() or '0') > 0:
+        continue
+    body = (f"## Anchor coverage gap\n\n"
+            f"Feature: {feat['full'][:200]}\n"
+            f"Source: `docs/design/{feat['source']}`\n\n"
+            f"This ✅ Present feature has no entry in AGENTS.md §Anchor coverage matrix.\n\n"
+            f"**Action**: Add a scenario or validation step to the anchor that exercises\n"
+            f"this feature. See `docs/design/24-project-anchor-framework.md`.")
+    r = subprocess.run(
+        ['gh','issue','create','--repo',REPO,'--title',title,
+         '--label',f'{PR_LABEL},kind/chore,area/tooling,priority/medium','--body',body],
+        capture_output=True, text=True)
+    if r.returncode == 0:
+        issues_opened += 1
+        print(f'[SM §4g-anchor] Opened: {title[:60]}')
+
+print(f'[SM §4g-anchor] Gap detection complete: {issues_opened} issues opened, '
+      f'{len(uncovered)} uncovered features.')
+ANCHOREOF
+
+  echo "[SM §4g-anchor] Feature→anchor gap detection complete."
+fi
+```
+
+---
+
 ## 4h. Autonomous vision trigger (every SM cycle)
 
 When the queue is empty and the system has been stable for ≥3 cycles, run the
