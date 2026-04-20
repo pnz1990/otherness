@@ -276,17 +276,17 @@ project-specific deployment record.
 
 ## Present (✅)
 
-- ✅ `.github/workflows/otherness-scheduled.yml` — cron (0 */6 * * *) + workflow_dispatch; Bedrock via OIDC; GH_TOKEN PAT for push/PR/trigger; all required permissions (2026-04-19)
-- ✅ `otherness-config.yaml` — `schedule.cron`, `schedule.model`, `schedule.api_key_secret` fields (2026-04-19)
+- ✅ `.github/workflows/otherness-scheduled.yml` — cron (0 */6 * * *) + workflow_dispatch; Bedrock via OIDC; GH_TOKEN PAT for push/PR/trigger; all required permissions (2026-04-19) ⚠️ Stale — referenced file not found
+- ✅ `otherness-config.yaml` — `schedule.cron`, `schedule.model`, `schedule.api_key_secret` fields (2026-04-19) ⚠️ Stale — referenced file not found
 - ✅ `otherness-config-template.yaml` — `schedule` section with setup instructions (2026-04-19)
-- ✅ `scripts/validate.sh` — checks scheduled workflow exists when `schedule.cron` is set (2026-04-19)
+- ✅ `scripts/validate.sh` — checks scheduled workflow exists when `schedule.cron` is set (2026-04-19) ⚠️ Stale — referenced file not found
 - ✅ `scripts/setup-github-bedrock-key.sh` — idempotent OIDC setup: creates provider, IAM role, Bedrock policy, pushes secrets to GitHub (2026-04-19)
-- ✅ IAM OIDC provider `token.actions.githubusercontent.com` in account 569190534191 — trust scoped to `pnz1990/*` (2026-04-19)
+- ✅ IAM OIDC provider `token.actions.githubusercontent.com` in account 569190534191 — trust scoped to `pnz1990/*` (2026-04-19) ⚠️ Stale — referenced file not found
 - ✅ IAM role `github-bedrock-key` — OIDC trust for `pnz1990/*`, inline `BedrockInvoke` policy (2026-04-19)
 - ✅ kardinal-promoter deployed — hourly cron, all secrets set, PR #828 (2026-04-19)
-- ✅ `/otherness.setup` and `/otherness.onboard`: add "activate scheduled loop" section that runs `setup-github-bedrock-key.sh` and copies the workflow template automatically — currently requires manual steps
-- ✅ `scripts/validate.sh`: verify `GH_TOKEN` secret exists on the repo when `schedule.cron` is configured (currently only checks for the workflow file)
-- ✅ Token expiry detection: preflight step in `otherness-scheduled.yml` validates `GH_TOKEN` before agent work; posts `[NEEDS HUMAN]` issue via `GITHUB_TOKEN` on missing or invalid token (PR #339, 2026-04-20)
+- ✅ `/otherness.setup` and `/otherness.onboard`: add "activate scheduled loop" section that runs `setup-github-bedrock-key.sh` and copies the workflow template automatically — currently requires manual steps ⚠️ Stale — referenced file not found
+- ✅ `scripts/validate.sh`: verify `GH_TOKEN` secret exists on the repo when `schedule.cron` is configured (currently only checks for the workflow file) ⚠️ Stale — referenced file not found
+- ✅ Token expiry detection: preflight step in `otherness-scheduled.yml` validates `GH_TOKEN` before agent work; posts `[NEEDS HUMAN]` issue via `GITHUB_TOKEN` on missing or invalid token (PR #339, 2026-04-20) ⚠️ Stale — referenced file not found
 
 ## Future (🔲)
 
