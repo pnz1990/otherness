@@ -500,7 +500,7 @@
       "done_at": "2026-04-21T21:36:44Z"
     },
     "issue-784": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Housekeeping-streak auto-escalation: SM \u00a74b must count consecutive sessions where `session",
       "labels": [
         "priority/medium",
@@ -509,7 +509,9 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "784"
+      "issue": "784",
+      "pr_merged": true,
+      "done_at": "2026-04-21T21:43:05Z"
     },
     "issue-785": {
       "state": "todo",
