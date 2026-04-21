@@ -891,7 +891,7 @@
       "cycle": 10
     }
   },
-  "pm_cycle_count": 3,
+  "pm_cycle_count": 4,
   "vision_aligned": true,
   "consecutive_vision_misaligned": 0,
   "sm_cycle_count": 95,
@@ -899,5 +899,6 @@
   "self_feat_prs_7d": 38,
   "managed_feat_prs_7d": 62,
   "last_session_id": "sess-b4417de5",
-  "last_session_at": "2026-04-21T22:35:46Z"
+  "last_session_at": "2026-04-21T22:35:46Z",
+  "housekeeping_streak": 0
 }
