@@ -479,7 +479,7 @@
       "done_at": "2026-04-21T21:46:59Z"
     },
     "issue-633": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Graceful partial handoff on GitHub Actions job timeout: GitHub Actions jobs have a default",
       "labels": [
         "priority/medium",
@@ -489,7 +489,9 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "633"
+      "issue": "633",
+      "pr_merged": true,
+      "done_at": "2026-04-21T23:28:08Z"
     },
     "issue-783": {
       "state": "done",
