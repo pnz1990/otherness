@@ -3948,6 +3948,22 @@ try:
 except: print('?')
 " 2>/dev/null || echo "?")
 
+# Read dual improvement rates from state.json (written by PM §5n each batch)
+SELF_FEAT_PRS=$(python3 -c "
+import json
+try:
+    s = json.load(open('.otherness/state.json'))
+    print(s.get('self_feat_prs_7d', '?'))
+except: print('?')
+" 2>/dev/null || echo "?")
+MANAGED_FEAT_PRS=$(python3 -c "
+import json
+try:
+    s = json.load(open('.otherness/state.json'))
+    print(s.get('managed_feat_prs_7d', '?'))
+except: print('?')
+" 2>/dev/null || echo "?")
+
 REPORT_BODY=$(cat <<BODY_EOF
 Batch ${SM_CYCLE:-?} | progress: ${PROGRESS_CLASS} | health: ${HEALTH} | Vision PRs: ${VISION_PRS:-0} | Chores: ${CHORES_COUNT} | Queue: ${TODO_COUNT:-0} remaining | Journeys: ${JOURNEY_OK}✅ ${JOURNEY_FAIL}❌ | Next: [${NEXT_ITEM}]
 
@@ -3958,6 +3974,7 @@ Batch ${SM_CYCLE:-?} | progress: ${PROGRESS_CLASS} | health: ${HEALTH} | Vision 
 - In-review: ${IN_REVIEW:-0} | Action: ${ACTION}
 - Needs-human open: ${NEEDS_HUMAN_COUNT:-0}
 - Sim calibrated: ${SIM_CALIB_LABEL:-unknown}${SIM_CALIB_WARN:-}
+- Self feat PRs (7d): ${SELF_FEAT_PRS:-?} | Managed feat PRs (7d): ${MANAGED_FEAT_PRS:-?}
 
 </details>
 BODY_EOF

@@ -1150,3 +1150,138 @@ INFERRED_EOF
   echo "[PM §5m] ⚠️ Inferred ratio check complete."
 fi
 ```
+
+---
+
+## 5n. Dual improvement rate: self vs. managed projects (runs every batch)
+
+Compute and report two distinct improvement rates per batch:
+- `self_feat_prs`: feat/fix/refactor PRs merged to the otherness repo in the last 7 days
+- `managed_feat_prs`: feat/fix/refactor PRs merged to non-otherness monitor.projects in the last 7 days
+
+When `managed_feat_prs == 0` for 3 consecutive batches while `self_feat_prs > 0`:
+open a `kind/chore priority/high` issue to surface the stall.
+
+Design ref: `docs/design/16-journey-2-reference-project.md` §Future (🔲 → ✅)
+
+```bash
+python3 - <<'DUAL_RATE_EOF'
+import subprocess, json, os, re, datetime
+
+REPO = os.environ.get('REPO', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '')
+
+# Step 1: Count self feat PRs (this repo, last 7 days)
+self_feat_prs = 0
+try:
+    cutoff = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=7)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    r = subprocess.run(
+        ['gh', 'pr', 'list', '--repo', REPO, '--state', 'merged', '--limit', '50',
+         '--json', 'title,mergedAt',
+         '--jq', f'[.[] | select(.mergedAt >= "{cutoff}") | select(.title | test("^feat|^fix|^refactor"; "i")) | select(.title | test("^chore\\\\(sm\\\\)|metrics|session complete|batch "; "i") | not)] | length'],
+        capture_output=True, text=True, timeout=15)
+    if r.returncode == 0 and r.stdout.strip().isdigit():
+        self_feat_prs = int(r.stdout.strip())
+except Exception as e:
+    print(f'[PM §5n] self_feat_prs lookup error (non-fatal): {e}')
+
+# Step 2: Read monitor.projects from otherness-config.yaml
+managed_projects = []
+try:
+    in_monitor = in_projects = False
+    for line in open('otherness-config.yaml'):
+        if re.match(r'^monitor:', line): in_monitor = True
+        if in_monitor and re.match(r'\s+projects:', line): in_projects = True
+        if in_projects:
+            m = re.match(r'\s+- (.+)', line)
+            if m:
+                p = m.group(1).strip()
+                if not p.endswith('/otherness'):
+                    managed_projects.append(p)
+except Exception:
+    pass
+
+# Step 3: Count managed feat PRs across all non-otherness projects (last 7 days, fail-open)
+managed_feat_prs = 0
+try:
+    cutoff = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=7)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    for proj in managed_projects:
+        try:
+            r = subprocess.run(
+                ['gh', 'pr', 'list', '--repo', proj, '--state', 'merged', '--limit', '50',
+                 '--json', 'title,mergedAt',
+                 '--jq', f'[.[] | select(.mergedAt >= "{cutoff}") | select(.title | test("^feat|^fix|^refactor"; "i")) | select(.title | test("^chore\\\\(sm\\\\)|metrics|session complete|batch "; "i") | not)] | length'],
+                capture_output=True, text=True, timeout=15)
+            if r.returncode == 0 and r.stdout.strip().isdigit():
+                managed_feat_prs += int(r.stdout.strip())
+        except Exception as proj_e:
+            print(f'[PM §5n] {proj} lookup error (fail-open): {proj_e}')
+except Exception as e:
+    print(f'[PM §5n] managed_feat_prs error (non-fatal): {e}')
+
+print(f'[PM §5n] self_feat_prs={self_feat_prs} | managed_feat_prs={managed_feat_prs} | managed_projects={len(managed_projects)}')
+
+# Step 4: Persist stall counter in state.json
+try:
+    with open('.otherness/state.json') as f: s = json.load(f)
+    current_stall = s.get('managed_feat_stall_count', 0)
+    if managed_feat_prs == 0 and self_feat_prs > 0:
+        new_stall = current_stall + 1
+        print(f'[PM §5n] Managed stall count: {new_stall} (was {current_stall})')
+    else:
+        new_stall = 0
+        if current_stall > 0:
+            print(f'[PM §5n] Managed projects active — resetting stall count (was {current_stall})')
+    s['managed_feat_stall_count'] = new_stall
+    # Expose for SM §4f to consume
+    s['self_feat_prs_7d'] = self_feat_prs
+    s['managed_feat_prs_7d'] = managed_feat_prs
+    with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
+except Exception as e:
+    print(f'[PM §5n] state write error (non-fatal): {e}')
+
+# Step 5: Open stall issue when stall_count >= 3 (deduplicated)
+try:
+    if new_stall >= 3:
+        stall_title = 'chore: otherness is improving itself but not its managed projects — value delivery has stalled'
+        r = subprocess.run(
+            ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+             '--search', stall_title[:60], '--json', 'number', '--jq', 'length'],
+            capture_output=True, text=True, timeout=15)
+        if int(r.stdout.strip() or '0') == 0:
+            body = (
+                f'## Managed project value delivery stall\n\n'
+                f'PM §5n detected: `managed_feat_prs = 0` for {new_stall} consecutive batches '
+                f'while `self_feat_prs > 0`.\n\n'
+                f'otherness is shipping improvements to itself but the managed projects '
+                f'(`{", ".join(managed_projects) or "none configured"}`) '
+                f'have received 0 feat/fix PRs in the last 7 days × {new_stall} batches.\n\n'
+                f'A system that only improves its own infrastructure while the projects it manages '
+                f'stagnate is not delivering the core promise of otherness.\n\n'
+                f'## Investigation\n'
+                f'- Are managed projects scheduled to run? Check their GitHub Actions.\n'
+                f'- Are there open `needs-human` issues blocking managed project progress?\n'
+                f'- Is the managed project queue empty? Run `/otherness.vibe-vision` on it.\n\n'
+                f'Current rates: self_feat_prs={self_feat_prs} | managed_feat_prs={managed_feat_prs}\n\n'
+                f'Reported by PM §5n | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}'
+            )
+            r2 = subprocess.run(
+                ['gh', 'issue', 'create', '--repo', REPO,
+                 '--title', stall_title,
+                 '--label', 'otherness,kind/chore,priority/high,area/agent-loop',
+                 '--body', body],
+                capture_output=True, text=True, timeout=15)
+            if r2.returncode == 0:
+                print(f'[PM §5n] Stall issue opened: {r2.stdout.strip()}')
+            else:
+                print(f'[PM §5n] Failed to open stall issue (non-fatal): {r2.stderr[:100]}')
+        else:
+            print('[PM §5n] Stall issue already open — skipping duplicate.')
+except Exception as e:
+    print(f'[PM §5n] stall issue error (non-fatal): {e}')
+
+print(f'[PM §5n] Dual improvement rate check complete.')
+DUAL_RATE_EOF
+```
