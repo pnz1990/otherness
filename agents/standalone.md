@@ -728,7 +728,100 @@ RECOVERY_EOF
   fi
 fi
 
-# DECISION:
+# §1f-contract-level2: Session minimum meaningful-PR contract — level 2 (design doc 35 §Future → ✅)
+# If recovery was attempted (ITEMS_COMPLETED still 0 after level-1 attempt),
+# try inline vision synthesis: re-run queue-gen from design docs to inject a new item.
+# Only fires once (CONTRACT_L2_ATTEMPTED prevents loop).
+if [ "${ITEMS_COMPLETED:-0}" -eq 0 ] && [ "${RECOVERY_ATTEMPTED:-false}" = "true" ] && [ "${CONTRACT_L2_ATTEMPTED:-false}" != "true" ]; then
+  export CONTRACT_L2_ATTEMPTED=true
+  echo "[COORD §1f-L2] Level-1 recovery produced 0 PRs — attempting level-2: inline queue refill..."
+  L2_RESULT=$(python3 - <<'L2_EOF'
+import subprocess, re, json, os
+
+REPO = os.environ.get('REPO', '')
+
+try:
+    state = json.load(open('.otherness/state.json'))
+    done_titles = set(v.get('title','').lower() for v in state.get('features',{}).values() if v.get('state') == 'done' and v.get('title'))
+except:
+    done_titles = set()
+
+try:
+    merged_prs = subprocess.check_output(['gh','pr','list','--repo',REPO,'--state','merged','--limit','50','--json','title','--jq','.[].title'], text=True, timeout=15).lower().splitlines()
+except:
+    merged_prs = []
+
+try:
+    open_issues = subprocess.check_output(['gh','issue','list','--repo',REPO,'--state','open','--limit','100','--json','title','--jq','.[].title'], text=True, timeout=15).lower().splitlines()
+except:
+    open_issues = []
+
+def is_done(desc):
+    d = desc.lower().strip()
+    d = re.sub(r'^⚠️\s*(inferred|observed):\s*', '', d)
+    if d in done_titles: return True
+    return any(d[:60] in pr for pr in merged_prs)
+
+def is_open(desc):
+    return any(desc.lower().strip()[:60] in issue for issue in open_issues)
+
+design_dir = 'docs/design'
+if not os.path.isdir(design_dir):
+    print('NONE')
+    exit(0)
+
+for fname in sorted(os.listdir(design_dir)):
+    if not fname.endswith('.md'): continue
+    try:
+        content = open(os.path.join(design_dir, fname)).read()
+        m = re.search(r'^## Future.*?\n(.*?)(?=^## |\Z)', content, re.MULTILINE | re.DOTALL)
+        if not m: continue
+        items = re.findall(r'^- 🔲 (?!.*🚫)(.+)', m.group(1), re.MULTILINE)
+        for item in items:
+            desc = re.sub(r'\s*—.*$', '', item).strip()
+            if is_done(desc) or is_open(desc): continue
+            title = f"feat: {desc[:90]}"
+            body = (f"## Design reference\n- **Design doc**: `docs/design/{fname}`\n- **Section**: `§ Future`\n"
+                    f"- **Implements**: {desc} (🔲 → ✅)\n\n## Summary\n\n"
+                    f"Level-2 session contract: session had 0 meaningful PRs after level-1 recovery; "
+                    f"inline queue-gen injecting vision item.\n\nFull item: {item}")
+            r = subprocess.run(['gh','issue','create','--repo',REPO,'--title',title,'--label','otherness,kind/enhancement,area/agent-loop,size/s,priority/medium','--body',body], capture_output=True, text=True, timeout=15)
+            if r.returncode == 0:
+                print(r.stdout.strip().split('/')[-1])
+                exit(0)
+    except Exception as e:
+        pass
+
+print('NONE')
+L2_EOF
+)
+  if echo "$L2_RESULT" | grep -qE '^[0-9]+$'; then
+    echo "[COORD §1f-L2] Level-2: created issue #$L2_RESULT — claiming and attempting..."
+    L2_ITEM_ID="issue-$L2_RESULT"
+    L2_BRANCH="feat/$L2_ITEM_ID"
+    L2_WORKTREE="../${REPO_NAME:-otherness}.${L2_ITEM_ID}"
+    if git push origin "HEAD:refs/heads/$L2_BRANCH" 2>/dev/null; then
+      [ -d "$L2_WORKTREE" ] && git worktree remove "$L2_WORKTREE" --force 2>/dev/null || true
+      git worktree add "$L2_WORKTREE" "$L2_BRANCH"
+      # [AI-STEP] Proceed to Phase 2 (ENG) with L2_ITEM_ID, then Phase 3 (QA)
+    else
+      echo "[COORD §1f-L2] Level-2 claim failed — proceeding to SM/PM."
+    fi
+  else
+    echo "[COORD §1f-L2] Level-2: no candidate found — proceeding to level-3."
+  fi
+fi
+
+# §1f-contract-level3: Session minimum meaningful-PR contract — level 3 (design doc 35 §Future → ✅)
+# After all recovery attempts, if ITEMS_COMPLETED still 0, post in-session DEFECT comment.
+# This fires within the session (before SM) so the operator sees it immediately.
+# SM §4b will also detect it — this provides earlier visibility.
+if [ "${ITEMS_COMPLETED:-0}" -eq 0 ] && [ "${CONTRACT_L2_ATTEMPTED:-false}" = "true" ] && [ "${CONTRACT_L3_POSTED:-false}" != "true" ]; then
+  export CONTRACT_L3_POSTED=true
+  echo "[COORD §1f-L3] All recovery levels exhausted — posting in-session DEFECT comment."
+  gh issue comment "${REPORT_ISSUE}" --repo "${REPO}" \
+    --body "[DEFECT | in-session | ${MY_SESSION_ID:-sess-unknown} | otherness@${OTHERNESS_VERSION:-unknown}] Session exhausted all recovery levels (L1: same-session claim, L2: inline vision synthesis) and still produced 0 meaningful PRs. SM §4b will diagnose root cause. Root causes to investigate: CI red / queue exhausted / all items blocked / ENG zero-diff pattern." 2>/dev/null || true
+fi
 # If ITEMS_COMPLETED < SESSION_LIMIT AND QUEUE_REMAINING > 0:
 #   → GOTO PHASE 1 (skip SM/PM — loop back immediately for next item)
 # Else:
