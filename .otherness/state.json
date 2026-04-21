@@ -668,8 +668,8 @@
       "priority": "medium"
     },
     "issue-639": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: 35.1",
       "labels": [
         "priority/medium",
@@ -678,7 +678,10 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 688,
+      "done_at": "2026-04-21T10:13:27Z"
     },
     "issue-638": {
       "state": "done",
