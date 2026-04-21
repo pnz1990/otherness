@@ -1266,7 +1266,7 @@
       "done_at": "2026-04-21T13:14:16Z"
     },
     "issue-713": {
-      "state": "in_review",
+      "state": "done",
       "status": "todo",
       "title": "feat: PM \u00a75j: managed project feature velocity gate",
       "labels": [
@@ -1277,7 +1277,9 @@
       ],
       "priority": "medium",
       "pr_number": 733,
-      "pr_url": "https://github.com/pnz1990/otherness/pull/733"
+      "pr_url": "https://github.com/pnz1990/otherness/pull/733",
+      "pr_merged": true,
+      "done_at": "2026-04-21T14:54:38Z"
     },
     "issue-714": {
       "state": "todo",
