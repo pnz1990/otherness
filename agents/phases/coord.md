@@ -284,6 +284,55 @@ esac
 
 ---
 
+## 1b-vision. Vision pressure set — build at session start (design doc 36 §36.1)
+
+Before claiming any item, read `docs/design/*.md` and build an in-memory vision pressure set.
+This set contains the first 40 chars (lowercased) of each `🔲 Future` item.
+The §1e claim logic uses this set to boost vision-backed items.
+
+```bash
+VISION_PRESSURE_SET=$(python3 - <<'VPEOF'
+import re, os, sys
+
+design_dir = 'docs/design'
+items = []
+doc_count = 0
+
+if os.path.isdir(design_dir):
+    for fname in sorted(os.listdir(design_dir)):
+        if not fname.endswith('.md'): continue
+        try:
+            content = open(f'{design_dir}/{fname}').read()
+            # Find ## Future section
+            m = re.search(r'^## Future.*?\n(.*?)(?=^## |\Z)', content,
+                          re.MULTILINE | re.DOTALL)
+            if m:
+                found = re.findall(r'^- 🔲 (?!.*🚫)(.+)', m.group(1), re.MULTILINE)
+                if found:
+                    doc_count += 1
+                    for item in found:
+                        # Strip trailing comments (— ...)
+                        clean = re.sub(r'\s*—.*$', '', item).strip()
+                        # Take first 40 chars lowercased as the key
+                        key = clean[:40].lower()
+                        if key:
+                            items.append(key)
+        except Exception:
+            pass
+
+print(f"[COORD §1b-vision] Vision pressure set: {len(items)} items from {doc_count} design docs.", file=sys.stderr)
+# Export as newline-separated string (empty if no items)
+print('\n'.join(items))
+VPEOF
+)
+export VISION_PRESSURE_SET
+# Log to stdout (stderr output from python block is not captured here)
+_VPS_COUNT=$(echo "$VISION_PRESSURE_SET" | grep -c . 2>/dev/null || echo "0")
+echo "[COORD §1b-vision] Vision pressure set built: ${_VPS_COUNT} items."
+```
+
+---
+
 ## 1c. Queue generation (with distributed lock)
 
 If queue is null or empty, acquire the queue-gen lock and generate.
