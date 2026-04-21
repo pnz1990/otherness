@@ -3621,15 +3621,67 @@ VPCEOF
 export VISION_PR_COUNT
 echo "[SM §4f §35.1] VISION_PR_COUNT=${VISION_PR_COUNT} (design-doc-backed PRs this session)"
 
-# Write vision_aligned to state.json (design doc 35 §35.5 minimal impl)
+# Write vision_aligned + consecutive_vision_misaligned to state.json (design doc 35 §35.5 + §35.3 → ✅)
 python3 - <<'VA_EOF'
-import json, os
+import json, os, subprocess
+
 VISION_PR_COUNT = int(os.environ.get('VISION_PR_COUNT', '0') or '0')
+REPO = os.environ.get('REPO', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
 try:
     with open('.otherness/state.json') as f: s = json.load(f)
-    s['vision_aligned'] = (VISION_PR_COUNT > 0)
+    aligned = (VISION_PR_COUNT > 0)
+    s['vision_aligned'] = aligned
+    # §35.3: update consecutive_vision_misaligned counter
+    if aligned:
+        s['consecutive_vision_misaligned'] = 0
+    else:
+        s['consecutive_vision_misaligned'] = s.get('consecutive_vision_misaligned', 0) + 1
     with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
-    print(f"[SM §4f §35.5] vision_aligned={s['vision_aligned']} written to state.json")
+    consec = s['consecutive_vision_misaligned']
+    print(f"[SM §4f §35.5] vision_aligned={aligned} consecutive_vision_misaligned={consec} written to state.json")
+    # §35.3: if 2+ consecutive misaligned batches, open queue audit issue (once)
+    if consec >= 2 and REPO:
+        # Check for existing open issue with "Queue audit needed" in title
+        r = subprocess.run(
+            ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+             '--search', 'Queue audit needed', '--json', 'number', '--jq', 'length'],
+            capture_output=True, text=True, timeout=15)
+        existing = int(r.stdout.strip() or '0')
+        if existing == 0:
+            body = (
+                f"## Queue Audit Needed\n\n"
+                f"SM detected {consec} consecutive batches with `vision_aligned: false` "
+                f"(0 design-doc-backed PRs merged per batch).\n\n"
+                f"This means the agent loop is running but not advancing the product vision. "
+                f"Items being claimed may not reference any design doc `🔲 Future` item.\n\n"
+                f"### Suggested actions\n"
+                f"1. Run `/otherness.vibe-vision` to check whether design docs are up to date\n"
+                f"2. Check `coord §1b` vision pressure set — does it have items matching open issues?\n"
+                f"3. Review the queue for chore-heavy items with no design doc reference\n\n"
+                f"Triggered by: SM §4a §35.3 — design doc 35-vision-alignment-signal.md"
+            )
+            cr = subprocess.run(
+                ['gh', 'issue', 'create', '--repo', REPO,
+                 '--title', 'Queue audit needed — 2 consecutive batches with no design-doc-backed PRs',
+                 '--label', 'otherness,kind/chore,priority/high,area/agent-loop',
+                 '--body', body],
+                capture_output=True, text=True, timeout=15)
+            if cr.returncode == 0:
+                issue_url = cr.stdout.strip()
+                print(f"[SM §4f §35.3] Queue audit issue opened: {issue_url}")
+                subprocess.run(
+                    ['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO,
+                     '--body', f"[SM §35.3 | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}] "
+                               f"⚠️ Queue audit triggered: {consec} consecutive batches with 0 vision-aligned PRs. "
+                               f"Issue: {issue_url}"],
+                    capture_output=True, timeout=15)
+            else:
+                print(f"[SM §4f §35.3] Failed to open queue audit issue (non-fatal): {cr.stderr[:100]}")
+        else:
+            print(f"[SM §4f §35.3] Queue audit issue already open (existing={existing}) — skipping duplicate.")
 except Exception as e:
     print(f"[SM §4f] vision_aligned write failed (non-fatal): {e}")
 VA_EOF
