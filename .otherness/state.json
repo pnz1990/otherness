@@ -720,7 +720,7 @@
       "priority": "medium"
     },
     "issue-635": {
-      "state": "assigned",
+      "state": "in_review",
       "status": "todo",
       "title": "feat: Simulation predictions must visibly change agent behavior: today the simulation runs, prod",
       "labels": [
@@ -738,7 +738,9 @@
       "file_spaces": [
         "scripts/",
         "agents/"
-      ]
+      ],
+      "pr_number": 680,
+      "pr_merged": false
     },
     "issue-634": {
       "state": "todo",
