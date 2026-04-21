@@ -739,6 +739,13 @@ if injected == 0:
 
 if injected > 0:
     print(f"[COORD §1c-guard] Enriched queue with {injected} enhancement item(s).")
+    # §1c-guard metric: increment chore_only_guard_count in state.json (design doc 35 §Future → ✅)
+    try:
+        with open('.otherness/state.json') as _f: _s = json.load(_f)
+        _s['chore_only_guard_count'] = _s.get('chore_only_guard_count', 0) + 1
+        with open('.otherness/state.json', 'w') as _f: json.dump(_s, _f, indent=2)
+    except Exception as _e:
+        print(f"[COORD §1c-guard] counter increment failed (non-fatal): {_e}")
     subprocess.run(['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO,
                     '--body', f"[COORD §1c-guard | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}] "
                               f"Chore-only queue detected ({chore_count} items). "

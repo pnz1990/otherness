@@ -19,13 +19,14 @@
 | `session_outcome` | Session classification: `feature-rich` / `mixed` / `chore-only` based on vision_prs ratio | → feature-rich |
 | `arch_convergence` | Simulation architecture convergence score from last calibration (0–1); 1 = simulation perfectly tracks reality | → 1.0 |
 | `sim_floor_delta` | `actual_prs_merged - sim_predicted_floor`; positive = outpacing simulation predictions | ↑ (positive delta) |
+| `queue_guard_fires` | Times the chore-only queue guard (COORD §1c-guard) fired and enriched the queue this batch | ↓ (less chore drift) |
 
 ---
 
 ## Batch Log
 
-| Date | Batch | prs_merged | needs_human | ci_red_hours | skills_count | todo_shipped | time_to_merge_avg_min | vision_prs | session_outcome | arch_convergence | sim_floor_delta | Notes |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Date | Batch | prs_merged | needs_human | ci_red_hours | skills_count | todo_shipped | time_to_merge_avg_min | vision_prs | session_outcome | arch_convergence | sim_floor_delta | queue_guard_fires | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 2026-04-14 | 1 | 1 | 1 | ~0.5 | 4 | 0 | — | Bootstrap: CI fix PR; CRITICAL tier PRs awaiting review |
 | 2026-04-14 | 2 | 4 | 2 | 0 | 5 | 4 | ~12 | Shipped #11 #12 #14 #15; CRITICAL #13 #16 pending human |
 | 2026-04-14 | 3 | 5 | 0 | 0 | 5 | 6 | ~8 | Merged all CRITICAL PRs; shipped #17 #18; Stage 1 complete |
