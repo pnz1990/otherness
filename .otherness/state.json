@@ -655,17 +655,13 @@
       "priority": "medium"
     },
     "issue-640": {
-      "state": "todo",
-      "status": "todo",
-      "title": "feat: 36.1",
-      "labels": [
-        "priority/medium",
-        "area/agent-loop",
-        "otherness",
-        "size/s",
-        "kind/enhancement"
-      ],
-      "priority": "medium"
+      "state": "done",
+      "status": "done",
+      "title": "feat: 36.1 \u2014 COORD \u00a71b-vision vision pressure set",
+      "note": "already-implemented-pr-689",
+      "pr_number": 689,
+      "pr_merged": true,
+      "done_at": "2026-04-21T10:46:56Z"
     },
     "issue-639": {
       "state": "done",
@@ -1154,6 +1150,11 @@
     "sess-6a945f23": {
       "last_seen": "2026-04-21T07:49:58Z",
       "item": "issue-635",
+      "cycle": 1
+    },
+    "sess-92d42ac3": {
+      "last_seen": "2026-04-21T10:42:22Z",
+      "item": "issue-640",
       "cycle": 1
     }
   },
