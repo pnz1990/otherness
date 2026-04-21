@@ -1915,6 +1915,48 @@ finally:
     except: pass
 subprocess.run(['git','worktree','prune'], capture_output=True)
 
+# Step 5b: sim_floor_delta rolling average — read last 5 values from metrics.md
+# Design ref: docs/design/23-simulation-as-anchor.md §Future → ✅
+# Fail-open: if column absent, < 5 rows, or parse fails, skip and set streak = 0.
+sfd_streak = 0
+sfd_avg = None
+try:
+    sfd_values = []
+    for line in content.splitlines():
+        m = re.match(r'^\|\s*\d{4}-\d{2}-\d{2}\s*\|(.+)', line)
+        if m:
+            cells = [c.strip() for c in line.split('|')[1:-1]]
+            if len(cells) >= 12:
+                raw = cells[11].strip()
+                # sim_floor_delta may be '—' (not calibrated) or a signed number like '-2' or '3'
+                if raw not in ('—', '', '?'):
+                    try:
+                        sfd_values.append(float(raw))
+                    except ValueError:
+                        pass
+    if len(sfd_values) >= 5:
+        last5 = sfd_values[-5:]
+        sfd_avg = sum(last5) / len(last5)
+        # Read existing streak from sim-prediction.json (via _state)
+        try:
+            pred_r = subprocess.run(
+                ['git', 'show', 'origin/_state:.otherness/sim-prediction.json'],
+                capture_output=True, text=True, timeout=10)
+            if pred_r.returncode == 0:
+                _pred = json.loads(pred_r.stdout)
+                sfd_streak = int(_pred.get('sim_floor_delta_negative_streak', 0))
+        except Exception:
+            sfd_streak = 0
+        if sfd_avg <= -1.5:
+            sfd_streak += 1
+        else:
+            sfd_streak = 0
+        print(f'[SM §4e] sim_floor_delta rolling avg: {sfd_avg:.2f} (streak={sfd_streak})')
+    else:
+        print(f'[SM §4e] sim_floor_delta: only {len(sfd_values)} numeric values — need ≥5, skip rolling avg.')
+except Exception as _sfd_e:
+    print(f'[SM §4e] sim_floor_delta rolling avg (non-fatal): {_sfd_e}')
+
 # Step 6: Post divergence signal after 3 consecutive below-floor batches
 if consecutive_count >= 3:
     signal_body = (
@@ -1940,8 +1982,10 @@ if consecutive_count >= 3:
 # Step 7: Compute recovery_action and write to sim-prediction.json on _state
 # Priority order (design doc 23 §Step 4): vision_synthesis > needs_human > ci_fix > learn > none
 # Design ref: docs/design/23-simulation-as-anchor.md §Step 4
+# Additional trigger: sim_floor_delta_negative_streak ≥ 3 → trigger_vision_synthesis
+# (design doc 23 §Future → ✅)
 recovery_action = 'none'
-if consecutive_count >= 3 or actual_shipped < pred_floor:
+if consecutive_count >= 3 or actual_shipped < pred_floor or sfd_streak >= 3:
     # Check queue depth — low queue → trigger vision synthesis
     try:
         state_json = subprocess.run(['git','show','origin/_state:.otherness/state.json'],
@@ -2004,6 +2048,9 @@ try:
     prediction['recovery_action_set_at'] = datetime.datetime.now(
         datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
     prediction['recovery_action_consecutive'] = consecutive_count
+    prediction['sim_floor_delta_negative_streak'] = sfd_streak
+    if sfd_avg is not None:
+        prediction['sim_floor_delta_rolling_avg'] = round(sfd_avg, 3)
     json.dump(prediction, open(pred_path, 'w'), indent=2)
     subprocess.run(['git','-C',state_wt2,'add',pred_path], capture_output=True)
     subprocess.run(['git','-C',state_wt2,'commit',
