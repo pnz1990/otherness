@@ -444,32 +444,67 @@ import re, os, subprocess, sys
 
 REPO = os.environ.get('REPO', '')
 
-# Step 1: Find the workflow file containing the pressure context
-# The pressure block is identified by "Context for this vision scan:" or
-# "OTHERNESS_PRESSURE_START" markers in .github/workflows/ files.
+# Step 1: Read the active pressure block from the Step A workflow prompt.
+# Design ref: docs/design/37-self-updating-pressure-prompts.md §37.1
+#
+# Primary source: parse the `prompt:` YAML key of the Step A step in
+# .github/workflows/otherness-scheduled.yml (Step A is identified by
+# its prompt containing "vibe-vision-auto.md").
+# Fallback: search all .github/workflows/*.yml for "Context for this vision scan:".
+
 workflow_dir = '.github/workflows'
+pressure_block = ''
 pressure_keywords = []
 pressure_file = None
 
-if os.path.isdir(workflow_dir):
+def _extract_pressure_block(content):
+    """Extract the pressure block text from workflow content."""
+    m = re.search(
+        r'Context for this vision scan:(.*?)(?=For each gap you identify|OTHERNESS_PRESSURE_END|\Z)',
+        content, re.DOTALL)
+    return m.group(1).strip() if m else ''
+
+def _extract_keywords(block):
+    """Extract key phrases from a pressure block."""
+    keywords = re.findall(r'- (?:Is )?(\w[\w\s]{3,30})\??', block)
+    return [k.lower().strip() for k in keywords if len(k) > 5]
+
+# Primary: parse prompt: section of Step A in otherness-scheduled.yml
+SCHEDULED_WORKFLOW = os.path.join(workflow_dir, 'otherness-scheduled.yml')
+if os.path.isfile(SCHEDULED_WORKFLOW):
+    try:
+        content = open(SCHEDULED_WORKFLOW).read()
+        # Find the Step A prompt block: the step whose prompt: contains vibe-vision-auto.md
+        # Extract indented block after `prompt: |` that contains vibe-vision-auto.md
+        step_blocks = re.findall(r'(prompt:\s*\|[^\S\n]*\n(?:(?:[ \t]+[^\n]*\n?|\n)*))',
+                                 content)
+        for block_str in step_blocks:
+            if 'vibe-vision-auto.md' in block_str:
+                # Found Step A's prompt — extract the pressure block from it
+                extracted = _extract_pressure_block(block_str)
+                if extracted:
+                    pressure_block = extracted
+                    pressure_keywords = _extract_keywords(pressure_block)
+                    pressure_file = 'otherness-scheduled.yml (Step A prompt)'
+                    break
+    except Exception as e:
+        print(f'[SCAN 5] Warning: could not parse {SCHEDULED_WORKFLOW}: {e}', file=sys.stderr)
+
+# Fallback: search all workflow files for Context for this vision scan:
+if not pressure_block and os.path.isdir(workflow_dir):
+    print('[SCAN 5] Falling back to workflow scan (Step A prompt not found in otherness-scheduled.yml)')
     for fname in sorted(os.listdir(workflow_dir)):
         if not fname.endswith(('.yml', '.yaml')): continue
         fpath = os.path.join(workflow_dir, fname)
         try:
             content = open(fpath).read()
-            # Look for the vision pressure block
             if 'Context for this vision scan:' in content or 'OTHERNESS_PRESSURE_START' in content:
-                pressure_file = fname
-                # Extract pressure keywords: lines starting with "- Is" or bullet points
-                m = re.search(
-                    r'Context for this vision scan:(.*?)(?=For each gap you identify|OTHERNESS_PRESSURE_END|$)',
-                    content, re.DOTALL)
-                if m:
-                    block = m.group(1)
-                    # Extract key phrases from the pressure block
-                    keywords = re.findall(r'- (?:Is )?(\w[\w\s]{3,30})\??', block)
-                    pressure_keywords = [k.lower().strip() for k in keywords if len(k) > 5]
-                break
+                extracted = _extract_pressure_block(content)
+                if extracted:
+                    pressure_block = extracted
+                    pressure_keywords = _extract_keywords(pressure_block)
+                    pressure_file = fname
+                    break
         except Exception:
             continue
 
