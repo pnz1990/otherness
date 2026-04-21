@@ -895,8 +895,8 @@
       "done_at": "2026-04-20T23:41:48Z"
     },
     "issue-621": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `agents/otherness.learn.md`: diversity-first learn target selection",
       "labels": [
         "priority/medium",
@@ -905,7 +905,17 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "assigned_to": "sess-92d42ac3",
+      "assigned_at": "2026-04-21T10:59:42Z",
+      "branch": "feat/issue-621",
+      "worktree": "../otherness.issue-621",
+      "file_spaces": [
+        "agents/"
+      ],
+      "pr_number": 695,
+      "pr_merged": true,
+      "done_at": "2026-04-21T11:03:02Z"
     },
     "issue-620": {
       "state": "done",
@@ -1156,9 +1166,9 @@
       "cycle": 1
     },
     "sess-92d42ac3": {
-      "last_seen": "2026-04-21T10:42:22Z",
-      "item": "issue-640",
-      "cycle": 1
+      "last_seen": "2026-04-21T10:59:42Z",
+      "item": "issue-621",
+      "cycle": 3
     }
   },
   "pm_cycle_count": 3,
