@@ -902,7 +902,39 @@ echo "[ONBOARD §7b] Structural validation complete. ${ONBOARD_FIXES} fix(es) ap
 
 ---
 
+## STEP 7c — Run end-to-end smoke test (design doc 32 §Future → ✅)
+
+Run `scripts/check-onboarding.sh` as the final gate. This validates structural
+completeness AND all first-run prerequisites (report_issue is a real integer,
+labels exist, autonomous_mode is set).
+
+```bash
+echo "[ONBOARD §7c] Running end-to-end smoke test via scripts/check-onboarding.sh..."
+if bash scripts/check-onboarding.sh "$REPO_ROOT" 2>/dev/null; then
+  echo "[ONBOARD §7c] Smoke test PASSED — all checks green."
+else
+  SMOKE_EXIT=$?
+  echo "[ONBOARD §7c] Smoke test FAILED (exit $SMOKE_EXIT) — fixing remaining gaps..."
+  # [AI-STEP] Read the errors printed by check-onboarding.sh.
+  # For each ERROR line:
+  #   - Missing label: re-run STEP 6b label creation (gh label create ...)
+  #   - report_issue TBD: ensure STEP 6c ran and wrote the issue number back
+  #   - autonomous_mode missing: add to otherness-config.yaml maqa section
+  #   - AGENTS.md REPORT_ISSUE missing: add the field from REPORT_NUM
+  # After fixing: re-run bash scripts/check-onboarding.sh to confirm 0 errors.
+  # If errors persist after one fix attempt: post a WARN in the PR body listing them.
+fi
+```
+
+---
+
 ## STEP 8 — Verify and report
+
+Run the full check one final time. Onboarding is complete when ALL pass:
+
+```bash
+bash scripts/check-onboarding.sh
+```
 
 This onboarding is complete when ALL of the following are true:
 
@@ -915,7 +947,13 @@ This onboarding is complete when ALL of the following are true:
 - [ ] `otherness-config.yaml` exists with correct `repo`, `report_issue` (a real issue number), `autonomous_mode`, and `monitor` values
 - [ ] GitHub labels (`kind/*`, `area/*`, `priority/*`, `size/*`, `otherness`, `needs-human`) exist in the repo
 - [ ] A PR is open for human review with all of the above files
+- [ ] `bash scripts/check-onboarding.sh` exits 0 (all 5 checks pass)
 
 If any item is unchecked: fix it before exiting.
+
+**After merge**: The human runs `/otherness.run`. The true end-to-end test is: the first
+batch ships ≥1 design-doc-backed PR with zero `[NEEDS HUMAN]` posts. If the first batch
+requires human intervention, review the ERROR/WARN lines from `check-onboarding.sh` and
+address them in a follow-up PR to `agents/onboard.md`.
 
 **Exit.** Your job is done. The human reviews and merges the PR, then runs `/otherness.run`.
