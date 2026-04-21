@@ -8,10 +8,12 @@
       "title": "feat: onboarding-existing-project.md first-run smoke test section"
     },
     "issue-720": {
-      "state": "in_review",
+      "state": "done",
       "pr_number": 743,
       "title": "feat: SM \u00a74b must distinguish metrics-only PRs from real work PRs",
-      "branch": "feat/issue-720"
+      "branch": "feat/issue-720",
+      "pr_merged": true,
+      "done_at": "2026-04-21T17:32:55Z"
     },
     "issue-721": {
       "state": "in_review",
