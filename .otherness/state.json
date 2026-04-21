@@ -720,7 +720,7 @@
       "priority": "medium"
     },
     "issue-635": {
-      "state": "todo",
+      "state": "assigned",
       "status": "todo",
       "title": "feat: Simulation predictions must visibly change agent behavior: today the simulation runs, prod",
       "labels": [
@@ -730,7 +730,15 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "assigned_to": "sess-6a945f23",
+      "assigned_at": "2026-04-21T07:49:58Z",
+      "branch": "feat/issue-635",
+      "worktree": "../otherness.issue-635",
+      "file_spaces": [
+        "scripts/",
+        "agents/"
+      ]
     },
     "issue-634": {
       "state": "todo",
@@ -1127,6 +1135,11 @@
     "sess-8bb57abd": {
       "last_seen": "2026-04-20T21:25:34Z",
       "item": "issue-643",
+      "cycle": 1
+    },
+    "sess-6a945f23": {
+      "last_seen": "2026-04-21T07:49:58Z",
+      "item": "issue-635",
       "cycle": 1
     }
   },
