@@ -944,6 +944,89 @@ Or check if the scheduled workflow is enabled and has valid credentials." 2>/dev
       else
         JOURNEY2_HEALTH="OK"
         echo "[PM §5j] Journey 2 OK: $REF_PROJECT last active ${AGE_H}h ago."
+
+        # Step 4: Feature velocity gate — check for feat PRs merged in last 7 days.
+        # A loop that is alive but only shipping chores is not delivering value.
+        # Fail-open: if the API call fails, skip the gate and keep JOURNEY2_HEALTH="OK".
+        FEAT_PR_COUNT=$(python3 - <<'VELEOF'
+import subprocess, json, datetime, os, sys
+
+REF_PROJECT = os.environ.get('REF_PROJECT', '')
+if not REF_PROJECT:
+    print('0'); sys.exit(0)
+
+try:
+    result = subprocess.run(
+        ['gh', 'pr', 'list', '--repo', REF_PROJECT,
+         '--state', 'merged', '--limit', '30',
+         '--json', 'title,labels,headRefName,mergedAt'],
+        capture_output=True, text=True, timeout=20)
+    if result.returncode != 0:
+        # API failure — fail-open
+        print('-1'); sys.exit(0)
+    prs = json.loads(result.stdout)
+except Exception:
+    print('-1'); sys.exit(0)
+
+cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=7)
+count = 0
+for pr in prs:
+    merged_at = pr.get('mergedAt', '')
+    if not merged_at:
+        continue
+    try:
+        merged_dt = datetime.datetime.fromisoformat(merged_at.replace('Z', '+00:00'))
+        if merged_dt < cutoff:
+            continue
+    except Exception:
+        continue
+    # Count if any label is kind/enhancement, OR branch/title starts with feat/
+    labels = [l.get('name', '') for l in pr.get('labels', [])]
+    branch = pr.get('headRefName', '')
+    title = pr.get('title', '')
+    if ('kind/enhancement' in labels or
+            branch.startswith('feat/') or
+            title.lower().startswith('feat(')):
+        count += 1
+
+print(count)
+VELEOF
+)
+
+        if [ "$FEAT_PR_COUNT" = "-1" ]; then
+          echo "[PM §5j] Journey 2 velocity gate: API unavailable — skipping (fail-open)."
+        elif [ "${FEAT_PR_COUNT:-0}" -eq 0 ]; then
+          JOURNEY2_HEALTH="AMBER"
+          echo "[PM §5j] Journey 2 AMBER: reference project has no feat PRs in last 7 days."
+          # Open a soft-signal issue (not [NEEDS HUMAN]) — once, deduplicated
+          _VEL_TITLE="[VELOCITY] Reference project has no feat PRs in 7 days: $REF_PROJECT"
+          _VEL_EXISTING=$(gh issue list --repo "$REPO" --state open \
+            --search "VELOCITY] Reference project has no feat PRs" \
+            --json number --jq 'length' 2>/dev/null || echo "1")
+          if [ "${_VEL_EXISTING:-1}" -eq 0 ]; then
+            gh issue create --repo "$REPO" \
+              --title "$_VEL_TITLE" \
+              --label "kind/chore,area/agent-loop,otherness" \
+              --body "## Journey 2 velocity gate triggered by PM §5j
+
+The reference project \`$REF_PROJECT\`'s \`_state\` branch is fresh (active in the last 72h),
+but **no \`kind/enhancement\` or \`feat/*\` PRs** have been merged in the last 7 days.
+
+The loop is alive but not delivering features on the managed project.
+
+**Possible causes**:
+- The queue on \`$REF_PROJECT\` is chore-only (check §1c-guard).
+- The agent is stuck in SM/PM housekeeping loops.
+- The design docs on \`$REF_PROJECT\` have no 🔲 Future items left.
+
+**Action**: Review the queue on \`$REF_PROJECT\` and add feature items if empty." 2>/dev/null
+            echo "[PM §5j] Velocity issue opened: no feat PRs in 7 days on $REF_PROJECT."
+          else
+            echo "[PM §5j] Velocity issue already open — not duplicating."
+          fi
+        else
+          echo "[PM §5j] Journey 2 velocity OK: ${FEAT_PR_COUNT} feat PRs in last 7d on $REF_PROJECT."
+        fi
       fi
     fi
   fi
