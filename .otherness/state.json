@@ -592,8 +592,8 @@
       "priority": "medium"
     },
     "issue-644": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: Meaningful-work rate tracked as a first-class metric: `docs/aide/metrics.md` must add a `m",
       "labels": [
         "priority/medium",
@@ -602,7 +602,17 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "assigned_to": "sess-92d42ac3",
+      "assigned_at": "2026-04-21T11:05:20Z",
+      "branch": "feat/issue-644",
+      "worktree": "../otherness.issue-644",
+      "file_spaces": [
+        "agents/"
+      ],
+      "pr_number": 696,
+      "pr_merged": true,
+      "done_at": "2026-04-21T11:09:26Z"
     },
     "issue-643": {
       "state": "done",
@@ -1166,9 +1176,9 @@
       "cycle": 1
     },
     "sess-92d42ac3": {
-      "last_seen": "2026-04-21T10:59:42Z",
-      "item": "issue-621",
-      "cycle": 3
+      "last_seen": "2026-04-21T11:05:20Z",
+      "item": "issue-644",
+      "cycle": 4
     }
   },
   "pm_cycle_count": 3,
