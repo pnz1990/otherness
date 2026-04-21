@@ -556,7 +556,7 @@ The following are accepted design tradeoffs, not failures:
 
 - 🔲 🚫 M5b: Restrict Bedrock Resource to specific ARNs — DEFERRED. opencode uses cross-region inference profile ARNs (arn:aws:bedrock:<region>:<acct>:inference-profile/*) that vary by model version. Resource:* with Budget alert is the current mitigation. Revisit when ARN patterns stabilize.
 - ✅ M3 App adoption: SM §4a checks each managed project's `otherness-scheduled.yml` for `OTHERNESS_USE_APP_TOKEN` once per 5 SM cycles. Projects in PAT mode trigger a `[SECURITY-AMBER]` comment on REPORT_ISSUE (deduplicated, 7-day window). Fail-open. (PR #738, 2026-04-21)
-- 🔲 M7 full close: when GitHub App (M3) is active, add a state write integrity check — validate that `state.json` pushes to `_state` originate from the App identity. Any push from a non-App identity triggers [NEEDS HUMAN].
+- ✅ M7 full close: SM §4a-M7 reads last 10 `_state` commits when App mode active (`OTHERNESS_USE_APP_TOKEN=true`); anomalous authors (non-bot) trigger deduplicated `[NEEDS HUMAN]` issue. Fail-open. Once per 5 SM cycles. (PR #773, 2026-04-21)
 
 ---
 
