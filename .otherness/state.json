@@ -514,9 +514,9 @@
       ]
     },
     "issue-650": {
-      "state": "todo",
-      "status": "todo",
-      "title": "feat: Learn session completion must be verified, not just queued: the current flow is \"SM detect",
+      "state": "done",
+      "status": "done",
+      "title": "feat(sm): \u00a74c learn-cadence: verify completion, escalate stale learn issues",
       "labels": [
         "priority/medium",
         "area/agent-loop",
@@ -524,12 +524,15 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_number": 707,
+      "pr_merged": true,
+      "done_at": "2026-04-21T12:44:06Z"
     },
     "issue-649": {
-      "state": "todo",
-      "status": "todo",
-      "title": "feat: Architectural monoculture breakout mechanism: the simulation identified that all agents sh",
+      "state": "done",
+      "status": "done",
+      "title": "feat(sm+learn): paradigm diversity tracking for monoculture breakout",
       "labels": [
         "priority/medium",
         "area/agent-loop",
@@ -537,11 +540,14 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_number": 708,
+      "pr_merged": true,
+      "done_at": "2026-04-21T12:48:21Z"
     },
     "issue-648": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: Cross-project pressure propagation: when otherness identifies a pattern (e.g. \"test covera",
       "labels": [
         "priority/medium",
@@ -550,7 +556,11 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 667,
+      "done_at": "2026-04-21T12:40:49Z",
+      "notes": "already-implemented-pr-667"
     },
     "issue-647": {
       "state": "done",
@@ -1169,9 +1179,9 @@
       "note": "report-issue-not-a-work-item"
     },
     "issue-600": {
-      "state": "todo",
-      "status": "todo",
-      "title": "feat: `/otherness.setup` and `/otherness.onboard`: deploy workflow during project setu",
+      "state": "done",
+      "status": "done",
+      "title": "feat(setup+onboard): auto-deploy otherness scheduled workflow during setup",
       "labels": [
         "area/agent-loop",
         "otherness",
@@ -1179,7 +1189,10 @@
         "priority/low",
         "kind/enhancement"
       ],
-      "priority": "low"
+      "priority": "low",
+      "pr_number": 709,
+      "pr_merged": true,
+      "done_at": "2026-04-21T12:53:19Z"
     }
   },
   "sm_cycle_count": 11,
@@ -1221,9 +1234,9 @@
       "cycle": 6
     },
     "sess-0fd84dc1": {
-      "last_seen": "2026-04-21T12:31:56Z",
-      "item": "issue-647",
-      "cycle": 1
+      "last_seen": "2026-04-21T12:40:06Z",
+      "item": "coord",
+      "cycle": 2
     }
   },
   "pm_cycle_count": 3,
