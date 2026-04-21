@@ -2964,90 +2964,40 @@ ACTION="Active"
 [ "${TODO_COUNT:-0}" -eq 0 ] && ACTION="Queue empty — running vision+learn"
 
 # §4f: Condensed report format (design doc 35 §Future → ✅)
-# Headline: Batch N | Health: X | Progress: X | Vision PRs: N | Chores: N | Queue: N remaining | Journeys: N✅ N❌ | Next: [title]
+# Headline: Batch N | progress: X | health: X | Vision PRs: N | Chores: N | Queue: N remaining | Journeys: N✅ N❌ | Next: [title]
 # Verbose details go into a <details> block. Human can scan 10 comments in 30 seconds.
 
-# Progress classification — design doc 23 §Future → ✅
-# Two-axis: ADVANCING / STALLING / STALLED based on meaningful_prs column from metrics.md.
-# ADVANCING: this batch has meaningful_prs > 0 (or vision_prs > 0 — either counts).
-# STALLING: this batch + last batch both have meaningful_prs == 0.
-# STALLED: this batch + last 2 batches all have meaningful_prs == 0.
-# Fallback: if metrics.md absent or <2 rows, default to ADVANCING (fail-open).
-# When STALLING or STALLED + HEALTH=GREEN: upgrade HEALTH to AMBER.
-PROGRESS_CLASS=$(python3 - <<'PROGRESS_EOF'
-import re, os
-
-try:
-    content = open('docs/aide/metrics.md').read()
-    rows = []
-    for line in content.splitlines():
-        m = re.match(r'^\|\s*\d{4}-\d{2}-\d{2}\s*\|(.+)', line)
-        if m:
-            cells = [c.strip() for c in line.split('|')[1:-1]]
-            if len(cells) >= 7:
-                try:
-                    mp = cells[13].strip() if len(cells) > 13 else '0'
-                    meaningful = int(mp) if mp.isdigit() else 0
-                    rows.append({'meaningful_prs': meaningful})
-                except Exception:
-                    rows.append({'meaningful_prs': 0})
-except Exception:
-    rows = []
-
-VISION_PRS = int(os.environ.get('VISION_PRS', '0') or '0')
-MERGED = int(os.environ.get('MERGED', '0') or '0')
-
-# Current batch: use VISION_PRS (already computed) or MEANINGFUL_PRS env var
-MEANINGFUL_PRS = int(os.environ.get('MEANINGFUL_PRS', '0') or '0')
-current_meaningful = max(VISION_PRS, MEANINGFUL_PRS)
-
-if current_meaningful > 0:
+# Two-axis progress classification — design doc 35 §Future → ✅
+# progress: ADVANCING | STABLE | STALLED (session-based, not history-based)
+# ADVANCING: ≥1 vision-aligned PR merged this session (product moved)
+# STABLE:    0 vision PRs but ≥1 PR merged this session (chores only, nothing broke)
+# STALLED:   0 merged PRs AND 0 open PRs (silent session — agent ran but nothing shipped)
+# Exported as SESSION_PROGRESS for downstream use (O7).
+# When STABLE or STALLED + HEALTH=GREEN: upgrade HEALTH to AMBER (O2).
+OPEN_PRS_4F=$(gh pr list --repo $REPO --state open --json number --jq 'length' 2>/dev/null || echo "0")
+PROGRESS_CLASS=$(python3 -c "
+import os
+vision_prs = int(os.environ.get('VISION_PRS', '0') or '0')
+merged = int(os.environ.get('MERGED', '0') or '0')
+open_prs = int(os.environ.get('OPEN_PRS_4F', '0') or '0')
+if vision_prs > 0:
     print('ADVANCING')
-elif len(rows) >= 2 and rows[-1]['meaningful_prs'] == 0 and rows[-2]['meaningful_prs'] == 0:
-    print('STALLED')
-elif len(rows) >= 1 and rows[-1]['meaningful_prs'] == 0:
-    print('STALLING')
-elif MERGED == 0:
+elif merged > 0:
+    print('STABLE')
+elif merged == 0 and open_prs == 0:
     print('STALLED')
 else:
-    print('ADVANCING')
-PROGRESS_EOF
-)
-PROGRESS_CLASS="${PROGRESS_CLASS:-ADVANCING}"
-STALLING_STREAK=$(python3 - <<'STREAK_EOF'
-import re
+    print('STABLE')
+" 2>/dev/null || echo "ADVANCING")
+export SESSION_PROGRESS="${PROGRESS_CLASS}"
+echo "[SM §4f] progress=${PROGRESS_CLASS} (vision_prs=${VISION_PRS:-0} merged=${MERGED:-0} open=${OPEN_PRS_4F})"
 
-try:
-    content = open('docs/aide/metrics.md').read()
-    rows = []
-    for line in content.splitlines():
-        m = re.match(r'^\|\s*\d{4}-\d{2}-\d{2}\s*\|(.+)', line)
-        if m:
-            cells = [c.strip() for c in line.split('|')[1:-1]]
-            if len(cells) >= 7:
-                try:
-                    mp = cells[13].strip() if len(cells) > 13 else '0'
-                    rows.append(int(mp) if mp.isdigit() else 0)
-                except Exception:
-                    rows.append(0)
-    # Count trailing consecutive zeros
-    streak = 0
-    for val in reversed(rows):
-        if val == 0: streak += 1
-        else: break
-    print(streak)
-except Exception:
-    print(0)
-STREAK_EOF
-)
-echo "[SM §4f] Progress: ${PROGRESS_CLASS} | Stalling streak: ${STALLING_STREAK} batch(es)"
-
-# O2: STALLING or STALLED + GREEN → upgrade to AMBER
-# A stalling system must never show GREEN to the human.
-if [ "${PROGRESS_CLASS}" = "STALLING" ] || [ "${PROGRESS_CLASS}" = "STALLED" ]; then
+# O2: STABLE or STALLED + GREEN → upgrade to AMBER
+# A non-advancing system must never show GREEN to the human.
+if [ "${PROGRESS_CLASS}" = "STABLE" ] || [ "${PROGRESS_CLASS}" = "STALLED" ]; then
   if [ "${HEALTH:-GREEN}" = "GREEN" ]; then
     HEALTH="AMBER"
-    echo "[SM §4f] Health upgraded GREEN→AMBER: progress=${PROGRESS_CLASS} (stalling streak=${STALLING_STREAK})"
+    echo "[SM §4f] Health upgraded GREEN→AMBER: progress=${PROGRESS_CLASS}"
   fi
 fi
 
@@ -3100,7 +3050,7 @@ except: print('?')
 " 2>/dev/null || echo "?")
 
 REPORT_BODY=$(cat <<BODY_EOF
-Batch ${SM_CYCLE:-?} | Health: ${HEALTH} | Progress: ${PROGRESS_CLASS} | Vision PRs: ${VISION_PRS:-0} | Chores: ${CHORES_COUNT} | Queue: ${TODO_COUNT:-0} remaining | Journeys: ${JOURNEY_OK}✅ ${JOURNEY_FAIL}❌ | Next: [${NEXT_ITEM}]
+Batch ${SM_CYCLE:-?} | progress: ${PROGRESS_CLASS} | health: ${HEALTH} | Vision PRs: ${VISION_PRS:-0} | Chores: ${CHORES_COUNT} | Queue: ${TODO_COUNT:-0} remaining | Journeys: ${JOURNEY_OK}✅ ${JOURNEY_FAIL}❌ | Next: [${NEXT_ITEM}]
 
 <details><summary>Details</summary>
 
