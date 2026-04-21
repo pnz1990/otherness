@@ -120,6 +120,93 @@ fi
 
 ---
 
+## 4a-changelog. CHANGELOG.md auto-update (design doc 03 §Future → ✅)
+
+After each batch, append entries for newly merged PRs to CHANGELOG.md.
+Uses Keep a Changelog format. Idempotent: skips PRs already in the file.
+
+```bash
+python3 - <<'CHANGELOG_EOF'
+import subprocess, json, os, re, datetime
+
+REPO = os.environ.get('REPO', '')
+
+changelog_path = 'CHANGELOG.md'
+HEADER = "# Changelog\n\nAll notable changes are documented here. Maintained automatically by SM §4a.\n\n"
+UNRELEASED_HEADER = "## [Unreleased]\n"
+
+# Read current CHANGELOG.md
+try:
+    content = open(changelog_path).read()
+except FileNotFoundError:
+    content = HEADER + UNRELEASED_HEADER + "\n"
+
+# Find existing PR numbers already in CHANGELOG
+existing_prs = set(int(m) for m in re.findall(r'\(#(\d+)\)', content))
+
+# Fetch recently merged PRs (last 24h, non-chore)
+EXCLUDE_PAT = re.compile(
+    r'^chore\(sm\)|^chore\(metrics\)|batch\s+\d+|session complete|PRs merged', re.IGNORECASE)
+try:
+    from datetime import datetime as _dt, timezone, timedelta
+    since = (_dt.now(timezone.utc) - timedelta(hours=24)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    r = subprocess.run(
+        ['gh', 'pr', 'list', '--repo', REPO, '--state', 'merged', '--limit', '30',
+         '--json', 'number,title,mergedAt'],
+        capture_output=True, text=True, timeout=20)
+    prs = json.loads(r.stdout.strip() or '[]') if r.returncode == 0 else []
+    recent = [pr for pr in prs
+              if pr.get('mergedAt', '') >= since
+              and not EXCLUDE_PAT.match(pr.get('title', ''))
+              and pr['number'] not in existing_prs]
+except Exception as e:
+    print(f'[SM §4a-changelog] PR fetch error (non-fatal): {e}')
+    recent = []
+
+if not recent:
+    print('[SM §4a-changelog] No new PRs to add to CHANGELOG.')
+else:
+    # Build new entries
+    new_entries = ''.join(f"- {pr['title']} (#{pr['number']})\n" for pr in recent)
+    # Insert after [Unreleased] header
+    if UNRELEASED_HEADER in content:
+        content = content.replace(
+            UNRELEASED_HEADER,
+            UNRELEASED_HEADER + '\n' + new_entries,
+            1)
+    else:
+        content = content + '\n' + UNRELEASED_HEADER + '\n' + new_entries
+    with open(changelog_path, 'w') as f:
+        f.write(content)
+    print(f'[SM §4a-changelog] Added {len(recent)} entries to CHANGELOG.md.')
+    # Commit directly to main (SM doc-commit path)
+    subprocess.run(['git', 'add', changelog_path], capture_output=True)
+    r2 = subprocess.run(
+        ['git', 'commit', '-m',
+         f'chore(changelog): auto-update — {len(recent)} new entries (SM §4a)'],
+        capture_output=True, text=True)
+    if r2.returncode == 0:
+        subprocess.run(['git', 'push', 'origin', 'main'], capture_output=True)
+        print('[SM §4a-changelog] CHANGELOG.md committed and pushed.')
+    else:
+        print(f'[SM §4a-changelog] Commit failed (non-fatal): {r2.stderr.strip()[:100]}')
+CHANGELOG_EOF
+
+# Version pinning check — is agent_version set?
+AGENT_VERSION=$(python3 -c "
+import re
+for line in open('otherness-config.yaml'):
+    m = re.match(r'^\s+agent_version:\s*(\S+)', line)
+    if m: print(m.group(1)); break
+" 2>/dev/null || echo "")
+if [ -z "$AGENT_VERSION" ]; then
+  CURRENT_TAG=$(git -C ~/.otherness describe --tags --abbrev=0 2>/dev/null || echo "unpinned")
+  echo "[SM] agent_version not pinned — currently on $CURRENT_TAG"
+fi
+```
+
+---
+
 ## 4b. Metrics update
 
 ```bash
