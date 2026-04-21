@@ -219,6 +219,120 @@ fi
 
 ---
 
+## 1b-sim. Simulation recovery action — adjust session behavior
+
+Read `recovery_action` from `_state:.otherness/sim-prediction.json` (written by SM §4e).
+Log the action and set `SIM_RECOVERY_ACTION` for downstream claim logic.
+Graceful fallback: if the file is absent or unreadable, proceed normally.
+
+**Design ref**: `docs/design/23-simulation-as-anchor.md §Step 4`.
+
+```bash
+SIM_RECOVERY_ACTION=$(python3 - <<'SIMEOF'
+import subprocess, json, os
+
+try:
+    r = subprocess.run(
+        ['git','show','origin/_state:.otherness/sim-prediction.json'],
+        capture_output=True, text=True, timeout=10)
+    if r.returncode != 0:
+        print('none'); exit(0)
+    pred = json.loads(r.stdout.strip())
+    action = pred.get('recovery_action', 'none')
+    consecutive = pred.get('recovery_action_consecutive', 0)
+    print(action)
+    import sys
+    print(f"[COORD §1b-sim] recovery_action={action} (consecutive_below_floor={consecutive})", file=sys.stderr)
+except Exception as e:
+    import sys
+    print(f"[COORD §1b-sim] sim-prediction.json unreadable (non-fatal): {e}", file=sys.stderr)
+    print('none')
+SIMEOF
+)
+export SIM_RECOVERY_ACTION
+
+case "$SIM_RECOVERY_ACTION" in
+  trigger_learn)
+    echo "[COORD §1b-sim] recovery_action=trigger_learn — queue priority will favor skill-growth items this session."
+    ;;
+  prioritize_ci_fix)
+    echo "[COORD §1b-sim] recovery_action=prioritize_ci_fix — will prefer kind/bug and CI-fix items when claiming."
+    ;;
+  escalate_oldest_needs_human)
+    echo "[COORD §1b-sim] recovery_action=escalate_oldest_needs_human — posting reminder on oldest needs-human issue."
+    OLDEST_NH=$(gh issue list --repo $REPO --state open --label needs-human \
+      --json number,createdAt \
+      --jq 'sort_by(.createdAt) | .[0].number' 2>/dev/null || echo "")
+    if [ -n "$OLDEST_NH" ]; then
+      gh issue comment "$OLDEST_NH" --repo $REPO \
+        --body "[COORD §1b-sim] Simulation recovery: this needs-human issue is blocking throughput. Please resolve or close. (recovery_action=escalate_oldest_needs_human)" 2>/dev/null || true
+      echo "[COORD §1b-sim] Posted reminder on needs-human issue #$OLDEST_NH."
+    fi
+    ;;
+  trigger_vision_synthesis)
+    echo "[COORD §1b-sim] recovery_action=trigger_vision_synthesis — queue is low; vibe-vision-auto will run in §1e if queue stays empty."
+    ;;
+  none|"")
+    echo "[COORD §1b-sim] recovery_action=none — simulation signals nominal."
+    ;;
+  *)
+    echo "[COORD §1b-sim] Unknown recovery_action='$SIM_RECOVERY_ACTION' — ignoring (non-fatal)."
+    SIM_RECOVERY_ACTION=none
+    ;;
+esac
+```
+
+---
+
+## 1b-vision. Vision pressure set — build at session start (design doc 36 §36.1)
+
+Before claiming any item, read `docs/design/*.md` and build an in-memory vision pressure set.
+This set contains the first 40 chars (lowercased) of each `🔲 Future` item.
+The §1e claim logic uses this set to boost vision-backed items.
+
+```bash
+VISION_PRESSURE_SET=$(python3 - <<'VPEOF'
+import re, os, sys
+
+design_dir = 'docs/design'
+items = []
+doc_count = 0
+
+if os.path.isdir(design_dir):
+    for fname in sorted(os.listdir(design_dir)):
+        if not fname.endswith('.md'): continue
+        try:
+            content = open(f'{design_dir}/{fname}').read()
+            # Find ## Future section
+            m = re.search(r'^## Future.*?\n(.*?)(?=^## |\Z)', content,
+                          re.MULTILINE | re.DOTALL)
+            if m:
+                found = re.findall(r'^- 🔲 (?!.*🚫)(.+)', m.group(1), re.MULTILINE)
+                if found:
+                    doc_count += 1
+                    for item in found:
+                        # Strip trailing comments (— ...)
+                        clean = re.sub(r'\s*—.*$', '', item).strip()
+                        # Take first 40 chars lowercased as the key
+                        key = clean[:40].lower()
+                        if key:
+                            items.append(key)
+        except Exception:
+            pass
+
+print(f"[COORD §1b-vision] Vision pressure set: {len(items)} items from {doc_count} design docs.", file=sys.stderr)
+# Export as newline-separated string (empty if no items)
+print('\n'.join(items))
+VPEOF
+)
+export VISION_PRESSURE_SET
+# Log to stdout (stderr output from python block is not captured here)
+_VPS_COUNT=$(echo "$VISION_PRESSURE_SET" | grep -c . 2>/dev/null || echo "0")
+echo "[COORD §1b-vision] Vision pressure set built: ${_VPS_COUNT} items."
+```
+
+---
+
 ## 1c. Queue generation (with distributed lock)
 
 If queue is null or empty, acquire the queue-gen lock and generate.
@@ -674,6 +788,13 @@ if injected == 0:
 
 if injected > 0:
     print(f"[COORD §1c-guard] Enriched queue with {injected} enhancement item(s).")
+    # §1c-guard metric: increment chore_only_guard_count in state.json (design doc 35 §Future → ✅)
+    try:
+        with open('.otherness/state.json') as _f: _s = json.load(_f)
+        _s['chore_only_guard_count'] = _s.get('chore_only_guard_count', 0) + 1
+        with open('.otherness/state.json', 'w') as _f: json.dump(_s, _f, indent=2)
+    except Exception as _e:
+        print(f"[COORD §1c-guard] counter increment failed (non-fatal): {_e}")
     subprocess.run(['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO,
                     '--body', f"[COORD §1c-guard | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}] "
                               f"Chore-only queue detected ({chore_count} items). "
@@ -790,7 +911,12 @@ allowed_areas = [a.strip() for a in os.environ.get('ALLOWED_AREAS','').split(','
 # Hygiene items (kind/chore or title starts with 'hygiene:') get deprioritized by +10
 # so features always claim before hygiene items at the same priority level.
 # Design ref: docs/design/29-continuous-code-hygiene.md §Future O3
+# Simulation recovery: SIM_RECOVERY_ACTION from §1b-sim adjusts sort key:
+#   prioritize_ci_fix  → kind/bug items get -5 boost (claimed before enhancements)
+#   trigger_learn      → no sort change (existing learn paths handle this)
+# Design ref: docs/design/23-simulation-as-anchor.md §Step 4
 PRIORITY_MAP = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}
+SIM_RECOVERY = os.environ.get('SIM_RECOVERY_ACTION', 'none')
 
 def _item_sort_key(item_id, item_data):
     pri = PRIORITY_MAP.get(item_data.get('priority'), 4)
@@ -799,7 +925,11 @@ def _item_sort_key(item_id, item_data):
     is_hygiene = (title.startswith('hygiene:') or
                   'kind/chore' in labels or
                   any(l.startswith('kind/chore') for l in labels))
-    return (pri + (10 if is_hygiene else 0), item_id)
+    is_bug = 'kind/bug' in labels or any(l.startswith('kind/bug') for l in labels)
+    boost = 0
+    if SIM_RECOVERY == 'prioritize_ci_fix' and is_bug:
+        boost = -5  # promote bugs above enhancements when CI fix is recovery action
+    return (pri + boost + (10 if is_hygiene else 0), item_id)
 
 # Build sorted candidates list (O1: features before hygiene; O2: priority-ordered)
 _candidates = []

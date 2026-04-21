@@ -36,15 +36,15 @@ This design doc specifies the correct CI gate:
 ## Present (✅)
 
 - ✅ Design doc created (this file) (2026-04-20)
+- ✅ 38.1 — `qa.md §3a`: uses `gh pr checks $PR_NUM` (not `gh run list`) — authoritative aggregate check status for the PR. Waits until no pending checks remain. On failure: reads log, attempts fix, max 3 attempts, then `[NEEDS HUMAN]`.
+- ✅ 38.2 — `qa.md §3e _merge_pr`: CI gate fires before Steps 1, 2, and 3 — if any check is in `failure` state, merge is refused and returns 1. `--admin` and branch-protection-clear bypass review requirements only, never CI checks.
+- ✅ 38.4 — `qa.md §3a`: DCO failure detection — if check name contains `dco` or `sign.off`, amend commit with `Signed-off-by: otherness[bot]` automatically. Not treated as a blocking CI failure.
 
 ---
 
 ## Future (🔲)
 
-- 🔲 38.1 — `qa.md §3a`: replace `gh run list --branch` with `gh pr checks $PR_NUM` — checks all required status checks on the PR, not just the last workflow run on the branch. Wait up to 30 min. If any check fails: read the failure, fix it, re-push, re-poll. If unfixable after 3 attempts: post `[NEEDS HUMAN]` with the exact failure.
-- 🔲 38.2 — `qa.md §3e _merge_pr`: add CI gate before Steps 1, 2, and 3 — if `gh pr checks` shows any check in `failure` state: do not attempt the merge. Return to ENG. The `--admin` flag and branch protection clearing bypass *review requirements only* — never CI check requirements.
 - 🔲 38.3 — `qa.md §3a`: make the CI fix path executable — replace the `[AI-STEP]` comment with a real loop: read `gh run view --log-failed`, post the error as a PR comment, push a fix commit, re-enter the CI wait loop. Max 3 fix attempts before `[NEEDS HUMAN]`.
-- 🔲 38.4 — `qa.md §3a`: distinguish DCO from real failures — DCO sign-off failures on projects the agent controls (where `otherness[bot]` is the committer) are fixed automatically by amending the commit to add `Signed-off-by`. This is not a QA blocker; it is a mechanical fix.
 - 🔲 38.5 — `qa.md §3a`: distinguish flaky external checks — checks that fail with "infrastructure" errors (runner timeout, network error, external service unavailable) get one automatic retry before being treated as a real failure.
 - 🔲 38.6 — SM §4b: QA rejection pattern tracker — when QA rejects a PR (i.e. a `feat/*` branch is closed without merging after a QA review), SM §4b must record the rejection type in metrics.md (`qa_rejection_reason`: one of `ci_failure / spec_violation / scope_creep / test_missing / other`). If the same rejection type appears 3 consecutive times across different sessions: SM must open a `kind/chore priority/high` issue: "QA rejection pattern: `<type>` in last 3 sessions — ENG may need a targeted skill." A skill that addresses the repeated failure (e.g. `test-coverage-discipline.md` for `test_missing`) should be identified or created. Without tracking rejection types, ENG keeps making the same mistake and SM never connects the dots. ⚠️ Inferred from reliability lens: sessions fail silently; QA rejection reasons are not tracked across sessions; the same root cause can repeat indefinitely without triggering a corrective response.
 

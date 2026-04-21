@@ -302,6 +302,8 @@ try:
                         'prs_merged': int(cells[2]) if cells[2].isdigit() else 0,
                         'needs_human': int(cells[3]) if cells[3].isdigit() else 0,
                         'todo_shipped': int(cells[6]) if cells[6].isdigit() else 0,
+                        # meaningful_prs is column 13 (index 13); may be absent in older rows
+                        'meaningful_prs': cells[13].strip() if len(cells) > 13 else '',
                     }
                     rows.append(row)
                 except (ValueError, IndexError):
@@ -342,6 +344,47 @@ if stagnation:
         print('[PM] Stagnation detected but issue already open — skipping duplicate.')
 else:
     print(f'[PM] No stagnation. Last 2 batches: {[(r["batch"], r["todo_shipped"]) for r in last2]}')
+
+# Meaningful-work stagnation check (design doc 21 §Future → ✅)
+# Trigger AMBER when meaningful_prs == 0 for 2 consecutive batches.
+# meaningful_prs column is index 13 in the current schema (14th column, 0-indexed).
+try:
+    meaningful_stagnation = all(
+        int(r.get('meaningful_prs', -1)) == 0
+        for r in last2
+        if r.get('meaningful_prs', '') not in ('', '-', '?')
+    )
+    if meaningful_stagnation and all(r.get('meaningful_prs', '') not in ('', '-', '?') for r in last2):
+        MEANINGFUL_STALE_TITLE = '[STALE] No meaningful PRs in last 2 batches — pipeline may be chore-only'
+        existing_m = subprocess.run(
+            ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+             '--search', '[STALE] No meaningful PRs', '--json', 'number', '--jq', 'length'],
+            capture_output=True, text=True)
+        count_m = int(existing_m.stdout.strip() or '0')
+        if count_m == 0:
+            r_m = subprocess.run(
+                ['gh', 'issue', 'create', '--repo', REPO,
+                 '--title', MEANINGFUL_STALE_TITLE,
+                 '--label', 'kind/chore,otherness',
+                 '--body', 'PM stagnation check triggered (meaningful_prs).\n\n'
+                           'Last 2 batches both had `meaningful_prs = 0`:\n' +
+                           '\n'.join(f'- Batch {r["batch"]} ({r["date"]}): meaningful_prs={r.get("meaningful_prs","?")}' for r in last2) +
+                           '\n\nThe system is shipping PRs but none advance a design doc Future item '
+                           '(🔲 → ✅). This likely means the session is running on chores only.\n\n'
+                           'Check: are there unclaimed 🔲 Future items in docs/design/? '
+                           'Is the queue refusal guard working? Is VISION_PRESSURE_SET populated?'],
+                capture_output=True, text=True)
+            if r_m.returncode == 0:
+                print(f'[PM] Meaningful-work stagnation detected — opened issue: {r_m.stdout.strip()}')
+            else:
+                print(f'[PM] Meaningful-work stagnation but failed to open issue: {r_m.stderr.strip()}')
+        else:
+            print(f'[PM] Meaningful-work stagnation detected but issue already open — skipping.')
+    else:
+        m_values = [r.get('meaningful_prs', '?') for r in last2]
+        print(f'[PM] Meaningful-work check OK. Last 2 batches meaningful_prs: {m_values}')
+except Exception as e:
+    print(f'[PM] meaningful_prs stagnation check failed (non-fatal): {e}')
 
 # needs_human spike: post warning comment only (no issue — it may be legitimate)
 if needs_human_spike:

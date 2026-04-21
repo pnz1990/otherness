@@ -23,13 +23,12 @@ Two consecutive AMBER batches on this criterion trigger an automatic queue audit
 
 ## Present (✅)
 
-*(Nothing shipped yet.)*
+- ✅ 35.1 — SM §4f: `VISION_PR_COUNT` check — for each PR merged this session, title or body (first 500 chars) scanned for `docs/design/`, `🔲 →`, or `design doc` (case-insensitive). Excludes chore(sm)/metrics/batch/session-complete titles. If `VISION_PR_COUNT == 0`: health degrades to AMBER. `vision_aligned` boolean written to `state.json` each batch. (PR #TBD, 2026-04-21)
 
 ---
 
 ## Future (🔲)
 
-- 🔲 35.1 — SM §4f: add `VISION_PR_COUNT` check — for each PR merged this session, verify it references a design doc Future item in its title or body. Count = number that do. If `VISION_PR_COUNT == 0` after a full session: set `VISION_ALIGNED=false`, downgrade health signal to AMBER regardless of CI status.
 - 🔲 35.2 — SM §4f: post AMBER note when vision-misaligned — include in health comment: "⚠️ 0 vision-aligned PRs this session. Queue may have drifted from design docs. Run vibe-vision or check coord §1b."
 - 🔲 35.3 — SM §4a: two-consecutive-AMBER trigger — if `_state` shows `vision_aligned: false` for 2 consecutive batches, automatically open a `kind/chore priority/high` issue: "Queue audit needed — 2 batches with no design-doc-backed PRs."
 - 🔲 35.4 — COORD §1b: vision-alignment filter — when claiming queue items, prefer items where the issue title or body references a design doc. Items with no design doc reference are labelled `size/xs priority/low` automatically and deprioritised below any item that does reference a design doc.

@@ -158,167 +158,95 @@ except:
 export VISION_PRS SESSION_OUTCOME
 echo "[SM §4b] Session outcome: ${SESSION_OUTCOME} (vision_prs=${VISION_PRS}, prs_merged=${MERGED})"
 
-# §4b: Session defect diagnosis (design doc 21 §Future → ✅)
-# When VISION_PRS == 0: session shipped no design-doc-backed work. Diagnose and open kind/bug issue.
-# O3: skip if a [DEFECT] issue for this session is already open.
-if [ "${VISION_PRS:-0}" -eq 0 ]; then
-  python3 - <<'DEFECT_EOF'
-import subprocess, json, re, os
+# §4b: Read queue guard fire count from state.json, then reset it (design doc 35 §Future → ✅)
+QUEUE_GUARD_FIRES=$(python3 -c "
+import json
+try:
+    s = json.load(open('.otherness/state.json'))
+    print(s.get('chore_only_guard_count', 0))
+except: print(0)
+" 2>/dev/null || echo "0")
+export QUEUE_GUARD_FIRES
+echo "[SM §4b] queue_guard_fires this session: ${QUEUE_GUARD_FIRES}"
+
+# §4b: MEANINGFUL_PRS — design-doc-backed PRs (design doc 21 §Future → ✅)
+# Count merged PRs (last 24h, non-excluded) where title or body references a design doc.
+# Uses same VISION_PAT as §4f VISION_PR_COUNT. Both metrics coexist.
+MEANINGFUL_PRS=$(python3 - <<'MPEOF'
+import subprocess, json, re, os, sys
 
 REPO = os.environ.get('REPO', '')
-MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
-OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
-REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
-MERGED = os.environ.get('MERGED', '0')
-SESSION_OUTCOME = os.environ.get('SESSION_OUTCOME', 'unknown')
-SM_CYCLE = os.environ.get('SM_CYCLE', '?')
-
-# O3: dedup — skip if [DEFECT] issue already open
-try:
-    existing = subprocess.run(
-        ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
-         '--search', '[DEFECT]', '--json', 'number', '--jq', 'length'],
-        capture_output=True, text=True, timeout=15)
-    if int(existing.stdout.strip() or '0') > 0:
-        print('[SM §4b] Defect issue already open — skipping duplicate.')
-        exit(0)
-except Exception as e:
-    print(f'[SM §4b] Defect check error (non-fatal): {e}')
-
-# Root cause diagnosis (O2)
-root_cause = 'unknown'
-next_action = 'Run /otherness.vibe-vision to synthesize new items and diagnose the loop.'
-
-# Check 1: ci-red
-try:
-    ci_r = subprocess.run(
-        ['gh', 'run', 'list', '--repo', REPO, '--branch', 'main', '--limit', '1',
-         '--json', 'conclusion', '--jq', '.[0].conclusion'],
-        capture_output=True, text=True, timeout=10)
-    if ci_r.stdout.strip().strip('"') == 'failure':
-        root_cause = 'ci-red'
-        next_action = 'Fix CI on main branch. Check the failing workflow run logs.'
-except Exception:
-    pass
-
-# Check 2: vision-pressure-too-low (queue exists but all chores)
-if root_cause == 'unknown':
-    try:
-        with open('.otherness/state.json') as f: s = json.load(f)
-        todo_items = [(k, v) for k, v in s.get('features', {}).items()
-                      if v.get('state') == 'todo']
-        if todo_items:
-            all_chore = all(
-                'kind/enhancement' not in v.get('labels', []) and
-                'kind/bug' not in v.get('labels', [])
-                for _, v in todo_items
-            )
-            if all_chore:
-                root_cause = 'vision-pressure-too-low'
-                next_action = ('All queue items are kind/chore or kind/docs. '
-                               'Run /otherness.vibe-vision to inject enhancement items from design docs.')
-    except Exception:
-        pass
-
-# Check 3: all-items-blocked
-if root_cause == 'unknown':
-    try:
-        with open('.otherness/state.json') as f: s = json.load(f)
-        todo_items = [(k, v) for k, v in s.get('features', {}).items()
-                      if v.get('state') == 'todo']
-        if todo_items:
-            all_blocked = all(
-                'blocked' in v.get('labels', []) or v.get('failed_attempts', 0) >= 3
-                for _, v in todo_items
-            )
-            if all_blocked:
-                root_cause = 'all-items-blocked'
-                next_action = ('All queue items are blocked or have failed 3+ attempts. '
-                               'Review and unblock items, or create new items from design docs.')
-    except Exception:
-        pass
-
-# Check 4: queue-source-exhausted (no todo items at all + no Future items in design docs)
-if root_cause == 'unknown':
-    try:
-        with open('.otherness/state.json') as f: s = json.load(f)
-        todo_items = [v for v in s.get('features', {}).values() if v.get('state') == 'todo']
-        if not todo_items:
-            # Check design docs for unclaimed Future items
-            design_dir = 'docs/design'
-            has_future = False
-            if os.path.isdir(design_dir):
-                for fname in os.listdir(design_dir):
-                    if not fname.endswith('.md'): continue
-                    try:
-                        content = open(f'{design_dir}/{fname}').read()
-                        if re.search(r'^- 🔲 (?!.*🚫)', content, re.MULTILINE):
-                            has_future = True
-                            break
-                    except Exception:
-                        pass
-            if not has_future:
-                root_cause = 'queue-source-exhausted'
-                next_action = ('No todo items in queue and no 🔲 Future items in design docs. '
-                               'Run /otherness.vibe-vision to expand the roadmap.')
-            else:
-                root_cause = 'vision-pressure-too-low'
-                next_action = ('Queue is empty but design docs have Future items. '
-                               'COORD queue-gen should have picked these up. '
-                               'Check if queue-gen lock is stuck: git ls-remote --heads origin otherness/queue-gen')
-    except Exception:
-        pass
-
-# O4-O6: Open the defect issue
-title = f'[DEFECT] Session completed with 0 meaningful PRs — {root_cause}'
-body = (
-    f'## Session defect detected\n\n'
-    f'**Session**: `{MY_SESSION_ID}` | **Batch**: {SM_CYCLE} | **Agent**: otherness@{OTHERNESS_VERSION}\n\n'
-    f'| Signal | Value |\n'
-    f'|--------|-------|\n'
-    f'| `vision_prs` | 0 (no design-doc-backed PRs merged) |\n'
-    f'| `prs_merged` | {MERGED} |\n'
-    f'| `session_outcome` | `{SESSION_OUTCOME}` |\n'
-    f'| `root_cause` | `{root_cause}` |\n\n'
-    f'## Root cause: `{root_cause}`\n\n'
-    f'## Recommended next action\n\n'
-    f'{next_action}\n\n'
-    f'## What a healthy session looks like\n\n'
-    f'A healthy session ships ≥1 PR that references a `docs/design/` file (🔲 → ✅). '
-    f'A session that ships only chores or nothing is a measurable defect. '
-    f'This issue is opened automatically by SM §4b to ensure the defect is visible and actionable.\n\n'
-    f'Reported by SM §4b | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}'
-)
+EXCLUDE_PAT = re.compile(
+    r'^chore\(sm\)|^chore\(metrics\)|batch\s+\d+|session complete|PRs merged', re.IGNORECASE)
+VISION_PAT = re.compile(
+    r'docs/design/|🔲\s*→|design doc', re.IGNORECASE)
 
 try:
+    from datetime import datetime, timezone, timedelta
+    since = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime('%Y-%m-%dT%H:%M:%SZ')
     r = subprocess.run(
-        ['gh', 'issue', 'create', '--repo', REPO,
-         '--title', title,
-         '--label', 'kind/bug,otherness,priority/high,area/agent-loop',
-         '--body', body],
+        ['gh', 'pr', 'list', '--repo', REPO, '--state', 'merged', '--limit', '30',
+         '--json', 'number,title,mergedAt'],
         capture_output=True, text=True, timeout=20)
-    if r.returncode == 0:
-        issue_url = r.stdout.strip()
-        print(f'[SM §4b] Defect issue opened: {issue_url}')
-        subprocess.run(
-            ['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO,
-             '--body', f'[SM §4b | {MY_SESSION_ID}] Defect detected: 0 meaningful PRs. root_cause={root_cause}. Issue: {issue_url}'],
-            capture_output=True, timeout=10)
-    else:
-        print(f'[SM §4b] Failed to open defect issue: {r.stderr.strip()[:100]}')
-except Exception as e:
-    print(f'[SM §4b] Defect issue creation error (non-fatal): {e}')
-DEFECT_EOF
-fi
+    if r.returncode != 0:
+        print('0'); sys.exit(0)
+    prs = json.loads(r.stdout.strip() or '[]')
+    recent = [pr for pr in prs
+              if pr.get('mergedAt', '') >= since
+              and not EXCLUDE_PAT.match(pr.get('title', ''))]
+except Exception:
+    print('0'); sys.exit(0)
+
+count = 0
+for pr in recent:
+    title = pr.get('title', '')
+    if VISION_PAT.search(title):
+        count += 1
+        continue
+    try:
+        rb = subprocess.run(
+            ['gh', 'pr', 'view', str(pr['number']), '--repo', REPO,
+             '--json', 'body', '--jq', '.body'],
+            capture_output=True, text=True, timeout=10)
+        body = rb.stdout.strip()[:500] if rb.returncode == 0 else ''
+        if VISION_PAT.search(body):
+            count += 1
+    except Exception:
+        pass
+
+print(count)
+MPEOF
+)
+export MEANINGFUL_PRS
+echo "[SM §4b] meaningful_prs this session: ${MEANINGFUL_PRS}"
+
+# Append row to metrics.md
 DATE=$(date +%Y-%m-%d)
 # [AI-STEP] Append a new row to docs/aide/metrics.md with today's metrics.
-# Row format (as of PR that added arch_convergence + sim_floor_delta):
-#   | $DATE | $BATCH | $MERGED | $NEEDS_HUMAN | 0 | $SKILLS | $TODO_SHIPPED | ~Xmin | $VISION_PRS | $SESSION_OUTCOME | $ARCH_CONVERGENCE | $SIM_FLOOR_DELTA | <notes> |
+# Row format (as of PR that added meaningful_prs):
+#   | $DATE | $BATCH | $MERGED | $NEEDS_HUMAN | 0 | $SKILLS | $TODO_SHIPPED | ~Xmin | $VISION_PRS | $SESSION_OUTCOME | $ARCH_CONVERGENCE | $SIM_FLOOR_DELTA | $QUEUE_GUARD_FIRES | $MEANINGFUL_PRS | <notes> |
 # $ARCH_CONVERGENCE: from scripts/sim-params.json arch_convergence_score field (default: — if calibration not run)
 # $SIM_FLOOR_DELTA: $MERGED - sim_predicted_floor from scripts/sim-params.json (default: — if missing)
+# $QUEUE_GUARD_FIRES: from QUEUE_GUARD_FIRES env var (set above from state.json chore_only_guard_count)
+# $MEANINGFUL_PRS: from MEANINGFUL_PRS env var (design-doc-backed PRs, computed above)
 # Historical rows (before PR #655) have only 9 columns — do not modify them.
 # Historical rows from PR #655 (vision_prs + session_outcome) have 11 columns — do not modify them.
+# Historical rows from PR #638 (queue_guard_fires) have 14 columns — do not modify them.
+# Historical rows from PR #644 (meaningful_prs) have 15 columns — do not modify them.
 # Use the pull-rebase-retry pattern to push directly to main (low-risk doc change).
+
+# After writing the row: reset the guard counter in state.json
+python3 - <<'RESET_GUARD_EOF'
+import json, os
+try:
+    with open('.otherness/state.json') as f: s = json.load(f)
+    if s.get('chore_only_guard_count', 0) > 0:
+        s['chore_only_guard_count'] = 0
+        with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
+        print('[SM §4b] queue_guard_fires counter reset to 0 after metrics write.')
+except Exception as e:
+    print(f'[SM §4b] counter reset failed (non-fatal): {e}')
+RESET_GUARD_EOF
 
 # Pull-rebase-retry push pattern (parallel-safe for direct main commits)
 git add docs/aide/metrics.md
@@ -1405,6 +1333,7 @@ try:
         'calibrated_at': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
         'source': '4e-calibration',
         'sm_cycle': sm_cycle,
+        'recovery_action': 'none',  # overwritten by §4e-ii divergence detection each cycle
     }
     # Write to _state branch
     state_wt = os.path.join(tempfile.gettempdir(), 'otherness-pred4e-' + str(os.getpid()))
@@ -1640,6 +1569,92 @@ if consecutive_count >= 3:
         print(f'[SM §4e] Divergence signal posted (consecutive={consecutive_count})')
     else:
         print(f'[SM §4e] Could not post divergence signal (non-fatal)')
+
+# Step 7: Compute recovery_action and write to sim-prediction.json on _state
+# Priority order (design doc 23 §Step 4): vision_synthesis > needs_human > ci_fix > learn > none
+# Design ref: docs/design/23-simulation-as-anchor.md §Step 4
+recovery_action = 'none'
+if consecutive_count >= 3 or actual_shipped < pred_floor:
+    # Check queue depth — low queue → trigger vision synthesis
+    try:
+        state_json = subprocess.run(['git','show','origin/_state:.otherness/state.json'],
+                                    capture_output=True, text=True)
+        if state_json.returncode == 0:
+            state = json.loads(state_json.stdout)
+            todo_count = len([d for d in state.get('features',{}).values()
+                              if d.get('state') == 'todo'])
+        else:
+            todo_count = 5  # assume OK if unreadable
+    except Exception:
+        todo_count = 5
+    # Check needs-human open issues
+    try:
+        nh_result = subprocess.run(
+            ['gh','issue','list','--repo',REPO,'--state','open',
+             '--label','needs-human','--json','number','--jq','length'],
+            capture_output=True, text=True, timeout=15)
+        needs_human_count = int(nh_result.stdout.strip() or '0')
+    except Exception:
+        needs_human_count = 0
+    # Check CI status — any failed run in last 24h
+    try:
+        ci_result = subprocess.run(
+            ['gh','run','list','--repo',REPO,'--branch','main','--limit','5',
+             '--json','conclusion,createdAt',
+             '--jq','[.[]|select(.conclusion=="failure")]|length'],
+            capture_output=True, text=True, timeout=15)
+        ci_failures = int(ci_result.stdout.strip() or '0')
+    except Exception:
+        ci_failures = 0
+    # Priority order
+    if todo_count < 5:
+        recovery_action = 'trigger_vision_synthesis'
+    elif needs_human_count > 0:
+        recovery_action = 'escalate_oldest_needs_human'
+    elif ci_failures > 0:
+        recovery_action = 'prioritize_ci_fix'
+    else:
+        recovery_action = 'trigger_learn'
+
+print(f'[SM §4e] recovery_action={recovery_action} (consecutive={consecutive_count})')
+
+# Write recovery_action to sim-prediction.json on _state
+state_wt2 = os.path.join(tempfile.gettempdir(), 'otherness-recov-' + str(os.getpid()))
+try:
+    if os.path.exists(state_wt2):
+        subprocess.run(['git','worktree','remove',state_wt2,'--force'], capture_output=True)
+    subprocess.run(['git','worktree','add','--no-checkout',state_wt2,'origin/_state'],
+                   capture_output=True, check=True)
+    pred_path = os.path.join(state_wt2, '.otherness', 'sim-prediction.json')
+    os.makedirs(os.path.dirname(pred_path), exist_ok=True)
+    subprocess.run(['git','-C',state_wt2,'checkout','_state','--','.otherness/sim-prediction.json'],
+                   capture_output=True)
+    try:
+        prediction = json.load(open(pred_path))
+    except Exception:
+        prediction = {}
+    prediction['recovery_action'] = recovery_action
+    prediction['recovery_action_set_at'] = datetime.datetime.now(
+        datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    prediction['recovery_action_consecutive'] = consecutive_count
+    json.dump(prediction, open(pred_path, 'w'), indent=2)
+    subprocess.run(['git','-C',state_wt2,'add',pred_path], capture_output=True)
+    subprocess.run(['git','-C',state_wt2,'commit',
+                    '-m',f'sm §4e: recovery_action={recovery_action}'],
+                   capture_output=True)
+    r2 = subprocess.run(['git','-C',state_wt2,'push','origin','HEAD:_state'],
+                        capture_output=True)
+    if r2.returncode == 0:
+        print(f'[SM §4e] sim-prediction.json recovery_action written to _state')
+    else:
+        print(f'[SM §4e] recovery_action write failed (non-fatal)')
+except Exception as e:
+    print(f'[SM §4e] recovery_action write error (non-fatal): {e}')
+finally:
+    try:
+        subprocess.run(['git','worktree','remove',state_wt2,'--force'], capture_output=True)
+    except: pass
+subprocess.run(['git','worktree','prune'], capture_output=True)
 DIVEOF
 ```
 
@@ -2866,10 +2881,82 @@ if [ -z "${VISION_PRS+x}" ]; then
   SESSION_OUTCOME="unknown"
 fi
 
-# Throughput signal: AMBER if session_outcome is chore-only (design doc 35 §O4)
-if [ "${SESSION_OUTCOME:-unknown}" = "chore-only" ] || [ "${VISION_PRS:-0}" -eq 0 ]; then
+# §4f: VISION_PR_COUNT — design-doc-backed PR check (design doc 35 §35.1 → ✅)
+# For each PR merged this session, check if title or body references a design doc.
+# A PR is "vision-aligned" if title or body (first 500 chars) contains:
+#   docs/design/ OR 🔲 → OR design doc (case-insensitive)
+# Excludes: chore(sm), chore(metrics), batch N, session complete PR titles.
+VISION_PR_COUNT=$(python3 - <<'VPCEOF'
+import subprocess, json, re, os, sys
+
+REPO = os.environ.get('REPO', '')
+
+EXCLUDE_PAT = re.compile(
+    r'^chore\(sm\)|^chore\(metrics\)|batch\s+\d+|session complete|PRs merged', re.IGNORECASE)
+VISION_PAT = re.compile(
+    r'docs/design/|🔲\s*→|design doc', re.IGNORECASE)
+
+# Get PRs merged in last 24h
+try:
+    from datetime import datetime, timezone, timedelta
+    since = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    r = subprocess.run(
+        ['gh', 'pr', 'list', '--repo', REPO, '--state', 'merged', '--limit', '30',
+         '--json', 'number,title,mergedAt'],
+        capture_output=True, text=True, timeout=20)
+    if r.returncode != 0:
+        print('0'); sys.exit(0)
+    prs = json.loads(r.stdout.strip() or '[]')
+    # Filter to last 24h and non-excluded
+    recent = [pr for pr in prs
+              if pr.get('mergedAt', '') >= since
+              and not EXCLUDE_PAT.match(pr.get('title', ''))]
+except Exception as e:
+    print(f'0', file=sys.stderr)
+    print('0'); sys.exit(0)
+
+count = 0
+for pr in recent:
+    title = pr.get('title', '')
+    # Fast-path: check title first
+    if VISION_PAT.search(title):
+        count += 1
+        continue
+    # Body scan (first 500 chars)
+    try:
+        rb = subprocess.run(
+            ['gh', 'pr', 'view', str(pr['number']), '--repo', REPO,
+             '--json', 'body', '--jq', '.body'],
+            capture_output=True, text=True, timeout=10)
+        body = rb.stdout.strip()[:500] if rb.returncode == 0 else ''
+        if VISION_PAT.search(body):
+            count += 1
+    except Exception:
+        pass
+
+print(count)
+VPCEOF
+)
+export VISION_PR_COUNT
+echo "[SM §4f §35.1] VISION_PR_COUNT=${VISION_PR_COUNT} (design-doc-backed PRs this session)"
+
+# Write vision_aligned to state.json (design doc 35 §35.5 minimal impl)
+python3 - <<'VA_EOF'
+import json, os
+VISION_PR_COUNT = int(os.environ.get('VISION_PR_COUNT', '0') or '0')
+try:
+    with open('.otherness/state.json') as f: s = json.load(f)
+    s['vision_aligned'] = (VISION_PR_COUNT > 0)
+    with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
+    print(f"[SM §4f §35.5] vision_aligned={s['vision_aligned']} written to state.json")
+except Exception as e:
+    print(f"[SM §4f] vision_aligned write failed (non-fatal): {e}")
+VA_EOF
+
+# Throughput signal: AMBER if session_outcome is chore-only OR VISION_PR_COUNT == 0 (design doc 35 §35.1)
+if [ "${SESSION_OUTCOME:-unknown}" = "chore-only" ] || [ "${VISION_PR_COUNT:-0}" -eq 0 ]; then
   HEALTH="AMBER"
-  THROUGHPUT_WARN=" ⚠️ ${SESSION_OUTCOME:-chore-only} session (0 vision PRs)"
+  THROUGHPUT_WARN=" ⚠️ ${SESSION_OUTCOME:-chore-only} session (${VISION_PR_COUNT:-0} vision-aligned PRs)"
 fi
 
 ACTION="Active"
@@ -2877,13 +2964,42 @@ ACTION="Active"
 [ "${TODO_COUNT:-0}" -eq 0 ] && ACTION="Queue empty — running vision+learn"
 
 # §4f: Condensed report format (design doc 35 §Future → ✅)
-# Headline: Batch N | Health: X | Progress: X | Vision PRs: N | Chores: N | Queue: N remaining | Journeys: N✅ N❌ | Next: [title]
+# Headline: Batch N | progress: X | health: X | Vision PRs: N | Chores: N | Queue: N remaining | Journeys: N✅ N❌ | Next: [title]
 # Verbose details go into a <details> block. Human can scan 10 comments in 30 seconds.
 
-# Progress classification (O4)
-PROGRESS_CLASS="ADVANCING"
-[ "${VISION_PRS:-0}" -eq 0 ] && [ "${MERGED:-0}" -gt 0 ] && PROGRESS_CLASS="STEADY"
-[ "${MERGED:-0}" -eq 0 ] && PROGRESS_CLASS="STALLED"
+# Two-axis progress classification — design doc 35 §Future → ✅
+# progress: ADVANCING | STABLE | STALLED (session-based, not history-based)
+# ADVANCING: ≥1 vision-aligned PR merged this session (product moved)
+# STABLE:    0 vision PRs but ≥1 PR merged this session (chores only, nothing broke)
+# STALLED:   0 merged PRs AND 0 open PRs (silent session — agent ran but nothing shipped)
+# Exported as SESSION_PROGRESS for downstream use (O7).
+# When STABLE or STALLED + HEALTH=GREEN: upgrade HEALTH to AMBER (O2).
+OPEN_PRS_4F=$(gh pr list --repo $REPO --state open --json number --jq 'length' 2>/dev/null || echo "0")
+PROGRESS_CLASS=$(python3 -c "
+import os
+vision_prs = int(os.environ.get('VISION_PRS', '0') or '0')
+merged = int(os.environ.get('MERGED', '0') or '0')
+open_prs = int(os.environ.get('OPEN_PRS_4F', '0') or '0')
+if vision_prs > 0:
+    print('ADVANCING')
+elif merged > 0:
+    print('STABLE')
+elif merged == 0 and open_prs == 0:
+    print('STALLED')
+else:
+    print('STABLE')
+" 2>/dev/null || echo "ADVANCING")
+export SESSION_PROGRESS="${PROGRESS_CLASS}"
+echo "[SM §4f] progress=${PROGRESS_CLASS} (vision_prs=${VISION_PRS:-0} merged=${MERGED:-0} open=${OPEN_PRS_4F})"
+
+# O2: STABLE or STALLED + GREEN → upgrade to AMBER
+# A non-advancing system must never show GREEN to the human.
+if [ "${PROGRESS_CLASS}" = "STABLE" ] || [ "${PROGRESS_CLASS}" = "STALLED" ]; then
+  if [ "${HEALTH:-GREEN}" = "GREEN" ]; then
+    HEALTH="AMBER"
+    echo "[SM §4f] Health upgraded GREEN→AMBER: progress=${PROGRESS_CLASS}"
+  fi
+fi
 
 # Chores count: MERGED minus VISION_PRS (non-negative)
 CHORES_COUNT=$(python3 -c "
@@ -2934,7 +3050,7 @@ except: print('?')
 " 2>/dev/null || echo "?")
 
 REPORT_BODY=$(cat <<BODY_EOF
-Batch ${SM_CYCLE:-?} | Health: ${HEALTH} | Progress: ${PROGRESS_CLASS} | Vision PRs: ${VISION_PRS:-0} | Chores: ${CHORES_COUNT} | Queue: ${TODO_COUNT:-0} remaining | Journeys: ${JOURNEY_OK}✅ ${JOURNEY_FAIL}❌ | Next: [${NEXT_ITEM}]
+Batch ${SM_CYCLE:-?} | progress: ${PROGRESS_CLASS} | health: ${HEALTH} | Vision PRs: ${VISION_PRS:-0} | Chores: ${CHORES_COUNT} | Queue: ${TODO_COUNT:-0} remaining | Journeys: ${JOURNEY_OK}✅ ${JOURNEY_FAIL}❌ | Next: [${NEXT_ITEM}]
 
 <details><summary>Details</summary>
 

@@ -29,12 +29,12 @@ The human should never need to manually update the pressure prompts. The agent d
 
 - ✅ Initial vision pressure context injected into all 3 project workflows by human (2026-04-20)
 - ✅ `docs/design/28-dual-step-scheduled-workflow.md` §Future: self-updating pressure prompts listed as next step (2026-04-20)
+- ✅ 37.1 — `agents/vibe-vision-auto.md` SCAN 5: reads the active pressure block from the `prompt:` YAML key of the Step A step in `.github/workflows/otherness-scheduled.yml` (Step A identified by containing `vibe-vision-auto.md`). Falls back to searching all workflow files if the primary source is absent. Exports `pressure_block` (full text) and `pressure_keywords` (key phrases) for use in scoring. (PR #TBD, 2026-04-21)
 
 ---
 
 ## Future (🔲)
 
-- 🔲 37.1 — `agents/vibe-vision-auto.md` SCAN 5: read current pressure block — parse the `prompt:` section of the Step A workflow step from `.github/workflows/otherness-scheduled.yml` to extract the current "Context for this vision scan:" block. This is the active pressure context.
 - 🔲 37.2 — SCAN 5: score the current pressure — for each bullet point in the current pressure block, check recent merged PRs (last 10 batches) and open design doc Present items. If a bullet's topic has ≥2 corresponding merged PRs or Present items: mark it "addressed." Count addressed / total = addressed ratio.
 - 🔲 37.3 — SCAN 5: rewrite condition — if addressed ratio > 0.6 (60% of pressure items have been acted on) OR if the last rewrite timestamp in the block is >30 days ago: trigger a rewrite.
 - 🔲 37.4 — SCAN 5: synthesise new pressure block — read `docs/aide/vision.md`, current design doc Future items, recent SM health comments, and the most recent PM competitive observation (if any). Synthesise a new pressure block that: (a) removes addressed items, (b) sharpens items that are partially addressed, (c) adds new items from the gap analysis. Write the block as natural language bullets, same format as the current block. Cap at 6 bullets.
