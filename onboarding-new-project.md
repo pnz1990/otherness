@@ -4,7 +4,7 @@ This guide walks through setting up otherness on a **brand new project** — one
 
 ---
 
-## Prerequisites (install once per machine)
+ ## Prerequisites (install once per machine)
 
 ```bash
 # 1. GitHub CLI
@@ -12,6 +12,10 @@ brew install gh && gh auth login
 
 # 2. otherness agent files
 git clone git@github.com:<your-username>/otherness.git ~/.otherness
+
+# 3. speckit (spec-driven development tooling — pinned for reproducibility)
+# Design ref: docs/design/42-speckit-integration.md §O1
+uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v0.7.4
 ```
 
 ---
