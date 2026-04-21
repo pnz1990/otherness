@@ -3964,6 +3964,123 @@ try:
 except: print('?')
 " 2>/dev/null || echo "?")
 
+# §4f: Managed project velocity gate (design doc 16 §Future → ✅)
+# GREEN requires BOTH self-progress AND managed project velocity.
+# If managed project has shipped 0 feat/fix/refactor PRs in 14 days → AMBER.
+# Fail-open: API errors or missing config leave HEALTH unchanged.
+MANAGED_VELOCITY_WARN=""
+MANAGED_VELOCITY_LABEL=""
+python3 - <<'MGMT_VEL_EOF'
+import subprocess, re, os, sys, datetime, json
+
+REPO = os.environ.get('REPO', '')
+HEALTH_IN = os.environ.get('HEALTH', 'GREEN')
+
+# Read reference project from otherness-config.yaml
+ref_project = None
+try:
+    in_monitor = in_projects = False
+    for line in open('otherness-config.yaml'):
+        if re.match(r'^monitor:', line): in_monitor = True
+        if in_monitor and re.match(r'\s+projects:', line): in_projects = True
+        if in_projects:
+            m = re.match(r'\s+- (.+)', line)
+            if m:
+                r = m.group(1).strip()
+                if not r.endswith('/otherness'):
+                    ref_project = r
+                    break
+except Exception:
+    pass
+
+if not ref_project:
+    print('[SM §4f] No reference project found — skipping managed velocity check.')
+    sys.exit(0)
+
+# Count feat/fix/refactor PRs merged in last 14 days on reference project
+try:
+    since_dt = (datetime.datetime.now(datetime.timezone.utc) -
+                datetime.timedelta(days=14)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    r = subprocess.run(
+        ['gh', 'pr', 'list', '--repo', ref_project, '--state', 'merged',
+         '--limit', '100', '--json', 'title,mergedAt',
+         '--jq', f'[.[] | select(.mergedAt >= "{since_dt}") | select(.title | test("^feat|^fix|^refactor"; "i"))] | length'],
+        capture_output=True, text=True, timeout=15)
+    if r.returncode != 0:
+        print(f'[SM §4f] Managed velocity API error (non-fatal): {r.stderr.strip()[:80]}')
+        sys.exit(0)
+    count = int(r.stdout.strip() or '0')
+    label = f'{count} feat PRs/14d (reference: {ref_project})'
+    print(f'[SM §4f] Managed velocity: {label}')
+    # Write env vars via marker lines
+    print(f'__MANAGED_VELOCITY_LABEL__={label}')
+    if count == 0 and HEALTH_IN == 'GREEN':
+        print(f'__MANAGED_VELOCITY_WARN__= ⚠️ Managed stalled (0 feat PRs/14d: {ref_project})')
+        print('__MANAGED_HEALTH_DOWNGRADE__=AMBER')
+except Exception as e:
+    print(f'[SM §4f] Managed velocity check error (non-fatal): {e}')
+MGMT_VEL_EOF
+
+# Parse output from python block — extract __VAR__=value markers
+_MGMT_OUTPUT=$(python3 - <<'MGMT_PARSE_EOF'
+import subprocess, re, os, sys, datetime, json
+
+REPO = os.environ.get('REPO', '')
+HEALTH_IN = os.environ.get('HEALTH', 'GREEN')
+
+ref_project = None
+try:
+    in_monitor = in_projects = False
+    for line in open('otherness-config.yaml'):
+        if re.match(r'^monitor:', line): in_monitor = True
+        if in_monitor and re.match(r'\s+projects:', line): in_projects = True
+        if in_projects:
+            m = re.match(r'\s+- (.+)', line)
+            if m:
+                r = m.group(1).strip()
+                if not r.endswith('/otherness'):
+                    ref_project = r
+                    break
+except Exception:
+    pass
+
+if not ref_project:
+    sys.exit(0)
+
+try:
+    since_dt = (datetime.datetime.now(datetime.timezone.utc) -
+                datetime.timedelta(days=14)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    r = subprocess.run(
+        ['gh', 'pr', 'list', '--repo', ref_project, '--state', 'merged',
+         '--limit', '100', '--json', 'title,mergedAt',
+         '--jq', f'[.[] | select(.mergedAt >= "{since_dt}") | select(.title | test("^feat|^fix|^refactor"; "i"))] | length'],
+        capture_output=True, text=True, timeout=15)
+    if r.returncode != 0:
+        sys.exit(0)
+    count = int(r.stdout.strip() or '0')
+    label = f'{count} feat PRs/14d (reference: {ref_project})'
+    print(f'MANAGED_VELOCITY_LABEL={label}')
+    if count == 0 and HEALTH_IN == 'GREEN':
+        print(f'MANAGED_VELOCITY_WARN= ⚠️ Managed stalled (0 feat PRs/14d: {ref_project})')
+        print('MANAGED_HEALTH_DOWNGRADE=AMBER')
+except Exception:
+    pass
+MGMT_PARSE_EOF
+2>/dev/null)
+
+# Apply env vars from python output
+while IFS='=' read -r _KEY _VAL; do
+    case "$_KEY" in
+        MANAGED_VELOCITY_LABEL) MANAGED_VELOCITY_LABEL="$_VAL" ;;
+        MANAGED_VELOCITY_WARN)  MANAGED_VELOCITY_WARN="$_VAL" ;;
+        MANAGED_HEALTH_DOWNGRADE)
+            if [ "$_VAL" = "AMBER" ] && [ "${HEALTH:-GREEN}" = "GREEN" ]; then
+                HEALTH="AMBER"
+                echo "[SM §4f] Health GREEN→AMBER: managed project velocity=0 feat PRs/14d"
+            fi ;;
+    esac
+done <<< "$_MGMT_OUTPUT"
+
 REPORT_BODY=$(cat <<BODY_EOF
 Batch ${SM_CYCLE:-?} | progress: ${PROGRESS_CLASS} | health: ${HEALTH} | Vision PRs: ${VISION_PRS:-0} | Chores: ${CHORES_COUNT} | Queue: ${TODO_COUNT:-0} remaining | Journeys: ${JOURNEY_OK}✅ ${JOURNEY_FAIL}❌ | Next: [${NEXT_ITEM}]
 
@@ -3975,6 +4092,7 @@ Batch ${SM_CYCLE:-?} | progress: ${PROGRESS_CLASS} | health: ${HEALTH} | Vision 
 - Needs-human open: ${NEEDS_HUMAN_COUNT:-0}
 - Sim calibrated: ${SIM_CALIB_LABEL:-unknown}${SIM_CALIB_WARN:-}
 - Self feat PRs (7d): ${SELF_FEAT_PRS:-?} | Managed feat PRs (7d): ${MANAGED_FEAT_PRS:-?}
+- Managed: ${MANAGED_VELOCITY_LABEL:-unknown}${MANAGED_VELOCITY_WARN:-}
 
 </details>
 BODY_EOF
