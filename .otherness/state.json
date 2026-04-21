@@ -1282,7 +1282,7 @@
       "done_at": "2026-04-21T14:54:38Z"
     },
     "issue-714": {
-      "state": "todo",
+      "state": "done",
       "status": "todo",
       "title": "feat: Multi-item loop execution verified in SM health signal: `coord.md` specifies that after BA",
       "labels": [
@@ -1291,7 +1291,9 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-21T15:08:26Z"
     },
     "issue-715": {
       "state": "todo",
