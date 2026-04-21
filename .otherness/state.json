@@ -16,15 +16,16 @@
       "done_at": "2026-04-21T17:32:55Z"
     },
     "issue-721": {
-      "state": "in_review",
+      "state": "done",
       "pr_number": 744,
-      "title": "feat: SM \u00a74f post AMBER note when vision-misaligned (35.2)",
+      "pr_merged": true,
+      "done_at": "2026-04-21T18:34:46Z",
+      "title": "feat(sm): add actionable vision-misaligned note to SM \u00a74f AMBER signal (35.2)",
       "labels": [
         "area/agent-loop",
         "kind/enhancement",
         "priority/medium",
-        "size/xs",
-        "needs-human"
+        "size/xs"
       ]
     },
     "issue-745": {
@@ -46,6 +47,258 @@
       ],
       "pr_merged": true,
       "done_at": "2026-04-21T17:41:46Z"
+    },
+    "issue-646": {
+      "state": "todo",
+      "title": "feat: SM health signal must distinguish real GREEN from stall-GREEN: the current GREEN health si",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-645": {
+      "state": "todo",
+      "title": "feat: Same-session recovery when no PR ships in first 20 minutes: `coord.md` must detect mid-ses",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-644": {
+      "state": "todo",
+      "title": "feat: Meaningful-work rate tracked as a first-class metric: `docs/aide/metrics.md` must add a `m",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-641": {
+      "state": "todo",
+      "title": "feat: 37.1",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-639": {
+      "state": "todo",
+      "title": "feat: 35.1",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-638": {
+      "state": "todo",
+      "title": "feat: `coord.md \u00a71c`: track guard-firing frequency in session metrics (metrics.md schema",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-637": {
+      "state": "todo",
+      "title": "feat: End-to-end onboarding smoke test on a live fresh repo: `scripts/check-onboarding.sh` valid",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-635": {
+      "state": "todo",
+      "title": "feat: Simulation predictions must visibly change agent behavior: today the simulation runs, prod",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-634": {
+      "state": "todo",
+      "title": "feat: Session defect diagnosis: when a session completes with 0 meaningful items (only metrics c",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-632": {
+      "state": "todo",
+      "title": "feat: `/otherness.status` single-page health summary that a human can read in 30 seconds: the cu",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-627": {
+      "state": "todo",
+      "title": "feat: `docs/aide/progress.md` automated update: SM \u00a74f must update `progress.md` after every bat",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-626": {
+      "state": "todo",
+      "title": "feat: New command `/otherness.status` enhanced output: the command currently exists but its outp",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-625": {
+      "state": "todo",
+      "title": "feat: `SM \u00a74f` batch report condensed format: the report issue comment must fit in 8 lines; curr",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-624": {
+      "state": "todo",
+      "title": "feat: `agents/onboard.md` vision inference quality: after writing `vision.md`, run the vision do",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-623": {
+      "state": "todo",
+      "title": "feat: `onboarding-existing-project.md` + `onboarding-new-project.md`: add a \"first-run smoke tes",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-622": {
+      "state": "todo",
+      "title": "feat: `agents/onboard.md` post-run validation: after generating `docs/aide/`, run a structural s",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-621": {
+      "state": "todo",
+      "title": "feat: `agents/otherness.learn.md`: diversity-first learn target selection",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-619": {
+      "state": "todo",
+      "title": "feat: `agents/otherness.learn.md` / `SM \u00a74c`: frame-lock break protocol",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-616": {
+      "state": "todo",
+      "title": "feat: `SM \u00a74e` / `PM \u00a75g`: simulation-behavior coupling gate",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-614": {
+      "state": "todo",
+      "title": "feat: `coord.md \u00a71c`: queue refusal guard",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-611": {
+      "state": "todo",
+      "title": "feat: Cross-project pressure propagation: when otherness identifies a pattern (e.g. \"test covera",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
     }
   },
   "session_heartbeats": {
