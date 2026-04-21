@@ -471,6 +471,79 @@
         "kind/enhancement"
       ],
       "priority": "medium"
+    },
+    "issue-633": {
+      "state": "todo",
+      "title": "feat: Graceful partial handoff on GitHub Actions job timeout: GitHub Actions jobs have a default",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "issue": "633"
+    },
+    "issue-783": {
+      "state": "todo",
+      "title": "feat: SM \u00a74f health signal must include managed project velocity in the GREEN definition",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "issue": "783"
+    },
+    "issue-784": {
+      "state": "todo",
+      "title": "feat: Housekeeping-streak auto-escalation: SM \u00a74b must count consecutive sessions where `session",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "issue": "784"
+    },
+    "issue-785": {
+      "state": "todo",
+      "title": "feat: M7 full close: when GitHub App (M3) is active, add a state write integrity check",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "issue": "785"
+    },
+    "issue-786": {
+      "state": "todo",
+      "title": "feat: Frame-lock break protocol as a scheduled mechanism, not a human-triggered event: the curre",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "issue": "786"
+    },
+    "issue-787": {
+      "state": "todo",
+      "title": "feat: Session type must be declared at session START, not classified post-session: SM \u00a74b curren",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "issue": "787"
     }
   },
   "session_heartbeats": {
