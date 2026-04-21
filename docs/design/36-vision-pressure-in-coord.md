@@ -23,7 +23,7 @@ no design-doc-backed items remain.
 
 ## Present (✅)
 
-- ✅ 36.1 — COORD §1b-vision: builds `VISION_PRESSURE_SET` at session start — reads all `🔲 Future` items from `docs/design/*.md`, takes first 40 chars lowercased as keys. Exported as newline-separated env var. Logged: "Vision pressure set: N items from M design docs." Graceful fallback if no docs/design/ exists. (PR #TBD, 2026-04-21)
+- ✅ 36.1 — COORD §1b-vision: builds `VISION_PRESSURE_SET` at session start — reads all `🔲 Future` items from `docs/design/*.md`, takes first 40 chars lowercased as keys. Exported as newline-separated env var. Logged: "Vision pressure set: N items from M design docs." Graceful fallback if no docs/design/ exists. (PR #689, 2026-04-21)
 
 ---
 
