@@ -35,7 +35,7 @@
       "title": "feat: validate.sh check [8/8] for state.json field doc-drift (41.3)"
     },
     "issue-757": {
-      "state": "assigned",
+      "state": "done",
       "assigned_to": "sess-5fee157c",
       "assigned_at": "2026-04-21T17:36:19Z",
       "branch": "feat/issue-757",
@@ -43,7 +43,9 @@
       "title": "feat: COORD \u00a71b unified startup signal reader",
       "file_spaces": [
         "agents/"
-      ]
+      ],
+      "pr_merged": true,
+      "done_at": "2026-04-21T17:41:46Z"
     }
   },
   "session_heartbeats": {
