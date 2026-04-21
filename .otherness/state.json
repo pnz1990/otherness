@@ -486,7 +486,7 @@
       "issue": "633"
     },
     "issue-783": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: SM \u00a74f health signal must include managed project velocity in the GREEN definition",
       "labels": [
         "priority/medium",
@@ -495,7 +495,9 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "783"
+      "issue": "783",
+      "pr_merged": true,
+      "done_at": "2026-04-21T21:36:44Z"
     },
     "issue-784": {
       "state": "todo",
