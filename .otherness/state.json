@@ -416,7 +416,7 @@
       "priority": "medium"
     },
     "issue-772": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Queue guard firing frequency tracked and acted on: `coord.md \u00a71c` queue refusal guard fire",
       "labels": [
         "priority/medium",
@@ -424,7 +424,17 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "assigned_to": "sess-b7b22e98",
+      "assigned_at": "2026-04-21T20:08:15Z",
+      "branch": "feat/issue-772",
+      "worktree": "../otherness.issue-772",
+      "file_spaces": [
+        "agents/phases/"
+      ],
+      "pr_merged": true,
+      "pr_number": 777,
+      "done_at": "2026-04-21T20:14:05Z"
     },
     "issue-773": {
       "state": "todo",
