@@ -165,14 +165,22 @@ Load skill: `~/.otherness/agents/skills/agent-coding-discipline.md` before writi
 
 ```bash
 # If you made a decision that future agents should not re-debate:
-# Append to .specify/memory/decisions.md (create if missing)
-cat >> .specify/memory/decisions.md << 'EOF'
-
-## $(date +%Y-%m-%d): <decision topic>
-**Decision**: <what was decided>
+# Use marker-based upsert (speckit ≥ 0.7.3) — prevents duplicates in concurrent sessions.
+# Design ref: docs/design/42-speckit-integration.md §Present
+_DECISION_KEY="$(date +%Y-%m-%d)-<decision-topic>"
+_DECISION_BODY="**Decision**: <what was decided>
 **Rationale**: <why — reference issue/PR if applicable>
-**Applies to**: <what future items this constrains>
-EOF
+**Applies to**: <what future items this constrains>"
+
+if specify --version >/dev/null 2>&1; then
+  # speckit available: use marker-based upsert
+  specify memory set "$_DECISION_KEY" "$_DECISION_BODY" 2>/dev/null || \
+    printf "\n## %s\n%s\n" "$_DECISION_KEY" "$_DECISION_BODY" >> .specify/memory/decisions.md
+else
+  # fallback: raw append (create file if missing)
+  mkdir -p .specify/memory
+  printf "\n## %s\n%s\n" "$_DECISION_KEY" "$_DECISION_BODY" >> .specify/memory/decisions.md
+fi
 ```
 
 **Dev server handling** (if TEST_COMMAND needs one):
