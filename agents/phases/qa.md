@@ -411,6 +411,60 @@ if [ -n "$_ISSUE_NUM" ]; then
   gh issue close "$_ISSUE_NUM" --repo "$REPO" \
     --comment "[QA | ${MY_SESSION_ID:-unknown}] Implemented in PR #${PR_NUM:-?}. Closing." \
     2>/dev/null && echo "[QA] Closed issue #$_ISSUE_NUM" || true
+
+  # Set board Status: Done — design doc 43 §O1, §43.5
+  # Non-blocking: board update failure must not stop the loop (O5)
+  _BOARD_PROJECT_ID=$(python3 -c "
+import re
+section=None
+for line in open('otherness-config.yaml'):
+    s=re.match(r'^(\w[\w_]*):', line)
+    if s: section=s.group(1)
+    if section=='project':
+        m=re.match(r'^\s+board_project_id:\s*[\"\'']?([^\"\'#\n\s]+)[\"\'']?', line)
+        if m: print(m.group(1).strip()); break
+" 2>/dev/null || echo "")
+
+  if [ -n "$_BOARD_PROJECT_ID" ]; then
+    python3 - <<BOARD_EOF 2>/dev/null || true
+import subprocess, json, os
+
+PROJECT_ID = os.environ.get('_BOARD_PROJECT_ID', '${_BOARD_PROJECT_ID}')
+ISSUE_NUM = int('${_ISSUE_NUM}')
+REPO = os.environ.get('REPO', '${REPO}')
+
+# Get the board item ID for this issue
+q1 = subprocess.run(['gh','api','graphql','-f',
+    f'query={{ node(id: "{PROJECT_ID}") {{ ... on ProjectV2 {{ items(first:200) {{ nodes {{ id content {{ ... on Issue {{ number }} }} }} }} }} }} }}'],
+    capture_output=True, text=True)
+try:
+    data = json.loads(q1.stdout)
+    items = data['data']['node']['items']['nodes']
+    item_id = next((i['id'] for i in items if i.get('content',{}).get('number')==ISSUE_NUM), None)
+except: item_id = None
+
+if not item_id: print(f'[PM] Issue #{ISSUE_NUM} not on board — skipping status update'); exit(0)
+
+# Get Status field ID and Done option ID
+q2 = subprocess.run(['gh','api','graphql','-f',
+    f'query={{ node(id: "{PROJECT_ID}") {{ ... on ProjectV2 {{ fields(first:20) {{ nodes {{ ... on ProjectV2SingleSelectField {{ id name options {{ id name }} }} }} }} }} }} }}'],
+    capture_output=True, text=True)
+try:
+    fdata = json.loads(q2.stdout)
+    fields = fdata['data']['node']['fields']['nodes']
+    status_field = next((f for f in fields if f.get('name')=='Status'), None)
+    field_id = status_field['id']
+    done_id = next((o['id'] for o in status_field['options'] if o['name']=='Done'), None)
+except: field_id = done_id = None
+
+if not field_id or not done_id: print('[PM] Could not find Status/Done field — skipping'); exit(0)
+
+# Set Done
+mut = f'mutation {{ updateProjectV2ItemFieldValue(input: {{ projectId: "{PROJECT_ID}" itemId: "{item_id}" fieldId: "{field_id}" value: {{ singleSelectOptionId: "{done_id}" }} }}) {{ projectV2Item {{ id }} }} }}'
+subprocess.run(['gh','api','graphql','-f',f'mutation={mut}'],capture_output=True)
+print(f'[PM] Board Status → Done for issue #{ISSUE_NUM}')
+BOARD_EOF
+  fi
 fi
 
 ITEM_ID="" ; MY_BRANCH="" ; MY_WORKTREE="" ; MY_SESSION_ID="" ; PR_NUM=""
