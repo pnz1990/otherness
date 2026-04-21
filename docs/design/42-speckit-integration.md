@@ -36,8 +36,8 @@ A speckit release is NOT worth adopting when it only contains:
 ## Present (✅)
 
 - ✅ speckit used for `.specify/specs/$ITEM_ID/spec.md` three-zone structure — ENG §2b (eng.md)
-- ✅ speckit used for `.specify/memory/decisions.md` architectural decision log — ENG §2d
-- ✅ speckit used for `.specify/memory/constitution.md` and `sdlc.md` — onboarding docs
+- ✅ speckit used for `.specify/memory/decisions.md` architectural decision log — ENG §2d ⚠️ Stale — referenced file not found
+- ✅ speckit used for `.specify/memory/constitution.md` and `sdlc.md` — onboarding docs ⚠️ Stale — referenced file not found
 - ✅ speckit version upgraded from 0.7.2 → 0.7.4 (2026-04-21)
 - ✅ `SPECKIT_COPILOT_ALLOW_ALL_TOOLS=1` set in scheduled workflow — non-interactive sessions no longer prompt for permissions (2026-04-21)
 - ✅ decisions.md writes use marker-based upsert pattern (`specify memory set`) instead of raw `cat >>` — prevents concurrent session corruption (2026-04-21)
