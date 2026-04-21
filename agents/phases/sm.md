@@ -565,6 +565,135 @@ except:
 export SESSION_ITEMS_COMPLETED
 echo "[SM §4b] session_items_completed: ${SESSION_ITEMS_COMPLETED}"
 
+# §4b: Skill impact measurement — once per 5 SM cycles
+# Design ref: docs/design/31-stage-2-skills-expansion.md §Future → ✅
+# Read PROVENANCE.md for learn session dates, compare needs_human before/after each session.
+# Fail-open: any parse/API error skips silently. Requires ≥5 rows before AND ≥10 rows after session.
+if [ $((${SM_CYCLE:-0} % 5)) -eq 0 ]; then
+python3 - <<'SKILL_IMPACT_EOF'
+import re, os, subprocess
+
+REPO = os.environ.get('REPO', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'SM')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+
+# Parse metrics.md for batch rows: date (col 0), needs_human (col 3)
+metrics_rows = []
+try:
+    content = open('docs/aide/metrics.md').read()
+    for line in content.splitlines():
+        m = re.match(r'^\|\s*(\d{4}-\d{2}-\d{2})\s*\|(.+)', line)
+        if m:
+            cells = [c.strip() for c in line.split('|')[1:-1]]
+            if len(cells) >= 4:
+                try:
+                    needs_human = int(cells[3]) if cells[3].isdigit() else None
+                    metrics_rows.append({'date': cells[0].strip(), 'needs_human': needs_human})
+                except Exception:
+                    pass
+except Exception as _e:
+    print(f'[SM §4b] Skill impact: metrics.md read error (non-fatal): {_e}')
+
+if len(metrics_rows) < 15:
+    print(f'[SM §4b] Skill impact: only {len(metrics_rows)} metric rows — need ≥15 for meaningful comparison. Skipping.')
+    exit(0)
+
+# Parse PROVENANCE.md for learn session dates
+learn_dates = []
+try:
+    prov_path = os.path.expanduser('~/.otherness/agents/skills/PROVENANCE.md')
+    prov_content = open(prov_path).read()
+    dates = re.findall(r'^## (\d{4}-\d{2}-\d{2})', prov_content, re.MULTILINE)
+    learn_dates = sorted(set(dates))
+except Exception as _e:
+    print(f'[SM §4b] Skill impact: PROVENANCE.md read error (non-fatal): {_e}')
+
+if not learn_dates:
+    print('[SM §4b] Skill impact: no learn sessions found in PROVENANCE.md. Skipping.')
+    exit(0)
+
+# Get open [SKILL-IMPACT] issues for dedup
+try:
+    existing_r = subprocess.run(
+        ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+         '--search', '[SKILL-IMPACT]', '--json', 'title', '--jq', '[.[].title]'],
+        capture_output=True, text=True, timeout=20)
+    import json as _json
+    existing_titles = _json.loads(existing_r.stdout.strip() or '[]') if existing_r.returncode == 0 else []
+except Exception:
+    existing_titles = []
+
+def avg_needs_human(rows):
+    vals = [r['needs_human'] for r in rows if r['needs_human'] is not None]
+    return sum(vals) / len(vals) if vals else None
+
+for learn_date in learn_dates:
+    try:
+        before_rows = [r for r in metrics_rows if r['date'] < learn_date][-10:]
+        after_rows = [r for r in metrics_rows if r['date'] >= learn_date][:10]
+
+        if len(before_rows) < 5:
+            print(f'[SM §4b] Skill impact: session {learn_date} — only {len(before_rows)} before rows (need ≥5). Skipping.')
+            continue
+        if len(after_rows) < 10:
+            print(f'[SM §4b] Skill impact: session {learn_date} — only {len(after_rows)} after rows (need ≥10). Skipping.')
+            continue
+
+        before_avg = avg_needs_human(before_rows)
+        after_avg = avg_needs_human(after_rows)
+
+        if before_avg is None or after_avg is None:
+            print(f'[SM §4b] Skill impact: session {learn_date} — cannot compute avg (insufficient numeric data). Skipping.')
+            continue
+
+        improved = after_avg < before_avg
+        print(f'[SM §4b] Skill impact check: session {learn_date} before_avg={before_avg:.2f} after_avg={after_avg:.2f} improved={"yes" if improved else "no"}')
+
+        if not improved:
+            title = f'[SKILL-IMPACT] Learn session {learn_date}: no measurable reduction in needs_human after 10 batches'
+            # Dedup: skip if title already in open issues
+            if any(learn_date in t for t in existing_titles):
+                print(f'[SM §4b] Skill impact: issue for {learn_date} already open — skipping duplicate.')
+                continue
+            body = (
+                f'## Skill impact: no measurable improvement detected\n\n'
+                f'**Learn session date**: `{learn_date}`\n\n'
+                f'| Metric | Before (last 5 batches avg) | After (first 10 batches avg) |\n'
+                f'|--------|-------|-------|\n'
+                f'| `needs_human` | {before_avg:.2f} | {after_avg:.2f} |\n\n'
+                f'## What this means\n\n'
+                f'The learn session on `{learn_date}` added skills to `agents/skills/`, but '
+                f'the `needs_human` rate did not decrease in the following 10 batches '
+                f'(it was {after_avg:.2f} vs baseline {before_avg:.2f}).\n\n'
+                f'## Possible causes\n\n'
+                f'- (a) The skill is too generic to apply to specific scenarios\n'
+                f'- (b) The agent is not loading the skill at the right moment (check `ENG §2c` skill selection)\n'
+                f'- (c) The `PROVENANCE.md` entry needs more specific applicability criteria\n'
+                f'- (d) The sample size is too small — 10 batches may not reflect long-term impact\n\n'
+                f'## Recommended action\n\n'
+                f'Review `~/.otherness/agents/skills/PROVENANCE.md` for the `{learn_date}` session. '
+                f'Check whether the extracted skills have clear "when to apply" criteria. '
+                f'If not: update the skill files with more specific applicability guidance.\n\n'
+                f'SM §4b opened this automatically per `docs/design/31-stage-2-skills-expansion.md`.\n\n'
+                f'Reported by SM §4b | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}'
+            )
+            r = subprocess.run(
+                ['gh', 'issue', 'create', '--repo', REPO,
+                 '--title', title,
+                 '--label', 'kind/chore,priority/low,area/skills,otherness',
+                 '--body', body],
+                capture_output=True, text=True, timeout=20)
+            if r.returncode == 0:
+                print(f'[SM §4b] Skill impact issue opened: {r.stdout.strip()[:80]}')
+            else:
+                print(f'[SM §4b] Skill impact issue creation failed (non-fatal): {r.stderr.strip()[:80]}')
+    except Exception as _e:
+        print(f'[SM §4b] Skill impact check error for {learn_date} (non-fatal): {_e}')
+
+print('[SM §4b] Skill impact check complete.')
+SKILL_IMPACT_EOF
+fi
+
 # Append row to metrics.md
 DATE=$(date +%Y-%m-%d)
 # [AI-STEP] Append a new row to docs/aide/metrics.md with today's metrics.
