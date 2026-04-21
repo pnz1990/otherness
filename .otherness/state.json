@@ -440,7 +440,7 @@
       "done_at": "2026-04-21T20:14:05Z"
     },
     "issue-773": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: M7 full close: when GitHub App (M3) is active, add a state write integrity check",
       "labels": [
         "priority/medium",
@@ -448,7 +448,9 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-21T21:50:47Z"
     },
     "issue-774": {
       "state": "todo",
@@ -516,7 +518,7 @@
       "done_at": "2026-04-21T21:43:05Z"
     },
     "issue-785": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: M7 full close: when GitHub App (M3) is active, add a state write integrity check",
       "labels": [
         "priority/medium",
@@ -528,7 +530,7 @@
       "issue": "785"
     },
     "issue-786": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Frame-lock break protocol as a scheduled mechanism, not a human-triggered event: the curre",
       "labels": [
         "priority/medium",
@@ -540,7 +542,7 @@
       "issue": "786"
     },
     "issue-787": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Session type must be declared at session START, not classified post-session: SM \u00a74b curren",
       "labels": [
         "priority/medium",
