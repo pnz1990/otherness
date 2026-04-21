@@ -192,3 +192,4 @@
 | 2026-04-20 | 93 | 1 | 0 | 0 | 12 | 1 | ~30 min | PR #629 feat(coord): queue refusal guard §1c-guard — enrich chore-only queues before claiming; design doc 35 created. Health: GREEN. |
 | 2026-04-20 | 94 | 1 | 0 | 0 | 12 | 1 | ~35 min | PR #663 feat(sm): condensed §4f batch report — 8-line format with details block. Health: GREEN. |
 | 2026-04-21 | 79 | 50 | 0 | 0 | 12 | 1 | ~Xmin | 22 | mixed | — | — | 0 | 1 | 1 | onboarding health check added |
+| 2026-04-21 | 95 | 1 | 0 | 0 | 12 | 1 | ~10 min | 22 | vision-aligned | — | — | 0 | 1 | 1 | PR #780 feat(pm): §5n dual improvement rate — self vs managed. CRITICAL-A. Health: GREEN. |
