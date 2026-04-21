@@ -38,7 +38,7 @@ session's normal state write at batch end.
 ## Future (🔲)
 
 - ✅ CHANGELOG.md maintained automatically — each merged PR appends an entry (SM phase) (PR #729, 2026-04-21)
-- 🔲 `/otherness.upgrade` interactive command updated to respect upgrade_policy — shows what the policy allows before prompting
+- ✅ `/otherness.upgrade` interactive command updated to respect upgrade_policy — Step 1 now reads and displays `upgrade_policy` from `otherness-config.yaml`, explains what the policy allows (major/minor/patch wildcard), warns when policy is unset; Step 2 filters available releases to show only those matching the policy (PR #770, 2026-04-21)
 
 ---
 
