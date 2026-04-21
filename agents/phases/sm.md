@@ -459,19 +459,37 @@ MPEOF
 export MEANINGFUL_PRS
 echo "[SM §4b] meaningful_prs this session: ${MEANINGFUL_PRS}"
 
+# §4b: session_items_completed — read from ITEMS_COMPLETED env var (set by standalone.md §1f loop gate).
+# If unset: default to 1 (single-item session — conservative, not 0).
+# Design ref: docs/design/21-session-throughput.md §Future → ✅
+SESSION_ITEMS_COMPLETED="${ITEMS_COMPLETED:-1}"
+# Guard: must be a positive integer; reset to 1 if not
+SESSION_ITEMS_COMPLETED=$(python3 -c "
+v='${SESSION_ITEMS_COMPLETED}'
+try:
+    n = int(v)
+    print(max(1, n))
+except:
+    print(1)
+" 2>/dev/null || echo "1")
+export SESSION_ITEMS_COMPLETED
+echo "[SM §4b] session_items_completed: ${SESSION_ITEMS_COMPLETED}"
+
 # Append row to metrics.md
 DATE=$(date +%Y-%m-%d)
 # [AI-STEP] Append a new row to docs/aide/metrics.md with today's metrics.
-# Row format (as of PR that added meaningful_prs):
-#   | $DATE | $BATCH | $MERGED | $NEEDS_HUMAN | 0 | $SKILLS | $TODO_SHIPPED | ~Xmin | $VISION_PRS | $SESSION_OUTCOME | $ARCH_CONVERGENCE | $SIM_FLOOR_DELTA | $QUEUE_GUARD_FIRES | $MEANINGFUL_PRS | <notes> |
+# Row format (as of PR that added session_items_completed):
+#   | $DATE | $BATCH | $MERGED | $NEEDS_HUMAN | 0 | $SKILLS | $TODO_SHIPPED | ~Xmin | $VISION_PRS | $SESSION_OUTCOME | $ARCH_CONVERGENCE | $SIM_FLOOR_DELTA | $QUEUE_GUARD_FIRES | $MEANINGFUL_PRS | $SESSION_ITEMS_COMPLETED | <notes> |
 # $ARCH_CONVERGENCE: from scripts/sim-params.json arch_convergence_score field (default: — if calibration not run)
 # $SIM_FLOOR_DELTA: $MERGED - sim_predicted_floor from scripts/sim-params.json (default: — if missing)
 # $QUEUE_GUARD_FIRES: from QUEUE_GUARD_FIRES env var (set above from state.json chore_only_guard_count)
 # $MEANINGFUL_PRS: from MEANINGFUL_PRS env var (design-doc-backed PRs, computed above)
+# $SESSION_ITEMS_COMPLETED: from ITEMS_COMPLETED env var (multi-item loop gate counter), default 1
 # Historical rows (before PR #655) have only 9 columns — do not modify them.
 # Historical rows from PR #655 (vision_prs + session_outcome) have 11 columns — do not modify them.
 # Historical rows from PR #638 (queue_guard_fires) have 14 columns — do not modify them.
 # Historical rows from PR #644 (meaningful_prs) have 15 columns — do not modify them.
+# Historical rows from PR #733 (session_items_completed) have 16 columns — do not modify them.
 # Use the pull-rebase-retry pattern to push directly to main (low-risk doc change).
 
 # After writing the row: reset the guard counter in state.json
@@ -579,6 +597,48 @@ else:
         else:
             print(f'[SM] todo_shipped: no regression '
                    f'({n1["todo_shipped"]} → {n0["todo_shipped"]})')
+
+    # §4b: session_items_completed regression — single-item-mode flag
+    # If the last 3 rows ALL have session_items_completed == 1, the multi-item loop
+    # may have regressed to single-item-per-session behavior.
+    # Column index: 14 (0-indexed after splitting on |), after meaningful_prs.
+    # Fail-open: if column absent or non-integer, skip silently.
+    # Design ref: docs/design/21-session-throughput.md §Future → ✅
+    try:
+        sic_values = []
+        for line in content.splitlines():
+            m = re.match(r'^\|\s*\d{4}-\d{2}-\d{2}\s*\|(.+)', line)
+            if m:
+                cells = [c.strip() for c in line.split('|')[1:-1]]
+                if len(cells) >= 15:
+                    sic_str = cells[14].strip()
+                    if sic_str.isdigit():
+                        sic_values.append(int(sic_str))
+        if len(sic_values) >= 3 and all(v == 1 for v in sic_values[-3:]):
+            open_if_absent(
+                '[SINGLE-ITEM-MODE] Multi-item loop may not be executing — 3 consecutive sessions completed exactly 1 item',
+                'SM §4b regression check triggered.\n\n'
+                '`session_items_completed == 1` for the last 3 consecutive sessions.\n\n'
+                '**Why this matters**: `coord.md` defines a multi-item session loop that should ship '
+                '≥3 items per session. Three consecutive single-item sessions indicate the loop may '
+                'have silently regressed to single-item mode — the post-item gate in `standalone.md §1f` '
+                'may not be firing, or `ITEMS_COMPLETED` is not being incremented.\n\n'
+                '**Possible causes**:\n'
+                '- `ITEMS_COMPLETED` env var not passed through to SM (session terminates after first item)\n'
+                '- `session_item_limit` set to 1 in `otherness-config.yaml`\n'
+                '- Queue empties after first item (check queue depth in state.json)\n\n'
+                '**To investigate**: Check the last 3 session workflow runs. Look for the '
+                '`[LOOP] Item 1/N complete` log line — if N=1 consistently or the loop line is '
+                'absent, the multi-item gate is not executing.\n\n'
+                'This issue is a soft signal — not a [NEEDS HUMAN] hard block.\n'
+                'SM §4b opened this automatically per docs/design/21-session-throughput.md.'
+            )
+        elif len(sic_values) >= 3:
+            print(f'[SM §4b] session_items_completed: {sic_values[-3:]} — no single-item-mode regression.')
+        else:
+            print(f'[SM §4b] session_items_completed: fewer than 3 rows with column present — skip regression check.')
+    except Exception as _e:
+        print(f'[SM §4b] session_items_completed regression check (non-fatal): {_e}')
 REGEOF
 ```
 
