@@ -46,6 +46,7 @@ This design doc specifies the correct CI gate:
 
 - 🔲 38.3 — `qa.md §3a`: make the CI fix path executable — replace the `[AI-STEP]` comment with a real loop: read `gh run view --log-failed`, post the error as a PR comment, push a fix commit, re-enter the CI wait loop. Max 3 fix attempts before `[NEEDS HUMAN]`.
 - 🔲 38.5 — `qa.md §3a`: distinguish flaky external checks — checks that fail with "infrastructure" errors (runner timeout, network error, external service unavailable) get one automatic retry before being treated as a real failure.
+- 🔲 38.6 — SM §4b: QA rejection pattern tracker — when QA rejects a PR (i.e. a `feat/*` branch is closed without merging after a QA review), SM §4b must record the rejection type in metrics.md (`qa_rejection_reason`: one of `ci_failure / spec_violation / scope_creep / test_missing / other`). If the same rejection type appears 3 consecutive times across different sessions: SM must open a `kind/chore priority/high` issue: "QA rejection pattern: `<type>` in last 3 sessions — ENG may need a targeted skill." A skill that addresses the repeated failure (e.g. `test-coverage-discipline.md` for `test_missing`) should be identified or created. Without tracking rejection types, ENG keeps making the same mistake and SM never connects the dots. ⚠️ Inferred from reliability lens: sessions fail silently; QA rejection reasons are not tracked across sessions; the same root cause can repeat indefinitely without triggering a corrective response.
 
 ---
 
