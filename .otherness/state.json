@@ -694,7 +694,7 @@
       "priority": "medium"
     },
     "issue-637": {
-      "state": "todo",
+      "state": "done",
       "status": "todo",
       "title": "feat: End-to-end onboarding smoke test on a live fresh repo: `scripts/check-onboarding.sh` valid",
       "labels": [
@@ -704,7 +704,9 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "resolved_at": "2026-04-21T09:18:25Z"
     },
     "issue-636": {
       "state": "done",
