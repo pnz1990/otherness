@@ -24,6 +24,7 @@ Two consecutive AMBER batches on this criterion trigger an automatic queue audit
 ## Present (✅)
 
 - ✅ 35.1 — SM §4f: `VISION_PR_COUNT` check — for each PR merged this session, title or body (first 500 chars) scanned for `docs/design/`, `🔲 →`, or `design doc` (case-insensitive). Excludes chore(sm)/metrics/batch/session-complete titles. If `VISION_PR_COUNT == 0`: health degrades to AMBER. `vision_aligned` boolean written to `state.json` each batch. (PR #TBD, 2026-04-21)
+- ✅ 35.2 — SM §4f: vision-misaligned AMBER note — `THROUGHPUT_WARN` updated to include actionable guidance: "⚠️ N vision-aligned PRs. Queue may have drifted from design docs. Run /otherness.vibe-vision or check coord §1b." — shown in health comment only when `VISION_PR_COUNT == 0`; absent when vision-aligned PRs exist (PR #721, 2026-04-21)
 
 ---
 
