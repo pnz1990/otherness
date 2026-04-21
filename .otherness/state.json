@@ -381,6 +381,72 @@
         "priority/medium",
         "size/s"
       ]
+    },
+    "issue-770": {
+      "state": "todo",
+      "title": "feat: `/otherness.upgrade` interactive command updated to respect upgrade_policy",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-771": {
+      "state": "todo",
+      "title": "feat: PM \u00a75: otherness self-improvement rate vs. managed project improvement rate",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-772": {
+      "state": "todo",
+      "title": "feat: Queue guard firing frequency tracked and acted on: `coord.md \u00a71c` queue refusal guard fire",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-773": {
+      "state": "todo",
+      "title": "feat: M7 full close: when GitHub App (M3) is active, add a state write integrity check",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-774": {
+      "state": "todo",
+      "title": "feat: Frame-lock break protocol as a scheduled mechanism, not a human-triggered event: the curre",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-775": {
+      "state": "todo",
+      "title": "feat: Session type must be declared at session START, not classified post-session: SM \u00a74b curren",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
     }
   },
   "session_heartbeats": {
