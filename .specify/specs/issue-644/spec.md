@@ -1,36 +1,35 @@
-# Spec: issue-644 — meaningful_prs metric (design doc 21)
+# Spec: issue-644 — PM §5 meaningful_prs stagnation check
 
 ## Design reference
 - **Design doc**: `docs/design/21-session-throughput.md`
-- **Section**: `§ Future`
-- **Implements**: Meaningful-work rate tracked as a first-class metric (🔲 → ✅)
+- **Section**: `§ Future — Meaningful-work rate tracked as a first-class metric`
+- **Implements**: PM §5 stagnation check: trigger AMBER (open issue) when `meaningful_prs = 0` for 2 consecutive batches. The SM §4b `meaningful_prs` column is already implemented (already ✅ Present); this completes the PM-side detection.
 
 ---
 
-## Zone 1 — Obligations
+## Zone 1 — Obligations (falsifiable)
 
-**O1** — `docs/aide/metrics.md` gains a `meaningful_prs` column in the metric definitions table and in the batch log header row.
+**O1** — PM §5 reads the last 2 rows of `docs/aide/metrics.md` and checks the `meaningful_prs` column (column 14, 0-indexed). If both rows have `meaningful_prs == 0`, it triggers a stagnation action. Violation: PM §5 doesn't read `meaningful_prs` at all.
 
-**O2** — `SM §4b` computes `MEANINGFUL_PRS`: count of merged PRs (last 24h, non-excluded) where title or body (first 500 chars) contains `docs/design/`, `🔲 →`, or `design doc` (case-insensitive). This is the same criterion as VISION_PR_COUNT (§35.1). Where VISION_PR_COUNT drives AMBER, MEANINGFUL_PRS is the persistent metric.
+**O2** — When 2 consecutive batches have `meaningful_prs == 0`, PM §5 opens a GitHub issue titled `[STALE] No meaningful PRs in last 2 batches — pipeline may be running on chores only` if no such issue is already open. Violation: PM §5 detects the condition but posts no issue.
 
-**O3** — `MEANINGFUL_PRS` is written to `metrics.md` as the last column in the current batch row.
+**O3** — The stagnation check for `meaningful_prs` is separate from (and in addition to) the existing `todo_shipped = 0` check. Both checks run independently. Violation: one check suppresses the other.
 
-**O4** — Historical rows without `meaningful_prs` are not modified.
-
-**O5** — scripts/validate.sh PASSED, scripts/lint.sh PASSED.
+**O4** — Graceful fallback: if the `meaningful_prs` column is absent from metrics.md rows (schema migration case), PM §5 skips the check and logs a warning. Violation: PM §5 crashes when `meaningful_prs` column is missing.
 
 ---
 
 ## Zone 2 — Implementer's judgment
 
-- `MEANINGFUL_PRS` reuses the same scan logic as `VISION_PR_COUNT` from §4f. SM §4b runs before §4f, so §4b must compute it independently (can duplicate the logic or refactor — duplication is simpler for this minimal implementation).
-- Column position: after `queue_guard_fires` (last existing column) → `meaningful_prs` appended.
-- PM §5 stagnation check (2-consecutive-batch AMBER) is a separate item — not in this PR.
+- The `meaningful_prs` column is at index 13 (14th column, 0-indexed) in the current metrics.md schema: `Date | Batch | prs_merged | needs_human | ci_red_hours | skills_count | todo_shipped | time_to_merge_avg_min | vision_prs | session_outcome | arch_convergence | sim_floor_delta | queue_guard_fires | meaningful_prs | Notes`.
+- The check runs in PM §5 immediately after the existing `todo_shipped` stagnation check (not in SM §4b — the issue spec says PM §5).
+- The issue body is concise: shows the last 2 batch rows with meaningful_prs values, directs to `docs/aide/metrics.md` for context.
+- Duplicate check: use `--search "[STALE] No meaningful"` to prevent opening the same issue twice.
 
 ---
 
 ## Zone 3 — Scoped out
 
-- PM §5 AMBER on consecutive `meaningful_prs=0` batches
-- Retroactive calculation on historical rows
-- `session_items_completed` column (separate issue)
+- SM §4b changes — already done in a prior PR.
+- Auto-remediation (triggering vision synthesis when meaningful_prs=0) — separate feature.
+- Historical metrics.md back-fill — schema was added in PR #TBD; historical rows may lack the column.
