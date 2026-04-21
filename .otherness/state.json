@@ -383,7 +383,7 @@
       ]
     },
     "issue-770": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: `/otherness.upgrade` interactive command updated to respect upgrade_policy",
       "labels": [
         "priority/medium",
@@ -391,7 +391,18 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "assigned_to": "sess-b7b22e98",
+      "assigned_at": "2026-04-21T20:03:31Z",
+      "branch": "feat/issue-770",
+      "worktree": "../otherness.issue-770",
+      "file_spaces": [
+        ".opencode/command/",
+        "docs/design/"
+      ],
+      "pr_merged": true,
+      "pr_number": 776,
+      "done_at": "2026-04-21T20:06:44Z"
     },
     "issue-771": {
       "state": "todo",
