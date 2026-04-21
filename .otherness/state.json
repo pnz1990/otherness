@@ -720,8 +720,8 @@
       "priority": "medium"
     },
     "issue-635": {
-      "state": "in_review",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: Simulation predictions must visibly change agent behavior: today the simulation runs, prod",
       "labels": [
         "priority/medium",
@@ -740,7 +740,8 @@
         "agents/"
       ],
       "pr_number": 680,
-      "pr_merged": false
+      "pr_merged": true,
+      "done_at": "2026-04-21T07:59:18Z"
     },
     "issue-634": {
       "state": "todo",
