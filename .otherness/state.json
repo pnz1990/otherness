@@ -659,7 +659,7 @@
       "done_at": "2026-04-20T21:30:20Z"
     },
     "issue-642": {
-      "state": "todo",
+      "state": "done",
       "status": "todo",
       "title": "feat: 38.1",
       "labels": [
@@ -669,7 +669,10 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": false,
+      "done_at": "2026-04-21T12:09:51Z",
+      "notes": "already-implemented \u2014 closed without PR"
     },
     "issue-641": {
       "state": "done",
@@ -784,9 +787,9 @@
       "done_at": "2026-04-21T07:59:18Z"
     },
     "issue-634": {
-      "state": "todo",
+      "state": "done",
       "status": "todo",
-      "title": "feat: Session defect diagnosis: when a session completes with 0 meaningful items (only metrics c",
+      "title": "feat(sm): session defect diagnosis",
       "labels": [
         "priority/medium",
         "area/agent-loop",
@@ -794,7 +797,10 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-21T12:09:51Z",
+      "pr_number": 703
     },
     "issue-633": {
       "state": "done",
@@ -1165,7 +1171,7 @@
       "priority": "low"
     }
   },
-  "sm_cycle_count": 10,
+  "sm_cycle_count": 11,
   "last_sm_at": "2026-04-21T08:00:25Z",
   "session_heartbeats": {
     "sess-5327084f": {
