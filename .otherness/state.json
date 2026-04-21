@@ -277,16 +277,11 @@
       "priority": "medium"
     },
     "issue-614": {
-      "state": "todo",
-      "title": "feat: `coord.md \u00a71c`: queue refusal guard",
-      "labels": [
-        "priority/medium",
-        "area/agent-loop",
-        "otherness",
-        "size/s",
-        "kind/enhancement"
-      ],
-      "priority": "medium"
+      "state": "done",
+      "pr_number": 629,
+      "pr_merged": true,
+      "done_at": "2026-04-20T00:00:00Z",
+      "title": "feat: `coord.md \u00a71c`: queue refusal guard"
     },
     "issue-611": {
       "state": "todo",
@@ -299,6 +294,19 @@
         "kind/enhancement"
       ],
       "priority": "medium"
+    },
+    "issue-762": {
+      "state": "done",
+      "pr_number": 764,
+      "pr_merged": true,
+      "done_at": "2026-04-21T18:43:45Z",
+      "title": "feat(sm): two-consecutive-AMBER trigger opens queue audit issue (35.3)",
+      "labels": [
+        "area/agent-loop",
+        "kind/enhancement",
+        "priority/medium",
+        "size/s"
+      ]
     }
   },
   "session_heartbeats": {
@@ -311,7 +319,14 @@
       "last_seen": "2026-04-21T17:36:19Z",
       "item": "issue-757",
       "cycle": 2
+    },
+    "sess-67e9c4b6": {
+      "last_seen": "2026-04-21T18:44:24Z",
+      "item": "complete",
+      "cycle": 10
     }
   },
-  "pm_cycle_count": 1
+  "pm_cycle_count": 2,
+  "vision_aligned": true,
+  "consecutive_vision_misaligned": 0
 }
