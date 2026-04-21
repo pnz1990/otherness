@@ -2828,10 +2828,82 @@ if [ -z "${VISION_PRS+x}" ]; then
   SESSION_OUTCOME="unknown"
 fi
 
-# Throughput signal: AMBER if session_outcome is chore-only (design doc 35 §O4)
-if [ "${SESSION_OUTCOME:-unknown}" = "chore-only" ] || [ "${VISION_PRS:-0}" -eq 0 ]; then
+# §4f: VISION_PR_COUNT — design-doc-backed PR check (design doc 35 §35.1 → ✅)
+# For each PR merged this session, check if title or body references a design doc.
+# A PR is "vision-aligned" if title or body (first 500 chars) contains:
+#   docs/design/ OR 🔲 → OR design doc (case-insensitive)
+# Excludes: chore(sm), chore(metrics), batch N, session complete PR titles.
+VISION_PR_COUNT=$(python3 - <<'VPCEOF'
+import subprocess, json, re, os, sys
+
+REPO = os.environ.get('REPO', '')
+
+EXCLUDE_PAT = re.compile(
+    r'^chore\(sm\)|^chore\(metrics\)|batch\s+\d+|session complete|PRs merged', re.IGNORECASE)
+VISION_PAT = re.compile(
+    r'docs/design/|🔲\s*→|design doc', re.IGNORECASE)
+
+# Get PRs merged in last 24h
+try:
+    from datetime import datetime, timezone, timedelta
+    since = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    r = subprocess.run(
+        ['gh', 'pr', 'list', '--repo', REPO, '--state', 'merged', '--limit', '30',
+         '--json', 'number,title,mergedAt'],
+        capture_output=True, text=True, timeout=20)
+    if r.returncode != 0:
+        print('0'); sys.exit(0)
+    prs = json.loads(r.stdout.strip() or '[]')
+    # Filter to last 24h and non-excluded
+    recent = [pr for pr in prs
+              if pr.get('mergedAt', '') >= since
+              and not EXCLUDE_PAT.match(pr.get('title', ''))]
+except Exception as e:
+    print(f'0', file=sys.stderr)
+    print('0'); sys.exit(0)
+
+count = 0
+for pr in recent:
+    title = pr.get('title', '')
+    # Fast-path: check title first
+    if VISION_PAT.search(title):
+        count += 1
+        continue
+    # Body scan (first 500 chars)
+    try:
+        rb = subprocess.run(
+            ['gh', 'pr', 'view', str(pr['number']), '--repo', REPO,
+             '--json', 'body', '--jq', '.body'],
+            capture_output=True, text=True, timeout=10)
+        body = rb.stdout.strip()[:500] if rb.returncode == 0 else ''
+        if VISION_PAT.search(body):
+            count += 1
+    except Exception:
+        pass
+
+print(count)
+VPCEOF
+)
+export VISION_PR_COUNT
+echo "[SM §4f §35.1] VISION_PR_COUNT=${VISION_PR_COUNT} (design-doc-backed PRs this session)"
+
+# Write vision_aligned to state.json (design doc 35 §35.5 minimal impl)
+python3 - <<'VA_EOF'
+import json, os
+VISION_PR_COUNT = int(os.environ.get('VISION_PR_COUNT', '0') or '0')
+try:
+    with open('.otherness/state.json') as f: s = json.load(f)
+    s['vision_aligned'] = (VISION_PR_COUNT > 0)
+    with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
+    print(f"[SM §4f §35.5] vision_aligned={s['vision_aligned']} written to state.json")
+except Exception as e:
+    print(f"[SM §4f] vision_aligned write failed (non-fatal): {e}")
+VA_EOF
+
+# Throughput signal: AMBER if session_outcome is chore-only OR VISION_PR_COUNT == 0 (design doc 35 §35.1)
+if [ "${SESSION_OUTCOME:-unknown}" = "chore-only" ] || [ "${VISION_PR_COUNT:-0}" -eq 0 ]; then
   HEALTH="AMBER"
-  THROUGHPUT_WARN=" ⚠️ ${SESSION_OUTCOME:-chore-only} session (0 vision PRs)"
+  THROUGHPUT_WARN=" ⚠️ ${SESSION_OUTCOME:-chore-only} session (${VISION_PR_COUNT:-0} vision-aligned PRs)"
 fi
 
 ACTION="Active"
