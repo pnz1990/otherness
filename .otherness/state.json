@@ -1458,8 +1458,8 @@
       "priority": "medium"
     }
   },
-  "sm_cycle_count": 12,
-  "last_sm_at": "2026-04-21T12:55:01Z",
+  "sm_cycle_count": 13,
+  "last_sm_at": "2026-04-21T13:15:10Z",
   "session_heartbeats": {
     "sess-5327084f": {
       "last_seen": "2026-04-20T13:12:45Z",
@@ -1502,6 +1502,6 @@
       "cycle": 2
     }
   },
-  "pm_cycle_count": 4,
+  "pm_cycle_count": 5,
   "last_auto_vision_cycle": 87
 }
