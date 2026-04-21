@@ -301,8 +301,56 @@ fi
 
 ```bash
 # Count batch metrics
-MERGED=$(gh pr list --repo $REPO --state merged --limit 50 \
-  --json number,mergedAt --jq '[.[] | select(.mergedAt >= "'$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-7d +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u +%Y-%m-%dT%H:%M:%SZ)'")] | length' 2>/dev/null || echo "?")
+# §4b: Filter out housekeeping-only PRs from prs_merged count (design doc 35 §Future → ✅)
+# A PR is housekeeping-only if ALL its changed files are under docs/aide/.
+# Fail-open: if gh pr view fails for a PR, count it as meaningful.
+MERGED=$(python3 - <<'MERGED_EOF'
+import subprocess, json, os, sys
+from datetime import datetime, timezone, timedelta
+
+REPO = os.environ.get('REPO', '')
+since = (datetime.now(timezone.utc) - timedelta(days=7)).strftime('%Y-%m-%dT%H:%M:%SZ')
+HOUSEKEEPING_DIRS = ('docs/aide/', '.otherness/state.json')
+
+try:
+    r = subprocess.run(
+        ['gh','pr','list','--repo',REPO,'--state','merged','--limit','50',
+         '--json','number,mergedAt',
+         '--jq',f'[.[] | select(.mergedAt >= "{since}")] | .[].number'],
+        capture_output=True, text=True, timeout=20)
+    if r.returncode != 0:
+        print('?'); sys.exit(0)
+    pr_nums = [line.strip() for line in r.stdout.strip().splitlines() if line.strip()]
+except Exception:
+    print('?'); sys.exit(0)
+
+real_count = 0
+for num in pr_nums:
+    try:
+        fr = subprocess.run(
+            ['gh','pr','view',num,'--repo',REPO,
+             '--json','files','--jq','[.files[].path]'],
+            capture_output=True, text=True, timeout=10)
+        if fr.returncode != 0:
+            real_count += 1  # fail-open
+            continue
+        files = json.loads(fr.stdout.strip() or '[]')
+        if not files:
+            real_count += 1  # fail-open on empty
+            continue
+        # PR is real if ANY file is outside housekeeping dirs
+        is_housekeeping = all(
+            any(f.startswith(d) for d in HOUSEKEEPING_DIRS)
+            for f in files
+        )
+        if not is_housekeeping:
+            real_count += 1
+    except Exception:
+        real_count += 1  # fail-open
+
+print(real_count)
+MERGED_EOF
+)
 NEEDS_HUMAN=$(gh issue list --repo $REPO --state all --label "needs-human" \
   --json number,createdAt --jq '[.[] | select(.createdAt >= "'$(date -u +%Y-%m-%d)'T00:00:00Z")] | length' 2>/dev/null || echo "0")
 SKILLS=$(ls ~/.otherness/agents/skills/*.md 2>/dev/null | grep -v PROVENANCE | grep -v README | wc -l | xargs)
