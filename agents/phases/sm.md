@@ -2967,10 +2967,89 @@ ACTION="Active"
 # Headline: Batch N | Health: X | Progress: X | Vision PRs: N | Chores: N | Queue: N remaining | Journeys: N✅ N❌ | Next: [title]
 # Verbose details go into a <details> block. Human can scan 10 comments in 30 seconds.
 
-# Progress classification (O4)
-PROGRESS_CLASS="ADVANCING"
-[ "${VISION_PRS:-0}" -eq 0 ] && [ "${MERGED:-0}" -gt 0 ] && PROGRESS_CLASS="STEADY"
-[ "${MERGED:-0}" -eq 0 ] && PROGRESS_CLASS="STALLED"
+# Progress classification — design doc 23 §Future → ✅
+# Two-axis: ADVANCING / STALLING / STALLED based on meaningful_prs column from metrics.md.
+# ADVANCING: this batch has meaningful_prs > 0 (or vision_prs > 0 — either counts).
+# STALLING: this batch + last batch both have meaningful_prs == 0.
+# STALLED: this batch + last 2 batches all have meaningful_prs == 0.
+# Fallback: if metrics.md absent or <2 rows, default to ADVANCING (fail-open).
+# When STALLING or STALLED + HEALTH=GREEN: upgrade HEALTH to AMBER.
+PROGRESS_CLASS=$(python3 - <<'PROGRESS_EOF'
+import re, os
+
+try:
+    content = open('docs/aide/metrics.md').read()
+    rows = []
+    for line in content.splitlines():
+        m = re.match(r'^\|\s*\d{4}-\d{2}-\d{2}\s*\|(.+)', line)
+        if m:
+            cells = [c.strip() for c in line.split('|')[1:-1]]
+            if len(cells) >= 7:
+                try:
+                    mp = cells[13].strip() if len(cells) > 13 else '0'
+                    meaningful = int(mp) if mp.isdigit() else 0
+                    rows.append({'meaningful_prs': meaningful})
+                except Exception:
+                    rows.append({'meaningful_prs': 0})
+except Exception:
+    rows = []
+
+VISION_PRS = int(os.environ.get('VISION_PRS', '0') or '0')
+MERGED = int(os.environ.get('MERGED', '0') or '0')
+
+# Current batch: use VISION_PRS (already computed) or MEANINGFUL_PRS env var
+MEANINGFUL_PRS = int(os.environ.get('MEANINGFUL_PRS', '0') or '0')
+current_meaningful = max(VISION_PRS, MEANINGFUL_PRS)
+
+if current_meaningful > 0:
+    print('ADVANCING')
+elif len(rows) >= 2 and rows[-1]['meaningful_prs'] == 0 and rows[-2]['meaningful_prs'] == 0:
+    print('STALLED')
+elif len(rows) >= 1 and rows[-1]['meaningful_prs'] == 0:
+    print('STALLING')
+elif MERGED == 0:
+    print('STALLED')
+else:
+    print('ADVANCING')
+PROGRESS_EOF
+)
+PROGRESS_CLASS="${PROGRESS_CLASS:-ADVANCING}"
+STALLING_STREAK=$(python3 - <<'STREAK_EOF'
+import re
+
+try:
+    content = open('docs/aide/metrics.md').read()
+    rows = []
+    for line in content.splitlines():
+        m = re.match(r'^\|\s*\d{4}-\d{2}-\d{2}\s*\|(.+)', line)
+        if m:
+            cells = [c.strip() for c in line.split('|')[1:-1]]
+            if len(cells) >= 7:
+                try:
+                    mp = cells[13].strip() if len(cells) > 13 else '0'
+                    rows.append(int(mp) if mp.isdigit() else 0)
+                except Exception:
+                    rows.append(0)
+    # Count trailing consecutive zeros
+    streak = 0
+    for val in reversed(rows):
+        if val == 0: streak += 1
+        else: break
+    print(streak)
+except Exception:
+    print(0)
+STREAK_EOF
+)
+echo "[SM §4f] Progress: ${PROGRESS_CLASS} | Stalling streak: ${STALLING_STREAK} batch(es)"
+
+# O2: STALLING or STALLED + GREEN → upgrade to AMBER
+# A stalling system must never show GREEN to the human.
+if [ "${PROGRESS_CLASS}" = "STALLING" ] || [ "${PROGRESS_CLASS}" = "STALLED" ]; then
+  if [ "${HEALTH:-GREEN}" = "GREEN" ]; then
+    HEALTH="AMBER"
+    echo "[SM §4f] Health upgraded GREEN→AMBER: progress=${PROGRESS_CLASS} (stalling streak=${STALLING_STREAK})"
+  fi
+fi
 
 # Chores count: MERGED minus VISION_PRS (non-negative)
 CHORES_COUNT=$(python3 -c "
