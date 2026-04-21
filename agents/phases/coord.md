@@ -1614,6 +1614,63 @@ if os.path.isdir(design_dir):
 
 print(f"[COORD §1f] Inline queue-gen complete: {new_items} issues created.")
 INLINE_QGEN
+
+      # §1f-refill: Update state.json with newly created issues (design doc 21 §Future → ✅)
+      # Without this update, QUEUE_REMAINING stays 0 and the session exits to SM/PM
+      # even though fresh items were just created. Adding them to state.json lets the
+      # §1f gate re-check and continue the session without waiting for the next run.
+      python3 - <<'REFILL_STATE_EOF'
+import subprocess, json, os, re
+
+REPO = os.environ.get('REPO', '')
+
+try:
+    with open('.otherness/state.json') as f: s = json.load(f)
+except Exception:
+    s = {}
+
+# Fetch newly created otherness-labelled issues not yet in state.json
+try:
+    r = subprocess.run(
+        ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+         '--label', 'otherness,kind/enhancement', '--limit', '20',
+         '--json', 'number,title,labels',
+         '--jq', '[.[] | {number:.number, title:.title, labels:[.labels[].name]}]'],
+        capture_output=True, text=True, timeout=15)
+    issues = json.loads(r.stdout) if r.returncode == 0 else []
+except Exception as e:
+    print(f'[COORD §1f-refill] API error (non-fatal): {e}')
+    issues = []
+
+added = 0
+for issue in issues:
+    item_id = f"issue-{issue['number']}"
+    if item_id not in s.get('features', {}):
+        s.setdefault('features', {})[item_id] = {
+            'state': 'todo',
+            'title': issue['title'],
+            'labels': issue.get('labels', []),
+            'priority': 'medium',
+            'issue': str(issue['number']),
+        }
+        added += 1
+
+if added > 0:
+    with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
+    print(f'[COORD §1f-refill] Added {added} new issues to state.json — session can continue.')
+else:
+    print('[COORD §1f-refill] No new issues to add to state.json.')
+REFILL_STATE_EOF
+
+      # Re-compute QUEUE_REMAINING after refill so §1f gate sees the new items
+      QUEUE_REMAINING=$(python3 -c "
+import json
+try:
+    s = json.load(open('.otherness/state.json'))
+    print(len([v for v in s.get('features',{}).values() if v.get('state') == 'todo']))
+except: print(0)
+" 2>/dev/null || echo "0")
+      echo "[COORD §1f] After refill: QUEUE_REMAINING=${QUEUE_REMAINING}"
       git push origin --delete "$QUEUE_LOCK_BRANCH" 2>/dev/null || true
       echo "[COORD §1f] Queue-gen lock released."
     else
