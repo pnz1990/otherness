@@ -101,9 +101,28 @@ REF_VER=$(gh api "repos/$REFERENCE_PROJECT/contents/.otherness%2Fstate.json?ref=
   --jq '.content' 2>/dev/null | base64 -d 2>/dev/null | \
   python3 -c "import json,sys; print(json.load(sys.stdin).get('version','?'))" 2>/dev/null || echo "?")
 if [ "$REF_VER" = "1.3" ]; then
-  echo "  OK: state.json is v1.3"
+  echo "  OK: state.json is v$REF_VER"
 else
   echo "  WARN: state.json is v$REF_VER (expected 1.3) — migration runs at next startup"
+fi
+
+# [5c] sim-prediction.json recovery_action check — warn (non-fatal) if absent
+# Design ref: docs/design/23-simulation-as-anchor.md §Step 4
+# QA follow-up from PR #680 (issue-681): verify SM §4e writes recovery_action field.
+echo "[5c] Checking $REFERENCE_PROJECT sim-prediction.json..."
+SIM_PRED_CONTENT=$(gh api "repos/$REFERENCE_PROJECT/contents/.otherness%2Fsim-prediction.json?ref=_state" \
+  --jq '.content' 2>/dev/null | base64 -d 2>/dev/null || echo "")
+if [ -z "$SIM_PRED_CONTENT" ]; then
+  echo "  WARN: sim-prediction.json not found on $REFERENCE_PROJECT _state branch"
+  echo "  (SM §4e has not run yet, or the file was not written — non-blocking)"
+else
+  SIM_RECOVERY_ACTION=$(echo "$SIM_PRED_CONTENT" | \
+    python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('recovery_action','ABSENT'))" 2>/dev/null || echo "PARSE_ERROR")
+  if [ "$SIM_RECOVERY_ACTION" = "ABSENT" ] || [ "$SIM_RECOVERY_ACTION" = "PARSE_ERROR" ]; then
+    echo "  WARN: sim-prediction.json exists but recovery_action field is missing (SM §4e incomplete?)"
+  else
+    echo "  OK: recovery_action=$SIM_RECOVERY_ACTION"
+  fi
 fi
 
 echo ""
