@@ -3153,6 +3153,60 @@ if [ "${PROGRESS_CLASS}" = "STABLE" ] || [ "${PROGRESS_CLASS}" = "STALLED" ]; th
   fi
 fi
 
+# §4f: Simulation calibration staleness check (design doc 23 §Future → ✅)
+# Read calibrated_at from _state:sim-prediction.json. Compute age in days.
+# If absent: show "unknown". If >14 days: downgrade HEALTH to AMBER.
+SIM_CALIB_LABEL=$(python3 - <<'SIMCALIB_EOF'
+import subprocess, json, datetime, sys
+
+try:
+    r = subprocess.run(
+        ['git', 'show', 'origin/_state:.otherness/sim-prediction.json'],
+        capture_output=True, text=True, timeout=10)
+    if r.returncode != 0:
+        print('unknown')
+        sys.exit(0)
+    data = json.loads(r.stdout.strip())
+    calibrated_at = data.get('calibrated_at', '')
+    if not calibrated_at:
+        print('unknown')
+        sys.exit(0)
+    cal_dt = datetime.datetime.fromisoformat(calibrated_at.replace('Z', '+00:00'))
+    now = datetime.datetime.now(datetime.timezone.utc)
+    age_days = (now - cal_dt).days
+    print(f'{age_days}d ago')
+except Exception:
+    print('unknown')
+SIMCALIB_EOF
+)
+SIM_CALIB_DAYS=$(python3 - <<'SIMDAYS_EOF'
+import subprocess, json, datetime, sys
+
+try:
+    r = subprocess.run(
+        ['git', 'show', 'origin/_state:.otherness/sim-prediction.json'],
+        capture_output=True, text=True, timeout=10)
+    if r.returncode != 0:
+        print('-1')
+        sys.exit(0)
+    data = json.loads(r.stdout.strip())
+    calibrated_at = data.get('calibrated_at', '')
+    if not calibrated_at:
+        print('-1')
+        sys.exit(0)
+    cal_dt = datetime.datetime.fromisoformat(calibrated_at.replace('Z', '+00:00'))
+    now = datetime.datetime.now(datetime.timezone.utc)
+    print(str((now - cal_dt).days))
+except Exception:
+    print('-1')
+SIMDAYS_EOF
+)
+if [ "${SIM_CALIB_DAYS:-0}" -gt 14 ] 2>/dev/null; then
+  HEALTH="AMBER"
+  SIM_CALIB_WARN=" ⚠️ Sim anchor stale (${SIM_CALIB_LABEL})"
+  echo "[SM §4f] Sim calibration stale (${SIM_CALIB_LABEL}) — HEALTH set to AMBER"
+fi
+
 # Chores count: MERGED minus VISION_PRS (non-negative)
 CHORES_COUNT=$(python3 -c "
 merged = int('${MERGED:-0}') if '${MERGED:-0}'.isdigit() else 0
@@ -3210,6 +3264,7 @@ Batch ${SM_CYCLE:-?} | progress: ${PROGRESS_CLASS} | health: ${HEALTH} | Vision 
 - Outcome: ${SESSION_OUTCOME:-unknown}${THROUGHPUT_WARN:-}
 - In-review: ${IN_REVIEW:-0} | Action: ${ACTION}
 - Needs-human open: ${NEEDS_HUMAN_COUNT:-0}
+- Sim calibrated: ${SIM_CALIB_LABEL:-unknown}${SIM_CALIB_WARN:-}
 
 </details>
 BODY_EOF
