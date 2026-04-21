@@ -931,7 +931,46 @@ else:
         branch_active = False
 
     if open_count > 0:
-        print(f'[SM §4c] Learn issue already open ({open_count}) — cadence reminder satisfied.')
+        # §4c: Verify learn issue is not stale (design doc 31 §Future → ✅)
+        # An open learn issue only satisfies cadence if it is recent OR a learn branch is active.
+        # If the issue has been open >7 days with no learn branch: escalate (don't silently accept).
+        try:
+            issue_age_days = 999
+            learn_issue_num = None
+            age_r = subprocess.run(
+                ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+                 '--search', 'learn(arch)', '--json', 'number,createdAt',
+                 '--jq', '.[0] | "\(.number)|\(.createdAt)"'],
+                capture_output=True, text=True, timeout=15)
+            if age_r.returncode == 0 and '|' in age_r.stdout.strip():
+                parts = age_r.stdout.strip().split('|')
+                learn_issue_num = parts[0].strip()
+                created_at = parts[1].strip()
+                import datetime as _dt
+                cal = _dt.datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                issue_age_days = (_dt.datetime.now(_dt.timezone.utc) - cal).days
+        except Exception:
+            issue_age_days = 0  # fail-open: treat as fresh
+
+        if issue_age_days > 7 and not branch_active:
+            print(f'[SM §4c] Learn issue stale ({issue_age_days}d open, no feat/learn branch) — escalating.')
+            # Comment on the issue to escalate it
+            if learn_issue_num:
+                subprocess.run(
+                    ['gh', 'issue', 'comment', learn_issue_num, '--repo', REPO,
+                     '--body', (f'[SM §4c | {MY_SESSION_ID}] Learn issue has been open {issue_age_days}d '
+                                f'with no active feat/learn branch. Cadence not satisfied — PROVENANCE.md '
+                                f'has not been updated in {days_since}d. This issue needs to be claimed '
+                                f'and `/otherness.learn` run in the next session.')],
+                    capture_output=True, timeout=10)
+                # Ensure priority/high label
+                subprocess.run(
+                    ['gh', 'issue', 'edit', learn_issue_num, '--repo', REPO,
+                     '--add-label', 'priority/high'],
+                    capture_output=True, timeout=10)
+                print(f'[SM §4c] Escalation comment posted on learn issue #{learn_issue_num}.')
+        else:
+            print(f'[SM §4c] Learn issue already open ({open_count}, {issue_age_days}d) — cadence reminder satisfied.')
     elif branch_active:
         print(f'[SM §4c] Learn branch active — cadence satisfied (in progress).')
     else:
