@@ -223,12 +223,31 @@ gh pr review $PR_NUM --repo $REPO \
 
 **CRITICAL TIER — AUTONOMOUS MODE SELF-REVIEW PROTOCOL**
 
-If PR touches `agents/standalone.md` or `agents/bounded-standalone.md` AND `AUTONOMOUS_MODE=true`:
+If PR touches `agents/standalone.md`, `agents/bounded-standalone.md`, or `agents/phases/*.md`
+AND `AUTONOMOUS_MODE=true`:
 
-Post answers to each check as `[AGENT SELF-REVIEW]` comment. If any fails: post
-`[NEEDS HUMAN: self-review-failed — <reason>]` and do NOT merge.
+1. Post the 5-check self-review as `[AGENT SELF-REVIEW]` comment on the PR.
+2. If **all 5 checks pass**: call `_merge_pr` immediately. Do NOT stop. Do NOT post `[NEEDS HUMAN]`.
+3. If **any check fails**: post `[NEEDS HUMAN: self-review-failed — <reason>]` and stop.
+
+```bash
+# After posting self-review comment — this block MUST execute:
+SELF_REVIEW_PASSED=true  # set to false if any check failed above
+
+if [ "$SELF_REVIEW_PASSED" = "true" ] && [ "${AUTONOMOUS_MODE:-false}" = "true" ]; then
+  echo "[QA] CRITICAL-A self-review passed — proceeding with autonomous merge"
+  _merge_pr "$PR_NUM" "$REPO" || {
+    echo "[QA] Merge failed after self-review — posting [NEEDS HUMAN]"
+    gh issue create --repo "$REPO" \
+      --title "[NEEDS HUMAN] CRITICAL-A merge failed on PR #${PR_NUM}" \
+      --label "needs-human" \
+      --body "Self-review passed but merge failed. Check branch protection and token permissions." 2>/dev/null
+  }
+fi
+```
 
 ```
+Self-review checklist (post as comment, then execute merge block above):
 1. SPEC COMPLETENESS — every Zone 1 obligation satisfied?
 2. FAILURE MODE ANALYSIS — name 3 ways this breaks a project not this one
    (no docs/aide/, no _state branch, non-GitHub CI, 0 features in state.json, monorepo)

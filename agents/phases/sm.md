@@ -3637,7 +3637,8 @@ VA_EOF
 # Throughput signal: AMBER if session_outcome is chore-only OR VISION_PR_COUNT == 0 (design doc 35 §35.1)
 if [ "${SESSION_OUTCOME:-unknown}" = "chore-only" ] || [ "${VISION_PR_COUNT:-0}" -eq 0 ]; then
   HEALTH="AMBER"
-  THROUGHPUT_WARN=" ⚠️ ${SESSION_OUTCOME:-chore-only} session (${VISION_PR_COUNT:-0} vision-aligned PRs)"
+  # §4f §35.2: include actionable vision-misaligned note in health comment (design doc 35-vision-alignment-signal.md §35.2 → ✅)
+  THROUGHPUT_WARN=" ⚠️ ${SESSION_OUTCOME:-chore-only} session (${VISION_PR_COUNT:-0} vision-aligned PRs). Queue may have drifted from design docs. Run /otherness.vibe-vision or check coord §1b."
 fi
 
 ACTION="Active"
@@ -4101,6 +4102,14 @@ Without this step these PRs pile up open indefinitely.
 ```bash
 # Detect if running on an opencode/* session branch
 SESSION_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+# Detached HEAD in GitHub Actions runner — fall back to GITHUB_HEAD_REF
+if [ -z "$SESSION_BRANCH" ] || [ "$SESSION_BRANCH" = "HEAD" ]; then
+  SESSION_BRANCH="${GITHUB_HEAD_REF:-}"
+fi
+# Final fallback: parse from GITHUB_REF (refs/heads/opencode/schedule-...)
+if [ -z "$SESSION_BRANCH" ] || [ "$SESSION_BRANCH" = "HEAD" ]; then
+  SESSION_BRANCH=$(echo "${GITHUB_REF:-}" | sed 's|refs/heads/||')
+fi
 
 if echo "$SESSION_BRANCH" | grep -qE '^opencode/(schedule|dispatch)-'; then
   echo "[SM §4g] Running on session branch: $SESSION_BRANCH — locating open PR to merge."
