@@ -572,6 +572,12 @@
       "pr_merged": true,
       "title": "feat: Meaningful-PR rate primary metric",
       "done_at": "2026-04-21T22:08:19Z"
+    },
+    "issue-803": {
+      "state": "done",
+      "pr_merged": true,
+      "title": "feat: ENG zero-diff detection",
+      "done_at": "2026-04-21T22:12:41Z"
     }
   },
   "session_heartbeats": {
