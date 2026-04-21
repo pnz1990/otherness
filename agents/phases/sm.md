@@ -1254,6 +1254,7 @@ try:
         'calibrated_at': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
         'source': '4e-calibration',
         'sm_cycle': sm_cycle,
+        'recovery_action': 'none',  # overwritten by §4e-ii divergence detection each cycle
     }
     # Write to _state branch
     state_wt = os.path.join(tempfile.gettempdir(), 'otherness-pred4e-' + str(os.getpid()))
@@ -1489,6 +1490,92 @@ if consecutive_count >= 3:
         print(f'[SM §4e] Divergence signal posted (consecutive={consecutive_count})')
     else:
         print(f'[SM §4e] Could not post divergence signal (non-fatal)')
+
+# Step 7: Compute recovery_action and write to sim-prediction.json on _state
+# Priority order (design doc 23 §Step 4): vision_synthesis > needs_human > ci_fix > learn > none
+# Design ref: docs/design/23-simulation-as-anchor.md §Step 4
+recovery_action = 'none'
+if consecutive_count >= 3 or actual_shipped < pred_floor:
+    # Check queue depth — low queue → trigger vision synthesis
+    try:
+        state_json = subprocess.run(['git','show','origin/_state:.otherness/state.json'],
+                                    capture_output=True, text=True)
+        if state_json.returncode == 0:
+            state = json.loads(state_json.stdout)
+            todo_count = len([d for d in state.get('features',{}).values()
+                              if d.get('state') == 'todo'])
+        else:
+            todo_count = 5  # assume OK if unreadable
+    except Exception:
+        todo_count = 5
+    # Check needs-human open issues
+    try:
+        nh_result = subprocess.run(
+            ['gh','issue','list','--repo',REPO,'--state','open',
+             '--label','needs-human','--json','number','--jq','length'],
+            capture_output=True, text=True, timeout=15)
+        needs_human_count = int(nh_result.stdout.strip() or '0')
+    except Exception:
+        needs_human_count = 0
+    # Check CI status — any failed run in last 24h
+    try:
+        ci_result = subprocess.run(
+            ['gh','run','list','--repo',REPO,'--branch','main','--limit','5',
+             '--json','conclusion,createdAt',
+             '--jq','[.[]|select(.conclusion=="failure")]|length'],
+            capture_output=True, text=True, timeout=15)
+        ci_failures = int(ci_result.stdout.strip() or '0')
+    except Exception:
+        ci_failures = 0
+    # Priority order
+    if todo_count < 5:
+        recovery_action = 'trigger_vision_synthesis'
+    elif needs_human_count > 0:
+        recovery_action = 'escalate_oldest_needs_human'
+    elif ci_failures > 0:
+        recovery_action = 'prioritize_ci_fix'
+    else:
+        recovery_action = 'trigger_learn'
+
+print(f'[SM §4e] recovery_action={recovery_action} (consecutive={consecutive_count})')
+
+# Write recovery_action to sim-prediction.json on _state
+state_wt2 = os.path.join(tempfile.gettempdir(), 'otherness-recov-' + str(os.getpid()))
+try:
+    if os.path.exists(state_wt2):
+        subprocess.run(['git','worktree','remove',state_wt2,'--force'], capture_output=True)
+    subprocess.run(['git','worktree','add','--no-checkout',state_wt2,'origin/_state'],
+                   capture_output=True, check=True)
+    pred_path = os.path.join(state_wt2, '.otherness', 'sim-prediction.json')
+    os.makedirs(os.path.dirname(pred_path), exist_ok=True)
+    subprocess.run(['git','-C',state_wt2,'checkout','_state','--','.otherness/sim-prediction.json'],
+                   capture_output=True)
+    try:
+        prediction = json.load(open(pred_path))
+    except Exception:
+        prediction = {}
+    prediction['recovery_action'] = recovery_action
+    prediction['recovery_action_set_at'] = datetime.datetime.now(
+        datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    prediction['recovery_action_consecutive'] = consecutive_count
+    json.dump(prediction, open(pred_path, 'w'), indent=2)
+    subprocess.run(['git','-C',state_wt2,'add',pred_path], capture_output=True)
+    subprocess.run(['git','-C',state_wt2,'commit',
+                    '-m',f'sm §4e: recovery_action={recovery_action}'],
+                   capture_output=True)
+    r2 = subprocess.run(['git','-C',state_wt2,'push','origin','HEAD:_state'],
+                        capture_output=True)
+    if r2.returncode == 0:
+        print(f'[SM §4e] sim-prediction.json recovery_action written to _state')
+    else:
+        print(f'[SM §4e] recovery_action write failed (non-fatal)')
+except Exception as e:
+    print(f'[SM §4e] recovery_action write error (non-fatal): {e}')
+finally:
+    try:
+        subprocess.run(['git','worktree','remove',state_wt2,'--force'], capture_output=True)
+    except: pass
+subprocess.run(['git','worktree','prune'], capture_output=True)
 DIVEOF
 ```
 
