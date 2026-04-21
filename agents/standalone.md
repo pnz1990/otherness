@@ -592,6 +592,114 @@ try:
 except: print(0)
 " 2>/dev/null || echo "0")
 echo "[LOOP] Item ${ITEMS_COMPLETED}/${SESSION_LIMIT} complete. Queue remaining: ${QUEUE_REMAINING}."
+
+# §1f-recovery: Same-session recovery — design doc 21 §Future
+# If ITEMS_COMPLETED == 0 (no PR merged yet) and no recovery already attempted:
+# scan docs/design/ for unclaimed 🔲 Future item → create issue → claim → attempt implementation
+# Only one recovery attempt per session (RECOVERY_ATTEMPTED prevents loop).
+if [ "${ITEMS_COMPLETED:-0}" -eq 0 ] && [ "${RECOVERY_ATTEMPTED:-false}" != "true" ]; then
+  export RECOVERY_ATTEMPTED=true
+  echo "[COORD §1f-recovery] No PR merged yet — scanning for recovery candidate..."
+  RECOVERY_CANDIDATE=$(python3 - <<'RECOVERY_EOF'
+import re, os, subprocess, json
+
+REPO = os.environ.get('REPO', '')
+
+try:
+    state = json.load(open('.otherness/state.json'))
+    done_titles = set(
+        v.get('title','').lower() for v in state.get('features',{}).values()
+        if v.get('state') == 'done' and v.get('title'))
+except Exception:
+    done_titles = set()
+
+try:
+    merged_prs = subprocess.check_output(
+        ['gh','pr','list','--repo',REPO,'--state','merged','--limit','50',
+         '--json','title','--jq','.[].title'], text=True, timeout=15).lower().splitlines()
+except Exception:
+    merged_prs = []
+
+# Get open issues to avoid duplicates
+try:
+    open_issues = subprocess.check_output(
+        ['gh','issue','list','--repo',REPO,'--state','open','--limit','100',
+         '--json','title','--jq','.[].title'], text=True, timeout=15).lower().splitlines()
+except Exception:
+    open_issues = []
+
+def is_done(desc):
+    d = desc.lower().strip()
+    d = re.sub(r'^⚠️\s*(inferred|observed):\s*', '', d)
+    if d in done_titles: return True
+    key = d[:60]
+    return any(key in pr for pr in merged_prs)
+
+def is_open(desc):
+    d = desc.lower().strip()[:60]
+    return any(d in issue for issue in open_issues)
+
+design_dir = 'docs/design'
+if not os.path.isdir(design_dir):
+    print('[COORD §1f-recovery] No recovery candidate found — proceeding to SM/PM.')
+    exit(0)
+
+for fname in sorted(os.listdir(design_dir)):
+    if not fname.endswith('.md'): continue
+    try:
+        content = open(os.path.join(design_dir, fname)).read()
+        m = re.search(r'^## Future.*?\n(.*?)(?=^## |\Z)', content, re.MULTILINE | re.DOTALL)
+        if not m: continue
+        items = re.findall(r'^- 🔲 (?!.*🚫)(.+)', m.group(1), re.MULTILINE)
+        for item in items:
+            desc = re.sub(r'\s*—.*$', '', item).strip()
+            if is_done(desc) or is_open(desc): continue
+            title = f"feat: {desc[:90]}"
+            body = (f"## Design reference\n"
+                    f"- **Design doc**: `docs/design/{fname}`\n"
+                    f"- **Section**: `§ Future`\n"
+                    f"- **Implements**: {desc} (🔲 → ✅)\n\n"
+                    f"## Summary\n\n"
+                    f"Same-session recovery candidate: session has 0 merged PRs; created to ensure\n"
+                    f"the session ships at least one meaningful item before SM/PM.\n\n"
+                    f"Full item: {item}")
+            r = subprocess.run(
+                ['gh','issue','create','--repo',REPO,
+                 '--title',title,'--label','otherness,kind/enhancement,area/agent-loop,size/s,priority/medium',
+                 '--body',body],
+                capture_output=True, text=True, timeout=15)
+            if r.returncode == 0:
+                num = r.stdout.strip().split('/')[-1]
+                print(num)
+                exit(0)
+    except Exception as e:
+        print(f'[COORD §1f-recovery] scan error for {fname}: {e}', file=__import__('sys').stderr)
+
+print('[COORD §1f-recovery] No recovery candidate found — proceeding to SM/PM.')
+RECOVERY_EOF
+)
+
+  if echo "$RECOVERY_CANDIDATE" | grep -qE '^[0-9]+$'; then
+    echo "[COORD §1f-recovery] Recovery candidate: issue #$RECOVERY_CANDIDATE"
+    # Loop back to claim and attempt this item
+    ITEM_ID="issue-$RECOVERY_CANDIDATE"
+    MY_BRANCH="feat/$ITEM_ID"
+    MY_WORKTREE="../${REPO_NAME:-otherness}.${ITEM_ID}"
+    if git push origin "HEAD:refs/heads/$MY_BRANCH" 2>/dev/null; then
+      [ -d "$MY_WORKTREE" ] && git worktree remove "$MY_WORKTREE" --force 2>/dev/null || true
+      git worktree add "$MY_WORKTREE" "$MY_BRANCH"
+      gh issue comment "$RECOVERY_CANDIDATE" --repo "$REPO" \
+        --body "[${MY_SESSION_ID:-sess-unknown}] Recovery claim: session had 0 merged PRs; attempting this item before SM/PM." 2>/dev/null
+      # [AI-STEP] Proceed to Phase 2 (ENG) with ITEM_ID=$ITEM_ID, then Phase 3 (QA)
+      # If merged: ITEMS_COMPLETED becomes 1, skip SM/PM gate next iteration
+    else
+      echo "[COORD §1f-recovery] Could not claim recovery item (race condition) — proceeding to SM/PM."
+    fi
+  else
+    echo "[COORD §1f-recovery] No recovery candidate found — proceeding to SM/PM."
+  fi
+fi
+
 # DECISION:
 # If ITEMS_COMPLETED < SESSION_LIMIT AND QUEUE_REMAINING > 0:
 #   → GOTO PHASE 1 (skip SM/PM — loop back immediately for next item)
