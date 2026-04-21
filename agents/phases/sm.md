@@ -4451,12 +4451,13 @@ while IFS='=' read -r _KEY _VAL; do
 done <<< "$_MGMT_OUTPUT"
 
 REPORT_BODY=$(cat <<BODY_EOF
-Batch ${SM_CYCLE:-?} | progress: ${PROGRESS_CLASS} | health: ${HEALTH} | Vision PRs: ${VISION_PRS:-0} | Chores: ${CHORES_COUNT} | Queue: ${TODO_COUNT:-0} remaining | Journeys: ${JOURNEY_OK}✅ ${JOURNEY_FAIL}❌ | Next: [${NEXT_ITEM}]
+Batch ${SM_CYCLE:-?} | progress: ${PROGRESS_CLASS} | health: ${HEALTH} | Shipped: ${MEANINGFUL_PRS:-0} meaningful (${MERGED:-0} total) | Queue: ${TODO_COUNT:-0} remaining | Journeys: ${JOURNEY_OK}✅ ${JOURNEY_FAIL}❌ | Next: [${NEXT_ITEM}]
 
 <details><summary>Details</summary>
 
 - Session: \`${MY_SESSION_ID:-sess-unknown}\` | Agent: otherness@${OTHERNESS_VERSION:-unknown}
 - Outcome: ${SESSION_OUTCOME:-unknown}${THROUGHPUT_WARN:-}
+- Vision PRs: ${VISION_PRS:-0} | Chores: ${CHORES_COUNT}
 - In-review: ${IN_REVIEW:-0} | Action: ${ACTION}
 - Needs-human open: ${NEEDS_HUMAN_COUNT:-0}
 - Sim calibrated: ${SIM_CALIB_LABEL:-unknown}${SIM_CALIB_WARN:-}
