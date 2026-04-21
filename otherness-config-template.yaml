@@ -9,6 +9,17 @@ project:
   board_url: ""                       # https://github.com/users/<owner>/projects/<N>
   pr_label: ""                        # label applied to all feature PRs (e.g. "myproject")
 
+  # GitHub Projects board integration — design doc 43
+  # board_project_id: the GraphQL node ID of the project board (PVT_kwHOC...).
+  # Find it with: gh api graphql -f query='{viewer{projectsV2(first:10){nodes{id title}}}}'
+  # When set, COORD sets Status:Todo on new issues, ENG sets In Progress/In Review, QA sets Done.
+  board_project_id: ""               # e.g. "PVT_kwHOC22HhM4BUMuc"
+
+  # active_milestone: the milestone name to assign to all new issues.
+  # Update this when you cut a new version milestone.
+  # Leave empty to skip milestone assignment.
+  active_milestone: ""               # e.g. "v0.6.0 — Pipeline Expressiveness"
+
   # The engineering domain of this project. Controls which role identity the ENG
   # and QA agents adopt when implementing and reviewing code.
   #

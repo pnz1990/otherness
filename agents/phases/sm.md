@@ -637,6 +637,72 @@ except Exception as e:
 DEFECT_EOF
 fi
 
+# §4b: Stuck-item detection — increment failed_attempts + label blocked (design doc 21 §Future → ✅)
+# When VISION_PRS==0 and a PR was opened but not merged (QA rejected or CI failed):
+# increment failed_attempts for the current item. When failed_attempts==3: label blocked.
+# Fail-open: errors skip silently. Design ref: docs/design/21-session-throughput.md
+if [ "${VISION_PRS:-0}" -eq 0 ] && [ -n "${ITEM_ID:-}" ]; then
+python3 - <<'STUCK_EOF'
+import json, subprocess, os, re
+
+REPO = os.environ.get('REPO', '')
+ITEM_ID = os.environ.get('ITEM_ID', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'SM')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+
+if not ITEM_ID:
+    exit(0)
+
+# Only increment if a PR was opened for this item (closed without merge = failure)
+try:
+    issue_num = re.sub(r'[^0-9]', '', ITEM_ID)
+    r = subprocess.run(
+        ['gh', 'pr', 'list', '--repo', REPO,
+         '--search', f'#{issue_num}', '--state', 'closed',
+         '--json', 'number,mergedAt', '--limit', '5',
+         '--jq', '[.[] | select(.mergedAt == null)] | length'],
+        capture_output=True, text=True, timeout=10)
+    closed_unmerged = int(r.stdout.strip() or '0') if r.returncode == 0 else 0
+except Exception:
+    closed_unmerged = 0
+
+if closed_unmerged == 0:
+    exit(0)  # No failed PR for this item — no increment
+
+try:
+    with open('.otherness/state.json') as f: s = json.load(f)
+    item_data = s.get('features', {}).get(ITEM_ID, {})
+    current_attempts = item_data.get('failed_attempts', 0)
+    new_attempts = current_attempts + 1
+    s.setdefault('features', {})[ITEM_ID]['failed_attempts'] = new_attempts
+    with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
+    print(f'[SM §4b] {ITEM_ID}: failed_attempts {current_attempts} → {new_attempts}')
+
+    if new_attempts >= 3:
+        # Label item as blocked on GitHub
+        labels = item_data.get('labels', [])
+        if 'blocked' not in labels:
+            issue_num_only = re.sub(r'[^0-9]', '', ITEM_ID)
+            subprocess.run(
+                ['gh', 'issue', 'edit', issue_num_only, '--repo', REPO,
+                 '--add-label', 'blocked'],
+                capture_output=True, timeout=10)
+            comment = (
+                f'⚠️ Item has failed QA or CI in {new_attempts} sessions — deprioritised. '
+                f'Root cause diagnosis needed before re-attempt. '
+                f'SM §4b | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}'
+            )
+            subprocess.run(
+                ['gh', 'issue', 'comment', issue_num_only, '--repo', REPO, '--body', comment],
+                capture_output=True, timeout=10)
+            print(f'[SM §4b] {ITEM_ID}: marked blocked (3 failed sessions)')
+        else:
+            print(f'[SM §4b] {ITEM_ID}: already labelled blocked')
+except Exception as e:
+    print(f'[SM §4b] Stuck-item detection error (non-fatal): {e}')
+STUCK_EOF
+fi
+
 # §4b: Read queue guard fire count from state.json, then reset it (design doc 35 §Future → ✅)
 QUEUE_GUARD_FIRES=$(python3 -c "
 import json

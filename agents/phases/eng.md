@@ -150,9 +150,39 @@ mkdir -p "$MY_WORKTREE/.specify/specs/$ITEM_ID"
 
 Load skill: `~/.otherness/agents/skills/agent-coding-discipline.md` before writing code.
 
+**MANDATORY: Create tasks.md before writing any code — design doc 43 §O3, §43.8**
+
+```bash
+# tasks.md must exist before code. QA rejects PRs without it.
+TASKS_FILE="$MY_WORKTREE/.specify/specs/$ITEM_ID/tasks.md"
+mkdir -p "$(dirname $TASKS_FILE)"
+
+# [AI-STEP] Write $TASKS_FILE with this structure:
+# # Tasks: $ITEM_ID <title from spec.md>
+#
+# ## Pre-implementation
+# - [CMD] `cd $MY_WORKTREE && <build/test baseline command>` — expected: 0 exit
+#
+# ## Implementation
+# - [AI] <step 1: what to write, one sentence>
+# - [CMD] `cd $MY_WORKTREE && <verification command>` — expected: <output>
+# - [AI] <step 2>
+# ... repeat [AI]/[CMD] pairs for each logical unit
+#
+# ## Post-implementation
+# - [CMD] `cd $MY_WORKTREE && bash scripts/validate.sh 2>&1 | tail -3` — expected: PASSED
+# - [CMD] `cd $MY_WORKTREE && <test command>` — expected: all pass
+#
+# Rules:
+# - [AI] steps = require judgment (how to implement)
+# - [CMD] steps = deterministic command with explicit expected output
+# - Every [CMD] failure: STOP and fix before proceeding. No skipping.
+# - At least 2 [CMD] verification steps required (QA checks this).
+echo "tasks.md created: $TASKS_FILE"
+```
+
 **Before writing a single line of code:**
-- Write the concrete success criterion (failing test, or exact observable behavior)
-- Mark tasks.md: which steps are AI steps (require judgment) vs command steps (deterministic)
+- tasks.md must already exist (see above)
 - Read `cwd` — every shell command that changes directory must use `cd $MY_WORKTREE &&` prefix.
   Bash resets `$PWD` between invocations. Never assume you are in the worktree.
 
