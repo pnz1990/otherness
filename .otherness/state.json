@@ -145,7 +145,7 @@
       "priority": "medium"
     },
     "issue-634": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Session defect diagnosis: when a session completes with 0 meaningful items (only metrics c",
       "labels": [
         "priority/medium",
@@ -154,10 +154,13 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 769,
+      "done_at": "2026-04-21T19:56:36Z"
     },
     "issue-632": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: `/otherness.status` single-page health summary that a human can read in 30 seconds: the cu",
       "labels": [
         "priority/medium",
@@ -166,10 +169,13 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 769,
+      "done_at": "2026-04-21T19:56:36Z"
     },
     "issue-627": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: `docs/aide/progress.md` automated update: SM \u00a74f must update `progress.md` after every bat",
       "labels": [
         "priority/medium",
@@ -178,10 +184,13 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 769,
+      "done_at": "2026-04-21T19:56:36Z"
     },
     "issue-626": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: New command `/otherness.status` enhanced output: the command currently exists but its outp",
       "labels": [
         "priority/medium",
@@ -190,10 +199,13 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 769,
+      "done_at": "2026-04-21T19:56:36Z"
     },
     "issue-625": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: `SM \u00a74f` batch report condensed format: the report issue comment must fit in 8 lines; curr",
       "labels": [
         "priority/medium",
@@ -202,10 +214,13 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 769,
+      "done_at": "2026-04-21T19:56:36Z"
     },
     "issue-624": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: `agents/onboard.md` vision inference quality: after writing `vision.md`, run the vision do",
       "labels": [
         "priority/medium",
@@ -214,10 +229,13 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 769,
+      "done_at": "2026-04-21T19:56:36Z"
     },
     "issue-623": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: `onboarding-existing-project.md` + `onboarding-new-project.md`: add a \"first-run smoke tes",
       "labels": [
         "priority/medium",
@@ -226,10 +244,13 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 769,
+      "done_at": "2026-04-21T19:56:36Z"
     },
     "issue-622": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: `agents/onboard.md` post-run validation: after generating `docs/aide/`, run a structural s",
       "labels": [
         "priority/medium",
@@ -238,10 +259,13 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 769,
+      "done_at": "2026-04-21T19:56:36Z"
     },
     "issue-621": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: `agents/otherness.learn.md`: diversity-first learn target selection",
       "labels": [
         "priority/medium",
@@ -250,10 +274,13 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 769,
+      "done_at": "2026-04-21T19:56:36Z"
     },
     "issue-619": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: `agents/otherness.learn.md` / `SM \u00a74c`: frame-lock break protocol",
       "labels": [
         "priority/medium",
@@ -262,7 +289,17 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "assigned_to": "sess-b7b22e98",
+      "assigned_at": "2026-04-21T19:52:59Z",
+      "branch": "feat/issue-619",
+      "worktree": "../otherness.issue-619",
+      "file_spaces": [
+        "docs/"
+      ],
+      "pr_merged": true,
+      "pr_number": 769,
+      "done_at": "2026-04-21T19:56:36Z"
     },
     "issue-616": {
       "state": "done",
