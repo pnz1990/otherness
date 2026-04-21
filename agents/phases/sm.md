@@ -195,6 +195,108 @@ print('[SM §4a] M3 app adoption check complete.')
 M3EOF
 fi
 
+# §4a: M7 full close — _state write integrity check (design doc 27 §Future → ✅)
+# When GitHub App (M3) is active (OTHERNESS_USE_APP_TOKEN=true), validate that recent
+# _state commits originate from the App identity (not a collaborator or PAT).
+# Any anomalous push triggers [NEEDS HUMAN]. Fail-open. Once per 5 SM cycles.
+# Design ref: docs/design/27-security-model.md §Future
+if [ $((${SM_CYCLE:-0} % 5)) -eq 0 ]; then
+python3 - <<'M7EOF'
+import subprocess, json, os, re
+
+REPO = os.environ.get('REPO', '')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'SM')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+
+# Only run when App mode is active
+use_app_token = False
+try:
+    r = subprocess.run(
+        ['gh', 'api', f'repos/{REPO}/actions/variables/OTHERNESS_USE_APP_TOKEN',
+         '--jq', '.value'],
+        capture_output=True, text=True, timeout=10)
+    use_app_token = r.returncode == 0 and r.stdout.strip().lower() == 'true'
+except Exception:
+    pass
+
+if not use_app_token:
+    print('[SM §4a-M7] App mode not active (OTHERNESS_USE_APP_TOKEN != true) — skipping integrity check.')
+    exit(0)
+
+# Read last 10 commits to _state branch
+try:
+    r = subprocess.run(
+        ['gh', 'api', f'repos/{REPO}/commits',
+         '--field', 'sha=_state', '--field', 'per_page=10',
+         '--jq', '[.[] | {sha: .sha[:8], author: (.commit.author.email // .commit.author.name), message: .commit.message[:40]}]'],
+        capture_output=True, text=True, timeout=15)
+    if r.returncode != 0:
+        print(f'[SM §4a-M7] Could not read _state commits (non-fatal): {r.stderr.strip()[:80]}')
+        exit(0)
+    commits = json.loads(r.stdout.strip() or '[]')
+except Exception as e:
+    print(f'[SM §4a-M7] _state commit read error (non-fatal): {e}')
+    exit(0)
+
+# Check: commits should be from otherness[bot] or the App identity
+# App commits have author email matching [bot]@users.noreply.github.com
+BOT_PATTERN = re.compile(r'\[bot\]|otherness.*bot|github-actions', re.IGNORECASE)
+
+anomalous = []
+for commit in commits:
+    author = commit.get('author', '')
+    if not BOT_PATTERN.search(author):
+        # Exclude bootstrap commit and empty state
+        msg = commit.get('message', '')
+        if 'bootstrap' in msg.lower() or msg.startswith('[cleanup]'):
+            continue
+        anomalous.append(f"sha={commit.get('sha')} author={author!r} msg={commit.get('message')!r}")
+
+if anomalous:
+    print(f'[SM §4a-M7] ⚠️ Anomalous _state commits detected: {len(anomalous)}')
+    for a in anomalous[:3]:
+        print(f'  {a}')
+    # Check for existing NEEDS HUMAN issue (dedup)
+    existing = subprocess.run(
+        ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+         '--search', 'M7-integrity', '--json', 'number', '--jq', 'length'],
+        capture_output=True, text=True, timeout=15)
+    if int(existing.stdout.strip() or '0') == 0:
+        body = (
+            f'## _state write integrity anomaly detected\n\n'
+            f'SM §4a-M7 detected _state branch commits that do not originate from the '
+            f'otherness[bot] App identity, despite `OTHERNESS_USE_APP_TOKEN=true`.\n\n'
+            f'## Anomalous commits\n\n'
+            + '\n'.join(f'- {a}' for a in anomalous[:5]) +
+            f'\n\n## What to investigate\n\n'
+            f'1. Check the commit authors above against known collaborators\n'
+            f'2. Verify the PAT (GH_TOKEN) fallback is not being used in production runs\n'
+            f'3. Check GitHub audit log for the anomalous push origin\n'
+            f'4. If the push was human-initiated: close this issue (intentional)\n'
+            f'5. If unexpected: consider rotating the GH_TOKEN PAT\n\n'
+            f'## Security design reference\n\n'
+            f'See `docs/design/27-security-model.md §M7`.\n\n'
+            f'SM §4a-M7 | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}'
+        )
+        r2 = subprocess.run(
+            ['gh', 'issue', 'create', '--repo', REPO,
+             '--title', '[NEEDS HUMAN] M7-integrity: anomalous _state commits detected',
+             '--label', 'needs-human,area/tooling,priority/high,otherness',
+             '--body', body],
+            capture_output=True, text=True, timeout=15)
+        if r2.returncode == 0:
+            print(f'[SM §4a-M7] NEEDS HUMAN issue opened: {r2.stdout.strip()}')
+        else:
+            print(f'[SM §4a-M7] Issue creation failed (non-fatal): {r2.stderr.strip()[:100]}')
+    else:
+        print('[SM §4a-M7] NEEDS HUMAN issue already open — skipping duplicate.')
+else:
+    print(f'[SM §4a-M7] _state integrity OK — all {len(commits)} recent commits from bot identity.')
+
+M7EOF
+fi
+
 # Version pinning check — is agent_version set?
 AGENT_VERSION=$(python3 -c "
 import re
