@@ -3,9 +3,34 @@
     "issue-718": {
       "state": "done",
       "pr_merged": true,
-      "done_at": "2026-04-21T15:56:00Z",
-      "title": "feat: onboarding-existing-project.md first-run smoke test section",
-      "branch": "feat/issue-718"
+      "pr_number": 742,
+      "done_at": "2026-04-21T00:00:00Z",
+      "title": "feat: onboarding-existing-project.md first-run smoke test section"
+    },
+    "issue-720": {
+      "state": "in_review",
+      "pr_number": 743,
+      "title": "feat: SM \u00a74b must distinguish metrics-only PRs from real work PRs",
+      "branch": "feat/issue-720"
+    },
+    "issue-721": {
+      "state": "in_review",
+      "pr_number": 744,
+      "title": "feat: SM \u00a74f post AMBER note when vision-misaligned (35.2)",
+      "labels": [
+        "area/agent-loop",
+        "kind/enhancement",
+        "priority/medium",
+        "size/xs",
+        "needs-human"
+      ]
+    },
+    "issue-745": {
+      "state": "done",
+      "pr_merged": true,
+      "pr_number": 746,
+      "done_at": "2026-04-21T16:14:35Z",
+      "title": "feat: validate.sh check [8/8] for state.json field doc-drift (41.3)"
     }
   }
 }
