@@ -3638,6 +3638,81 @@ try:
 except Exception as e:
     print(f"[SM §4f] progress.md commit/push error (non-fatal): {e}")
 PROGRESS_EOF
+
+# §4f: README "Last shipped" line update (design doc 06 §Future → ✅)
+# Update README.md with the most recent non-chore merged PR title and date.
+# Idempotent: replaces existing "Last shipped:" line.
+python3 - <<'README_SHIPPED_EOF'
+import subprocess, json, os, re
+
+REPO = os.environ.get('REPO', '')
+
+EXCLUDE_PAT = re.compile(
+    r'^chore\(sm\)|^chore\(metrics\)|^chore\(changelog\)|^chore\(readme\)|batch\s+\d+|session complete|PRs merged',
+    re.IGNORECASE)
+
+try:
+    r = subprocess.run(
+        ['gh', 'pr', 'list', '--repo', REPO, '--state', 'merged', '--limit', '20',
+         '--json', 'number,title,mergedAt'],
+        capture_output=True, text=True, timeout=15)
+    prs = json.loads(r.stdout.strip() or '[]') if r.returncode == 0 else []
+    recent = [pr for pr in prs if not EXCLUDE_PAT.match(pr.get('title', ''))]
+    if not recent:
+        print('[SM §4f] No non-chore PR found — skipping README update.')
+        exit(0)
+    last_pr = recent[0]
+    last_pr_title = last_pr['title']
+    last_pr_num = last_pr['number']
+    last_pr_date = last_pr.get('mergedAt', '')[:10]
+    last_shipped_line = f'**Last shipped:** {last_pr_title} (#{last_pr_num}, {last_pr_date})'
+except Exception as e:
+    print(f'[SM §4f] README update: PR fetch error (non-fatal): {e}')
+    exit(0)
+
+readme_path = 'README.md'
+try:
+    content = open(readme_path).read()
+except FileNotFoundError:
+    print(f'[SM §4f] README.md not found — skipping update (non-fatal)')
+    exit(0)
+
+SHIPPED_PAT = re.compile(r'^\*\*Last shipped:\*\*.*$', re.MULTILINE)
+if SHIPPED_PAT.search(content):
+    new_content = SHIPPED_PAT.sub(last_shipped_line, content, count=1)
+else:
+    # Insert after badge line or after first heading
+    badge_pat = re.compile(r'(\[!\[.*?\]\(.*?workflows/.*?\))\n', re.DOTALL)
+    if badge_pat.search(content):
+        new_content = badge_pat.sub(r'\1\n\n' + last_shipped_line + '\n', content, count=1)
+    else:
+        new_content = re.sub(r'^(# .+\n)', r'\1\n' + last_shipped_line + '\n', content, count=1, flags=re.MULTILINE)
+
+if new_content == content:
+    print('[SM §4f] README "Last shipped" unchanged — skipping commit.')
+    exit(0)
+
+with open(readme_path, 'w') as f:
+    f.write(new_content)
+
+subprocess.run(['git', 'add', readme_path], capture_output=True)
+cr = subprocess.run(
+    ['git', 'commit', '-m', f'chore(readme): update Last shipped — #{last_pr_num} (SM §4f)'],
+    capture_output=True, text=True)
+if cr.returncode == 0:
+    import time
+    for i in range(1, 4):
+        subprocess.run(['git', 'pull', '--rebase', 'origin', 'main'], capture_output=True)
+        rr = subprocess.run(['git', 'push', 'origin', 'main'], capture_output=True)
+        if rr.returncode == 0:
+            print(f'[SM §4f] README "Last shipped" updated: {last_pr_title[:50]}')
+            break
+        time.sleep(i * 2)
+    else:
+        print('[SM §4f] README push failed after 3 retries (non-fatal)')
+else:
+    print(f'[SM §4f] README commit skipped (already up to date): {cr.stderr.strip()[:80]}')
+README_SHIPPED_EOF
 ```
 
 ---
