@@ -230,19 +230,25 @@ Signed-off-by: otherness[bot] <otherness[bot]@users.noreply.github.com>
 git push origin $MY_BRANCH
 ```
 
-Open PR — the PR body must list which design doc was updated:
+Open PR — the PR body must include `Closes #N` to auto-close the issue on merge,
+and list which design doc was updated:
 ```bash
+_ISSUE_NUM=$(echo "$ITEM_ID" | grep -oE '[0-9]+$')
 gh pr create --repo $REPO --base main --head $MY_BRANCH \
   --title "<type>(<scope>): <description>" \
   --label "$PR_LABEL" \
   --body "## Summary
 ...
 
+Closes #${_ISSUE_NUM}
+
 ## Design doc
 Updated \`docs/design/<N>-<area>.md\`: moved <item> from 🔲 Future to ✅ Present.
 
 ## Customer doc
-Updated \`docs/<feature>.md\`: <what changed>."
+Updated \`docs/<feature>.md\`: <what changed>.
+
+Signed-off-by: otherness[bot] <otherness[bot]@users.noreply.github.com>"
 ```
 
 Update state: `state=in_review`, `pr_number=<N>`.

@@ -404,6 +404,15 @@ PYEOF
 export STATE_MSG="[$MY_SESSION_ID] $ITEM_ID done"
 # run STATE MANAGEMENT write block
 
+# Close the GitHub issue that this item was implementing
+# ITEM_ID is "issue-NNN" format — extract the number and close it
+_ISSUE_NUM=$(echo "$ITEM_ID" | grep -oE '[0-9]+$')
+if [ -n "$_ISSUE_NUM" ]; then
+  gh issue close "$_ISSUE_NUM" --repo "$REPO" \
+    --comment "[QA | ${MY_SESSION_ID:-unknown}] Implemented in PR #${PR_NUM:-?}. Closing." \
+    2>/dev/null && echo "[QA] Closed issue #$_ISSUE_NUM" || true
+fi
+
 ITEM_ID="" ; MY_BRANCH="" ; MY_WORKTREE="" ; MY_SESSION_ID="" ; PR_NUM=""
 ```
 
