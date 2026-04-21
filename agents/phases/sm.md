@@ -706,6 +706,88 @@ MPEOF
 export MEANINGFUL_PRS
 echo "[SM §4b] meaningful_prs this session: ${MEANINGFUL_PRS}"
 
+# §4b: Housekeeping-streak auto-escalation (design doc 21 §Future → ✅)
+# Count consecutive sessions where session_outcome == chore-only (no meaningful PRs).
+# When streak reaches 3: (1) open kind/bug priority/high issue, (2) write housekeeping_streak
+# to state.json so COORD §1b can trigger vision synthesis, (3) post to REPORT_ISSUE.
+# Fail-open: errors skip silently. Deduplication: one open issue per streak event.
+# Design ref: docs/design/21-session-throughput.md §Future
+python3 - <<'HK_STREAK_EOF'
+import json, os, subprocess
+
+REPO = os.environ.get('REPO', '')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'SM')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+SESSION_OUTCOME = os.environ.get('SESSION_OUTCOME', 'unknown')
+
+try:
+    with open('.otherness/state.json') as f: s = json.load(f)
+    current_streak = s.get('housekeeping_streak', 0)
+
+    # Update streak: increment if chore-only, reset if feature-rich or mixed
+    if SESSION_OUTCOME == 'chore-only':
+        new_streak = current_streak + 1
+    else:
+        new_streak = 0
+
+    s['housekeeping_streak'] = new_streak
+    with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
+    print(f'[SM §4b] housekeeping_streak: {current_streak} → {new_streak} (session_outcome={SESSION_OUTCOME})')
+
+    # Escalate when streak reaches 3
+    if new_streak >= 3:
+        issue_title = f'[HOUSEKEEPING-STREAK] {new_streak} consecutive chore-only sessions — pipeline broken'
+        existing = subprocess.run(
+            ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+             '--search', 'HOUSEKEEPING-STREAK', '--json', 'number', '--jq', 'length'],
+            capture_output=True, text=True, timeout=15)
+        if int(existing.stdout.strip() or '0') == 0:
+            body = (
+                f'## Housekeeping streak: {new_streak} consecutive chore-only sessions\n\n'
+                f'SM §4b detected `session_outcome == chore-only` for {new_streak} consecutive sessions '
+                f'(tracked in `state.json` as `housekeeping_streak`).\n\n'
+                f'This means the agent is shipping only housekeeping PRs without any design-doc-backed '
+                f'feature work. The loop is running but not advancing the product.\n\n'
+                f'## Automatic actions taken\n\n'
+                f'- `housekeeping_streak: {new_streak}` written to `state.json`\n'
+                f'- COORD §1b will detect this at next startup and trigger autonomous vision synthesis '
+                f'before attempting any claim\n\n'
+                f'## Possible causes\n\n'
+                f'- Queue contains only chore/docs items with no feat items available\n'
+                f'- Design docs have no 🔲 Future items remaining (vision synthesis exhausted)\n'
+                f'- Items in queue are ambiguous and ENG produces zero-diff outputs\n'
+                f'- CI is blocking feature PRs while allowing chore PRs through\n\n'
+                f'## Required action\n\n'
+                f'1. Check `docs/design/` for 🔲 Future items — if empty, run `/otherness.vibe-vision`\n'
+                f'2. Check if the last 3 sessions have `[DEFECT]` issues open (look at report issue comments)\n'
+                f'3. Verify `session_outcome` in `docs/aide/metrics.md` for the last 5 rows\n\n'
+                f'SM §4b opened this automatically per `docs/design/21-session-throughput.md`.\n\n'
+                f'Reported by SM §4b | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}'
+            )
+            r = subprocess.run(
+                ['gh', 'issue', 'create', '--repo', REPO,
+                 '--title', issue_title,
+                 '--label', 'kind/bug,priority/high,area/agent-loop,otherness',
+                 '--body', body],
+                capture_output=True, text=True, timeout=15)
+            if r.returncode == 0:
+                issue_url = r.stdout.strip()
+                print(f'[SM §4b] Housekeeping-streak issue opened: {issue_url}')
+                # Post to REPORT_ISSUE
+                subprocess.run(
+                    ['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO,
+                     '--body', f'[SM §4b | {MY_SESSION_ID}] ⚠️ Housekeeping streak={new_streak} — '
+                               f'pipeline broken. Issue: {issue_url}'],
+                    capture_output=True, timeout=15)
+            else:
+                print(f'[SM §4b] Housekeeping-streak issue creation failed (non-fatal): {r.stderr.strip()[:100]}')
+        else:
+            print(f'[SM §4b] Housekeeping-streak issue already open — skipping duplicate.')
+except Exception as e:
+    print(f'[SM §4b] Housekeeping-streak check error (non-fatal): {e}')
+HK_STREAK_EOF
+
 # §4b: session_items_completed — read from ITEMS_COMPLETED env var (set by standalone.md §1f loop gate).
 # If unset: default to 1 (single-item session — conservative, not 0).
 # Design ref: docs/design/21-session-throughput.md §Future → ✅
