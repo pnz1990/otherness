@@ -1310,7 +1310,7 @@
       "done_at": "2026-04-21T15:16:07Z"
     },
     "issue-716": {
-      "state": "todo",
+      "state": "done",
       "status": "todo",
       "title": "feat: M3 App adoption: explicitly track which managed projects have the GitHub App configured vs",
       "labels": [
@@ -1319,7 +1319,9 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-21T15:21:59Z"
     },
     "issue-717": {
       "state": "todo",
