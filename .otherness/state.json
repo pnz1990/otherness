@@ -453,7 +453,7 @@
       "done_at": "2026-04-21T21:50:47Z"
     },
     "issue-774": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Frame-lock break protocol as a scheduled mechanism, not a human-triggered event: the curre",
       "labels": [
         "priority/medium",
@@ -461,7 +461,9 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-21T21:52:02Z"
     },
     "issue-775": {
       "state": "done",
