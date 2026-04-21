@@ -928,6 +928,30 @@ fi
 
 ---
 
+## STEP 7d — Deploy otherness scheduled workflow (design doc 28 §Future → ✅)
+
+Deploy the otherness scheduled workflow so the project can run autonomously without human
+intervention. Idempotent: skip if already present.
+
+```bash
+OTHERNESS_WORKFLOW="$HOME/.otherness/.github/workflows/otherness-scheduled.yml"
+TARGET_DIR="$REPO_ROOT/.github/workflows"
+TARGET_FILE="$TARGET_DIR/otherness-scheduled.yml"
+
+if [ -f "$TARGET_FILE" ]; then
+  echo "[ONBOARD §7d] otherness-scheduled.yml already present — skipping."
+elif [ ! -f "$OTHERNESS_WORKFLOW" ]; then
+  echo "[ONBOARD §7d] ⚠️  ~/.otherness/.github/workflows/otherness-scheduled.yml not found."
+  echo "[ONBOARD §7d] Ensure ~/.otherness is cloned from pnz1990/otherness."
+else
+  mkdir -p "$TARGET_DIR"
+  cp "$OTHERNESS_WORKFLOW" "$TARGET_FILE"
+  echo "[ONBOARD §7d] Deployed otherness-scheduled.yml to $TARGET_FILE"
+fi
+```
+
+---
+
 ## STEP 8 — Verify and report
 
 Run the full check one final time. Onboarding is complete when ALL pass:
