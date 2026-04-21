@@ -56,6 +56,8 @@ commits to a specific item.
 
 - ✅ `SM §4f` `docs/aide/progress.md` automated update: progress.md now includes "Last 3 batch outcomes" field from metrics.md session_outcome column; SM owns progress.md the same way it owns metrics.md — updated every batch via pull-rebase-retry push to main (PR #TBD, 2026-04-20)
 
+- ✅ `SM §4e-iii` / `PM §5g`: simulation-behavior coupling gate — verifies that arch_convergence AMBER (≥0.7) signals triggered a learn session and that a completed learn session decreased arch_convergence in the next calibration; posts `[⚠️ Simulation loop unclosed]` on REPORT_ISSUE if the feedback chain never closed; informational only, does not block work (PR #668, 2026-04-21)
+
 ## Future (🔲)
 
 - ✅ `coord.md §1c`: track guard-firing frequency in session metrics — `chore_only_guard_count` incremented in `state.json` on every guard fire; SM §4b reads, writes `queue_guard_fires` column to `metrics.md`, resets counter; `docs/aide/metrics.md` header row and metric definitions updated (PR #638, 2026-04-21)
