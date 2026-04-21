@@ -83,6 +83,60 @@ From the results, select up to **8 repos** that appear highest signal based on:
 - Not a toy or demo project
 - Different from projects already studied (check provenance log below)
 
+**DIVERSITY-FIRST SCORING**: repos are scored by how structurally different they are from
+existing PROVENANCE.md skills, not just by star count. This prevents the monoculture where
+all learned patterns come from similar agent-loop projects.
+
+```python
+# Diversity score heuristic (always active in §1b, even when frame_lock_detected=false)
+# Design ref: docs/design/35-quality-of-output-gaps.md (diversity-first learn target selection)
+import re, os
+
+# Step A: Read existing skill category distribution from PROVENANCE.md
+try:
+    provenance = open(os.path.expanduser('~/.otherness/agents/skills/PROVENANCE.md')).read()
+    sources = re.findall(r'github\.com/([^/\s]+/[^/\s]+)', provenance)
+except Exception:
+    sources = []
+
+CATEGORIES = ['agent-loop', 'data-pipeline', 'frontend', 'backend-service', 'devops', 'ml-training', 'other']
+category_counts = {c: 0 for c in CATEGORIES}
+
+def classify_repo(name_or_desc):
+    n = (name_or_desc or '').lower()
+    if any(k in n for k in ['agent','autonomous','bot','opencode','otherness','workflow']): return 'agent-loop'
+    elif any(k in n for k in ['pipeline','etl','stream','kafka','spark']): return 'data-pipeline'
+    elif any(k in n for k in ['ui','react','vue','frontend','web','css','next']): return 'frontend'
+    elif any(k in n for k in ['api','service','backend','server','grpc']): return 'backend-service'
+    elif any(k in n for k in ['docker','k8s','deploy','infra','terraform']): return 'devops'
+    elif any(k in n for k in ['ml','model','train','torch','tensorflow']): return 'ml-training'
+    return 'other'
+
+for s in sources:
+    cat = classify_repo(s)
+    category_counts[cat] = category_counts.get(cat, 0) + 1
+
+# Step B: Rank categories by scarcity (least represented gets highest bonus)
+sorted_cats = sorted(category_counts.items(), key=lambda x: x[1])
+scarcity_bonus = {}
+for rank, (cat, _) in enumerate(sorted_cats):
+    scarcity_bonus[cat] = max(0, 3 - rank)  # top-3 scarcest get +3, +2, +1
+
+# Step C: When selecting repos from search results, prefer candidates in scarce categories
+# Apply to each candidate: diversity_score = scarcity_bonus[classify_repo(name)] + quality_bonus
+# quality_bonus: 0-2 based on stars (> 100 stars → +1, > 500 → +2)
+# Select repos with highest total score first
+
+print("[LEARN §1b] Skill category distribution:", dict(sorted(category_counts.items(), key=lambda x: x[1])))
+print("[LEARN §1b] Diversity scarcity bonus:", scarcity_bonus)
+print("[LEARN §1b] Prefer repos in categories:", [c for c, b in scarcity_bonus.items() if b > 0])
+```
+
+When selecting the final list of 8 repos, apply this priority:
+1. Repos in the two least-represented skill categories (highest diversity bonus)
+2. Repos not already in PROVENANCE.md (novelty)
+3. Repos with high quality signals (stars, activity, docs depth)
+
 Always include as baseline targets when not already in the provenance log:
 - `ellistarn/muse` (design doc discipline, grammar-driven systems)
 - `ellistarn/home` (skill definitions, reconciling-implementations)
