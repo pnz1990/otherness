@@ -312,8 +312,8 @@
       "priority": "medium"
     },
     "issue-361": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "security(p2): replace GH_TOKEN PAT with GitHub App \u2014 per-repo scoped, non-exportable",
       "labels": [
         "priority/medium",
@@ -328,7 +328,9 @@
       "assigned_at": null,
       "branch": null,
       "worktree": null,
-      "file_spaces": []
+      "file_spaces": [],
+      "note": "already-closed-pr-605",
+      "done_at": "2026-04-20T17:41:02Z"
     },
     "issue-338": {
       "state": "done",
@@ -564,8 +566,8 @@
       "priority": "medium"
     },
     "issue-646": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: SM health signal must distinguish real GREEN from stall-GREEN: the current GREEN health si",
       "labels": [
         "priority/medium",
@@ -574,11 +576,21 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "assigned_to": "sess-92d42ac3",
+      "assigned_at": "2026-04-21T11:15:36Z",
+      "branch": "feat/issue-646",
+      "worktree": "../otherness.issue-646",
+      "file_spaces": [
+        "agents/"
+      ],
+      "pr_number": 698,
+      "pr_merged": true,
+      "done_at": "2026-04-21T11:19:52Z"
     },
     "issue-645": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: Same-session recovery when no PR ships in first 20 minutes: `coord.md` must detect mid-ses",
       "labels": [
         "priority/medium",
@@ -587,11 +599,21 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "assigned_to": "sess-92d42ac3",
+      "assigned_at": "2026-04-21T11:10:52Z",
+      "branch": "feat/issue-645",
+      "worktree": "../otherness.issue-645",
+      "file_spaces": [
+        "agents/"
+      ],
+      "pr_number": 697,
+      "pr_merged": true,
+      "done_at": "2026-04-21T11:14:32Z"
     },
     "issue-644": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: Meaningful-work rate tracked as a first-class metric: `docs/aide/metrics.md` must add a `m",
       "labels": [
         "priority/medium",
@@ -600,7 +622,17 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "assigned_to": "sess-92d42ac3",
+      "assigned_at": "2026-04-21T11:05:20Z",
+      "branch": "feat/issue-644",
+      "worktree": "../otherness.issue-644",
+      "file_spaces": [
+        "agents/"
+      ],
+      "pr_number": 696,
+      "pr_merged": true,
+      "done_at": "2026-04-21T11:09:26Z"
     },
     "issue-643": {
       "state": "done",
@@ -627,7 +659,7 @@
       "done_at": "2026-04-20T21:30:20Z"
     },
     "issue-642": {
-      "state": "todo",
+      "state": "done",
       "status": "todo",
       "title": "feat: 38.1",
       "labels": [
@@ -637,11 +669,14 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": false,
+      "done_at": "2026-04-21T12:09:51Z",
+      "notes": "already-implemented \u2014 closed without PR"
     },
     "issue-641": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: 37.1",
       "labels": [
         "priority/medium",
@@ -650,24 +685,23 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_number": 694,
+      "pr_merged": true,
+      "done_at": "2026-04-21T10:54:49Z"
     },
     "issue-640": {
-      "state": "todo",
-      "status": "todo",
-      "title": "feat: 36.1",
-      "labels": [
-        "priority/medium",
-        "area/agent-loop",
-        "otherness",
-        "size/s",
-        "kind/enhancement"
-      ],
-      "priority": "medium"
+      "state": "done",
+      "status": "done",
+      "title": "feat: 36.1 \u2014 COORD \u00a71b-vision vision pressure set",
+      "note": "already-implemented-pr-689",
+      "pr_number": 689,
+      "pr_merged": true,
+      "done_at": "2026-04-21T10:46:56Z"
     },
     "issue-639": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: 35.1",
       "labels": [
         "priority/medium",
@@ -676,11 +710,14 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 688,
+      "done_at": "2026-04-21T10:13:27Z"
     },
     "issue-638": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `coord.md \u00a71c`: track guard-firing frequency in session metrics (metrics.md schema",
       "labels": [
         "priority/medium",
@@ -689,10 +726,13 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 687,
+      "done_at": "2026-04-21T10:03:45Z"
     },
     "issue-637": {
-      "state": "todo",
+      "state": "done",
       "status": "todo",
       "title": "feat: End-to-end onboarding smoke test on a live fresh repo: `scripts/check-onboarding.sh` valid",
       "labels": [
@@ -702,10 +742,12 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "resolved_at": "2026-04-21T09:18:25Z"
     },
     "issue-636": {
-      "state": "todo",
+      "state": "done",
       "status": "todo",
       "title": "feat: Autonomous `/otherness.learn` cadence enforcement with measurable trigger: SM \u00a74c must che",
       "labels": [
@@ -715,11 +757,14 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "resolved_at": "2026-04-21T09:03:06Z",
+      "resolution": "already_implemented",
+      "notes": "Implemented by PR #658 (merged 2026-04-20). Closed as duplicate."
     },
     "issue-635": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: Simulation predictions must visibly change agent behavior: today the simulation runs, prod",
       "labels": [
         "priority/medium",
@@ -728,12 +773,23 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "assigned_to": "sess-6a945f23",
+      "assigned_at": "2026-04-21T07:49:58Z",
+      "branch": "feat/issue-635",
+      "worktree": "../otherness.issue-635",
+      "file_spaces": [
+        "scripts/",
+        "agents/"
+      ],
+      "pr_number": 680,
+      "pr_merged": true,
+      "done_at": "2026-04-21T07:59:18Z"
     },
     "issue-634": {
-      "state": "todo",
+      "state": "done",
       "status": "todo",
-      "title": "feat: Session defect diagnosis: when a session completes with 0 meaningful items (only metrics c",
+      "title": "feat(sm): session defect diagnosis",
       "labels": [
         "priority/medium",
         "area/agent-loop",
@@ -741,11 +797,14 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-21T12:09:51Z",
+      "pr_number": 703
     },
     "issue-633": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: Graceful partial handoff on GitHub Actions job timeout: GitHub Actions jobs have a default",
       "labels": [
         "priority/medium",
@@ -754,11 +813,15 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": false,
+      "pr_number": 676,
+      "note": "needs-human-workflow-push",
+      "done_at": "2026-04-20T23:55:51Z"
     },
     "issue-632": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `/otherness.status` single-page health summary that a human can read in 30 seconds: the cu",
       "labels": [
         "priority/medium",
@@ -767,11 +830,14 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 675,
+      "done_at": "2026-04-20T23:53:10Z"
     },
     "issue-627": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `docs/aide/progress.md` automated update: SM \u00a74f must update `progress.md` after every bat",
       "labels": [
         "priority/medium",
@@ -780,11 +846,14 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 674,
+      "done_at": "2026-04-20T23:50:58Z"
     },
     "issue-626": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: New command `/otherness.status` enhanced output: the command currently exists but its outp",
       "labels": [
         "priority/medium",
@@ -793,10 +862,13 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 673,
+      "done_at": "2026-04-20T23:48:56Z"
     },
     "issue-625": {
-      "state": "todo",
+      "state": "done",
       "status": "todo",
       "title": "feat: `SM \u00a74f` batch report condensed format: the report issue comment must fit in 8 lines; curr",
       "labels": [
@@ -806,11 +878,13 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-20T23:09:49Z"
     },
     "issue-624": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `agents/onboard.md` vision inference quality: after writing `vision.md`, run the vision do",
       "labels": [
         "priority/medium",
@@ -819,11 +893,14 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 672,
+      "done_at": "2026-04-20T23:46:29Z"
     },
     "issue-623": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `onboarding-existing-project.md` + `onboarding-new-project.md`: add a \"first-run smoke tes",
       "labels": [
         "priority/medium",
@@ -832,11 +909,14 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 671,
+      "done_at": "2026-04-20T23:44:04Z"
     },
     "issue-622": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `agents/onboard.md` post-run validation: after generating `docs/aide/`, run a structural s",
       "labels": [
         "priority/medium",
@@ -845,11 +925,14 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 670,
+      "done_at": "2026-04-20T23:41:48Z"
     },
     "issue-621": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `agents/otherness.learn.md`: diversity-first learn target selection",
       "labels": [
         "priority/medium",
@@ -858,11 +941,21 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "assigned_to": "sess-92d42ac3",
+      "assigned_at": "2026-04-21T10:59:42Z",
+      "branch": "feat/issue-621",
+      "worktree": "../otherness.issue-621",
+      "file_spaces": [
+        "agents/"
+      ],
+      "pr_number": 695,
+      "pr_merged": true,
+      "done_at": "2026-04-21T11:03:02Z"
     },
     "issue-620": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `agents/skills/README.md` + `SM \u00a74c`: skill decay tracking",
       "labels": [
         "priority/medium",
@@ -871,11 +964,20 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "assigned_to": "sess-fa7fdbde",
+      "branch": "feat/issue-620",
+      "worktree": "../otherness.issue-620",
+      "file_spaces": [
+        "agents/"
+      ],
+      "pr_number": 660,
+      "pr_merged": true,
+      "done_at": "2026-04-20T22:49:10Z"
     },
     "issue-619": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `agents/otherness.learn.md` / `SM \u00a74c`: frame-lock break protocol",
       "labels": [
         "priority/medium",
@@ -884,11 +986,14 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 669,
+      "done_at": "2026-04-20T23:38:07Z"
     },
     "issue-618": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `SM \u00a74c` learn-cadence enforcement: add an explicit check",
       "labels": [
         "priority/medium",
@@ -897,11 +1002,14 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_number": 658,
+      "pr_merged": true,
+      "done_at": "2026-04-20T22:42:29Z"
     },
     "issue-617": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `docs/aide/metrics.md` schema: add `arch_convergence` and `sim_floor_delta` columns to bat",
       "labels": [
         "priority/medium",
@@ -910,11 +1018,21 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "assigned_to": "sess-fa7fdbde",
+      "branch": "feat/issue-617",
+      "worktree": "../otherness.issue-617",
+      "file_spaces": [
+        "docs/",
+        "agents/"
+      ],
+      "pr_number": 659,
+      "pr_merged": true,
+      "done_at": "2026-04-20T22:46:24Z"
     },
     "issue-616": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `SM \u00a74e` / `PM \u00a75g`: simulation-behavior coupling gate",
       "labels": [
         "priority/medium",
@@ -923,12 +1041,15 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 668,
+      "done_at": "2026-04-20T23:34:12Z"
     },
     "issue-615": {
-      "state": "todo",
+      "state": "done",
       "status": "todo",
-      "title": "feat: `SM \u00a74f` batch report format: replace generic GREEN/AMBER/RED with a two-axis signal: `pro",
+      "title": "feat: `SM \u00a74f` batch report format two-axis signal",
       "labels": [
         "priority/medium",
         "area/agent-loop",
@@ -936,11 +1057,14 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-21T11:51:27Z",
+      "pr_number": 701
     },
     "issue-614": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `coord.md \u00a71c`: queue refusal guard",
       "labels": [
         "priority/medium",
@@ -949,11 +1073,13 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "note": "already-implemented-coord-1c-guard",
+      "done_at": "2026-04-20"
     },
     "issue-613": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `standalone.md` / `coord.md \u00a71e`: silent-session detection",
       "labels": [
         "priority/medium",
@@ -962,11 +1088,14 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_number": 657,
+      "pr_merged": true,
+      "done_at": "2026-04-20T22:39:01Z"
     },
     "issue-612": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `SM \u00a74b`: session outcome classification",
       "labels": [
         "priority/medium",
@@ -975,11 +1104,14 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_number": 655,
+      "pr_merged": true,
+      "done_at": "2026-04-20T22:29:44Z"
     },
     "issue-611": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: Cross-project pressure propagation: when otherness identifies a pattern (e.g. \"test covera",
       "labels": [
         "priority/medium",
@@ -988,24 +1120,20 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 667,
+      "done_at": "2026-04-20T23:28:05Z"
     },
     "issue-610": {
-      "state": "todo",
-      "status": "todo",
-      "title": "feat: `SM \u00a74b` / `PM \u00a75`: meaningful-work gate",
-      "labels": [
-        "priority/medium",
-        "area/agent-loop",
-        "otherness",
-        "size/s",
-        "kind/enhancement"
-      ],
-      "priority": "medium"
+      "state": "done",
+      "status": "done",
+      "note": "covered-by-pr-655",
+      "pr_number": 655
     },
     "issue-609": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: Self-updating pressure prompts: Step A should read its own current pressure context, evalu",
       "labels": [
         "priority/medium",
@@ -1014,16 +1142,20 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_number": 656,
+      "pr_merged": true,
+      "done_at": "2026-04-20T22:35:21Z"
     },
     "issue-608": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "\ud83d\udcca Autonomous Team Reports \u2014 2026-04-20",
       "labels": [
         "otherness"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "note": "report-issue-not-a-work-item"
     },
     "issue-600": {
       "state": "todo",
@@ -1039,8 +1171,8 @@
       "priority": "low"
     }
   },
-  "sm_cycle_count": 6,
-  "last_sm_at": "2026-04-20T21:30:49Z",
+  "sm_cycle_count": 11,
+  "last_sm_at": "2026-04-21T08:00:25Z",
   "session_heartbeats": {
     "sess-5327084f": {
       "last_seen": "2026-04-20T13:12:45Z",
@@ -1066,8 +1198,18 @@
       "last_seen": "2026-04-20T21:25:34Z",
       "item": "issue-643",
       "cycle": 1
+    },
+    "sess-6a945f23": {
+      "last_seen": "2026-04-21T07:49:58Z",
+      "item": "issue-635",
+      "cycle": 1
+    },
+    "sess-92d42ac3": {
+      "last_seen": "2026-04-21T11:15:36Z",
+      "item": "issue-646",
+      "cycle": 6
     }
   },
-  "pm_cycle_count": 2,
+  "pm_cycle_count": 3,
   "last_auto_vision_cycle": 87
 }
