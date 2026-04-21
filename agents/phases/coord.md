@@ -461,6 +461,105 @@ except: print('')
     COORD_ACTION=none
     ;;
 esac
+
+# §1b-session-type: declare session type at START based on queue composition (design doc 35 §Future → ✅)
+# Before claiming any item, inspect the top 3 items in the queue.
+# Write session_type_declared: feature-rich|mixed|chore-only to state.json.
+# If chore-only: trigger queue enrichment guard (§1c) BEFORE first claim.
+# Fail-open: errors write session_type_declared=unknown and proceed.
+SESSION_TYPE_DECLARED=$(python3 - <<'SESSTYPE_EOF'
+import json, subprocess, os, sys
+
+REPO = os.environ.get('REPO', '')
+
+# Read top 3 todo items from state.json
+try:
+    with open('.otherness/state.json') as f: s = json.load(f)
+except Exception as e:
+    print(f'[COORD §1b-session-type] state.json unreadable (non-fatal): {e}', file=sys.stderr)
+    print('unknown')
+    sys.exit(0)
+
+features = s.get('features', {})
+
+# Get claimed items (branch locks) from remote
+claimed = set()
+try:
+    ls = subprocess.check_output(['git', 'ls-remote', '--heads', 'origin'], text=True)
+    for line in ls.splitlines():
+        if 'refs/heads/feat/' in line:
+            claimed.add(line.split('refs/heads/feat/')[-1].strip())
+except Exception:
+    pass
+
+PRIORITY_MAP = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}
+
+def _sort_key(item_id, item_data):
+    pri = PRIORITY_MAP.get(item_data.get('priority'), 4)
+    title = item_data.get('title', '').lower()
+    labels = item_data.get('labels', [])
+    is_hygiene = (title.startswith('hygiene:') or 'kind/chore' in labels)
+    return (pri + (10 if is_hygiene else 0), item_id)
+
+candidates = []
+for item_id, d in features.items():
+    if d.get('state') != 'todo': continue
+    if item_id in claimed: continue
+    candidates.append((item_id, d))
+
+candidates.sort(key=lambda x: _sort_key(x[0], x[1]))
+top3 = candidates[:3]
+
+if not top3:
+    print('[COORD §1b-session-type] Queue empty — session_type_declared=unknown', file=sys.stderr)
+    session_type = 'unknown'
+else:
+    CHORE_KINDS = {'kind/chore', 'kind/docs'}
+    FEATURE_KINDS = {'kind/enhancement', 'kind/bug'}
+
+    def is_feature(d):
+        labels = d.get('labels', [])
+        title = d.get('title', '').lower()
+        if title.startswith('hygiene:') or 'kind/chore' in labels: return False
+        if any(l in FEATURE_KINDS for l in labels): return True
+        # Default: items with no labels are treated as features
+        return not any(l in CHORE_KINDS for l in labels)
+
+    feature_count = sum(1 for _, d in top3 if is_feature(d))
+    chore_count = len(top3) - feature_count
+
+    if feature_count == 0:
+        session_type = 'chore-only'
+    elif chore_count == 0:
+        session_type = 'feature-rich'
+    else:
+        session_type = 'mixed'
+
+    print(f'[COORD §1b-session-type] top3={[id for id,_ in top3]} '
+          f'feature={feature_count} chore={chore_count} → session_type={session_type}',
+          file=sys.stderr)
+
+# Write to state.json
+try:
+    with open('.otherness/state.json') as f: s = json.load(f)
+    s['session_type_declared'] = session_type
+    with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
+except Exception as e:
+    print(f'[COORD §1b-session-type] write failed (non-fatal): {e}', file=sys.stderr)
+
+print(session_type)
+SESSTYPE_EOF
+)
+export SESSION_TYPE_DECLARED
+echo "[COORD §1b-session-type] session_type_declared=${SESSION_TYPE_DECLARED}"
+
+# If chore-only at start: force queue enrichment guard before any claim
+# (guard will be re-run in §1c, but this ensures it fires even if §1c skips it)
+if [ "${SESSION_TYPE_DECLARED:-unknown}" = "chore-only" ]; then
+  echo "[COORD §1b-session-type] chore-only queue declared — enrichment guard will fire in §1c before first claim."
+  # Set flag for §1c to pick up
+  export QUEUE_NEEDS_ENRICHMENT=true
+fi
 ```
 
 ---
