@@ -1195,8 +1195,8 @@
       "done_at": "2026-04-21T12:53:19Z"
     }
   },
-  "sm_cycle_count": 11,
-  "last_sm_at": "2026-04-21T08:00:25Z",
+  "sm_cycle_count": 12,
+  "last_sm_at": "2026-04-21T12:55:01Z",
   "session_heartbeats": {
     "sess-5327084f": {
       "last_seen": "2026-04-20T13:12:45Z",
@@ -1239,6 +1239,6 @@
       "cycle": 2
     }
   },
-  "pm_cycle_count": 3,
+  "pm_cycle_count": 4,
   "last_auto_vision_cycle": 87
 }
