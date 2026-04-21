@@ -51,8 +51,38 @@ try:
     }
     with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
 except Exception as e:
-    print(f"Heartbeat write failed (non-fatal): {e}")
+     print(f"Heartbeat write failed (non-fatal): {e}")
 EOF
+
+# §1a: Concurrent session deduplication guard (design doc 15 §Future → ✅)
+# If another session has a heartbeat <2 minutes old: stagger by sleeping 30s.
+# Advisory only — branch-lock still handles actual collisions. Fail-open.
+python3 - <<'CONCURRENT_EOF'
+import json, datetime, os, time
+
+MY_SESSION = os.environ.get('MY_SESSION_ID', '')
+try:
+    r = __import__('subprocess').run(
+        ['git', 'show', 'origin/_state:.otherness/state.json'],
+        capture_output=True, text=True, timeout=5)
+    s = json.loads(r.stdout) if r.returncode == 0 else {}
+    beats = s.get('session_heartbeats', {})
+    now = datetime.datetime.now(datetime.timezone.utc)
+    concurrent = [
+        sid for sid, hb in beats.items()
+        if sid != MY_SESSION
+        and hb.get('last_seen', '')
+        and (now - datetime.datetime.fromisoformat(
+            hb['last_seen'].replace('Z', '+00:00'))).total_seconds() < 120
+    ]
+    if concurrent:
+        print(f'[COORD §1a] Concurrent session(s) detected: {concurrent} — staggering 30s.')
+        time.sleep(30)
+    else:
+        print(f'[COORD §1a] No concurrent sessions — proceeding.')
+except Exception as e:
+    pass  # fail-open: skip guard on any error
+CONCURRENT_EOF
 
 # Stop sentinel
 if [ -f ".otherness/stop-after-current" ] && [ -z "$ITEM_ID" ]; then
