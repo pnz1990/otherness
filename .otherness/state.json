@@ -579,8 +579,8 @@
       "priority": "medium"
     },
     "issue-645": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: Same-session recovery when no PR ships in first 20 minutes: `coord.md` must detect mid-ses",
       "labels": [
         "priority/medium",
@@ -589,7 +589,17 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "assigned_to": "sess-92d42ac3",
+      "assigned_at": "2026-04-21T11:10:52Z",
+      "branch": "feat/issue-645",
+      "worktree": "../otherness.issue-645",
+      "file_spaces": [
+        "agents/"
+      ],
+      "pr_number": 697,
+      "pr_merged": true,
+      "done_at": "2026-04-21T11:14:32Z"
     },
     "issue-644": {
       "state": "done",
@@ -1176,9 +1186,9 @@
       "cycle": 1
     },
     "sess-92d42ac3": {
-      "last_seen": "2026-04-21T11:05:20Z",
-      "item": "issue-644",
-      "cycle": 4
+      "last_seen": "2026-04-21T11:10:52Z",
+      "item": "issue-645",
+      "cycle": 5
     }
   },
   "pm_cycle_count": 3,
