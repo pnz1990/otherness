@@ -229,9 +229,65 @@ eval "$BUILD_COMMAND" && eval "$TEST_COMMAND" && eval "$LINT_COMMAND"
 
 Max 3 fix attempts. If still failing after 3: post `[NEEDS HUMAN: build failing after 3 attempts — <error>]` on the issue. Do not open a PR with failing tests.
 
----
+## 2e-zero-diff. Zero-diff gate (design doc 21 §Future → ✅)
 
-## 2f. Update design doc, commit and push
+Before committing, verify that the working branch has ≥1 changed file outside
+`docs/aide/`, `.otherness/`, and test/metrics-only files. If zero meaningful
+files changed: abort PR creation, re-queue item, increment `failed_attempts`.
+
+```bash
+cd $MY_WORKTREE
+
+# Count meaningful changed files (exclude docs/aide/, .otherness/, metrics-only)
+MEANINGFUL_DIFF=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | python3 -c "
+import sys, re
+EXCLUDE = re.compile(r'^(docs/aide/|\.otherness/|\.specify/memory|scripts/validate|docs/aide)')
+files = [l.strip() for l in sys.stdin if l.strip()]
+meaningful = [f for f in files if not EXCLUDE.match(f)]
+print(len(meaningful))
+" 2>/dev/null || git diff --name-only origin/main...HEAD 2>/dev/null | python3 -c "
+import sys, re
+EXCLUDE = re.compile(r'^(docs/aide/|\.otherness/|\.specify/memory)')
+files = [l.strip() for l in sys.stdin if l.strip()]
+meaningful = [f for f in files if not EXCLUDE.match(f)]
+print(len(meaningful))
+" 2>/dev/null || echo "1")
+
+if [ "${MEANINGFUL_DIFF:-1}" -eq 0 ]; then
+  echo "[ENG §2e-zero-diff] Zero meaningful file changes detected — aborting PR creation."
+  echo "[ENG §2e-zero-diff] Re-queuing item with blocked label and failed_attempts increment."
+  
+  # Re-queue: reset branch (so next session can claim it), label blocked, comment
+  ISSUE_NUM=$(echo $ITEM_ID | grep -oE '[0-9]+' | head -1)
+  gh issue edit "$ISSUE_NUM" --repo "$REPO" --add-label blocked 2>/dev/null || true
+  gh issue comment "$ISSUE_NUM" --repo "$REPO" \
+    --body "[ENG §2e-zero-diff | ${MY_SESSION_ID:-sess-unknown}] ENG produced zero meaningful file changes. Item may be ambiguous or already implemented. Human review needed before re-attempt. Branch deleted — item reset to queue." 2>/dev/null || true
+  
+  # Increment failed_attempts in state.json
+  cd $(git rev-parse --show-toplevel 2>/dev/null || echo .) 2>/dev/null
+  python3 -c "
+import json, os
+ITEM_ID = os.environ.get('ITEM_ID', '')
+try:
+    with open('.otherness/state.json') as f: s = json.load(f)
+    item = s.setdefault('features', {}).setdefault(ITEM_ID, {})
+    item['failed_attempts'] = item.get('failed_attempts', 0) + 1
+    item['state'] = 'todo'
+    item['branch'] = None
+    item['worktree'] = None
+    with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
+    print(f'[ENG §2e-zero-diff] failed_attempts incremented for {ITEM_ID}')
+except Exception as e:
+    print(f'[ENG §2e-zero-diff] state update failed (non-fatal): {e}')
+" 2>/dev/null || true
+  
+  # Delete branch to release lock — item goes back to queue for next session
+  git push origin --delete "$MY_BRANCH" 2>/dev/null || true
+  
+  # Skip to SM/PM — do not open a PR
+  ITEM_ID=""; MY_BRANCH=""; MY_WORKTREE=""
+fi
+```
 
 Load skill: `~/.otherness/agents/skills/contribution-hygiene.md` before committing.
 Load skill: `~/.otherness/agents/skills/ephemeral-pr-artifacts.md` before opening the PR.
