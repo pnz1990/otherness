@@ -169,17 +169,70 @@ except: print(0)
 export QUEUE_GUARD_FIRES
 echo "[SM §4b] queue_guard_fires this session: ${QUEUE_GUARD_FIRES}"
 
+# §4b: MEANINGFUL_PRS — design-doc-backed PRs (design doc 21 §Future → ✅)
+# Count merged PRs (last 24h, non-excluded) where title or body references a design doc.
+# Uses same VISION_PAT as §4f VISION_PR_COUNT. Both metrics coexist.
+MEANINGFUL_PRS=$(python3 - <<'MPEOF'
+import subprocess, json, re, os, sys
+
+REPO = os.environ.get('REPO', '')
+EXCLUDE_PAT = re.compile(
+    r'^chore\(sm\)|^chore\(metrics\)|batch\s+\d+|session complete|PRs merged', re.IGNORECASE)
+VISION_PAT = re.compile(
+    r'docs/design/|🔲\s*→|design doc', re.IGNORECASE)
+
+try:
+    from datetime import datetime, timezone, timedelta
+    since = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    r = subprocess.run(
+        ['gh', 'pr', 'list', '--repo', REPO, '--state', 'merged', '--limit', '30',
+         '--json', 'number,title,mergedAt'],
+        capture_output=True, text=True, timeout=20)
+    if r.returncode != 0:
+        print('0'); sys.exit(0)
+    prs = json.loads(r.stdout.strip() or '[]')
+    recent = [pr for pr in prs
+              if pr.get('mergedAt', '') >= since
+              and not EXCLUDE_PAT.match(pr.get('title', ''))]
+except Exception:
+    print('0'); sys.exit(0)
+
+count = 0
+for pr in recent:
+    title = pr.get('title', '')
+    if VISION_PAT.search(title):
+        count += 1
+        continue
+    try:
+        rb = subprocess.run(
+            ['gh', 'pr', 'view', str(pr['number']), '--repo', REPO,
+             '--json', 'body', '--jq', '.body'],
+            capture_output=True, text=True, timeout=10)
+        body = rb.stdout.strip()[:500] if rb.returncode == 0 else ''
+        if VISION_PAT.search(body):
+            count += 1
+    except Exception:
+        pass
+
+print(count)
+MPEOF
+)
+export MEANINGFUL_PRS
+echo "[SM §4b] meaningful_prs this session: ${MEANINGFUL_PRS}"
+
 # Append row to metrics.md
 DATE=$(date +%Y-%m-%d)
 # [AI-STEP] Append a new row to docs/aide/metrics.md with today's metrics.
-# Row format (as of PR that added queue_guard_fires):
-#   | $DATE | $BATCH | $MERGED | $NEEDS_HUMAN | 0 | $SKILLS | $TODO_SHIPPED | ~Xmin | $VISION_PRS | $SESSION_OUTCOME | $ARCH_CONVERGENCE | $SIM_FLOOR_DELTA | $QUEUE_GUARD_FIRES | <notes> |
+# Row format (as of PR that added meaningful_prs):
+#   | $DATE | $BATCH | $MERGED | $NEEDS_HUMAN | 0 | $SKILLS | $TODO_SHIPPED | ~Xmin | $VISION_PRS | $SESSION_OUTCOME | $ARCH_CONVERGENCE | $SIM_FLOOR_DELTA | $QUEUE_GUARD_FIRES | $MEANINGFUL_PRS | <notes> |
 # $ARCH_CONVERGENCE: from scripts/sim-params.json arch_convergence_score field (default: — if calibration not run)
 # $SIM_FLOOR_DELTA: $MERGED - sim_predicted_floor from scripts/sim-params.json (default: — if missing)
 # $QUEUE_GUARD_FIRES: from QUEUE_GUARD_FIRES env var (set above from state.json chore_only_guard_count)
+# $MEANINGFUL_PRS: from MEANINGFUL_PRS env var (design-doc-backed PRs, computed above)
 # Historical rows (before PR #655) have only 9 columns — do not modify them.
 # Historical rows from PR #655 (vision_prs + session_outcome) have 11 columns — do not modify them.
 # Historical rows from PR #638 (queue_guard_fires) have 14 columns — do not modify them.
+# Historical rows from PR #644 (meaningful_prs) have 15 columns — do not modify them.
 # Use the pull-rebase-retry pattern to push directly to main (low-risk doc change).
 
 # After writing the row: reset the guard counter in state.json
