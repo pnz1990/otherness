@@ -83,11 +83,11 @@ escalation handles future stalls.
 - ✅ test.sh check 5b: outputs STALE_REASON with specific stall duration + exports JOURNEY2_STALE_HOURS for PM consumption (PR #302-303, 2026-04-19)
 
 ## Future (🔲)
-- ✅ ⚠️ Inferred: cross-project improvement proposals — pm.md §5c [AI-STEP] converted to executable Python: reads monitor.projects, checks needs-human/CI per project, opens improvement issues for common blockers across ≥2 projects. Fail-open. (PR #TBD, 2026-04-20)
+- ✅ ⚠️ Inferred: cross-project improvement proposals — pm.md §5c [AI-STEP] converted to executable Python: reads monitor.projects, checks needs-human/CI per project, opens improvement issues for common blockers across ≥2 projects. Fail-open. (PR #582, 2026-04-20)
 
 - ✅ definition-of-done.md: Journey 2 has automated check command — reads reference project from config, checks _state age, outputs STALE_REASON (2026-04-19)
 
-- ✅ PM §5j: managed project feature velocity gate — counts `kind/enhancement` or `feat/*` PRs merged in last 7 days on the reference project. If zero and loop is alive: JOURNEY2_HEALTH=AMBER. Opens a deduplicated `[VELOCITY]` issue (not [NEEDS HUMAN]). Fail-open on API errors. (PR #TBD, 2026-04-21)
+- ✅ PM §5j: managed project feature velocity gate — counts `kind/enhancement` or `feat/*` PRs merged in last 7 days on the reference project. If zero and loop is alive: JOURNEY2_HEALTH=AMBER. Opens a deduplicated `[VELOCITY]` issue (not [NEEDS HUMAN]). Fail-open on API errors. (PR #733, 2026-04-21)
 
 - 🔲 PM §5: otherness self-improvement rate vs. managed project improvement rate — report both separately: the SM health signal merges otherness-self improvements with managed-project improvements into a single GREEN/AMBER/RED. This conflation hides a critical distinction: otherness can be shipping PRs to improve itself while the managed projects (alibi, kardinal-promoter, kro-ui) receive zero feature improvements. PM §5 must compute and report two distinct rates per batch: (1) `self_feat_prs`: feat PRs merged to the otherness repo in the last 7 days, (2) `managed_feat_prs`: feat PRs merged to non-otherness monitor.projects in the last 7 days. SM §4f health comment must include both values. When `managed_feat_prs == 0` for 3 consecutive batches while `self_feat_prs > 0`: PM §5 must open a `kind/chore priority/high` issue: "otherness is improving itself but not its managed projects — the value delivered to users has stalled." A system that only improves its own infrastructure while the projects it manages stagnate is not delivering the core promise of otherness. ⚠️ Inferred from honesty lens: the loop is honest about itself but not about the value it delivers to managed projects.
 
