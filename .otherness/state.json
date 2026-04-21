@@ -681,8 +681,8 @@
       "priority": "medium"
     },
     "issue-638": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: `coord.md \u00a71c`: track guard-firing frequency in session metrics (metrics.md schema",
       "labels": [
         "priority/medium",
@@ -691,7 +691,10 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 687,
+      "done_at": "2026-04-21T10:03:45Z"
     },
     "issue-637": {
       "state": "done",
