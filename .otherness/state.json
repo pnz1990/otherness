@@ -566,8 +566,8 @@
       "priority": "medium"
     },
     "issue-646": {
-      "state": "todo",
-      "status": "todo",
+      "state": "done",
+      "status": "done",
       "title": "feat: SM health signal must distinguish real GREEN from stall-GREEN: the current GREEN health si",
       "labels": [
         "priority/medium",
@@ -576,7 +576,17 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "assigned_to": "sess-92d42ac3",
+      "assigned_at": "2026-04-21T11:15:36Z",
+      "branch": "feat/issue-646",
+      "worktree": "../otherness.issue-646",
+      "file_spaces": [
+        "agents/"
+      ],
+      "pr_number": 698,
+      "pr_merged": true,
+      "done_at": "2026-04-21T11:19:52Z"
     },
     "issue-645": {
       "state": "done",
@@ -1186,9 +1196,9 @@
       "cycle": 1
     },
     "sess-92d42ac3": {
-      "last_seen": "2026-04-21T11:10:52Z",
-      "item": "issue-645",
-      "cycle": 5
+      "last_seen": "2026-04-21T11:15:36Z",
+      "item": "issue-646",
+      "cycle": 6
     }
   },
   "pm_cycle_count": 3,
