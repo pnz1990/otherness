@@ -454,3 +454,77 @@ gh pr list --repo "$REPO" --state open --json number,title,createdAt \
 | feat/* branch but no PR | Build/test failing | Check CI run for errors |
 | [NEEDS HUMAN: no vision] | docs/aide/vision.md missing | Run `/otherness.vibe-vision` first |
 | [NEEDS HUMAN: ci-red-3-attempts] | scripts/validate.sh failing | Run validate.sh locally and fix |
+
+---
+
+## Is the loop still working?
+
+Run these three checks any time you want to confirm the autonomous loop is healthy (not just after first run — use this days or weeks later too). All three should take under 5 minutes combined.
+
+```bash
+REPO=$(git remote get-url origin | sed 's|.*github.com[:/]||;s|\.git$||')
+```
+
+### Check 1 — `_state` branch updated in last 24h
+
+```bash
+LAST=$(gh api "repos/$REPO/branches/_state" \
+  --jq '.commit.commit.committer.date' 2>/dev/null || echo "NOT FOUND")
+AGE_H=$(python3 -c "
+import datetime
+try:
+    d = datetime.datetime.fromisoformat('$LAST'.replace('Z','+00:00'))
+    print(int((datetime.datetime.now(datetime.timezone.utc) - d).total_seconds() / 3600))
+except:
+    print(9999)
+" 2>/dev/null || echo "9999")
+echo "_state last updated: ${LAST} (${AGE_H}h ago)"
+# PASS: AGE_H < 24
+# FAIL: "NOT FOUND" → loop never ran; AGE_H ≥ 24 → loop has stalled
+```
+
+**What to do if failing:**
+- `NOT FOUND` — the first session never completed; check GitHub Actions workflow for errors
+- `>= 24h ago` — check whether the scheduled workflow is enabled: `gh workflow list --repo "$REPO"`
+
+### Check 2 — At least one PR opened or merged in last 7 days
+
+```bash
+FEAT_PRS=$(gh pr list --repo "$REPO" --state all --limit 30 \
+  --json title,createdAt,mergedAt \
+  --jq '[.[] | select(
+    (.createdAt >= (now - 604800 | strftime("%Y-%m-%dT%H:%M:%SZ"))) or
+    (.mergedAt != null and .mergedAt >= (now - 604800 | strftime("%Y-%m-%dT%H:%M:%SZ")))
+  ) | .title] | length' 2>/dev/null || echo "0")
+echo "PRs in last 7 days: $FEAT_PRS"
+# PASS: FEAT_PRS >= 1
+# FAIL: 0 — loop is alive but not shipping work
+```
+
+**What to do if failing:**
+- Check whether the queue is empty: `gh issue list --repo "$REPO" --label "otherness" --state open`
+- If empty, run `/otherness.vibe-vision` to inject new work into the design docs
+
+### Check 3 — No `[NEEDS HUMAN]` issues older than 48h
+
+```bash
+OLD_NH=$(gh issue list --repo "$REPO" --state open --label "needs-human" \
+  --json number,title,createdAt \
+  --jq '[.[] | select(.createdAt < (now - 172800 | strftime("%Y-%m-%dT%H:%M:%SZ")))] | length' \
+  2>/dev/null || echo "0")
+echo "[NEEDS HUMAN] issues older than 48h: $OLD_NH"
+# PASS: OLD_NH == 0
+# FAIL: > 0 — escalations are blocking the loop; read each issue and resolve or close
+```
+
+**What to do if failing:**
+```bash
+# List the stale escalations
+gh issue list --repo "$REPO" --state open --label "needs-human" \
+  --json number,title,createdAt \
+  --jq '.[] | "#\(.number) (\(.createdAt[:10])) \(.title[:70])"'
+```
+
+---
+
+**One-command alternative**: `/otherness.status` covers all three checks plus queue depth, simulation health, and reference project activity in a single dashboard view.
