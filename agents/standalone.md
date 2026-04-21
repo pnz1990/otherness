@@ -328,11 +328,30 @@ OTHERNESS_VERSION=$(git -C ~/.otherness describe --tags --always 2>/dev/null \
   || echo "unknown")
 
 # Daily report rotation: check if REPORT_ISSUE was created on a previous UTC day;
-# if so, close it and open a fresh one (history preserved).
+# if so, open a fresh one. Uses GitHub search to detect today's issue before creating.
+# Persists the new issue number via _state branch push (not local filesystem).
 REPORT_ISSUE=$(python3 - <<'ROTATE_EOF'
 import subprocess, json, datetime, re, os, sys
 
-# Read base report_issue: state.json > AGENTS.md > otherness-config.yaml
+REPO = os.environ.get('REPO', '')
+PR_LABEL = os.environ.get('PR_LABEL', 'otherness')
+today = datetime.datetime.now(datetime.timezone.utc).date()
+today_str = today.strftime('%Y-%m-%d')
+
+# Step 1: Check if today's report issue already exists (dedup guard)
+search_title = f'Autonomous Team Reports — {today_str}'
+try:
+    r = subprocess.run(['gh','issue','list','--repo',REPO,'--state','open',
+                        '--search', search_title,
+                        '--json','number,title','--jq','.[0].number'],
+                       capture_output=True, text=True, timeout=15)
+    if r.returncode == 0 and r.stdout.strip() and r.stdout.strip() != 'null':
+        existing_num = r.stdout.strip()
+        print(existing_num)
+        sys.exit(0)
+except: pass
+
+# Step 2: Read base report_issue from state.json (_state branch) > AGENTS.md > config
 report_issue = None
 try:
     r = subprocess.run(['git','show','origin/_state:.otherness/state.json'],
@@ -359,42 +378,51 @@ if not report_issue:
 if not report_issue:
     report_issue = '1'
 
-# Check creation date of current report issue
-REPO = os.environ.get('REPO', '')
-PR_LABEL = os.environ.get('PR_LABEL', 'otherness')
+# Step 3: Check if current report issue is from a previous day
 try:
     r = subprocess.run(['gh','issue','view',report_issue,'--repo',REPO,
-                        '--json','createdAt','--jq','.createdAt'],
-                       capture_output=True, text=True)
+                        '--json','createdAt,state','--jq','{created:.createdAt,state:.state}'],
+                       capture_output=True, text=True, timeout=10)
     if r.returncode == 0:
-        created = r.stdout.strip().strip('"')
+        d = json.loads(r.stdout)
+        created = d.get('created','').strip('"')
+        issue_state = d.get('state','open')
         created_date = datetime.datetime.fromisoformat(created.replace('Z','+00:00')).date()
-        today = datetime.datetime.now(datetime.timezone.utc).date()
-        if created_date < today:
-            today_str = today.strftime('%Y-%m-%d')
-            # Create new issue
+        if created_date < today or issue_state == 'closed':
+            # Create today's issue
             new_title = f'📊 Autonomous Team Reports — {today_str}'
             cr = subprocess.run(['gh','issue','create','--repo',REPO,
                                  '--title',new_title,
-                                 '--label',PR_LABEL,
                                  '--body',f'Daily autonomous team report. Continued from #{report_issue}.'],
-                                capture_output=True, text=True)
+                                capture_output=True, text=True, timeout=15)
             if cr.returncode == 0:
                 new_url = cr.stdout.strip()
                 new_num = new_url.split('/')[-1]
-                # Close old issue with pointer to new
+                # Comment on old issue (don't close — close is noisy and hides history)
                 subprocess.run(['gh','issue','comment',report_issue,'--repo',REPO,
-                                '--body',f'[ROTATE] Day boundary reached. Continuing in #{new_num}: {new_url}'],
-                               capture_output=True)
-                subprocess.run(['gh','issue','close',report_issue,'--repo',REPO,
-                                '--comment',f'Daily rotation complete. New report: #{new_num}'],
-                               capture_output=True)
-                # Persist new report_issue to state.json
+                                '--body',f'[ROTATE] Continuing today in #{new_num}: {new_url}'],
+                               capture_output=True, timeout=10)
+                # Persist new issue number to _state branch via git worktree
                 try:
-                    with open('.otherness/state.json') as f: s = json.load(f)
-                    s['report_issue'] = int(new_num)
-                    with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
-                except: pass
+                    wt = '/tmp/_state_persist'
+                    subprocess.run(['git','worktree','add','--orphan','-b','_state_persist_tmp',wt],
+                                   capture_output=True)
+                    subprocess.run(['git','fetch','origin','_state:_state'],capture_output=True)
+                    subprocess.run(['git','-C',wt,'checkout','origin/_state','--','.otherness/state.json'],
+                                   capture_output=True)
+                    sj_path = f'{wt}/.otherness/state.json'
+                    if os.path.exists(sj_path):
+                        with open(sj_path) as f: s = json.load(f)
+                        s['report_issue'] = int(new_num)
+                        with open(sj_path,'w') as f: json.dump(s,f,indent=2)
+                        subprocess.run(['git','-C',wt,'add','.otherness/state.json'],capture_output=True)
+                        subprocess.run(['git','-C',wt,'commit','-m',f'rotate report_issue to #{new_num}'],
+                                       capture_output=True)
+                        subprocess.run(['git','-C',wt,'push','origin',f'HEAD:_state'],capture_output=True)
+                    subprocess.run(['git','worktree','remove',wt,'--force'],capture_output=True)
+                    subprocess.run(['git','branch','-D','_state_persist_tmp'],capture_output=True)
+                except Exception as e:
+                    pass  # state persist failed — next session will re-rotate but dedup guard prevents duplicates
                 print(new_num)
                 sys.exit(0)
 except: pass
