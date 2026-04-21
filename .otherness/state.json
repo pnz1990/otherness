@@ -462,7 +462,7 @@
       "priority": "medium"
     },
     "issue-775": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Session type must be declared at session START, not classified post-session: SM \u00a74b curren",
       "labels": [
         "priority/medium",
@@ -470,7 +470,9 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-21T21:46:59Z"
     },
     "issue-633": {
       "state": "todo",
