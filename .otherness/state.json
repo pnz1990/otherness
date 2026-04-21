@@ -553,9 +553,9 @@
       "priority": "medium"
     },
     "issue-647": {
-      "state": "todo",
-      "status": "todo",
-      "title": "feat: Simulation calibration staleness visible in health signal: `sim-prediction.json` stores a ",
+      "state": "done",
+      "status": "done",
+      "title": "feat(sm): surface sim calibration staleness in \u00a74f health signal",
       "labels": [
         "priority/medium",
         "area/agent-loop",
@@ -563,7 +563,18 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "assigned_to": "sess-0fd84dc1",
+      "assigned_at": "2026-04-21T12:31:56Z",
+      "branch": "feat/issue-647",
+      "worktree": "../otherness.issue-647",
+      "file_spaces": [
+        "agents/",
+        "scripts/"
+      ],
+      "pr_number": 706,
+      "pr_merged": true,
+      "done_at": "2026-04-21T12:38:58Z"
     },
     "issue-646": {
       "state": "done",
@@ -1208,6 +1219,11 @@
       "last_seen": "2026-04-21T11:15:36Z",
       "item": "issue-646",
       "cycle": 6
+    },
+    "sess-0fd84dc1": {
+      "last_seen": "2026-04-21T12:31:56Z",
+      "item": "issue-647",
+      "cycle": 1
     }
   },
   "pm_cycle_count": 3,
