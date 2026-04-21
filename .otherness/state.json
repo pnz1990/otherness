@@ -566,6 +566,12 @@
       "pr_merged": true,
       "title": "feat: Stuck-item detection",
       "done_at": "2026-04-21T22:05:02Z"
+    },
+    "issue-800": {
+      "state": "done",
+      "pr_merged": true,
+      "title": "feat: Meaningful-PR rate primary metric",
+      "done_at": "2026-04-21T22:08:19Z"
     }
   },
   "session_heartbeats": {
