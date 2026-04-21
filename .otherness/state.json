@@ -1193,6 +1193,269 @@
       "pr_number": 709,
       "pr_merged": true,
       "done_at": "2026-04-21T12:53:19Z"
+    },
+    "issue-710": {
+      "state": "done",
+      "status": "done",
+      "title": "feat: CHANGELOG.md maintained automatically",
+      "labels": [
+        "otherness",
+        "kind/enhancement",
+        "area/agent-loop",
+        "size/s",
+        "priority/medium"
+      ],
+      "priority": "medium",
+      "assigned_to": "sess-0fd84dc1",
+      "assigned_at": "2026-04-21T13:00:45Z",
+      "branch": "feat/issue-710",
+      "worktree": "../otherness.issue-710",
+      "file_spaces": [
+        "agents/",
+        "scripts/"
+      ],
+      "pr_number": 729,
+      "pr_merged": true,
+      "done_at": "2026-04-21T13:05:08Z"
+    },
+    "issue-711": {
+      "state": "done",
+      "status": "done",
+      "title": "feat: README health badge and last shipped line",
+      "labels": [
+        "otherness",
+        "kind/enhancement",
+        "area/agent-loop",
+        "size/s",
+        "priority/medium"
+      ],
+      "priority": "medium",
+      "assigned_to": "sess-0fd84dc1",
+      "assigned_at": "2026-04-21T13:05:43Z",
+      "branch": "feat/issue-711",
+      "worktree": "../otherness.issue-711",
+      "file_spaces": [
+        "agents/",
+        "README.md"
+      ],
+      "pr_number": 730,
+      "pr_merged": true,
+      "done_at": "2026-04-21T13:10:37Z"
+    },
+    "issue-712": {
+      "state": "done",
+      "status": "done",
+      "title": "feat: Concurrent session detection and deduplication guard",
+      "labels": [
+        "otherness",
+        "kind/enhancement",
+        "area/agent-loop",
+        "size/s",
+        "priority/medium"
+      ],
+      "priority": "medium",
+      "assigned_to": "sess-0fd84dc1",
+      "assigned_at": "2026-04-21T13:11:16Z",
+      "branch": "feat/issue-712",
+      "worktree": "../otherness.issue-712",
+      "file_spaces": [
+        "agents/"
+      ],
+      "pr_number": 731,
+      "pr_merged": true,
+      "done_at": "2026-04-21T13:14:16Z"
+    },
+    "issue-713": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: PM \u00a75j: managed project feature velocity gate",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-714": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: Multi-item loop execution verified in SM health signal: `coord.md` specifies that after BA",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-715": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: `sim_floor_delta` must feed into `recovery_action` computation: `docs/aide/metrics.md` now",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-716": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: M3 App adoption: explicitly track which managed projects have the GitHub App configured vs",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-717": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: Skill impact measurement",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-718": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: `onboarding-existing-project.md` first-run smoke test section: the onboarding guides for e",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-719": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: Metrics trend surfacing in SM health comment: metrics are collected every batch but SM onl",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-720": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: SM \u00a74b must distinguish metrics-only PRs from real work PRs: the `prs_merged` column count",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-721": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: 35.2",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-722": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: 36.2",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-723": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: 37.2",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-724": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: 38.3",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-725": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: 39.1",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-726": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: 39.1",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-727": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: 40.1",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-728": {
+      "state": "todo",
+      "status": "todo",
+      "title": "feat: 41.1",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
     }
   },
   "sm_cycle_count": 12,
