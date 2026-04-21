@@ -1296,7 +1296,7 @@
       "done_at": "2026-04-21T15:08:26Z"
     },
     "issue-715": {
-      "state": "todo",
+      "state": "done",
       "status": "todo",
       "title": "feat: `sim_floor_delta` must feed into `recovery_action` computation: `docs/aide/metrics.md` now",
       "labels": [
@@ -1305,7 +1305,9 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-21T15:16:07Z"
     },
     "issue-716": {
       "state": "todo",
