@@ -139,7 +139,7 @@
       "done_at": "2026-04-21T19:57:43Z"
     },
     "issue-637": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: End-to-end onboarding smoke test on a live fresh repo: `scripts/check-onboarding.sh` valid",
       "labels": [
         "priority/medium",
@@ -148,10 +148,13 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 637,
+      "done_at": "2026-04-21T19:59:13Z"
     },
     "issue-635": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Simulation predictions must visibly change agent behavior: today the simulation runs, prod",
       "labels": [
         "priority/medium",
@@ -160,7 +163,10 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 768,
+      "done_at": "2026-04-21T19:59:13Z"
     },
     "issue-634": {
       "state": "done",
