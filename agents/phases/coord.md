@@ -1202,6 +1202,9 @@ for id, d in features.items():
     if d.get('state') != 'todo': continue
     if id in claimed: continue
     if not deps_met(id): continue
+    # Skip items marked blocked (failed 3+ sessions) — design doc 21 §Future → ✅
+    if 'blocked' in d.get('labels', []) or d.get('failed_attempts', 0) >= 3:
+        continue
     # Area filter for bounded agents
     if allowed_areas:
         item_areas = d.get('areas', [])
