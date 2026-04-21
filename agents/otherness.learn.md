@@ -331,6 +331,7 @@ Append to `~/.otherness/agents/skills/PROVENANCE.md`:
 ```markdown
 ## <YYYY-MM-DD> — <repo>
 
+**paradigm_category:** <functional|event-sourced|actor-model|imperative-oop|declarative-config|reactive|domain-driven|protocol-oriented|other>
 **Files read:** <list>
 **Patterns extracted:** <N>
 **Disposition:**
