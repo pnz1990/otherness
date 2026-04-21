@@ -975,6 +975,30 @@ else:
         print(f'[SM §4c] Learn branch active — cadence satisfied (in progress).')
     else:
         print(f'[SM §4c] Learn overdue ({days_since}d > {MAX_DAYS}d floor) — opening priority/high issue.')
+
+        # §4c: Paradigm diversity check (design doc 31 §Future → ✅)
+        # Parse last 2 paradigm_category: fields from PROVENANCE.md to detect monoculture.
+        last_paradigms = []
+        paradigm_warning = ''
+        try:
+            prov_content = open(os.path.expanduser('~/.otherness/agents/skills/PROVENANCE.md')).read()
+            import re as _re
+            paradigm_entries = _re.findall(r'\*\*paradigm_category:\*\*\s*(\S+)', prov_content)
+            if not paradigm_entries:
+                # Try alternate format: `paradigm_category: X`
+                paradigm_entries = _re.findall(r'paradigm_category:\s*(\S+)', prov_content)
+            last_paradigms = paradigm_entries[-2:] if paradigm_entries else []
+            if len(last_paradigms) >= 2 and len(set(last_paradigms)) == 1:
+                paradigm_warning = (
+                    f'\n\n⚠️ Diversity gate: last 2 sessions both used `{last_paradigms[-1]}` paradigm. '
+                    f'This session MUST target a different paradigm to break frame-lock.')
+        except Exception:
+            last_paradigms = []
+
+        last_paradigm_line = ''
+        if last_paradigms:
+            last_paradigm_line = f'Last learn paradigm: `{last_paradigms[-1]}`. Target a different paradigm this session.\n\n'
+
         title = f'learn(arch): cadence enforcement — PROVENANCE.md overdue ({days_since}d since last learn)'
         body = (
             f'## Learn cadence enforcement\n\n'
@@ -984,6 +1008,11 @@ else:
             f'## What to do\n'
             f'Run `/otherness.learn` in the next available session. '
             f'Pick a repo from a different paradigm than the last session.\n\n'
+            f'{last_paradigm_line}'
+            f'**PROVENANCE.md format reminder**: each entry must include a `paradigm_category:` field '
+            f'(one of: `functional`, `event-sourced`, `actor-model`, `imperative-oop`, '
+            f'`declarative-config`, `reactive`, `domain-driven`, `protocol-oriented`, `other`).'
+            f'{paradigm_warning}\n\n'
             f'Reported by SM §4c | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}'
         )
         r = subprocess.run(
