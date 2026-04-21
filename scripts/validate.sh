@@ -17,7 +17,7 @@ echo "=== otherness validate ==="
 #             <owner>/<X> that isn't <owner>/otherness. Falls back gracefully.
 #   Rule 2 — reads fleet project names from otherness-config.yaml monitor.projects
 #             and catches them in project-reference context.
-echo "[1/7] Checking for hardcoded project paths in agent files..."
+echo "[1/8] Checking for hardcoded project paths in agent files..."
 
 # Resolve owner from config (used in Rule 1)
 OWNER=$(python3 -c "
@@ -94,7 +94,7 @@ done
 # Skill paths use ~/.otherness/agents/skills/<name>.md — on a CI runner ~/.otherness
 # doesn't exist, but the files are present in the repo at agents/skills/<name>.md.
 # We resolve both locations: prefer the expanded ~ path, fall back to repo-local.
-echo "[2/7] Checking skill references..."
+echo "[2/8] Checking skill references..."
 MISSING=0
 while IFS= read -r line; do
   # Extract path after "Load skill: read `" up to closing backtick
@@ -116,7 +116,7 @@ done < <(grep "Load skill: read" "$AGENTS_DIR/standalone.md" "$AGENTS_DIR/phases
 [ $MISSING -eq 0 ] && echo "  OK: all skill refs resolve" || exit 1
 
 # 3. Check required files exist
-echo "[3/7] Checking required files..."
+echo "[3/8] Checking required files..."
 REQUIRED=(
   "$AGENTS_DIR/standalone.md"
   "$AGENTS_DIR/bounded-standalone.md"
@@ -164,7 +164,7 @@ done
 [ $MISSING_FILES -eq 0 ] && echo "  OK: all required files present" || exit 1
 
 # 4. Check self-update is present in standalone.md
-echo "[4/7] Checking self-update mechanism..."
+echo "[4/8] Checking self-update mechanism..."
 if ! grep -q "git -C ~/.otherness pull" "$AGENTS_DIR/standalone.md"; then
   echo "  ERROR: standalone.md missing self-update (git pull) mechanism"
   exit 1
@@ -174,7 +174,7 @@ echo "  OK: self-update present"
 # 5. Check all spec.md files contain ## Design reference
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 SPECS_DIR="$ROOT_DIR/.specify/specs"
-echo "[5/7] Checking spec files for ## Design reference..."
+echo "[5/8] Checking spec files for ## Design reference..."
 if [ ! -d "$SPECS_DIR" ]; then
   echo "  OK: no .specify/specs/ directory — skipping spec lint"
 else
@@ -189,7 +189,7 @@ else
 fi
 
 # 6. Check every agent file has a ## MODE block
-echo "[6/7] Checking agent files for ## MODE block..."
+echo "[6/8] Checking agent files for ## MODE block..."
 MISSING_MODE=0
 for agent_file in "$AGENTS_DIR"/*.md "$AGENTS_DIR/phases"/*.md; do
   [ -f "$agent_file" ] || continue
@@ -264,7 +264,7 @@ fi
 # 7. Check ⚠️ Inferred and ⚠️ Observed items have source attribution
 # Each such item must end with a parenthetical attribution: (source, YYYY-MM-DD)
 # Items inside fenced code blocks are excluded (they are documentation examples).
-echo "[7/7] Checking ⚠️ Inferred/Observed items have source attribution..."
+echo "[7/8] Checking ⚠️ Inferred/Observed items have source attribution..."
 python3 - <<'INFERRED_CHECK'
 import re, os, sys
 
@@ -309,6 +309,74 @@ if errors:
 else:
     print("  OK: all ⚠️ Inferred/Observed items have source attribution")
 INFERRED_CHECK
+
+# 8. Check ✅ Present items that mention state.json fields are reflected in local state.json
+# Design ref: docs/design/41-design-doc-integrity.md §41.3
+# Fail-open: if .otherness/state.json absent (CI without _state), skip gracefully.
+# Drift is logged as [DOC-DRIFT] warning only — not a hard error.
+echo "[8/8] Checking ✅ Present items referencing state.json fields..."
+python3 - <<'STATE_DRIFT_CHECK'
+import re, os, json, sys
+
+ROOT_DIR = os.getcwd()
+DESIGN_DIR = os.path.join(ROOT_DIR, 'docs', 'design')
+STATE_PATH = os.path.join(ROOT_DIR, '.otherness', 'state.json')
+
+# Graceful fallback: if state.json doesn't exist locally, skip
+if not os.path.exists(STATE_PATH):
+    print("  OK: .otherness/state.json not present locally (CI) — skipping drift check")
+    sys.exit(0)
+
+if not os.path.isdir(DESIGN_DIR):
+    print("  OK: docs/design/ not found — skipping state.json drift check")
+    sys.exit(0)
+
+try:
+    state = json.load(open(STATE_PATH))
+except Exception as e:
+    print(f"  OK: could not read state.json ({e}) — skipping drift check")
+    sys.exit(0)
+
+# Pattern: backtick-quoted word adjacent to "state.json" in ✅ Present items
+# Matches: `foo` field, write `bar` to state.json, state.json.`baz`
+FIELD_PAT = re.compile(r'`([a-z_][a-zA-Z0-9_]*)` (?:field|key)|'
+                        r'write `([a-z_][a-zA-Z0-9_]*)` to state\.json|'
+                        r'state\.json[^`]*`([a-z_][a-zA-Z0-9_]*)`')
+
+drifts = []
+
+for fname in sorted(os.listdir(DESIGN_DIR)):
+    if not fname.endswith('.md'):
+        continue
+    try:
+        content = open(os.path.join(DESIGN_DIR, fname)).read()
+    except Exception:
+        continue
+
+    # Only scan ✅ Present items
+    for line in content.splitlines():
+        if not line.startswith('- ✅'):
+            continue
+        if 'state.json' not in line:
+            continue
+        # Extract field names
+        for m in FIELD_PAT.finditer(line):
+            field = m.group(1) or m.group(2) or m.group(3)
+            if not field:
+                continue
+            # Skip generic words unlikely to be state.json keys
+            if field in ('the', 'a', 'an', 'true', 'false', 'null', 'none', 'str', 'int'):
+                continue
+            if field not in state:
+                drifts.append(f"  [DOC-DRIFT] {fname}: ✅ Present mentions state.json.{field} — not found in state.json")
+
+if drifts:
+    for d in drifts:
+        print(d)
+    print(f"  {len(drifts)} doc-drift warning(s) — these are informational, not blocking.")
+else:
+    print("  OK: all ✅ Present state.json field references found in state.json")
+STATE_DRIFT_CHECK
 
 echo ""
 echo "=== validate: PASSED ==="
