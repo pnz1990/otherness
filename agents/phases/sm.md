@@ -546,7 +546,116 @@ except: print(0)
 export QUEUE_GUARD_FIRES
 echo "[SM §4b] queue_guard_fires this session: ${QUEUE_GUARD_FIRES}"
 
-# §4b: MEANINGFUL_PRS — design-doc-backed PRs (design doc 21 §Future → ✅)
+# §4b: Guard enrichment effectiveness — track whether the queue guard actually produced items
+# (design doc 21 §Future → ✅)
+# When the guard fires (QUEUE_GUARD_FIRES > 0), check whether new enhancement issues were
+# created as a result (proxy: count issues labeled otherness,kind/enhancement created in last 24h).
+# If guard fires but enrichment_produced == 0 for 3 consecutive sessions: open a bug issue.
+GUARD_ENRICHMENT_PRODUCED=$(python3 - <<'GUARD_ENRICH_EOF'
+import subprocess, json, os, sys, re
+from datetime import datetime, timezone, timedelta
+
+REPO = os.environ.get('REPO', '')
+QUEUE_GUARD_FIRES = int(os.environ.get('QUEUE_GUARD_FIRES', '0') or '0')
+
+if QUEUE_GUARD_FIRES == 0:
+    # Guard did not fire this session — enrichment_produced = 0 (not applicable)
+    print('0')
+    sys.exit(0)
+
+# Guard fired — count new enhancement issues opened in last 24h as a proxy for enrichment
+try:
+    since = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    r = subprocess.run(
+        ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+         '--label', 'kind/enhancement,otherness', '--limit', '20',
+         '--json', 'number,createdAt', '--jq',
+         f'[.[] | select(.createdAt >= "{since}")] | length'],
+        capture_output=True, text=True, timeout=15)
+    count = int(r.stdout.strip() or '0') if r.returncode == 0 else 0
+    print(count)
+except Exception as e:
+    print(f'[SM §4b] guard_enrichment_produced API error (non-fatal): {e}', file=__import__('sys').stderr)
+    print('0')  # fail-open: treat as 0
+GUARD_ENRICH_EOF
+)
+export GUARD_ENRICHMENT_PRODUCED
+echo "[SM §4b] guard_enrichment_produced this session: ${GUARD_ENRICHMENT_PRODUCED}"
+
+# §4b: Guard enrichment failure detection — 3 consecutive fire-but-no-enrich = bug
+python3 - <<'GUARD_FAIL_EOF'
+import re, os, subprocess
+
+REPO = os.environ.get('REPO', '')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+QUEUE_GUARD_FIRES = int(os.environ.get('QUEUE_GUARD_FIRES', '0') or '0')
+GUARD_ENRICHMENT_PRODUCED = int(os.environ.get('GUARD_ENRICHMENT_PRODUCED', '0') or '0')
+
+# Only check when guard just fired with no enrichment
+if QUEUE_GUARD_FIRES == 0 or GUARD_ENRICHMENT_PRODUCED > 0:
+    sys.exit(0) if False else None  # no-op
+    exit(0)
+
+# Read last 3 rows from metrics.md for guard_fires and enrichment columns
+try:
+    content = open('docs/aide/metrics.md').read()
+    # Find header to locate column indices
+    rows = []
+    for line in content.splitlines():
+        m = re.match(r'^\|\s*\d{4}-\d{2}-\d{2}\s*\|', line)
+        if m:
+            cells = [c.strip() for c in line.split('|')[1:-1]]
+            rows.append(cells)
+    if len(rows) < 3:
+        exit(0)
+    # Look at last 3 rows — column 12 = queue_guard_fires (0-indexed), column 16 = guard_enrichment_produced
+    # Column layout: date(0) batch(1) merged(2) nh(3) ci_red(4) skills(5) todo(6) time(7) vision(8) outcome(9) arch(10) sim(11) guard(12) meaningful(13) items(14) notes(15) guard_enrich(16)
+    def is_fire_no_enrich(cells):
+        try:
+            guard = int(cells[12]) if len(cells) > 12 else 0
+            enrich = int(cells[16]) if len(cells) > 16 else 0
+            return guard > 0 and enrich == 0
+        except (ValueError, IndexError):
+            return False
+    last3 = rows[-3:]
+    if all(is_fire_no_enrich(r) for r in last3):
+        # 3 consecutive fire-no-enrich: open a bug issue
+        title = '[BUG] Queue guard fires but enrichment produces 0 items — vision synthesis fallback may be broken'
+        try:
+            existing = subprocess.run(
+                ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+                 '--search', 'Queue guard fires but enrichment', '--json', 'number', '--jq', 'length'],
+                capture_output=True, text=True, timeout=10)
+            if int(existing.stdout.strip() or '0') == 0:
+                subprocess.run(
+                    ['gh', 'issue', 'create', '--repo', REPO,
+                     '--title', title,
+                     '--label', 'kind/bug,priority/high,otherness',
+                     '--body', (
+                         f'## SM §4b guard enrichment failure detection\n\n'
+                         f'The queue refusal guard (`coord.md §1c`) has fired in the last 3 consecutive '
+                         f'sessions but produced 0 new enhancement issues each time. This means the '
+                         f'enrichment fallback (design doc injection or roadmap generation) is broken '
+                         f'or the vision synthesis path (`vibe-vision-auto.md`) is not running.\n\n'
+                         f'**Expected**: when guard fires → at least 1 new `kind/enhancement` issue created.\n'
+                         f'**Actual**: guard fires but `guard_enrichment_produced = 0` for 3 sessions.\n\n'
+                         f'Check: does `docs/design/` have unclaimed 🔲 Future items? '
+                         f'Is `scripts/validate.sh` passing? Is the vibe-vision-auto scan creating items?\n\n'
+                         f'Reported by SM §4b | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}'
+                     )],
+                    capture_output=True, text=True, timeout=15)
+                print(f'[SM §4b] guard enrichment failure: bug issue opened.')
+            else:
+                print(f'[SM §4b] guard enrichment failure: bug issue already open — skipping duplicate.')
+        except Exception as e:
+            print(f'[SM §4b] guard enrichment failure: issue creation error (non-fatal): {e}')
+    else:
+        print(f'[SM §4b] guard enrichment check OK (last 3 rows do not all show fire-no-enrich).')
+except Exception as e:
+    print(f'[SM §4b] guard enrichment failure check error (non-fatal): {e}')
+GUARD_FAIL_EOF
 # Count merged PRs (last 24h, non-excluded) where title or body references a design doc.
 # Uses same VISION_PAT as §4f VISION_PR_COUNT. Both metrics coexist.
 MEANINGFUL_PRS=$(python3 - <<'MPEOF'
@@ -745,18 +854,20 @@ fi
 # Append row to metrics.md
 DATE=$(date +%Y-%m-%d)
 # [AI-STEP] Append a new row to docs/aide/metrics.md with today's metrics.
-# Row format (as of PR that added session_items_completed):
-#   | $DATE | $BATCH | $MERGED | $NEEDS_HUMAN | 0 | $SKILLS | $TODO_SHIPPED | ~Xmin | $VISION_PRS | $SESSION_OUTCOME | $ARCH_CONVERGENCE | $SIM_FLOOR_DELTA | $QUEUE_GUARD_FIRES | $MEANINGFUL_PRS | $SESSION_ITEMS_COMPLETED | <notes> |
+# Row format (as of PR that added guard_enrichment_produced):
+#   | $DATE | $BATCH | $MERGED | $NEEDS_HUMAN | 0 | $SKILLS | $TODO_SHIPPED | ~Xmin | $VISION_PRS | $SESSION_OUTCOME | $ARCH_CONVERGENCE | $SIM_FLOOR_DELTA | $QUEUE_GUARD_FIRES | $MEANINGFUL_PRS | $SESSION_ITEMS_COMPLETED | <notes> | $GUARD_ENRICHMENT_PRODUCED |
 # $ARCH_CONVERGENCE: from scripts/sim-params.json arch_convergence_score field (default: — if calibration not run)
 # $SIM_FLOOR_DELTA: $MERGED - sim_predicted_floor from scripts/sim-params.json (default: — if missing)
 # $QUEUE_GUARD_FIRES: from QUEUE_GUARD_FIRES env var (set above from state.json chore_only_guard_count)
 # $MEANINGFUL_PRS: from MEANINGFUL_PRS env var (design-doc-backed PRs, computed above)
 # $SESSION_ITEMS_COMPLETED: from ITEMS_COMPLETED env var (multi-item loop gate counter), default 1
+# $GUARD_ENRICHMENT_PRODUCED: from GUARD_ENRICHMENT_PRODUCED env var — new enhancement issues created when guard fired (0 if guard did not fire)
 # Historical rows (before PR #655) have only 9 columns — do not modify them.
 # Historical rows from PR #655 (vision_prs + session_outcome) have 11 columns — do not modify them.
 # Historical rows from PR #638 (queue_guard_fires) have 14 columns — do not modify them.
 # Historical rows from PR #644 (meaningful_prs) have 15 columns — do not modify them.
 # Historical rows from PR #733 (session_items_completed) have 16 columns — do not modify them.
+# Historical rows from PR #772 (guard_enrichment_produced) have 17 columns — do not modify them.
 # Use the pull-rebase-retry pattern to push directly to main (low-risk doc change).
 
 # After writing the row: reset the guard counter in state.json
