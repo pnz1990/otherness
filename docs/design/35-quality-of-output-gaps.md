@@ -58,7 +58,7 @@ commits to a specific item.
 
 ## Future (🔲)
 
-- 🔲 `coord.md §1c`: track guard-firing frequency in session metrics (metrics.md schema — see docs/design/33-stage-4-self-improvement-metrics.md)
+- ✅ `coord.md §1c`: track guard-firing frequency in session metrics — `chore_only_guard_count` incremented in `state.json` on every guard fire; SM §4b reads, writes `queue_guard_fires` column to `metrics.md`, resets counter; `docs/aide/metrics.md` header row and metric definitions updated (PR #638, 2026-04-21)
 
 ---
 

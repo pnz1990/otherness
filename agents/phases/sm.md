@@ -158,16 +158,42 @@ except:
 export VISION_PRS SESSION_OUTCOME
 echo "[SM §4b] Session outcome: ${SESSION_OUTCOME} (vision_prs=${VISION_PRS}, prs_merged=${MERGED})"
 
+# §4b: Read queue guard fire count from state.json, then reset it (design doc 35 §Future → ✅)
+QUEUE_GUARD_FIRES=$(python3 -c "
+import json
+try:
+    s = json.load(open('.otherness/state.json'))
+    print(s.get('chore_only_guard_count', 0))
+except: print(0)
+" 2>/dev/null || echo "0")
+export QUEUE_GUARD_FIRES
+echo "[SM §4b] queue_guard_fires this session: ${QUEUE_GUARD_FIRES}"
+
 # Append row to metrics.md
 DATE=$(date +%Y-%m-%d)
 # [AI-STEP] Append a new row to docs/aide/metrics.md with today's metrics.
-# Row format (as of PR that added arch_convergence + sim_floor_delta):
-#   | $DATE | $BATCH | $MERGED | $NEEDS_HUMAN | 0 | $SKILLS | $TODO_SHIPPED | ~Xmin | $VISION_PRS | $SESSION_OUTCOME | $ARCH_CONVERGENCE | $SIM_FLOOR_DELTA | <notes> |
+# Row format (as of PR that added queue_guard_fires):
+#   | $DATE | $BATCH | $MERGED | $NEEDS_HUMAN | 0 | $SKILLS | $TODO_SHIPPED | ~Xmin | $VISION_PRS | $SESSION_OUTCOME | $ARCH_CONVERGENCE | $SIM_FLOOR_DELTA | $QUEUE_GUARD_FIRES | <notes> |
 # $ARCH_CONVERGENCE: from scripts/sim-params.json arch_convergence_score field (default: — if calibration not run)
 # $SIM_FLOOR_DELTA: $MERGED - sim_predicted_floor from scripts/sim-params.json (default: — if missing)
+# $QUEUE_GUARD_FIRES: from QUEUE_GUARD_FIRES env var (set above from state.json chore_only_guard_count)
 # Historical rows (before PR #655) have only 9 columns — do not modify them.
 # Historical rows from PR #655 (vision_prs + session_outcome) have 11 columns — do not modify them.
+# Historical rows from PR #638 (queue_guard_fires) have 14 columns — do not modify them.
 # Use the pull-rebase-retry pattern to push directly to main (low-risk doc change).
+
+# After writing the row: reset the guard counter in state.json
+python3 - <<'RESET_GUARD_EOF'
+import json, os
+try:
+    with open('.otherness/state.json') as f: s = json.load(f)
+    if s.get('chore_only_guard_count', 0) > 0:
+        s['chore_only_guard_count'] = 0
+        with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
+        print('[SM §4b] queue_guard_fires counter reset to 0 after metrics write.')
+except Exception as e:
+    print(f'[SM §4b] counter reset failed (non-fatal): {e}')
+RESET_GUARD_EOF
 
 # Pull-rebase-retry push pattern (parallel-safe for direct main commits)
 git add docs/aide/metrics.md
