@@ -158,6 +158,158 @@ except:
 export VISION_PRS SESSION_OUTCOME
 echo "[SM §4b] Session outcome: ${SESSION_OUTCOME} (vision_prs=${VISION_PRS}, prs_merged=${MERGED})"
 
+# §4b: Session defect diagnosis (design doc 21 §Future → ✅)
+# When VISION_PRS == 0: session shipped no design-doc-backed work. Diagnose and open kind/bug issue.
+# O3: skip if a [DEFECT] issue for this session is already open.
+if [ "${VISION_PRS:-0}" -eq 0 ]; then
+  python3 - <<'DEFECT_EOF'
+import subprocess, json, re, os
+
+REPO = os.environ.get('REPO', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
+MERGED = os.environ.get('MERGED', '0')
+SESSION_OUTCOME = os.environ.get('SESSION_OUTCOME', 'unknown')
+SM_CYCLE = os.environ.get('SM_CYCLE', '?')
+
+# O3: dedup — skip if [DEFECT] issue already open
+try:
+    existing = subprocess.run(
+        ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+         '--search', '[DEFECT]', '--json', 'number', '--jq', 'length'],
+        capture_output=True, text=True, timeout=15)
+    if int(existing.stdout.strip() or '0') > 0:
+        print('[SM §4b] Defect issue already open — skipping duplicate.')
+        exit(0)
+except Exception as e:
+    print(f'[SM §4b] Defect check error (non-fatal): {e}')
+
+# Root cause diagnosis (O2)
+root_cause = 'unknown'
+next_action = 'Run /otherness.vibe-vision to synthesize new items and diagnose the loop.'
+
+# Check 1: ci-red
+try:
+    ci_r = subprocess.run(
+        ['gh', 'run', 'list', '--repo', REPO, '--branch', 'main', '--limit', '1',
+         '--json', 'conclusion', '--jq', '.[0].conclusion'],
+        capture_output=True, text=True, timeout=10)
+    if ci_r.stdout.strip().strip('"') == 'failure':
+        root_cause = 'ci-red'
+        next_action = 'Fix CI on main branch. Check the failing workflow run logs.'
+except Exception:
+    pass
+
+# Check 2: vision-pressure-too-low (queue exists but all chores)
+if root_cause == 'unknown':
+    try:
+        with open('.otherness/state.json') as f: s = json.load(f)
+        todo_items = [(k, v) for k, v in s.get('features', {}).items()
+                      if v.get('state') == 'todo']
+        if todo_items:
+            all_chore = all(
+                'kind/enhancement' not in v.get('labels', []) and
+                'kind/bug' not in v.get('labels', [])
+                for _, v in todo_items
+            )
+            if all_chore:
+                root_cause = 'vision-pressure-too-low'
+                next_action = ('All queue items are kind/chore or kind/docs. '
+                               'Run /otherness.vibe-vision to inject enhancement items from design docs.')
+    except Exception:
+        pass
+
+# Check 3: all-items-blocked
+if root_cause == 'unknown':
+    try:
+        with open('.otherness/state.json') as f: s = json.load(f)
+        todo_items = [(k, v) for k, v in s.get('features', {}).items()
+                      if v.get('state') == 'todo']
+        if todo_items:
+            all_blocked = all(
+                'blocked' in v.get('labels', []) or v.get('failed_attempts', 0) >= 3
+                for _, v in todo_items
+            )
+            if all_blocked:
+                root_cause = 'all-items-blocked'
+                next_action = ('All queue items are blocked or have failed 3+ attempts. '
+                               'Review and unblock items, or create new items from design docs.')
+    except Exception:
+        pass
+
+# Check 4: queue-source-exhausted (no todo items at all + no Future items in design docs)
+if root_cause == 'unknown':
+    try:
+        with open('.otherness/state.json') as f: s = json.load(f)
+        todo_items = [v for v in s.get('features', {}).values() if v.get('state') == 'todo']
+        if not todo_items:
+            design_dir = 'docs/design'
+            has_future = False
+            if os.path.isdir(design_dir):
+                for fname in os.listdir(design_dir):
+                    if not fname.endswith('.md'): continue
+                    try:
+                        content = open(f'{design_dir}/{fname}').read()
+                        if re.search(r'^- 🔲 (?!.*🚫)', content, re.MULTILINE):
+                            has_future = True
+                            break
+                    except Exception:
+                        pass
+            if not has_future:
+                root_cause = 'queue-source-exhausted'
+                next_action = ('No todo items in queue and no 🔲 Future items in design docs. '
+                               'Run /otherness.vibe-vision to expand the roadmap.')
+            else:
+                root_cause = 'vision-pressure-too-low'
+                next_action = ('Queue is empty but design docs have Future items. '
+                               'COORD queue-gen should have picked these up. '
+                               'Check if queue-gen lock is stuck: git ls-remote --heads origin otherness/queue-gen')
+    except Exception:
+        pass
+
+# O4-O6: Open the defect issue
+title = f'[DEFECT] Session completed with 0 meaningful PRs — {root_cause}'
+body = (
+    f'## Session defect detected\n\n'
+    f'**Session**: `{MY_SESSION_ID}` | **Batch**: {SM_CYCLE} | **Agent**: otherness@{OTHERNESS_VERSION}\n\n'
+    f'| Signal | Value |\n'
+    f'|--------|-------|\n'
+    f'| `vision_prs` | 0 (no design-doc-backed PRs merged) |\n'
+    f'| `prs_merged` | {MERGED} |\n'
+    f'| `session_outcome` | `{SESSION_OUTCOME}` |\n'
+    f'| `root_cause` | `{root_cause}` |\n\n'
+    f'## Root cause: `{root_cause}`\n\n'
+    f'## Recommended next action\n\n'
+    f'{next_action}\n\n'
+    f'## What a healthy session looks like\n\n'
+    f'A healthy session ships ≥1 PR that references a `docs/design/` file (🔲 → ✅). '
+    f'A session that ships only chores or nothing is a measurable defect. '
+    f'This issue is opened automatically by SM §4b to ensure the defect is visible and actionable.\n\n'
+    f'Reported by SM §4b | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}'
+)
+
+try:
+    r = subprocess.run(
+        ['gh', 'issue', 'create', '--repo', REPO,
+         '--title', title,
+         '--label', 'kind/bug,otherness,priority/high,area/agent-loop',
+         '--body', body],
+        capture_output=True, text=True, timeout=20)
+    if r.returncode == 0:
+        issue_url = r.stdout.strip()
+        print(f'[SM §4b] Defect issue opened: {issue_url}')
+        subprocess.run(
+            ['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO,
+             '--body', f'[SM §4b | {MY_SESSION_ID}] Defect detected: 0 meaningful PRs. root_cause={root_cause}. Issue: {issue_url}'],
+            capture_output=True, timeout=10)
+    else:
+        print(f'[SM §4b] Failed to open defect issue: {r.stderr.strip()[:100]}')
+except Exception as e:
+    print(f'[SM §4b] Defect issue creation error (non-fatal): {e}')
+DEFECT_EOF
+fi
+
 # §4b: Read queue guard fire count from state.json, then reset it (design doc 35 §Future → ✅)
 QUEUE_GUARD_FIRES=$(python3 -c "
 import json
