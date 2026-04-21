@@ -1129,6 +1129,7 @@ except Exception:
 # Step 3: Reset flag if convergence has dropped
 if frame_lock_active and current_conv < FRAMELOCK_RESET_THRESHOLD:
     s['frame_lock_detected'] = False
+    s['frame_lock_auto_triggered'] = False  # reset auto-trigger flag when frame-lock clears
     with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
     print(f'[SM §4c-framelock] Frame-lock cleared (arch_convergence={current_conv:.3f} < {FRAMELOCK_RESET_THRESHOLD})')
     exit(0)
@@ -1234,6 +1235,124 @@ try:
         print(f'[SM §4c-framelock] Could not open issue: {r.stderr[:100]}')
 except Exception as e:
     print(f'[SM §4c-framelock] Issue create error (non-fatal): {e}')
+
+# Step 9: Auto-escalation — if frame-lock persists and no human responded in >48h,
+# automatically trigger a learn session (design doc 31 §Future → ✅)
+# Conditions: arch_convergence > 0.7 AND last learn > 14 days ago
+# AND [NEEDS HUMAN] issue has been open > 48 hours without a human comment
+# AND frame_lock_auto_triggered not already set in state.json
+try:
+    AUTO_TRIGGER_THRESHOLD = 0.7   # stricter than FRAMELOCK_THRESHOLD (0.65)
+    HUMAN_RESPONSE_WAIT_H = 48     # hours before auto-triggering
+
+    # Condition a: arch_convergence > AUTO_TRIGGER_THRESHOLD
+    if current_conv <= AUTO_TRIGGER_THRESHOLD:
+        print(f'[SM §4c-framelock] Auto-trigger: arch_convergence={current_conv:.3f} <= {AUTO_TRIGGER_THRESHOLD} — skipping.')
+        exit(0)
+
+    # Condition b: last learn > 14 days ago
+    days_since_learn = 999
+    try:
+        import re as _re, datetime as _dt
+        provenance = open(os.path.expanduser('~/.otherness/agents/skills/PROVENANCE.md')).read()
+        dates = _re.findall(r'^## (\d{4}-\d{2}-\d{2})', provenance, _re.MULTILINE)
+        if dates:
+            last_learn = _dt.date.fromisoformat(sorted(dates)[-1])
+            days_since_learn = (_dt.date.today() - last_learn).days
+    except Exception:
+        days_since_learn = 999
+
+    if days_since_learn <= 14:
+        print(f'[SM §4c-framelock] Auto-trigger: last learn {days_since_learn}d ago (≤14d) — skipping.')
+        exit(0)
+
+    # Condition c: frame_lock_auto_triggered not already set
+    auto_triggered = s.get('frame_lock_auto_triggered', False)
+    if auto_triggered:
+        print('[SM §4c-framelock] Auto-trigger: already triggered this frame-lock event — skipping.')
+        exit(0)
+
+    # Condition d: [NEEDS HUMAN] frame-lock issue open > HUMAN_RESPONSE_WAIT_H and no human comment
+    import json as _json
+    from datetime import timezone as _tz, timedelta as _td
+    cutoff = datetime.datetime.now(_tz.utc) - _td(hours=HUMAN_RESPONSE_WAIT_H)
+    framelock_issue_num = None
+    try:
+        r_search = subprocess.run(
+            ['gh','issue','list','--repo',REPO,'--state','open',
+             '--search','frame-lock','--json','number,createdAt','--jq','.[0]'],
+            capture_output=True, text=True, timeout=10)
+        if r_search.returncode == 0 and r_search.stdout.strip() not in ('', 'null'):
+            iss = _json.loads(r_search.stdout)
+            issue_created = datetime.datetime.fromisoformat(iss.get('createdAt','').replace('Z','+00:00'))
+            framelock_issue_num = str(iss.get('number',''))
+            if issue_created >= cutoff:
+                print(f'[SM §4c-framelock] Auto-trigger: frame-lock issue #{framelock_issue_num} created {(datetime.datetime.now(_tz.utc)-issue_created).total_seconds()/3600:.1f}h ago — waiting {HUMAN_RESPONSE_WAIT_H}h before auto-triggering.')
+                exit(0)
+            # Check for human comments in last 48h
+            r_comments = subprocess.run(
+                ['gh','issue','view',framelock_issue_num,'--repo',REPO,
+                 '--json','comments','--jq',
+                 f'[.comments[] | select(.createdAt >= "{cutoff.strftime(\"%Y-%m-%dT%H:%M:%SZ\")}") | .author.login] | length'],
+                capture_output=True, text=True, timeout=10)
+            human_responses = int(r_comments.stdout.strip() or '0')
+            if human_responses > 0:
+                print(f'[SM §4c-framelock] Auto-trigger: {human_responses} human response(s) on issue #{framelock_issue_num} — human is engaged, skipping auto-trigger.')
+                exit(0)
+    except Exception as e:
+        print(f'[SM §4c-framelock] Auto-trigger pre-check error (non-fatal): {e}')
+        exit(0)  # fail-open: skip if check fails
+
+    # All conditions met — auto-trigger a learn session
+    print(f'[SM §4c-framelock] Auto-trigger: all conditions met (arch_conv={current_conv:.3f}, last_learn={days_since_learn}d, no human response >48h) — triggering learn session...')
+
+    import os as _os
+    repo_name = _os.path.basename(_os.getcwd())
+    import time as _time
+    learn_branch = f"feat/learn-framelock-{datetime.date.today().strftime('%Y%m%d')}"
+
+    push_result = subprocess.run(
+        ['git','push','origin',f'HEAD:refs/heads/{learn_branch}'],
+        capture_output=True, text=True, timeout=15)
+    if push_result.returncode != 0:
+        print(f'[SM §4c-framelock] Auto-trigger: branch push failed (another session may have claimed it) — skipping.')
+        exit(0)
+
+    # Mark auto-triggered in state.json
+    s['frame_lock_auto_triggered'] = True
+    with open('.otherness/state.json', 'w') as f: _json.dump(s, f, indent=2)
+
+    # Post notification comment on the [NEEDS HUMAN] issue (do not close it)
+    if framelock_issue_num:
+        subprocess.run(
+            ['gh','issue','comment',framelock_issue_num,'--repo',REPO,
+             '--body', (
+                 f'[SM §4c-framelock | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}] '
+                 f'Auto-triggering learn session (paradigm_diversity_required=true) on branch `{learn_branch}`. '
+                 f'Conditions: arch_convergence={current_conv:.3f} > 0.7, last learn={days_since_learn}d ago, '
+                 f'no human response in >48h. '
+                 f'This issue stays open for human review. '
+                 f'The system is self-healing — please review when convenient.'
+             )],
+            capture_output=True, timeout=15)
+
+    # Post to REPORT_ISSUE
+    subprocess.run(
+        ['gh','issue','comment',REPORT_ISSUE,'--repo',REPO,
+         '--body', (
+             f'[SM §4c-framelock | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}] '
+             f'Frame-lock AUTO-TRIGGER: learn session triggered on `{learn_branch}` '
+             f'(arch_convergence={current_conv:.3f}, last_learn={days_since_learn}d, >48h without human response). '
+             f'Human notification issue #{framelock_issue_num} remains open.'
+         )],
+        capture_output=True, timeout=15)
+
+    print(f'[SM §4c-framelock] Auto-trigger: learn branch {learn_branch} pushed. frame_lock_auto_triggered=true.')
+
+except SystemExit:
+    pass  # controlled exits from conditions checks above
+except Exception as e:
+    print(f'[SM §4c-framelock] Auto-trigger error (non-fatal): {e}')
 
 FRAMELOCK_EOF
 
