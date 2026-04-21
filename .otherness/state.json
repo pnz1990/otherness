@@ -49,7 +49,7 @@
       "done_at": "2026-04-21T17:41:46Z"
     },
     "issue-646": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: SM health signal must distinguish real GREEN from stall-GREEN: the current GREEN health si",
       "labels": [
         "priority/medium",
@@ -58,10 +58,13 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 769,
+      "done_at": "2026-04-21T19:58:28Z"
     },
     "issue-645": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Same-session recovery when no PR ships in first 20 minutes: `coord.md` must detect mid-ses",
       "labels": [
         "priority/medium",
@@ -70,10 +73,13 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 769,
+      "done_at": "2026-04-21T19:58:28Z"
     },
     "issue-644": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Meaningful-work rate tracked as a first-class metric: `docs/aide/metrics.md` must add a `m",
       "labels": [
         "priority/medium",
@@ -82,7 +88,10 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 769,
+      "done_at": "2026-04-21T19:58:28Z"
     },
     "issue-641": {
       "state": "done",
