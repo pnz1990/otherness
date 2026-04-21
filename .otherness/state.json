@@ -1041,9 +1041,9 @@
       "done_at": "2026-04-20T23:34:12Z"
     },
     "issue-615": {
-      "state": "todo",
+      "state": "done",
       "status": "todo",
-      "title": "feat: `SM \u00a74f` batch report format: replace generic GREEN/AMBER/RED with a two-axis signal: `pro",
+      "title": "feat: `SM \u00a74f` batch report format two-axis signal",
       "labels": [
         "priority/medium",
         "area/agent-loop",
@@ -1051,7 +1051,10 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-21T11:51:27Z",
+      "pr_number": 701
     },
     "issue-614": {
       "state": "done",
