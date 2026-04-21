@@ -6,6 +6,10 @@ _in memory of mankind_
   <img src="logo.png" alt="otherness" width="200" />
 </p>
 
+[![otherness scheduled run](https://github.com/pnz1990/otherness/actions/workflows/otherness-scheduled.yml/badge.svg)](https://github.com/pnz1990/otherness/actions/workflows/otherness-scheduled.yml)
+
+**Last shipped:** _(updated by SM §4f each batch)_
+
 **You seed the vision. The system builds the product.**
 
 otherness is a perpetual autonomous development system. You describe what you want the
