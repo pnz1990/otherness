@@ -3589,7 +3589,8 @@ VA_EOF
 # Throughput signal: AMBER if session_outcome is chore-only OR VISION_PR_COUNT == 0 (design doc 35 §35.1)
 if [ "${SESSION_OUTCOME:-unknown}" = "chore-only" ] || [ "${VISION_PR_COUNT:-0}" -eq 0 ]; then
   HEALTH="AMBER"
-  THROUGHPUT_WARN=" ⚠️ ${SESSION_OUTCOME:-chore-only} session (${VISION_PR_COUNT:-0} vision-aligned PRs)"
+  # §4f §35.2: include actionable vision-misaligned note in health comment (design doc 35-vision-alignment-signal.md §35.2 → ✅)
+  THROUGHPUT_WARN=" ⚠️ ${SESSION_OUTCOME:-chore-only} session (${VISION_PR_COUNT:-0} vision-aligned PRs). Queue may have drifted from design docs. Run /otherness.vibe-vision or check coord §1b."
 fi
 
 ACTION="Active"
