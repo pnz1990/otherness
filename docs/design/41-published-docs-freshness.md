@@ -57,10 +57,10 @@ the per-command detail pages AND a consolidated `docs/cli-reference.md` overview
 
 ## Present (✅)
 
-- ✅ `hack/gen-cli-docs/main.go` generates per-command pages in `docs/reference/cli/` (2026-04-20)
-- ✅ `docs.yml` Step 4: verify CLI docs in sync — PR CI fails if `docs/reference/cli/` is stale (2026-04-20)
-- ✅ `docs.yml` Step 1: auto-generate CLI docs on every push to `cmd/kardinal/**` (2026-04-20)
-- ✅ `docs.yml` deploys to `pnz1990.github.io/kardinal-promoter` on every merge to main (2026-04-20)
+- ✅ `hack/gen-cli-docs/main.go` generates per-command pages in `docs/reference/cli/` (2026-04-20) ⚠️ Stale — referenced file not found
+- ✅ `docs.yml` Step 4: verify CLI docs in sync — PR CI fails if `docs/reference/cli/` is stale (2026-04-20) ⚠️ Stale — referenced file not found
+- ✅ `docs.yml` Step 1: auto-generate CLI docs on every push to `cmd/kardinal/**` (2026-04-20) ⚠️ Stale — referenced file not found
+- ✅ `docs.yml` deploys to `pnz1990.github.io/kardinal-promoter` on every merge to main (2026-04-20) ⚠️ Stale — referenced file not found
 
 ## Future (🔲)
 

@@ -363,6 +363,108 @@ echo "[COORD §1b-vision] Vision pressure set built: ${_VPS_COUNT} items."
 
 ---
 
+## 1b-preflight. Unified startup signal reader (design doc 35 §Future → ✅)
+
+Read all behavioral signals from `state.json` at session start. Apply them in
+priority order. Set `COORD_ACTION` for downstream phases to consume.
+
+Priority order (highest first):
+1. Open `needs-human` issues → log count, set `COORD_ACTION=caution`
+2. `housekeeping_streak ≥ 3` → set `COORD_ACTION=vision-first` (queue-gen runs vibe-vision-auto first)
+3. `next_session_directive` non-null → set `COORD_ACTION=directive`
+4. `frame_lock_detected` true → set `COORD_ACTION=learn-prefer`
+5. No signal → `COORD_ACTION=none`
+
+```bash
+# §1b-preflight: unified signal reader — design doc 35 §Future → ✅
+COORD_ACTION=$(python3 - <<'PREFLIGHT_EOF'
+import subprocess, json, os, sys
+
+REPO = os.environ.get('REPO', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+
+# Read state.json signals — graceful fallback if missing or malformed
+try:
+    with open('.otherness/state.json') as f:
+        state = json.load(f)
+except Exception as e:
+    print(f"[COORD §1b-preflight] state.json unreadable (non-fatal): {e}", file=sys.stderr)
+    print('none')
+    sys.exit(0)
+
+housekeeping_streak = int(state.get('housekeeping_streak', 0) or 0)
+next_session_directive = state.get('next_session_directive') or ''
+frame_lock_detected = bool(state.get('frame_lock_detected', False))
+silent_session_count = int(state.get('silent_session_count', 0) or 0)
+
+# Check open needs-human issues
+needs_human_count = 0
+try:
+    r = subprocess.run(
+        ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+         '--label', 'needs-human', '--json', 'number', '--jq', 'length'],
+        capture_output=True, text=True, timeout=10)
+    needs_human_count = int(r.stdout.strip() or '0')
+except Exception:
+    pass
+
+# Determine COORD_ACTION using priority order
+action = 'none'
+if needs_human_count > 0:
+    action = 'caution'
+elif housekeeping_streak >= 3:
+    action = 'vision-first'
+elif next_session_directive:
+    action = 'directive'
+elif frame_lock_detected:
+    action = 'learn-prefer'
+
+print(f"[COORD §1b-preflight] needs_human={needs_human_count} streak={housekeeping_streak} "
+      f"directive={next_session_directive!r} frame_lock={frame_lock_detected} "
+      f"silent_sessions={silent_session_count} action={action}", file=sys.stderr)
+
+print(action)
+PREFLIGHT_EOF
+)
+export COORD_ACTION
+
+# Act on COORD_ACTION signals
+case "$COORD_ACTION" in
+  caution)
+    NEEDS_HUMAN_COUNT=$(gh issue list --repo $REPO --state open --label needs-human \
+      --json number --jq 'length' 2>/dev/null || echo "?")
+    echo "[COORD §1b-preflight] action=caution — ${NEEDS_HUMAN_COUNT} needs-human issues open. Proceeding carefully."
+    ;;
+  vision-first)
+    echo "[COORD §1b-preflight] action=vision-first — housekeeping_streak ≥ 3. Vibe-vision-auto will run before queue-gen."
+    # COORD_ACTION=vision-first is consumed by §1c: it runs vibe-vision-auto first
+    ;;
+  directive)
+    DIRECTIVE=$(python3 -c "
+import json
+try:
+    s = json.load(open('.otherness/state.json'))
+    print(s.get('next_session_directive', ''))
+except: print('')
+" 2>/dev/null || echo "")
+    echo "[COORD §1b-preflight] action=directive — next_session_directive='${DIRECTIVE}'. Claim priority adjusted."
+    ;;
+  learn-prefer)
+    echo "[COORD §1b-preflight] action=learn-prefer — frame_lock_detected. Prefer skill-growth items when claiming."
+    ;;
+  none)
+    echo "[COORD §1b-preflight] action=none — all signals nominal."
+    ;;
+  *)
+    echo "[COORD §1b-preflight] Unknown action='${COORD_ACTION}' — treating as none."
+    COORD_ACTION=none
+    ;;
+esac
+```
+
+---
+
 ## 1c. Queue generation (with distributed lock)
 
 If queue is null or empty, acquire the queue-gen lock and generate.
@@ -370,6 +472,40 @@ If queue is null or empty, acquire the queue-gen lock and generate.
 **The lock uses `refs/heads/otherness/queue-gen`. The loser waits for `_state` to update.**
 
 ```bash
+# §1c-vision-first: if COORD_ACTION=vision-first (housekeeping_streak ≥ 3 from §1b-preflight),
+# run vibe-vision-auto NOW before checking the queue or generating items.
+# This ensures a stale-streak session synthesizes vision before claiming chores.
+if [ "${COORD_ACTION:-none}" = "vision-first" ]; then
+  AGENTS_PATH_VF=$(python3 -c "
+import re, os
+section = None
+for line in open('otherness-config.yaml'):
+    s = re.match(r'^(\w[\w_]*):', line)
+    if s: section = s.group(1)
+    if section == 'maqa':
+        m = re.match(r'\s+agents_path:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?', line)
+        if m: print(os.path.expanduser(m.group(1).strip())); break
+" 2>/dev/null || echo "$HOME/.otherness/agents")
+  if [ -f "$AGENTS_PATH_VF/vibe-vision-auto.md" ]; then
+    echo "[COORD §1c] COORD_ACTION=vision-first — running vibe-vision-auto before queue-gen..."
+    # [AI-STEP] Read and follow $AGENTS_PATH_VF/vibe-vision-auto.md in the current worktree.
+    # After the scan completes, clear housekeeping_streak in state.json (reset to 0).
+    python3 -c "
+import json
+try:
+    with open('.otherness/state.json') as f: s = json.load(f)
+    s['housekeeping_streak'] = 0
+    with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
+    print('[COORD §1c] housekeeping_streak reset to 0 after vision synthesis.')
+except Exception as e:
+    print(f'[COORD §1c] streak reset non-fatal: {e}')
+" 2>/dev/null
+    git pull origin main --quiet 2>/dev/null || true
+  else
+    echo "[COORD §1c] COORD_ACTION=vision-first but vibe-vision-auto.md not found at $AGENTS_PATH_VF — skipping."
+  fi
+fi
+
 git fetch origin _state --quiet 2>/dev/null
 git show origin/_state:.otherness/state.json > .otherness/state.json 2>/dev/null || true
 
