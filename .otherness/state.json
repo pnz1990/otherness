@@ -560,6 +560,12 @@
       "pr_merged": true,
       "done_at": "2026-04-21T21:56:45Z",
       "title": "feat: Session minimum meaningful-PR contract"
+    },
+    "issue-799": {
+      "state": "done",
+      "pr_merged": true,
+      "title": "feat: Stuck-item detection",
+      "done_at": "2026-04-21T22:05:02Z"
     }
   },
   "session_heartbeats": {
