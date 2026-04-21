@@ -265,7 +265,7 @@
       "priority": "medium"
     },
     "issue-616": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: `SM \u00a74e` / `PM \u00a75g`: simulation-behavior coupling gate",
       "labels": [
         "priority/medium",
@@ -274,7 +274,17 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "assigned_to": "sess-b7b22e98",
+      "assigned_at": "2026-04-21T19:48:14Z",
+      "branch": "feat/issue-616",
+      "worktree": "../otherness.issue-616",
+      "file_spaces": [
+        "docs/"
+      ],
+      "pr_merged": true,
+      "pr_number": 768,
+      "done_at": "2026-04-21T19:51:46Z"
     },
     "issue-614": {
       "state": "done",
