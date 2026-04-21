@@ -284,7 +284,7 @@
       "title": "feat: `coord.md \u00a71c`: queue refusal guard"
     },
     "issue-611": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Cross-project pressure propagation: when otherness identifies a pattern (e.g. \"test covera",
       "labels": [
         "priority/medium",
@@ -293,7 +293,10 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-21T19:46:38Z",
+      "pr_number": 767
     },
     "issue-762": {
       "state": "done",
