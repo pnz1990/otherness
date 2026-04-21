@@ -105,6 +105,96 @@ for spec_id in os.listdir(specs_dir):
 print('[SM §4a] Stale spec check complete.')
 STALE_SPEC_EOF
 
+# §4a: M3 App adoption check — once per 5 SM cycles
+# Design ref: docs/design/27-security-model.md §Future → ✅
+# Check each managed project's otherness-scheduled.yml for OTHERNESS_USE_APP_TOKEN.
+# Fail-open: API failure → skip silently. Duplicate suppression: check REPORT_ISSUE comments.
+if [ $((${SM_CYCLE:-0} % 5)) -eq 0 ]; then
+python3 - <<'M3EOF'
+import subprocess, re, os, base64, json
+
+REPO = os.environ.get('REPO', '')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'SM')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+
+# Read monitor.projects
+projects = []
+try:
+    in_monitor = in_projects = False
+    for line in open('otherness-config.yaml'):
+        if re.match(r'^monitor:', line): in_monitor = True
+        if in_monitor and re.match(r'\s+projects:', line): in_projects = True
+        if in_projects:
+            m = re.match(r'\s+- (.+)', line)
+            if m: projects.append(m.group(1).strip())
+        elif in_monitor and re.match(r'^\w', line): in_projects = False
+except Exception:
+    pass
+
+if not projects:
+    print('[SM §4a] M3 check: no monitor.projects configured — skipping.')
+    exit(0)
+
+# Read recent REPORT_ISSUE comments to check for recent SECURITY-AMBER posts (dedup window: 7d)
+recent_amber_projects = set()
+try:
+    from datetime import datetime, timezone, timedelta
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    r = subprocess.run(
+        ['gh', 'issue', 'view', REPORT_ISSUE, '--repo', REPO,
+         '--json', 'comments', '--jq',
+         f'[.comments[] | select(.createdAt >= "{cutoff}") | .body] | .[]'],
+        capture_output=True, text=True, timeout=20)
+    if r.returncode == 0:
+        for comment in r.stdout.splitlines():
+            if '[SECURITY-AMBER]' in comment:
+                for proj in projects:
+                    if proj in comment:
+                        recent_amber_projects.add(proj)
+except Exception:
+    pass
+
+for project in projects:
+    # Skip self (the otherness repo is checked differently)
+    if project == REPO:
+        continue
+    try:
+        r = subprocess.run(
+            ['gh', 'api',
+             f'repos/{project}/contents/.github/workflows/otherness-scheduled.yml'],
+            capture_output=True, text=True, timeout=15)
+        if r.returncode != 0:
+            print(f'[SM §4a] M3 app adoption check: {project} mode=unknown (API error)')
+            continue
+        data = json.loads(r.stdout)
+        content = base64.b64decode(data.get('content', '').replace('\n', '')).decode('utf-8', errors='replace')
+        if 'OTHERNESS_USE_APP_TOKEN' in content:
+            print(f'[SM §4a] M3 app adoption check: {project} mode=app')
+        else:
+            print(f'[SM §4a] M3 app adoption check: {project} mode=pat')
+            # Post AMBER comment if not already posted in last 7 days
+            if project not in recent_amber_projects:
+                amber_msg = (
+                    f'[SECURITY-AMBER | SM §4a | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}] '
+                    f'Project `{project}` appears to be using PAT fallback '
+                    f'(no `OTHERNESS_USE_APP_TOKEN` found in `otherness-scheduled.yml`) — '
+                    f'cross-repo blast radius risk. See `docs/design/27-security-model.md §M3`. '
+                    f'Recommended: configure GitHub App token (M3) on this project.'
+                )
+                subprocess.run(
+                    ['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO, '--body', amber_msg],
+                    capture_output=True, timeout=15)
+                print(f'[SM §4a] SECURITY-AMBER posted for {project} (PAT mode).')
+            else:
+                print(f'[SM §4a] SECURITY-AMBER already posted for {project} in last 7d — skipping duplicate.')
+    except Exception as _e:
+        print(f'[SM §4a] M3 check error for {project} (non-fatal): {_e}')
+
+print('[SM §4a] M3 app adoption check complete.')
+M3EOF
+fi
+
 # Version pinning check — is agent_version set?
 AGENT_VERSION=$(python3 -c "
 import re
