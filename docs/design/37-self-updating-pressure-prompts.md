@@ -29,7 +29,7 @@ The human should never need to manually update the pressure prompts. The agent d
 
 - ✅ Initial vision pressure context injected into all 3 project workflows by human (2026-04-20)
 - ✅ `docs/design/28-dual-step-scheduled-workflow.md` §Future: self-updating pressure prompts listed as next step (2026-04-20)
-- ✅ 37.1 — `agents/vibe-vision-auto.md` SCAN 5: reads the active pressure block from the `prompt:` YAML key of the Step A step in `.github/workflows/otherness-scheduled.yml` (Step A identified by containing `vibe-vision-auto.md`). Falls back to searching all workflow files if the primary source is absent. Exports `pressure_block` (full text) and `pressure_keywords` (key phrases) for use in scoring. (PR #TBD, 2026-04-21)
+- ✅ 37.1 — `agents/vibe-vision-auto.md` SCAN 5: reads the active pressure block from the `prompt:` YAML key of the Step A step in `.github/workflows/otherness-scheduled.yml` (Step A identified by containing `vibe-vision-auto.md`). Falls back to searching all workflow files if the primary source is absent. Exports `pressure_block` (full text) and `pressure_keywords` (key phrases) for use in scoring. (PR #694, 2026-04-21)
 
 ---
 

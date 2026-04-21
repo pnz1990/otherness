@@ -37,7 +37,7 @@ session's normal state write at batch end.
 
 ## Future (🔲)
 
-- ✅ CHANGELOG.md maintained automatically — each merged PR appends an entry (SM phase) (PR #TBD, 2026-04-21)
+- ✅ CHANGELOG.md maintained automatically — each merged PR appends an entry (SM phase) (PR #729, 2026-04-21)
 - 🔲 `/otherness.upgrade` interactive command updated to respect upgrade_policy — shows what the policy allows before prompting
 
 ---
