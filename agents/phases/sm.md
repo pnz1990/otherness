@@ -4101,6 +4101,14 @@ Without this step these PRs pile up open indefinitely.
 ```bash
 # Detect if running on an opencode/* session branch
 SESSION_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+# Detached HEAD in GitHub Actions runner — fall back to GITHUB_HEAD_REF
+if [ -z "$SESSION_BRANCH" ] || [ "$SESSION_BRANCH" = "HEAD" ]; then
+  SESSION_BRANCH="${GITHUB_HEAD_REF:-}"
+fi
+# Final fallback: parse from GITHUB_REF (refs/heads/opencode/schedule-...)
+if [ -z "$SESSION_BRANCH" ] || [ "$SESSION_BRANCH" = "HEAD" ]; then
+  SESSION_BRANCH=$(echo "${GITHUB_REF:-}" | sed 's|refs/heads/||')
+fi
 
 if echo "$SESSION_BRANCH" | grep -qE '^opencode/(schedule|dispatch)-'; then
   echo "[SM §4g] Running on session branch: $SESSION_BRANCH — locating open PR to merge."
