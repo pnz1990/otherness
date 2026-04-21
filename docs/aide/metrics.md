@@ -190,3 +190,4 @@
 
 | 2026-04-20 | 93 | 1 | 0 | 0 | 12 | 1 | ~30 min | PR #629 feat(coord): queue refusal guard §1c-guard — enrich chore-only queues before claiming; design doc 35 created. Health: GREEN. |
 | 2026-04-20 | 94 | 1 | 0 | 0 | 12 | 1 | ~35 min | PR #663 feat(sm): condensed §4f batch report — 8-line format with details block. Health: GREEN. |
+| 2026-04-21 | 95 | 21 | 0 | 0 | 14 | 21 | ~5 min | PR #733 feat(pm): PM §5j managed project feature velocity gate — CRITICAL tier, awaiting human merge. Health: GREEN. |
