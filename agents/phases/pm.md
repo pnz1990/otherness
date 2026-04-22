@@ -1085,6 +1085,160 @@ fi
 
 ---
 
+## 5l. README staleness score (runs every N_PM_CYCLES, design doc 39 §39.1)
+
+Compute how stale README.md is, using 4 signals. Score ≥ 2.0 means a refresh is warranted.
+This step computes and reports the score only — it does NOT perform the rewrite (39.2–39.3).
+
+```bash
+if [ $((${PM_CYCLE:-0} % ${N_PM_CYCLES:-3})) -eq 0 ]; then
+  echo "[PM §5l] Computing README staleness score..."
+
+  # §39.1 O3: Opt-out check — if pm.readme_refresh: false, skip
+  README_REFRESH=$(python3 -c "
+import re
+section = None
+for line in open('otherness-config.yaml'):
+    s = re.match(r'^(\w[\w_]*):', line)
+    if s: section = s.group(1)
+    if section == 'pm':
+        m = re.match(r'\s+readme_refresh:\s*(true|false)', line)
+        if m: print(m.group(1)); break
+" 2>/dev/null || echo "true")
+
+  if [ "$README_REFRESH" = "false" ]; then
+    echo "[PM §5l] readme_refresh=false — skipped."
+  else
+    python3 - <<'README_STALE_EOF'
+import subprocess, re, os, datetime, sys
+
+REPO = os.environ.get('REPO', '')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'PM')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+
+# §39.1 O6: graceful fallback if README.md absent
+if not os.path.isfile('README.md'):
+    print('[PM §5l] README.md not found — skipped.')
+    sys.exit(0)
+
+# Signal 1: days_stale — days since README.md was last modified (git log)
+days_stale = 0
+try:
+    r = subprocess.run(['git', 'log', '--format=%ci', '-1', '--', 'README.md'],
+                       capture_output=True, text=True, timeout=10)
+    if r.returncode == 0 and r.stdout.strip():
+        last_modified = datetime.datetime.fromisoformat(r.stdout.strip()[:19])
+        days_stale = max(0, (datetime.datetime.now() - last_modified).days)
+except Exception:
+    days_stale = 0
+
+# Get last modified date for feat_prs_since filter
+last_modified_date = None
+try:
+    r2 = subprocess.run(['git', 'log', '--format=%cI', '-1', '--', 'README.md'],
+                        capture_output=True, text=True, timeout=10)
+    if r2.returncode == 0 and r2.stdout.strip():
+        last_modified_date = r2.stdout.strip()[:20]
+except Exception:
+    pass
+
+# Signal 2: feat_prs_since — merged PRs with feat: prefix since README last modified
+feat_prs_since = 0
+try:
+    pr_list = subprocess.check_output(
+        ['gh', 'pr', 'list', '--repo', REPO, '--state', 'merged', '--limit', '50',
+         '--json', 'title,mergedAt', '--jq',
+         '[.[] | select(.title | startswith("feat:"))] | .[].mergedAt'],
+        text=True, timeout=20).strip().splitlines()
+    if last_modified_date:
+        feat_prs_since = sum(
+            1 for d in pr_list
+            if d.strip()[:20] > last_modified_date
+        )
+    else:
+        feat_prs_since = len(pr_list)
+except Exception:
+    feat_prs_since = 0
+
+# Signal 3: missing_present — design doc Present items not mentioned in README
+missing_present = 0
+try:
+    readme_text = open('README.md').read().lower()
+    design_dir = 'docs/design'
+    if os.path.isdir(design_dir):
+        for fname in sorted(os.listdir(design_dir)):
+            if not fname.endswith('.md'):
+                continue
+            try:
+                doc_content = open(os.path.join(design_dir, fname)).read()
+                present_match = re.search(
+                    r'^## Present.*?\n(.*?)(?=^## |\Z)', doc_content,
+                    re.MULTILINE | re.DOTALL)
+                if present_match:
+                    items = re.findall(r'^- ✅ (.+)', present_match.group(1), re.MULTILINE)
+                    for item in items:
+                        topic = re.sub(r'\s*\(.*$', '', item).strip()[:30].lower()
+                        if topic and len(topic) > 4 and topic not in readme_text:
+                            missing_present += 1
+            except Exception:
+                pass
+except Exception:
+    missing_present = 0
+
+# Signal 4: missing_commands — /otherness.* in README with no .opencode/command/ file
+missing_commands = 0
+try:
+    readme_text_raw = open('README.md').read()
+    cmds = set(re.findall(r'`(/otherness\.\S+)`', readme_text_raw))
+    cmd_dir = '.opencode/command'
+    for cmd in cmds:
+        # cmd = '/otherness.run' → expect .opencode/command/otherness.run.md
+        cmd_fname = cmd.lstrip('/') + '.md'
+        if not os.path.isfile(os.path.join(cmd_dir, cmd_fname)):
+            missing_commands += 1
+except Exception:
+    missing_commands = 0
+
+# §39.1 O1: Compute score from 4 signals
+score = days_stale / 30 + feat_prs_since / 5 + missing_present / 3 + missing_commands * 2
+
+# §39.1 O2: Threshold = 2.0 (hard)
+THRESHOLD = 2.0
+if score >= THRESHOLD:
+    status = f'≥ {THRESHOLD} — refresh warranted'
+    level = 'AMBER'
+else:
+    status = f'< {THRESHOLD} — no refresh needed'
+    level = 'OK'
+
+print(f'[PM §5l] README staleness: score={score:.2f} {status}')
+print(f'[PM §5l]   days_stale={days_stale}, feat_prs_since={feat_prs_since}, '
+      f'missing_present={missing_present}, missing_commands={missing_commands}')
+
+# §39.1 O5: Post to REPORT_ISSUE
+if REPORT_ISSUE:
+    body = (f'[PM §5l | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}] '
+            f'README staleness: **score={score:.2f}** ({level})\n\n'
+            f'| Signal | Value | Weight |\n'
+            f'|--------|-------|--------|\n'
+            f'| days_stale | {days_stale}d | ÷30 |\n'
+            f'| feat_prs_since | {feat_prs_since} | ÷5 |\n'
+            f'| missing_present | {missing_present} | ÷3 |\n'
+            f'| missing_commands | {missing_commands} | ×2 |\n\n'
+            f'Threshold: 2.0. {"Refresh warranted — 39.2/39.3 will handle it." if score >= THRESHOLD else "README is current."}')
+    subprocess.run(
+        ['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO, '--body', body],
+        capture_output=True, timeout=15)
+README_STALE_EOF
+
+    echo "[PM §5l] README staleness score complete."
+  fi
+fi
+```
+
+---
+
 ## 5m. ⚠️ Inferred ratio check (runs every N_PM_CYCLES)
 
 Surface when machine-generated items dominate — human direction may be needed.
