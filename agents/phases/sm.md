@@ -3585,6 +3585,7 @@ except: print('(?)')
 " 2>/dev/null || echo "(?)")
 
 # Journey counts (O5): count ## sections in definition-of-done.md
+# Fix issue-664: if no ## headers contain ✅/❌, show ? instead of 0
 JOURNEY_OK=$(python3 -c "
 import re
 try:
@@ -3592,7 +3593,12 @@ try:
     # Count journey sections marked ✅ in their header or body
     sections = re.findall(r'^##\s+.+', content, re.MULTILINE)
     ok = sum(1 for s in sections if '✅' in s)
-    print(ok)
+    fail = sum(1 for s in sections if '❌' in s)
+    # If file exists but no sections have markers at all, data is unavailable
+    if sections and ok == 0 and fail == 0:
+        print('?')
+    else:
+        print(ok)
 except: print('?')
 " 2>/dev/null || echo "?")
 
@@ -3601,8 +3607,13 @@ import re
 try:
     content = open('docs/aide/definition-of-done.md').read()
     sections = re.findall(r'^##\s+.+', content, re.MULTILINE)
+    ok = sum(1 for s in sections if '✅' in s)
     fail = sum(1 for s in sections if '❌' in s)
-    print(fail)
+    # If file exists but no sections have markers at all, data is unavailable
+    if sections and ok == 0 and fail == 0:
+        print('?')
+    else:
+        print(fail)
 except: print('?')
 " 2>/dev/null || echo "?")
 
