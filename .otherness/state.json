@@ -686,7 +686,7 @@
       "done_at": "2026-04-22T05:30:35Z"
     },
     "issue-756": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: SM \u00a74f must update `docs/aide/progress.md` every batch with accurate state: `docs/aide/pro",
       "labels": [
         "priority/medium",
@@ -695,10 +695,11 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "756"
+      "issue": "756",
+      "note": "already done"
     },
     "issue-753": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Simulation prediction DIFF",
       "labels": [
         "priority/medium",
@@ -707,7 +708,8 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "753"
+      "issue": "753",
+      "note": "already done (PR #833)"
     },
     "issue-752": {
       "state": "done",
@@ -867,7 +869,7 @@
       "done_at": "2026-04-22T02:00:00Z"
     },
     "issue-702": {
-      "state": "todo",
+      "state": "done",
       "title": "fix(sm): \u00a74f SESSION_PROGRESS defaults to STALLED when MERGED env unset in standalone call",
       "labels": [
         "area/agent-loop",
@@ -876,7 +878,10 @@
         "priority/low"
       ],
       "priority": "low",
-      "issue": "702"
+      "issue": "702",
+      "pr_merged": true,
+      "pr_number": 847,
+      "done_at": "2026-04-22T08:21:52Z"
     },
     "issue-681": {
       "state": "done",
@@ -891,7 +896,7 @@
       "priority": "medium"
     },
     "issue-664": {
-      "state": "todo",
+      "state": "done",
       "title": "docs: SM \u00a74f JOURNEY counts show 0 when definition-of-done.md lacks \u2705/\u274c markers",
       "labels": [
         "size/xs",
@@ -899,7 +904,10 @@
         "priority/low"
       ],
       "priority": "low",
-      "issue": "664"
+      "issue": "664",
+      "pr_merged": true,
+      "pr_number": 848,
+      "done_at": "2026-04-22T08:25:22Z"
     }
   },
   "session_heartbeats": {
