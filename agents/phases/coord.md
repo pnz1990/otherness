@@ -288,6 +288,75 @@ the vision, read the design docs, generate a queue, and execute autonomously." 2
 fi
 ```
 
+## §1b-vision. Build VISION_PRESSURE_SET (design doc 36 §36.1 → ✅)
+
+Read all `🔲 Future` items from `docs/design/*.md` and export as `VISION_PRESSURE_SET`.
+This is the session's vision pressure set — used by §1e claim-priority boost and §36.4 learn trigger.
+
+```bash
+VISION_PRESSURE_SET=$(python3 - <<'VPS_EOF'
+import re, os, sys
+
+design_dir = 'docs/design'
+items = []
+docs_count = 0
+
+if not os.path.isdir(design_dir):
+    print('')
+    sys.exit(0)
+
+for fname in sorted(os.listdir(design_dir)):
+    if not fname.endswith('.md'): continue
+    try:
+        content = open(f'{design_dir}/{fname}').read()
+        m = re.search(r'^## Future.*?\n(.*?)(?=^## |\Z)', content, re.MULTILINE | re.DOTALL)
+        if not m: continue
+        future_items = re.findall(r'^- 🔲 (?!.*🚫)(.+)', m.group(1), re.MULTILINE)
+        if not future_items: continue
+        docs_count += 1
+        for item in future_items[:20]:  # cap per doc to avoid huge env var
+            # Extract description before first em-dash or colon
+            desc = re.sub(r'\s*[—:–].*$', '', item).strip()
+            # Also capture first meaningful words as key
+            key = desc.lower()[:40].strip()
+            if key and key not in items:
+                items.append(key)
+    except Exception:
+        continue  # fail-open per file
+
+print('\n'.join(items[:200]))  # cap total
+import sys; print(f"[COORD §1b-vision] Vision pressure set: {len(items[:200])} items from {docs_count} design docs.", file=sys.stderr)
+VPS_EOF
+)
+
+# Capture the stderr log and print it
+VISION_PRESSURE_SET_LOG=$(python3 - <<'VPS_LOG_EOF'
+import re, os, sys
+
+design_dir = 'docs/design'
+items_count = 0
+docs_count = 0
+
+if os.path.isdir(design_dir):
+    for fname in os.listdir(design_dir):
+        if not fname.endswith('.md'): continue
+        try:
+            content = open(f'{design_dir}/{fname}').read()
+            m = re.search(r'^## Future.*?\n(.*?)(?=^## |\Z)', content, re.MULTILINE | re.DOTALL)
+            if m:
+                future_items = re.findall(r'^- 🔲 (?!.*🚫)(.+)', m.group(1), re.MULTILINE)
+                if future_items:
+                    docs_count += 1
+                    items_count += min(len(future_items), 20)
+        except: pass
+
+print(f"[COORD §1b-vision] Vision pressure set: {min(items_count,200)} items from {docs_count} design docs.")
+VPS_LOG_EOF
+)
+echo "$VISION_PRESSURE_SET_LOG"
+export VISION_PRESSURE_SET
+```
+
 ---
 
 ## 1b.5 Preflight gate — PREFLIGHT_CHECK (GO/NO-GO before claiming work)

@@ -23,14 +23,14 @@ no design-doc-backed items remain.
 
 ## Present (✅)
 
-- ✅ 36.1 — COORD §1b-vision: builds `VISION_PRESSURE_SET` at session start — reads all `🔲 Future` items from `docs/design/*.md`, takes first 40 chars lowercased as keys. Exported as newline-separated env var. Logged: "Vision pressure set: N items from M design docs." Graceful fallback if no docs/design/ exists. (PR #689, 2026-04-21)
+- ✅ 36.1 — COORD §1b-vision: builds `VISION_PRESSURE_SET` at session start — reads all `🔲 Future` items from `docs/design/*.md`, takes first 40 chars lowercased as keys. Exported as newline-separated env var. Logged: "Vision pressure set: N items from M design docs." Graceful fallback if no docs/design/ exists. (PR #689 spec written, issue-938 implementation added to coord.md 2026-04-22)
 - ✅ 36.2 — COORD §1e: vision-pressure claim priority boost — `_item_sort_key` reads `VISION_PRESSURE_SET`; items whose title+body match any VPS key (case-insensitive substring) receive -1 boost; non-matching items receive +1. Tiebreaker within same priority tier (O1: no override). Fail-open: VPS empty or unset → boost=0. (PR #820, 2026-04-22)
 
 ---
 
 ## Future (🔲)
 
-- 🔲 36.1 — COORD §1b: read active design doc Future items at session start — before claiming any item, build an in-memory set of all `🔲 Future` items from `docs/design/*.md`. This is the "vision pressure set" for this session.
+- ✅ 36.1 — COORD §1b-vision: `VISION_PRESSURE_SET` actually built at session start: §1b-vision block added to coord.md — reads all `🔲 Future` items from `docs/design/*.md`, keys = first 40 chars lowercased, exported as newline-separated env var before §1c queue-gen. Previously in ✅ Present but implementation was absent from coord.md. (issue-938, 2026-04-22)
 - 🔲 36.3 — COORD §1b: log vision-pressure claim decisions — when claiming an item, append to the batch report: "Claimed #N [vision-backed: yes/no] — <reason>". This makes the claim logic auditable without adding overhead.
 - ✅ 36.4 — COORD §1f: queue-depth learn trigger counts vision-backed items — `VISION_BACKED_TODO_NOW` computed via `VISION_PRESSURE_SET` key match; trigger fires when vision-backed count < 3 (not raw count < 5); log: "[COORD §1e-36.4] Vision-backed todo items: N / M total."; fail-open when VPS unset (falls back to total count). (issue-891, 2026-04-22)
 - 🔲 36.5 — SM §4f: report vision pressure utilisation — in the health comment, include: "Vision-backed items claimed this session: N / M total claims." This closes the feedback loop: the human can see whether the pressure prompts are actually driving what gets implemented.
