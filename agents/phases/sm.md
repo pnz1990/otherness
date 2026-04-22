@@ -4450,6 +4450,156 @@ while IFS='=' read -r _KEY _VAL; do
     esac
 done <<< "$_MGMT_OUTPUT"
 
+# §4f: Metrics trend surfacing — design doc 33 §Future → ✅ (issue-719)
+# Compute 5-batch rolling trend for time_to_merge_avg_min and needs_human.
+# Fail-open: any read/parse error silently skips the trend (no AMBER, no crash).
+METRICS_TREND=$(python3 - <<'TREND_EOF'
+import re, json, os, subprocess
+
+REPO = os.environ.get('REPO', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
+
+# Column indices (0-based) in the batch log table
+# Header: Date | Batch | prs_merged | needs_human | ci_red_hours | skills_count | todo_shipped | time_to_merge_avg_min | Notes
+COL_TTM = 7   # time_to_merge_avg_min
+COL_NH  = 3   # needs_human
+
+def parse_float(v):
+    """Return float from cell value; return None if non-numeric (e.g. '—', '~10', '')."""
+    v = v.strip().lstrip('~').replace('–', '').replace('—', '').strip()
+    try:
+        return float(v)
+    except ValueError:
+        return None
+
+try:
+    content = open('docs/aide/metrics.md').read()
+except Exception:
+    print('')
+    raise SystemExit(0)
+
+# Find data rows: lines with | DATE | ... | in the batch log section
+rows = []
+in_batch_log = False
+for line in content.splitlines():
+    if '## Batch Log' in line:
+        in_batch_log = True
+        continue
+    if in_batch_log and line.startswith('## '):
+        # Left the batch log section
+        break
+    if not in_batch_log:
+        continue
+    # Skip header/separator rows
+    if not line.startswith('|'):
+        continue
+    cells = [c.strip() for c in line.strip('|').split('|')]
+    if len(cells) < 8:
+        continue
+    # Skip header row (first cell is 'Date') and separator rows
+    if cells[0].lower() in ('date', '---', '') or set(cells[0]) <= set('-| '):
+        continue
+    # Skip rows where cells[1] is 'Batch' (header)
+    if cells[1].strip().lower() == 'batch':
+        continue
+    ttm = parse_float(cells[COL_TTM]) if len(cells) > COL_TTM else None
+    nh  = parse_float(cells[COL_NH])  if len(cells) > COL_NH  else None
+    rows.append({'ttm': ttm, 'nh': nh})
+
+# Need at least 2 rows to compute a trend
+if len(rows) < 2:
+    print('')
+    raise SystemExit(0)
+
+last5 = rows[-5:]  # up to 5; may be fewer
+
+def compute_trend(values_5, metric_name, higher_is_bad):
+    """Return a trend string or empty string if not enough numeric data."""
+    nums = [v for v in values_5 if v is not None]
+    if len(nums) < 2:
+        return ''
+    first_val = nums[0]
+    last_val  = nums[-1]
+    if first_val == 0:
+        return ''  # avoid division by zero
+    pct = (last_val - first_val) / first_val * 100
+    if abs(pct) < 1:
+        return ''  # neutral — skip
+    direction = '⬆️' if pct > 0 else '⬇️'
+    verdict = 'bad' if (pct > 0 and higher_is_bad) or (pct < 0 and not higher_is_bad) else 'good'
+    return f'{direction} {metric_name} {"up" if pct > 0 else "down"} {abs(pct):.0f}% over last {len(nums)} batches (trend: {verdict})'
+
+ttm_vals = [r['ttm'] for r in last5]
+nh_vals  = [r['nh']  for r in last5]
+
+ttm_trend = compute_trend(ttm_vals, 'time-to-merge', higher_is_bad=True)
+nh_trend  = compute_trend(nh_vals,  'needs-human',   higher_is_bad=True)
+
+trend_lines = []
+if ttm_trend:
+    trend_lines.append(f'- Trend: {ttm_trend}')
+if nh_trend:
+    trend_lines.append(f'- Trend: {nh_trend}')
+
+# §4f: Consecutive worsening detection → open kind/chore priority/high issue after 3 batches
+# State: consecutive_worsening_ttm, consecutive_worsening_nh in state.json
+try:
+    with open('.otherness/state.json') as f: s = json.load(f)
+except Exception:
+    s = {}
+
+def update_worsening(s, key, trend_str, metric_label):
+    """Increment worsening counter if bad trend, reset if not. Open issue at streak=3."""
+    is_bad = 'trend: bad' in trend_str if trend_str else False
+    current = s.get(key, 0)
+    new_val = current + 1 if is_bad else 0
+    s[key] = new_val
+    if new_val >= 3:
+        # Open an issue (dedup guard)
+        title = f'SM trend alert: {metric_label} worsening for 3 consecutive batches'
+        try:
+            r = subprocess.run(
+                ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+                 '--search', title[:60], '--json', 'number', '--jq', 'length'],
+                capture_output=True, text=True, timeout=15)
+            if int(r.stdout.strip() or '0') == 0:
+                body = (
+                    f'## SM Trend Alert\n\n'
+                    f'`{metric_label}` has been worsening for {new_val} consecutive batches.\n\n'
+                    f'Last trend reading: `{trend_str}`\n\n'
+                    f'## Actions\n'
+                    f'1. Inspect `docs/aide/metrics.md` for the last {new_val} rows\n'
+                    f'2. Identify root cause: slow CI? blocked items? escalations?\n'
+                    f'3. Open a targeted fix issue if root cause is identified\n\n'
+                    f'Reported by SM §4f | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}'
+                )
+                cr = subprocess.run(
+                    ['gh', 'issue', 'create', '--repo', REPO,
+                     '--title', title,
+                     '--label', 'kind/chore,priority/high,area/agent-loop,otherness',
+                     '--body', body],
+                    capture_output=True, text=True, timeout=15)
+                if cr.returncode == 0:
+                    print(f'[SM §4f] Trend alert issue opened for {metric_label}: {cr.stdout.strip().split(chr(10))[-1]}',
+                          file=__import__('sys').stderr)
+        except Exception as e:
+            pass  # fail-open
+    return new_val
+
+update_worsening(s, 'consecutive_worsening_ttm', ttm_trend, 'time-to-merge')
+update_worsening(s, 'consecutive_worsening_nh',  nh_trend,  'needs-human')
+
+try:
+    with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
+except Exception:
+    pass
+
+print('\n'.join(trend_lines))
+TREND_EOF
+)
+
 REPORT_BODY=$(cat <<BODY_EOF
 Batch ${SM_CYCLE:-?} | progress: ${PROGRESS_CLASS} | health: ${HEALTH} | Shipped: ${MEANINGFUL_PRS:-0} meaningful (${MERGED:-0} total) | Queue: ${TODO_COUNT:-0} remaining | Journeys: ${JOURNEY_OK}✅ ${JOURNEY_FAIL}❌ | Next: [${NEXT_ITEM}]
 
@@ -4463,7 +4613,7 @@ Batch ${SM_CYCLE:-?} | progress: ${PROGRESS_CLASS} | health: ${HEALTH} | Shipped
 - Sim calibrated: ${SIM_CALIB_LABEL:-unknown}${SIM_CALIB_WARN:-}
 - Self feat PRs (7d): ${SELF_FEAT_PRS:-?} | Managed feat PRs (7d): ${MANAGED_FEAT_PRS:-?}
 - Managed: ${MANAGED_VELOCITY_LABEL:-unknown}${MANAGED_VELOCITY_WARN:-}
-
+${METRICS_TREND:+${METRICS_TREND}}
 </details>
 BODY_EOF
 )
