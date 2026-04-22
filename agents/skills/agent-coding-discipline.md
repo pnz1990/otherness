@@ -67,3 +67,31 @@ Strong success criteria let the engineer loop independently without human input.
 Weak criteria ("make it work") require clarification mid-implementation, which defeats autonomous execution.
 
 This pairs with TDD: the success criterion becomes the failing test.
+
+---
+
+## Append-Only Semantic History <!-- provenance: Priivacy-ai/spec-kitty, glossary/contexts/practices-principles.md, 2026-04-21 -->
+
+**Decision records are immutable. Never rewrite history, only extend it.**
+
+spec-kitty's practices-principles glossary defines this as a system invariant:
+*"Term/sense changes and conflict decisions are recorded as immutable events, not rewritten in place."*
+
+Applied to otherness:
+
+- `.specify/memory/decisions.md` is append-only. Never edit or delete an existing entry.
+  If a previous decision was wrong, write a new entry that supersedes it — and explicitly
+  name what it supersedes.
+- `state.json` entries for done items are never deleted in-session. SM archives them in
+  batches (every 10 merges) but never deletes the record of what happened.
+- Design doc Present items (`✅`) are never changed to Future (`🔲`) once marked. If a
+  feature is reverted, add a `⚠️ Reverted` marker and open a new issue.
+
+**Why this matters for trust:** The HiC (human-in-charge) must be able to reconstruct
+what happened and when. A rewritten history makes audits impossible and undermines the
+human's ability to trust the agent's output. Append-only is a governance property, not
+a technical preference.
+
+**The test:** Can a human reading only `.specify/memory/decisions.md` and the git log
+reconstruct every significant architectural decision and when it was made, in sequence?
+If an entry was edited rather than superseded, the answer is no.

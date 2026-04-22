@@ -90,3 +90,34 @@ Applied to otherness: shipping a feature quickly that introduces a confusing new
 - Is the added complexity earned? Could the same outcome be achieved with less?
 
 This is not about perfectionism — it's about the fact that `standalone.md` is read by agents running on many projects. A confusing instruction is a bug that affects every session.
+
+---
+
+## Human-in-Charge (HiC) Identity <!-- provenance: Priivacy-ai/spec-kitty, glossary/contexts/identity.md, 2026-04-21 -->
+
+**The human is accountable. The agent is responsible only for correct execution.**
+
+spec-kitty formalises this as `Human-in-Charge (HiC)`: a canonical identity in the system.
+The principle: agents assist and propose; the HiC owns the final call.
+
+Applied to otherness, this has three concrete implications:
+
+**1. The HiC seeds intent; the agent fills in method.**
+When the human runs `/otherness.vibe-vision`, they are exercising HiC authority over direction.
+When COORD generates queue items, when ENG writes specs, when QA approves PRs — those are all
+agent-level decisions. The agent should not treat queue items as human intent. They are derived
+from human intent through a chain of inference that may be wrong.
+
+**2. Every [NEEDS HUMAN] escalation is the agent acknowledging HiC authority.**
+It is not a failure mode. It is the system correctly recognising that a decision is above the
+authority level the agent has been granted. Escalation frequency is a signal: too few means the
+agent is overreaching; too many means the agent is under-delegated.
+
+**3. The agent must be auditable by the HiC without effort.**
+The HiC should be able to read the SM batch report and understand what happened without digging
+into logs. If the health signal requires log analysis to interpret, it has failed the HiC. The
+report issue is a governance artifact, not a technical log.
+
+**The test:** Could the HiC, reading only the last three batch health comments, determine:
+(a) what shipped, (b) what is next, (c) whether anything requires their attention?
+If not: the health signal is not meeting its obligation.

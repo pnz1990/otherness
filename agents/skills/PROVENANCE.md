@@ -478,3 +478,63 @@ They are directly applicable to Layer 2 (projects otherness autonomously develop
   project-specific context, not transferable patterns.
 - `alibi-journey-2-failure` — specific operational failure requiring human restart.
   Not a generalizable skill; documented in DoD Journey Status instead.
+
+---
+
+## 2026-04-21 — Priivacy-ai/spec-kitty
+
+**paradigm_category:** agent-loop (spec-driven development workflow, CLI-based)
+
+**Files read:**
+- `AGENTS.md` — full
+- `README.md` — full
+- `docs/tutorials/claude-code-integration.md`
+- `architecture/audience/external/tech-lead-evaluator.md`
+- `architecture/2.x/README.md`
+- `glossary/README.md`
+- `glossary/contexts/practices-principles.md`
+- `glossary/contexts/identity.md`
+- `SECURITY-POSITION.md`
+- `kitty-specs/020-autonomous-multi-agent-orchestrator/spec.md`
+- `kitty-specs/044-constitution-interview-compiler-context-bootstrap/spec.md`
+- `kitty-specs/045-agent-profile-system/spec.md`
+- `contracts/batch-api-contract.md`
+
+**Patterns extracted:** 6
+**Patterns rejected:** 2
+
+**Disposition:**
+- `discovery-interview-gate` → EXTEND_SKILL (`declaring-designs.md`)
+  Block spec creation until key ambiguities are resolved. spec-kitty's CLI refuses to
+  generate spec.md until the user answers a discovery interview. Transferred as a
+  pre-spec checklist in declaring-designs.md.
+
+- `human-in-charge-identity` → EXTEND_SKILL (`agent-responsibility.md`)
+  HiC as a formal governance identity: agents assist and propose, human owns final call.
+  Three concrete implications for otherness: HiC seeds intent, escalation acknowledges
+  HiC authority, system must be auditable by HiC without effort.
+
+- `append-only-semantic-history` → EXTEND_SKILL (`agent-coding-discipline.md`)
+  Decision records are immutable events, never rewritten. Transferred as the
+  "Append-Only Semantic History" section. Explains why this is a governance property.
+
+- `stakeholder-persona-model` → NEW_SKILL (`stakeholder-persona-model.md`)
+  Formal audience persona documents with desiderata, frustrations, and behavioral cues.
+  Three personas defined: Project Owner (primary HiC), Platform Team (fleet operator),
+  Evaluator (potential adopter). Used when designing user-facing features or health signals.
+
+- `governed-consultation-patterns` → NEW_SKILL (`governed-consultation-patterns.md`)
+  Three distinct operator surfaces (execute/advise/ask) with different authority levels
+  and durable invocation records. Also: the "mostly invisible process, highly visible
+  outcomes" principle from the practices-principles glossary.
+
+- `state-per-artifact` → AGENT_LOOP (standalone.md §STATE MANAGEMENT)
+  Lane-as-frontmatter pattern: per-file state avoids write conflicts in parallel sessions.
+  Transferred as a targeted note in standalone.md recommending per-item status files if
+  state write conflicts become frequent. Not a full rewrite — a pointer to the alternative.
+
+**Rejected patterns (with reason):**
+- `mission-vs-feature terminology canon` — rejected: not transferable (domain-specific
+  to spec-kitty's product terminology decision; otherness already has consistent terminology)
+- `C4 architecture documentation` — rejected: not transferable at current scale (single repo,
+  single-person human owner; overhead exceeds value until team size grows)

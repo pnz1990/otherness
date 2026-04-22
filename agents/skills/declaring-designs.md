@@ -119,3 +119,38 @@ Every `spec.md` must contain these sections:
 ## Rejected alternatives
 <Why we chose this approach over alternatives. Optional if there were no real alternatives.>
 ```
+
+---
+
+## Discovery Interview Gate <!-- provenance: Priivacy-ai/spec-kitty, AGENTS.md, 2026-04-21 -->
+
+**Do not write a spec until key ambiguities are resolved.**
+
+spec-kitty's CLI enforces this: `spec-kitty specify` asks discovery questions and refuses
+to generate spec.md until the user answers them. The discipline is: ambiguity at spec time
+becomes a defect at implementation time. Resolve it now.
+
+Before writing any spec, answer these questions in writing (not in your head):
+
+**For features with external dependencies:**
+- What authentication or authorization model applies?
+- What persistence layer? What schema constraints?
+- What validation rules govern the inputs?
+- What are the error states and how should each be surfaced to the user?
+
+**For changes to existing behavior:**
+- What currently depends on the behavior being changed?
+- What is the compatibility guarantee — is this a breaking change?
+- What is the rollback path if the change produces a regression?
+
+**For ambiguous scope:**
+- What is the smallest change that satisfies the Zone 1 obligations?
+- What is explicitly out of scope this time (Zone 3)?
+
+**The gate:** If you cannot answer the questions above with one sentence each, the spec
+is not ready to write. Stop. Post the unanswered questions as a comment on the issue and
+wait for clarification, or make explicit assumptions and document them in Zone 2.
+
+**Why this matters:** Otherness sessions run without a human present. An ambiguity that
+a human would catch in a code review has no correction mechanism during the session. The
+spec is the last place ambiguity can be resolved cheaply.

@@ -12,14 +12,16 @@ Skills are **additive only** — never delete content from a skill file (see con
 | `agent-coding-discipline.md` | About to write or modify code | Phase 2d (ENG — TDD) |
 | `reconciling-implementations.md` | Reviewing a PR as QA | Phase 3 (QA — ADVERSARIAL REVIEW) |
 | `autonomous-workflow-patterns.md` | Designing a multi-step feature or reviewing workflow logic | Phase 2a, 2d, or 3 |
-| `role-based-agent-identity.md` | Writing or improving agent instructions (standalone.md, onboard.md) | Phase 4 (SM) or when updating agent files |
+| `role-based-agent-identity.md` | Writing or improving agent instructions | Phase 4 (SM) or when updating agent files |
 | `contribution-hygiene.md` | Opening a PR or writing a commit message | Phase 2f (ENG — before gh pr create) |
 | `agent-responsibility.md` | Starting any non-trivial task — before spec, before code, before PR | All phases — load at task start |
-| `ephemeral-pr-artifacts.md` | Opening a CRITICAL tier PR or any complex PR needing reviewer context | Phase 2f (ENG — before gh pr create) |
-| `explicit-anti-patterns.md` | Writing any agent instruction file, or during QA review | Phase 3 (QA) or Phase 4 (SM) when updating agent files |
+| `ephemeral-pr-artifacts.md` | Opening a CRITICAL tier PR or any complex PR | Phase 2f (ENG — before gh pr create) |
+| `explicit-anti-patterns.md` | Writing any agent instruction file, or during QA review | Phase 3 (QA) or Phase 4 (SM) |
 | `triage-discipline.md` | Running the SM phase review | Phase 4 (SM — every batch) |
 | `architectural-audit.md` | Running a comprehensive codebase audit | `/otherness.arch-audit` command |
 | `difficulty-ledger.md` | Consulting before implementing — "have I seen this failure class?" | Phase 2 (ENG — before spec) |
+| `stakeholder-persona-model.md` | Designing a user-facing feature, writing docs, or deciding health signal content | Phase 4 (SM), Phase 5 (PM), vibe-vision |
+| `governed-consultation-patterns.md` | Starting any human-facing command (vibe-vision, arch-audit, status) | Start of advisory sessions |
 
 ## Skill summaries
 

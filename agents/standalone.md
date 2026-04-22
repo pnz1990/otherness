@@ -84,6 +84,13 @@ Badges: Coordinator `[🎯 COORD]` | Engineer `[🔨 ENG]` | QA `[🔍 QA]` | SD
 State (`state.json`) lives on a dedicated `_state` branch, **not on `main`**.
 Parallel sessions write to `_state`; code PRs go to `main`.
 
+**The state-per-artifact principle** <!-- provenance: Priivacy-ai/spec-kitty, AGENTS.md lane-as-frontmatter pattern, 2026-04-21 -->
+spec-kitty avoids state write conflicts by keeping lane status in per-file frontmatter —
+each work package file owns its own state, so parallel writes never conflict. Otherness
+uses a single `state.json` — the field-level merge below is the equivalent mitigation.
+If state write conflicts become frequent (>3 retries/session), consider migrating per-item
+state to per-file `.specify/specs/$ITEM_ID/status.json` files on the session branch.
+
 ### Reading state
 ```bash
 git fetch origin _state --quiet 2>/dev/null
