@@ -61,13 +61,14 @@ the per-command detail pages AND a consolidated `docs/cli-reference.md` overview
 - ✅ `docs.yml` Step 4: verify CLI docs in sync — PR CI fails if `docs/reference/cli/` is stale (2026-04-20) ⚠️ Stale — referenced file not found
 - ✅ `docs.yml` Step 1: auto-generate CLI docs on every push to `cmd/kardinal/**` (2026-04-20) ⚠️ Stale — referenced file not found
 - ✅ `docs.yml` deploys to `pnz1990.github.io/kardinal-promoter` on every merge to main (2026-04-20) ⚠️ Stale — referenced file not found
+- ✅ 41.4 — PM §5j-comparison: comparison doc accuracy check — scans `docs/comparison.md` ❌ rows, matches against design doc ✅ Present items, opens `kind/docs priority/medium` issue when row is stale. Graceful skip if comparison.md absent. Dedup: at most one open issue per row. Runs every N_PM_CYCLES. (PR #896, 2026-04-22)
 
 ## Future (🔲)
 
 - 🔲 41.1 — `hack/gen-cli-docs/main.go`: emit `docs/cli-reference.md` as a consolidated overview in addition to per-command pages. Format: command table with description + link to detail page. Removes the hand-authored duplicate entirely. `docs.yml` verify step catches any drift. **This closes the 4 missing commands gap permanently.**
 - 🔲 41.2 — `docs.yml` path triggers: add `README.md` and `docs/comparison.md` to the `paths:` list so a push touching either file triggers a docs build + deploy. Currently these files can change without a docs redeploy.
 - 🔲 41.3 — PM §5j: version staleness check — scan `README.md` for version strings matching `v[0-9]+\.[0-9]+\.[0-9]+`. Compare against latest GitHub release tag. If >1 minor version behind: open `kind/docs priority/high` issue with the stale line and the correct value.
-- 🔲 41.4 — PM §5j: comparison doc accuracy check — for each `❌` row in `docs/comparison.md`, check if the corresponding `🔲 Future` item in any design doc has since moved to `✅ Present`. If so: open `kind/docs priority/medium` issue to flip the comparison row.
+- ✅ 41.4 — see ✅ Present section above. (PR #896, 2026-04-22)
 - 🔲 41.5 — QA §3b: docs gate for user-visible features — when a PR marks a `🔲 Future` item `✅ Present` AND the feature is user-visible (CLI command, CRD field, UI behaviour), QA checks that either (a) a docs file was modified or (b) the feature is auto-documented by Layer 1. If neither: WRONG finding with exact missing doc reference.
 - 🔲 41.6 — Immediate fixes (not blocked on design completion): README version v0.5.0 → v0.8.1; comparison.md: Subscription watchers row flipped from ❌ to ✅.
 
