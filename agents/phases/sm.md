@@ -3637,15 +3637,15 @@ except: print('?')
 # GREEN requires BOTH self-progress AND managed project velocity.
 # If managed project has shipped 0 feat/fix/refactor PRs in 14 days → AMBER.
 # Fail-open: API errors or missing config leave HEALTH unchanged.
+# Refactored (issue-790): single python block — no duplicate API call.
 MANAGED_VELOCITY_WARN=""
 MANAGED_VELOCITY_LABEL=""
-python3 - <<'MGMT_VEL_EOF'
-import subprocess, re, os, sys, datetime, json
+_MGMT_OUTPUT=$(python3 - <<'MGMT_VEL_EOF'
+import subprocess, re, os, sys, datetime
 
 REPO = os.environ.get('REPO', '')
 HEALTH_IN = os.environ.get('HEALTH', 'GREEN')
 
-# Read reference project from otherness-config.yaml
 ref_project = None
 try:
     in_monitor = in_projects = False
@@ -3666,7 +3666,6 @@ if not ref_project:
     print('[SM §4f] No reference project found — skipping managed velocity check.')
     sys.exit(0)
 
-# Count feat/fix/refactor PRs merged in last 14 days on reference project
 try:
     since_dt = (datetime.datetime.now(datetime.timezone.utc) -
                 datetime.timedelta(days=14)).strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -3681,60 +3680,14 @@ try:
     count = int(r.stdout.strip() or '0')
     label = f'{count} feat PRs/14d (reference: {ref_project})'
     print(f'[SM §4f] Managed velocity: {label}')
-    # Write env vars via marker lines
-    print(f'__MANAGED_VELOCITY_LABEL__={label}')
-    if count == 0 and HEALTH_IN == 'GREEN':
-        print(f'__MANAGED_VELOCITY_WARN__= ⚠️ Managed stalled (0 feat PRs/14d: {ref_project})')
-        print('__MANAGED_HEALTH_DOWNGRADE__=AMBER')
-except Exception as e:
-    print(f'[SM §4f] Managed velocity check error (non-fatal): {e}')
-MGMT_VEL_EOF
-
-# Parse output from python block — extract __VAR__=value markers
-_MGMT_OUTPUT=$(python3 - <<'MGMT_PARSE_EOF'
-import subprocess, re, os, sys, datetime, json
-
-REPO = os.environ.get('REPO', '')
-HEALTH_IN = os.environ.get('HEALTH', 'GREEN')
-
-ref_project = None
-try:
-    in_monitor = in_projects = False
-    for line in open('otherness-config.yaml'):
-        if re.match(r'^monitor:', line): in_monitor = True
-        if in_monitor and re.match(r'\s+projects:', line): in_projects = True
-        if in_projects:
-            m = re.match(r'\s+- (.+)', line)
-            if m:
-                r = m.group(1).strip()
-                if not r.endswith('/otherness'):
-                    ref_project = r
-                    break
-except Exception:
-    pass
-
-if not ref_project:
-    sys.exit(0)
-
-try:
-    since_dt = (datetime.datetime.now(datetime.timezone.utc) -
-                datetime.timedelta(days=14)).strftime('%Y-%m-%dT%H:%M:%SZ')
-    r = subprocess.run(
-        ['gh', 'pr', 'list', '--repo', ref_project, '--state', 'merged',
-         '--limit', '100', '--json', 'title,mergedAt',
-         '--jq', f'[.[] | select(.mergedAt >= "{since_dt}") | select(.title | test("^feat|^fix|^refactor"; "i"))] | length'],
-        capture_output=True, text=True, timeout=15)
-    if r.returncode != 0:
-        sys.exit(0)
-    count = int(r.stdout.strip() or '0')
-    label = f'{count} feat PRs/14d (reference: {ref_project})'
+    # Output env var markers for bash to parse
     print(f'MANAGED_VELOCITY_LABEL={label}')
     if count == 0 and HEALTH_IN == 'GREEN':
         print(f'MANAGED_VELOCITY_WARN= ⚠️ Managed stalled (0 feat PRs/14d: {ref_project})')
         print('MANAGED_HEALTH_DOWNGRADE=AMBER')
-except Exception:
-    pass
-MGMT_PARSE_EOF
+except Exception as e:
+    print(f'[SM §4f] Managed velocity check error (non-fatal): {e}')
+MGMT_VEL_EOF
 2>/dev/null)
 
 # Apply env vars from python output
