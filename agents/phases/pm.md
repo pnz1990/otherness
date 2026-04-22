@@ -2087,3 +2087,234 @@ except Exception as e:
     pass
 CYCLE_EOF
 ```
+
+---
+
+## 5p. Major release detection (runs every PM cycle, design doc 40 §40.3)
+
+Detect breaking changes merged since the last git tag. When found, open a
+`needs-human kind/release` issue. Never cut the major release autonomously.
+
+<!-- design ref: docs/design/40-autonomous-releases.md §40.3 -->
+
+```bash
+python3 - <<'MAJOR_RELEASE_EOF'
+import subprocess, re, os, sys, json, datetime
+
+REPO = os.environ.get('REPO', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'PM')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '')
+PR_LABEL = os.environ.get('PR_LABEL', 'otherness')
+
+# §40.3 O6: Opt-out check
+releases_enabled = True
+try:
+    content = open('otherness-config.yaml').read()
+    if re.search(r'releases\.enabled:\s*false', content) or re.search(r'enabled:\s*false', content):
+        releases_enabled = False
+except Exception:
+    pass
+
+if not releases_enabled:
+    print('[PM §5p] releases.enabled=false — skipped.')
+    sys.exit(0)
+
+# Get last git tag
+try:
+    r = subprocess.run(['git', 'describe', '--tags', '--abbrev=0'],
+                       capture_output=True, text=True, timeout=10)
+    last_tag = r.stdout.strip() if r.returncode == 0 and r.stdout.strip() else None
+except Exception:
+    last_tag = None
+
+if not last_tag:
+    print('[PM §5p] No existing tag found — cannot compute candidate. Skipping.')
+    sys.exit(0)
+
+# Get PRs merged since last tag
+try:
+    tag_date_r = subprocess.run(
+        ['git', 'log', '-1', '--format=%cI', last_tag],
+        capture_output=True, text=True, timeout=10)
+    tag_date = tag_date_r.stdout.strip()[:20] if tag_date_r.returncode == 0 else ''
+except Exception:
+    tag_date = ''
+
+try:
+    pr_list = json.loads(subprocess.check_output(
+        ['gh', 'pr', 'list', '--repo', REPO, '--state', 'merged', '--limit', '100',
+         '--json', 'title,mergedAt,number'],
+        text=True, timeout=20))
+    if tag_date:
+        prs_since_tag = [p for p in pr_list if p.get('mergedAt', '')[:20] > tag_date]
+    else:
+        prs_since_tag = pr_list[:50]
+except Exception:
+    prs_since_tag = []
+
+# §40.3 O1: Detect breaking changes
+BREAKING_PATTERNS = [
+    r'^feat!:', r'^fix!:', r'^refactor!:', r'^chore!:', r'^build!:',  # conventional commit breaking
+    r'\bbreaking\b', r'\bincompatible\b', r'\bmigration required\b',  # keywords in title
+]
+
+breaking_prs = []
+for pr in prs_since_tag:
+    title = pr.get('title', '').lower()
+    for pat in BREAKING_PATTERNS:
+        if re.search(pat, title, re.IGNORECASE):
+            breaking_prs.append(pr)
+            break
+
+# Also scan design docs for breaking change signals in Future/Zone3 sections
+breaking_design_docs = []
+design_dir = 'docs/design'
+if os.path.isdir(design_dir):
+    for fname in sorted(os.listdir(design_dir)):
+        if not fname.endswith('.md'): continue
+        try:
+            doc_content = open(os.path.join(design_dir, fname)).read()
+            # Check Zone 3 (Scoped out) and Future sections for breaking signals
+            for section_name in ['Zone 3', 'Future', 'Zone3']:
+                m = re.search(rf'^## {section_name}.*?\n(.*?)(?=^## |\Z)',
+                              doc_content, re.MULTILINE | re.DOTALL)
+                if m:
+                    section_text = m.group(1).lower()
+                    if any(kw in section_text for kw in ['breaking', 'incompatible', 'migration required']):
+                        breaking_design_docs.append(fname)
+                        break
+        except Exception:
+            pass
+
+has_breaking = bool(breaking_prs or breaking_design_docs)
+print(f'[PM §5p] Breaking change detection: breaking_prs={len(breaking_prs)}, '
+      f'breaking_design_docs={len(breaking_design_docs)}')
+
+if not has_breaking:
+    print(f'[PM §5p] No breaking changes detected since {last_tag}. No major release candidate.')
+    sys.exit(0)
+
+# §40.3 O5: Deduplication — at most one open major-release-candidate issue
+RELEASE_TITLE_PREFIX = '[RELEASE]'
+try:
+    r = subprocess.run(
+        ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+         '--json', 'number,title,createdAt',
+         '--jq', f'[.[] | select(.title | startswith("{RELEASE_TITLE_PREFIX}"))]'],
+        capture_output=True, text=True, timeout=15)
+    existing_issues = json.loads(r.stdout.strip() or '[]') if r.returncode == 0 else []
+except Exception:
+    existing_issues = []
+
+if existing_issues:
+    issue = existing_issues[0]
+    issue_num = issue.get('number', '?')
+    created_at = issue.get('createdAt', '')
+    age_days = 0
+    try:
+        created_dt = datetime.datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+        age_days = (datetime.datetime.now(datetime.timezone.utc) - created_dt).days
+    except Exception:
+        pass
+    if age_days > 14:
+        msg = (f'[PM §5p | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}] '
+               f'Major release candidate issue has been open for {age_days} days. '
+               f'Breaking changes still detected. Human decision required.')
+        subprocess.run(
+            ['gh', 'issue', 'comment', str(issue_num), '--repo', REPO, '--body', msg],
+            capture_output=True, timeout=15)
+        print(f'[PM §5p] Existing release issue #{issue_num} is {age_days}d old — posted follow-up.')
+    else:
+        print(f'[PM §5p] Existing release issue #{issue_num} (age {age_days}d) — skipping new issue.')
+    sys.exit(0)
+
+# §40.3 O2-O3: Open needs-human issue with reason, shipped features, draft release notes
+# Compute next major version
+try:
+    parts = last_tag.lstrip('v').split('.')
+    next_major = f"v{int(parts[0]) + 1}.0.0"
+except Exception:
+    next_major = 'vX.0.0'
+
+breaking_reason = ''
+if breaking_prs:
+    breaking_reason += f'**Breaking PRs since {last_tag}:**\n'
+    for pr in breaking_prs[:5]:
+        breaking_reason += f'- #{pr["number"]}: {pr["title"]}\n'
+if breaking_design_docs:
+    breaking_reason += f'\n**Design docs with breaking signals:** {", ".join(breaking_design_docs[:3])}'
+
+feat_prs = [p for p in prs_since_tag if re.match(r'^feat', p.get('title',''), re.IGNORECASE)]
+feat_summary = '\n'.join(f'- #{p["number"]}: {p["title"]}' for p in feat_prs[:10])
+if not feat_summary:
+    feat_summary = '_No feat PRs since last tag_'
+
+issue_body = (
+    f'## Major Release Candidate — Human Decision Required\n\n'
+    f'PM §5p detected breaking changes since `{last_tag}`. '
+    f'A major version bump to `{next_major}` may be warranted.\n\n'
+    f'## Reason\n\n'
+    f'{breaking_reason}\n\n'
+    f'## What shipped since `{last_tag}`\n\n'
+    f'{feat_summary}\n\n'
+    f'## Draft release notes\n\n'
+    f'```\n'
+    f'## What\'s in {next_major}\n\n'
+    f'### Breaking changes\n'
+    f'<describe the breaking changes detected above>\n\n'
+    f'### New features\n'
+    f'{feat_summary}\n\n'
+    f'### Upgrading\n'
+    f'<describe migration steps required>\n'
+    f'```\n\n'
+    f'## How to proceed\n\n'
+    f'- Reply **"cut it"** to trigger the major release (human-initiated only)\n'
+    f'- Or **close this issue** to defer the major release\n'
+    f'- Or add `releases.enabled: false` to `otherness-config.yaml` to suppress future detection\n\n'
+    f'*Generated by PM §5p | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}*'
+)
+
+issue_title = f'[RELEASE] {next_major} candidate — human decision required'
+
+# Build label list — gracefully handle missing labels
+label_candidates = [PR_LABEL, 'needs-human', 'priority/high']
+try:
+    existing_labels_r = subprocess.run(
+        ['gh', 'label', 'list', '--repo', REPO, '--json', 'name', '--jq', '[.[].name]'],
+        capture_output=True, text=True, timeout=10)
+    existing_labels = json.loads(existing_labels_r.stdout.strip() or '[]') if existing_labels_r.returncode == 0 else []
+    # Add kind/release if it exists, else kind/chore
+    if 'kind/release' in existing_labels:
+        label_candidates.append('kind/release')
+    elif 'kind/chore' in existing_labels:
+        label_candidates.append('kind/chore')
+    all_labels = ','.join(l for l in label_candidates if l in existing_labels or l == PR_LABEL)
+    if not all_labels:
+        all_labels = PR_LABEL
+except Exception:
+    all_labels = PR_LABEL
+
+r = subprocess.run(
+    ['gh', 'issue', 'create', '--repo', REPO,
+     '--title', issue_title,
+     '--label', all_labels,
+     '--body', issue_body],
+    capture_output=True, text=True, timeout=20)
+
+if r.returncode == 0:
+    issue_url = r.stdout.strip()
+    issue_num = issue_url.split('/')[-1]
+    print(f'[PM §5p] Opened major release candidate issue #{issue_num}: {issue_url}')
+    if REPORT_ISSUE:
+        subprocess.run(
+            ['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO,
+             '--body', f'[PM §5p | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}] '
+                       f'Major release candidate detected since {last_tag}. '
+                       f'Issue #{issue_num} opened for human decision.'],
+            capture_output=True, timeout=15)
+else:
+    print(f'[PM §5p] Issue create failed (non-fatal): {r.stderr[:200]}')
+
+MAJOR_RELEASE_EOF
+```

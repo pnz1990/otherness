@@ -50,3 +50,4 @@
 
 | 2026-04-22 | 2026-04-22 | 13 | 0 | 0 | 0 | ? | 0 | 0 | sess-370630c5 |
 | 2026-04-22 | 11 | 17 | 0 | 0 | 14 | 17 | 1 | ~8 | Batch 11: competitive-standing.md shipped (#907); SM §4b now shows competitive delta |
+| 2026-04-22 | 12 | 50 | 0 | 0 | 12 | 23 | 1 | ~15 | Batch 12: feat(pm) §5k README refresh PR opening merged (#916, CRITICAL-A autonomous); MISS#917 filed (label fallback); feature-rich session |
