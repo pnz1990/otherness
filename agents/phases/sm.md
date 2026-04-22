@@ -1646,34 +1646,69 @@ try:
         'recovery_action': 'none',  # overwritten by §4e-ii divergence detection each cycle
     }
     # Write to _state branch
-    state_wt = os.path.join(tempfile.gettempdir(), 'otherness-pred4e-' + str(os.getpid()))
-    try:
-        if os.path.exists(state_wt):
-            subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
-        subprocess.run(['git','worktree','add','--no-checkout',state_wt,'origin/_state'],
-                       capture_output=True, check=True)
-        target = os.path.join(state_wt, '.otherness', 'sim-prediction.json')
-        os.makedirs(os.path.dirname(target), exist_ok=True)
-        subprocess.run(['git','-C',state_wt,'checkout','_state','--','.otherness/sim-prediction.json'],
-                       capture_output=True)
-        json.dump(prediction, open(target, 'w'), indent=2)
-        subprocess.run(['git','-C',state_wt,'add',target], capture_output=True)
-        subprocess.run(['git','-C',state_wt,'commit',
-                        '-m', f'4e-calibration: sim-prediction.json (sm_cycle={sm_cycle})'],
-                       capture_output=True)
-        r = subprocess.run(['git','-C',state_wt,'push','origin','HEAD:_state'],
-                           capture_output=True)
-        if r.returncode == 0:
-            print(f"[SM §4e] sim-prediction.json written: floor={prs_floor}, ceiling={prs_ceiling}, arch_conv={arch_conv:.3f}")
-        else:
-            print("[SM §4e] sim-prediction.json push failed (non-fatal)")
-    except Exception as e:
-        print(f"[SM §4e] sim-prediction write error (non-fatal): {e}")
-    finally:
-        try:
-            subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
-        except: pass
-    subprocess.run(['git','worktree','prune'], capture_output=True)
+     state_wt = os.path.join(tempfile.gettempdir(), 'otherness-pred4e-' + str(os.getpid()))
+     try:
+         if os.path.exists(state_wt):
+             subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
+         subprocess.run(['git','worktree','add','--no-checkout',state_wt,'origin/_state'],
+                        capture_output=True, check=True)
+         target = os.path.join(state_wt, '.otherness', 'sim-prediction.json')
+         prev_target = os.path.join(state_wt, '.otherness', 'sim-prediction-prev.json')
+         os.makedirs(os.path.dirname(target), exist_ok=True)
+         subprocess.run(['git','-C',state_wt,'checkout','_state','--','.otherness/sim-prediction.json'],
+                        capture_output=True)
+
+         # §23 prediction DIFF: read previous prediction before overwriting (O1, O4 — graceful fallback)
+         prev_pred = {}
+         try:
+             if os.path.isfile(target):
+                 prev_pred = json.load(open(target))
+                 # Save copy as sim-prediction-prev.json (O1)
+                 import shutil as _shutil
+                 _shutil.copy2(target, prev_target)
+                 subprocess.run(['git','-C',state_wt,'add',prev_target], capture_output=True)
+         except Exception:
+             prev_pred = {}
+
+         # Compute prediction_diff block (O2)
+         _prev_floor = prev_pred.get('prs_floor', prediction.get('prs_floor', 0))
+         _prev_ceil  = prev_pred.get('prs_ceiling', prediction.get('prs_ceiling', 0))
+         _prev_arch  = prev_pred.get('arch_convergence', prediction.get('arch_convergence', 0)) or 0
+         _prev_act   = prev_pred.get('recovery_action', 'none')
+         _prev_cal   = prev_pred.get('calibrated_at', None)
+         _curr_floor = prediction.get('prs_floor', 0)
+         _curr_ceil  = prediction.get('prs_ceiling', 0)
+         _curr_arch  = prediction.get('arch_convergence', 0) or 0
+         _curr_act   = prediction.get('recovery_action', 'none')
+         prediction['prediction_diff'] = {
+             'floor_delta': _curr_floor - _prev_floor,
+             'ceiling_delta': _curr_ceil - _prev_ceil,
+             'arch_convergence_delta': round(_curr_arch - _prev_arch, 4),
+             'recovery_action_changed': _prev_act != _curr_act,
+             'prev_calibrated_at': _prev_cal,
+         }
+         print(f"[SM §4e] prediction_diff: floor±{prediction['prediction_diff']['floor_delta']} "
+               f"ceiling±{prediction['prediction_diff']['ceiling_delta']} "
+               f"arch±{prediction['prediction_diff']['arch_convergence_delta']}")
+
+         json.dump(prediction, open(target, 'w'), indent=2)
+         subprocess.run(['git','-C',state_wt,'add',target], capture_output=True)
+         subprocess.run(['git','-C',state_wt,'commit',
+                         '-m', f'4e-calibration: sim-prediction.json (sm_cycle={sm_cycle})'],
+                        capture_output=True)
+         r = subprocess.run(['git','-C',state_wt,'push','origin','HEAD:_state'],
+                            capture_output=True)
+         if r.returncode == 0:
+             print(f"[SM §4e] sim-prediction.json written: floor={prs_floor}, ceiling={prs_ceiling}, arch_conv={arch_conv:.3f}")
+         else:
+             print("[SM §4e] sim-prediction.json push failed (non-fatal)")
+     except Exception as e:
+         print(f"[SM §4e] sim-prediction write error (non-fatal): {e}")
+     finally:
+         try:
+             subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
+         except: pass
+     subprocess.run(['git','worktree','prune'], capture_output=True)
 except Exception as e:
     print(f"[SM §4e] sim-prediction simulation error (non-fatal): {e}")
 PREDEOF
@@ -3465,6 +3500,36 @@ if [ "${SIM_CALIB_DAYS:-0}" -gt 14 ] 2>/dev/null; then
   echo "[SM §4f] Sim calibration stale (${SIM_CALIB_LABEL}) — HEALTH set to AMBER"
 fi
 
+# §23 prediction DIFF: read prediction_diff from sim-prediction.json (O3)
+SIM_DELTA=$(python3 - <<'SIMDELTA_EOF'
+import subprocess, json, sys
+
+try:
+    r = subprocess.run(
+        ['git', 'show', 'origin/_state:.otherness/sim-prediction.json'],
+        capture_output=True, text=True, timeout=10)
+    if r.returncode != 0:
+        print('(no prediction)')
+        sys.exit(0)
+    data = json.loads(r.stdout.strip())
+    diff = data.get('prediction_diff')
+    if not diff:
+        print('(first calibration)')
+        sys.exit(0)
+    fd = diff.get('floor_delta', 0)
+    cd = diff.get('ceiling_delta', 0)
+    ad = diff.get('arch_convergence_delta', 0)
+    ra_changed = diff.get('recovery_action_changed', False)
+    prev_act = data.get('recovery_action', '?')
+    # Format deltas with sign
+    def fmt(n): return f'+{n}' if n > 0 else str(n)
+    act_str = f'→{prev_act}' if ra_changed else 'unchanged'
+    print(f'floor {fmt(fd)} | ceiling {fmt(cd)} | conv {fmt(ad)} | action {act_str}')
+except Exception as e:
+    print(f'(n/a: {e})')
+SIMDELTA_EOF
+)
+
 # Chores count: MERGED minus VISION_PRS (non-negative)
 CHORES_COUNT=$(python3 -c "
 merged = int('${MERGED:-0}') if '${MERGED:-0}'.isdigit() else 0
@@ -3820,6 +3885,7 @@ REPORT_BODY=$(cat <<BODY_EOF
 | Queue | ${TODO_COUNT:-0} todo | in-review: ${IN_REVIEW:-0} |
 | Last PR | ${_LAST_PR_DISPLAY} | |
 | Sim calibrated | ${SIM_CALIB_LABEL:-unknown} | ${SIM_CALIB_WARN:-ok} |
+| Sim delta | ${SIM_DELTA:-(no data)} | |
 | Needs-human | ${NEEDS_HUMAN_COUNT:-0} open | ${ACTION:-continue} |
 | Managed | ${MANAGED_VELOCITY_LABEL:-unknown} | ${MANAGED_VELOCITY_WARN:-} |
 ${METRICS_TREND:+
