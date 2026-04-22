@@ -1286,7 +1286,7 @@
       "pr_number": 0
     },
     "issue-938": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 36.1",
       "labels": [
         "priority/medium",
@@ -1294,7 +1294,9 @@
         "otherness",
         "size/s",
         "kind/enhancement"
-      ]
+      ],
+      "pr_merged": true,
+      "done_at": "2026-04-22T23:50:46Z"
     }
   },
   "session_heartbeats": {
