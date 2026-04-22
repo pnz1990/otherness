@@ -133,7 +133,30 @@ mkdir -p "$MY_WORKTREE/.specify/specs/$ITEM_ID"
 
 ---
 
-## 2c. Customer doc check
+## 2c. Skill-loading confirmation (MANDATORY — design doc 31 §Future → ✅)
+
+Before writing any code or customer doc, confirm which skills were loaded.
+
+```bash
+# List available skills
+ls ~/.otherness/agents/skills/*.md 2>/dev/null | grep -v PROVENANCE | grep -v README
+
+# [AI-STEP] Review the list above. Select the most applicable skill(s) for this item type:
+# - feat/enhancement → agent-coding-discipline.md, declaring-designs.md
+# - bug/fix → reconciling-implementations.md, agent-responsibility.md
+# - PR/commit → contribution-hygiene.md, ephemeral-pr-artifacts.md
+# - learn/skills → autonomous-workflow-patterns.md
+# Log your selection — this text MUST appear in the PR description:
+#   Loaded skill: `<filename>`
+# Example:
+#   Loaded skill: `agent-coding-discipline.md`
+#   Loaded skill: `declaring-designs.md`
+#
+# SM §4b-skill-citation checks that ≥3 of the last 5 feat/* PRs include this line.
+# A missing "Loaded skill:" line counts as 0 for that PR.
+```
+
+## 2c-customer. Customer doc check
 
 ```bash
 # If this item adds or changes user-visible behavior:
