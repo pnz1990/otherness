@@ -137,13 +137,13 @@ releases:
 
 ## Present (✅)
 
-*(Nothing shipped yet.)*
+- ✅ 40.1 — PM §5o: patch release trigger — 7-day age + ≥3 fix/security/chore PRs + no feat PRs + CI green + no NEEDS HUMAN. Auto-cut patch with `gh release create --generate-notes`. Opt-out via `releases.enabled: false`. (PR #TBD, 2026-04-22)
 
 ---
 
 ## Future (🔲)
 
-- 🔲 40.1 — SM §4h / PM §5l: patch release trigger — 7-day age + ≥3 fix/security/chore PRs + no feat PRs + CI green + no NEEDS HUMAN. Auto-cut patch with `gh release create --generate-notes`.
+- 🔲 40.2 — PM §5l: minor release trigger — 7-day age + ≥3 feat PRs + ≥1 new Present item since tag + CI green + no open feature PRs. Auto-cut minor with curated summary section.
 - 🔲 40.2 — PM §5l: minor release trigger — 7-day age + ≥3 feat PRs + ≥1 new Present item since tag + CI green + no open feature PRs. Auto-cut minor with curated summary section.
 - 🔲 40.3 — PM §5l: major release detection — detect breaking API changes or architectural pivots. Open `needs-human kind/release` issue with draft release notes. Never cut autonomously.
 - 🔲 40.4 — PM §5l: release notes template — curated summary above `--generate-notes` output. Group feat PRs by design doc area. Include "Upgrading" section from AGENTS.md breaking changes.
