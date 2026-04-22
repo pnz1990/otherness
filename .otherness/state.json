@@ -666,7 +666,7 @@
       "issue": "763"
     },
     "issue-758": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 42.1",
       "labels": [
         "priority/medium",
@@ -675,7 +675,9 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "758"
+      "issue": "758",
+      "pr_merged": true,
+      "done_at": "2026-04-22T05:30:35Z"
     },
     "issue-756": {
       "state": "todo",
@@ -786,8 +788,8 @@
       "issue": "725"
     },
     "issue-724": {
-      "state": "todo",
-      "title": "feat: 38.3",
+      "state": "done",
+      "title": "feat(qa): 38.3 \u2014 CI fix loop",
       "labels": [
         "priority/medium",
         "area/agent-loop",
@@ -795,10 +797,13 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "724"
+      "issue": "724",
+      "pr_merged": true,
+      "pr_num": 824,
+      "done_at": "2026-04-22T03:17:16Z"
     },
     "issue-723": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 37.2",
       "labels": [
         "priority/medium",
@@ -807,10 +812,12 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "723"
+      "issue": "723",
+      "pr_merged": true,
+      "done_at": "2026-04-22T05:14:36Z"
     },
     "issue-722": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 36.2",
       "labels": [
         "priority/medium",
@@ -819,10 +826,14 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "722"
+      "issue": "722",
+      "pr_number": 822,
+      "pr_merged": true,
+      "pr_num": 822,
+      "done_at": "2026-04-22T03:00:00Z"
     },
     "issue-719": {
-      "state": "in_review",
+      "state": "done",
       "title": "feat: Metrics trend surfacing in SM health comment",
       "labels": [
         "priority/medium",
@@ -833,7 +844,10 @@
       "priority": "medium",
       "issue": "719",
       "pr_number": "819",
-      "assigned_to": "sess-fac66d42"
+      "assigned_to": "sess-fac66d42",
+      "pr_merged": true,
+      "pr_num": 819,
+      "done_at": "2026-04-22T02:00:00Z"
     },
     "issue-702": {
       "state": "todo",
@@ -898,14 +912,18 @@
       "cycle": 1
     }
   },
-  "pm_cycle_count": 4,
+  "pm_cycle_count": 5,
   "vision_aligned": true,
   "consecutive_vision_misaligned": 0,
-  "sm_cycle_count": 95,
+  "sm_cycle_count": 96,
   "managed_feat_stall_count": 0,
   "self_feat_prs_7d": 38,
   "managed_feat_prs_7d": 62,
   "last_session_id": "sess-b4417de5",
   "last_session_at": "2026-04-21T22:35:46Z",
-  "housekeeping_streak": 0
+  "housekeeping_streak": 0,
+  "last_session_health": "GREEN",
+  "last_session_prs": 1,
+  "last_session_vision_backed": 1,
+  "report_issue": 827
 }
