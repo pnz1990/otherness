@@ -577,6 +577,40 @@ HEALTH="GREEN"
 [ "${NEEDS_HUMAN:-0}" -gt 0 ] && HEALTH="AMBER ⚠️ (needs-human open)"
 [ "$CI_RED" = "YES" ] && HEALTH="RED 🔴 (main CI failing)"
 
+# §4b-competitive: read latest competitive standing row (design doc 17 §Future → ✅)
+# Fail-open: if file absent or no data rows, omit the line silently.
+COMPETITIVE_LINE=$(python3 - <<'COMP_EOF'
+import re, os
+try:
+    content = open('docs/aide/competitive-standing.md').read()
+    rows = [l for l in content.splitlines()
+            if re.match(r'^\|\s*\d{4}-\d{2}-\d{2}', l)]
+    if not rows:
+        raise ValueError("no data rows")
+    # Parse last row: | Date | Batch | Comparator | ... | delta |
+    last = rows[-1]
+    cells = [c.strip() for c in last.split('|')[1:-1]]
+    if len(cells) >= 8:
+        comparator = cells[2]
+        delta = cells[7]
+        date = cells[0]
+        # Compute batches ago (use BATCH_COUNT env if available)
+        batch_col = cells[1]
+        try:
+            batch_count = int(os.environ.get('BATCH_COUNT', '0') or '0')
+            row_batch = int(batch_col)
+            batches_ago = batch_count - row_batch
+        except Exception:
+            batches_ago = 0
+        suffix = f'{batches_ago} batch(es) ago' if batches_ago > 0 else 'this batch'
+        print(f'vs. {comparator}: {delta} (last checked: {suffix})')
+    else:
+        raise ValueError("malformed row")
+except Exception:
+    pass  # Fail-open: no output
+COMP_EOF
+)
+
 # Post the report — three questions, nothing more
 REPORT_BODY="[🔄 SDM | ${MY_SESSION_ID:-?} | otherness@${OTHERNESS_VERSION:-?}]
 
@@ -592,7 +626,8 @@ ${TODO_TOP:-  (queue empty — vision scan will refill)}
 **Q3 — Blocking?**
 $([ "${NEEDS_HUMAN:-0}" -gt 0 ] && echo "⚠️ Yes — $NEEDS_HUMAN needs-human issue(s):
 $NH_LIST" || echo "✅ Nothing blocking")
-$([ "$CI_RED" = "YES" ] && echo "🔴 Main branch CI is red" || true)"
+$([ "$CI_RED" = "YES" ] && echo "🔴 Main branch CI is red" || true)
+$([ -n "$COMPETITIVE_LINE" ] && echo "$COMPETITIVE_LINE" || true)"
 
 gh issue comment "$REPORT_ISSUE" --repo "$REPO" --body "$REPORT_BODY" 2>/dev/null
 echo "[SM §4b] Batch report posted"
