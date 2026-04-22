@@ -985,7 +985,7 @@
       "title": "fix: metrics schema-execution drift \u2014 data rows missing skills_count column"
     },
     "issue-882": {
-      "state": "in_review",
+      "state": "done",
       "title": "feat: COORD \u00a71e must refuse to claim a `kind/chore` item when no `kind/enhancement` or `kind/bug",
       "labels": [
         "priority/medium",
@@ -1002,7 +1002,9 @@
         "agents/",
         "scripts/"
       ],
-      "pr_number": 886
+      "pr_number": 902,
+      "pr_merged": true,
+      "done_at": "2026-04-22T13:09:00Z"
     },
     "issue-883": {
       "state": "todo",
@@ -1027,8 +1029,151 @@
       "priority": "medium"
     },
     "issue-885": {
+      "state": "done",
+      "title": "feat(metrics): add meaningful_prs_week velocity column \u2014 time-normalised delivery rate",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "assigned_to": "sess-82cfece1",
+      "assigned_at": "2026-04-22T12:40:55Z",
+      "branch": "feat/issue-885",
+      "worktree": "../otherness.issue-885",
+      "file_spaces": [
+        "agents/phases/",
+        "docs/aide/"
+      ],
+      "pr_number": 901,
+      "pr_merged": true,
+      "done_at": "2026-04-22T13:02:32Z"
+    },
+    "issue-889": {
       "state": "todo",
-      "title": "feat: Features-per-week velocity must be tracked as the primary speed signal",
+      "title": "feat: PM competitive comparison must produce a verifiable rubric artifact, not just `\u26a0\ufe0f Inferred",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-890": {
+      "state": "todo",
+      "title": "feat: Phase-role cognitive diversity",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-891": {
+      "state": "todo",
+      "title": "feat: 36.4",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-892": {
+      "state": "todo",
+      "title": "feat: 38.6",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-893": {
+      "state": "todo",
+      "title": "feat: 39.3",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-894": {
+      "state": "todo",
+      "title": "feat: 40.3",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-895": {
+      "state": "todo",
+      "title": "feat: 41.4",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-896": {
+      "state": "todo",
+      "title": "feat: 41.4",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-897": {
+      "state": "todo",
+      "title": "feat: 42.3",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-898": {
+      "state": "todo",
+      "title": "feat: 42.3",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-899": {
+      "state": "todo",
+      "title": "feat: 43.3",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-900": {
+      "state": "todo",
+      "title": "feat: 44.1",
       "labels": [
         "priority/medium",
         "area/agent-loop",
@@ -1073,21 +1218,26 @@
       "last_seen": "2026-04-22T11:41:09Z",
       "item": "issue-882",
       "cycle": 1
+    },
+    "sess-82cfece1": {
+      "last_seen": "2026-04-22T13:09:51Z",
+      "item": "complete",
+      "cycle": 1
     }
   },
   "pm_cycle_count": 6,
   "vision_aligned": true,
   "consecutive_vision_misaligned": 0,
-  "sm_cycle_count": 98,
+  "sm_cycle_count": 99,
   "managed_feat_stall_count": 0,
   "self_feat_prs_7d": 38,
   "managed_feat_prs_7d": 62,
-  "last_session_id": "sess-d7c168c2",
-  "last_session_at": "2026-04-22T06:59:42Z",
+  "last_session_id": "sess-82cfece1",
+  "last_session_at": "2026-04-22T13:09:51Z",
   "housekeeping_streak": 0,
   "last_session_health": "GREEN",
-  "last_session_prs": 1,
-  "last_session_vision_backed": 1,
+  "last_session_prs": 2,
+  "last_session_vision_backed": 2,
   "report_issue": 827,
   "batch_count": 2,
   "meaningful_pr_guarantee_failed": false
