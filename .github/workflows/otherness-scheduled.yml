@@ -135,17 +135,21 @@ jobs:
           AGENT_VERSION=$(python3 -c "
           import re
           for line in open('otherness-config.yaml'):
-              m = re.match(r'^\s+agent_version:\s*[\"\'']?([^\"\'#\n\s]+)[\"\'']?', line)
-              if m and m.group(1) not in ('','\"\"',\"''\"):
-                  print(m.group(1)); break
+              m = re.match(r'^\s+agent_version:\s*(.+)', line)
+              if m:
+                  val = m.group(1).split('#')[0].strip().strip('\"').strip(\"'\")
+                  if val and val not in ('', '\"\"', \"''\"):
+                      print(val); break
           " 2>/dev/null || echo "")
 
           UPGRADE_POLICY=$(python3 -c "
           import re
           for line in open('otherness-config.yaml'):
-              m = re.match(r'^\s+upgrade_policy:\s*[\"\'']?([^\"\'#\n\s]+)[\"\'']?', line)
-              if m and m.group(1) not in ('','\"\"',\"''\"):
-                  print(m.group(1)); break
+              m = re.match(r'^\s+upgrade_policy:\s*(.+)', line)
+              if m:
+                  val = m.group(1).split('#')[0].strip().strip('\"').strip(\"'\")
+                  if val and val not in ('', '\"\"', \"''\"):
+                      print(val); break
           " 2>/dev/null || echo "")
 
           echo "[otherness] agent_version=${AGENT_VERSION:-unset} upgrade_policy=${UPGRADE_POLICY:-none}"
