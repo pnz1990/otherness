@@ -611,7 +611,7 @@
       "note": "already done per design doc"
     },
     "issue-808": {
-      "state": "todo",
+      "state": "assigned",
       "title": "feat: Queue composition audit must run every 10 batches and post a plain-language summary: COORD",
       "labels": [
         "priority/medium",
@@ -623,7 +623,15 @@
       "priority": "medium",
       "issue": "808",
       "blocked": true,
-      "blocked_reason": "Deprioritised per design doc 45"
+      "blocked_reason": "Deprioritised per design doc 45",
+      "assigned_to": "sess-9c950add",
+      "assigned_at": "2026-04-22T23:28:09Z",
+      "branch": "feat/issue-808",
+      "worktree": "../otherness.issue-808",
+      "file_spaces": [
+        "agents/",
+        "scripts/"
+      ]
     },
     "issue-807": {
       "state": "done",
@@ -1220,7 +1228,7 @@
       "done_at": "2026-04-22T22:37:53Z"
     },
     "issue-929": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Workflow disabled detection from within the loop: when a scheduled workflow is disabled vi",
       "labels": [
         "priority/medium",
@@ -1228,10 +1236,12 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-22T23:33:35Z"
     },
     "issue-930": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Skill load verification: ENG must confirm which skills were loaded before implementation",
       "labels": [
         "priority/medium",
@@ -1239,10 +1249,12 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-22T23:37:43Z"
     },
     "issue-931": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Onboarding generates `docs/design/` stubs from real codebase analysis: `/otherness.onboard",
       "labels": [
         "priority/medium",
@@ -1250,7 +1262,41 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-22T23:40:59Z"
+    },
+    "issue-939": {
+      "state": "in_review",
+      "title": "feat: 39.4",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "assigned_to": "sess-9c950add",
+      "assigned_at": "2026-04-22T23:45:06Z",
+      "branch": "feat/issue-939",
+      "worktree": "../otherness.issue-939",
+      "file_spaces": [
+        "agents/"
+      ],
+      "pr_number": 0
+    },
+    "issue-938": {
+      "state": "done",
+      "title": "feat: 36.1",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "pr_merged": true,
+      "done_at": "2026-04-22T23:50:46Z"
     }
   },
   "session_heartbeats": {
@@ -1303,12 +1349,17 @@
       "last_seen": "2026-04-22T22:28:10Z",
       "item": "issue-895",
       "cycle": 1
+    },
+    "sess-9c950add": {
+      "last_seen": "2026-04-22T23:43:24Z",
+      "item": "coord",
+      "cycle": 2
     }
   },
-  "pm_cycle_count": 9,
+  "pm_cycle_count": 11,
   "vision_aligned": true,
   "consecutive_vision_misaligned": 0,
-  "sm_cycle_count": 101,
+  "sm_cycle_count": 102,
   "managed_feat_stall_count": 0,
   "self_feat_prs_7d": 38,
   "managed_feat_prs_7d": 62,
@@ -1319,7 +1370,7 @@
   "last_session_prs": 1,
   "last_session_vision_backed": 1,
   "report_issue": 827,
-  "batch_count": 2,
+  "batch_count": 4,
   "meaningful_pr_guarantee_failed": false,
   "sm_batch_count": 1,
   "last_sm_run": "2026-04-22T21:46:36Z"
