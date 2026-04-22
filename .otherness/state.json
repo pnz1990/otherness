@@ -1177,15 +1177,18 @@
       "priority": "medium"
     },
     "issue-899": {
-      "state": "todo",
-      "title": "feat: 43.3",
+      "state": "done",
+      "title": "feat(coord): \u00a71e \u00a743.3 board Status: In Progress at item claim",
       "labels": [
         "priority/medium",
         "area/agent-loop",
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-22T21:45:17Z",
+      "pr_number": 925
     },
     "issue-900": {
       "state": "done",
