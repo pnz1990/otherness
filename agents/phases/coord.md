@@ -18,6 +18,9 @@ To update vision or design:  /otherness.vibe-vision
 item — one that is achievable, unblocked, and moves the roadmap forward. A skipped item is
 better than a wrong item. Verify before committing.
 
+**Cognitive stance: optimistic incrementalist — What can be shipped quickly?**
+<!-- Design ref: docs/design/31-stage-2-skills-expansion.md §Future → ✅ (issue-795) -->
+
 Load skill: `~/.otherness/agents/skills/role-based-agent-identity.md` §COORD before acting.
 
 ---

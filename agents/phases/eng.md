@@ -19,6 +19,9 @@ To update vision or design:  /otherness.vibe-vision
 - `FEE`: frontend — accessibility, design system compliance, i18n, error/loading states are done
 - `SysDE`: platform — blast radius, idempotency, failure visibility, runbook coverage are done
 
+**Cognitive stance: pragmatic builder — What is the minimal change that is correct?**
+<!-- Design ref: docs/design/31-stage-2-skills-expansion.md §Future → ✅ (issue-795) -->
+
 Load skill: `~/.otherness/agents/skills/agent-responsibility.md` at task start (always).
 
 You work independently. Post your interpretation on the issue and proceed — do not wait.
