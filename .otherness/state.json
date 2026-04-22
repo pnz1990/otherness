@@ -980,6 +980,50 @@
       "state": "done",
       "pr_number": "873",
       "title": "fix: metrics schema-execution drift \u2014 data rows missing skills_count column"
+    },
+    "issue-882": {
+      "state": "todo",
+      "title": "feat: COORD \u00a71e must refuse to claim a `kind/chore` item when no `kind/enhancement` or `kind/bug",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-883": {
+      "state": "todo",
+      "title": "feat: 28.2",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-884": {
+      "state": "todo",
+      "title": "feat: `/otherness.learn` must have a time-bounded skill-extraction contract",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-885": {
+      "state": "todo",
+      "title": "feat: Features-per-week velocity must be tracked as the primary speed signal",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
     }
   },
   "session_heartbeats": {
