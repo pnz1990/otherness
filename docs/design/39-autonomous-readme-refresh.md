@@ -81,13 +81,13 @@ PM §5k (new step, runs every 10 PM cycles):
 ## Present (✅)
 
 - ✅ 39.1 — PM §5l: staleness score computation — days since modified, feat PRs since, missing Present items, missing commands. Score = days_stale/30 + feat_prs_since/5 + missing_present/3 + missing_commands×2. Threshold: score ≥ 2.0. Opt-out via `pm.readme_refresh: false`. Reports to REPORT_ISSUE. (PR #829, 2026-04-22)
+- ✅ 39.3 — PM §5k: open README refresh PR with staleness score in body, labeled `kind/docs priority/low size/s`. Duplicate suppression: at most one open refresh PR at a time (>7 days old gets a follow-up comment). Writes `<!-- last-refreshed: YYYY-MM-DD -->` as placeholder until 39.2 ships. (PR #893)
 
 ---
 
 ## Future (🔲)
 
 - 🔲 39.2 — PM §5l: README refresh AI step — rewrite using vision.md, roadmap.md, Present items, recent PR titles as context. Preserve structure, update content.
-- 🔲 39.3 — PM §5k: open README refresh PR with staleness score in body, labeled `kind/docs priority/low size/s`.
 - 🔲 39.4 — PM §5k: duplicate suppression — check for open README refresh PR before creating another. At most one open at a time.
 - 🔲 39.5 — validate.sh check: README last-modified date recorded in a comment at top of README (e.g. `<!-- last-refreshed: 2026-04-20 -->`). validate.sh fails if no such comment exists and README is >90 days old.
 

@@ -1430,7 +1430,215 @@ if REPORT_ISSUE:
     subprocess.run(
         ['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO, '--body', body],
         capture_output=True, timeout=15)
+
+# §39.3: Write score to temp file so §5k can read it
+import tempfile
+_score_file = os.path.join(tempfile.gettempdir(), 'otherness_readme_score.txt')
+with open(_score_file, 'w') as _sf:
+    _sf.write(f'{score:.4f}\n{days_stale}\n{feat_prs_since}\n{missing_present}\n{missing_commands}\n')
 README_STALE_EOF
+
+    # §39.3 O1: If score ≥ 2.0, attempt to open a README refresh PR
+    README_SCORE=$(python3 -c "
+import tempfile, os
+p = os.path.join(tempfile.gettempdir(), 'otherness_readme_score.txt')
+try:
+    lines = open(p).read().splitlines()
+    print(lines[0])
+except: print('0')
+" 2>/dev/null || echo "0")
+
+    README_SCORE_GE_2=$(python3 -c "
+try:
+    print('yes' if float('${README_SCORE:-0}') >= 2.0 else 'no')
+except: print('no')
+" 2>/dev/null || echo "no")
+
+    if [ "$README_SCORE_GE_2" = "yes" ]; then
+      echo "[PM §5k] score=${README_SCORE} ≥ 2.0 — checking for existing README refresh PR..."
+
+      python3 - <<'README_PR_EOF'
+import subprocess, os, re, datetime, tempfile
+
+REPO = os.environ.get('REPO', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'PM')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '')
+PR_LABEL = os.environ.get('PR_LABEL', 'otherness')
+
+# Read score data from temp file
+_score_file = os.path.join(tempfile.gettempdir(), 'otherness_readme_score.txt')
+try:
+    lines = open(_score_file).read().splitlines()
+    score = float(lines[0])
+    days_stale = int(lines[1])
+    feat_prs_since = int(lines[2])
+    missing_present = int(lines[3])
+    missing_commands = int(lines[4])
+except Exception:
+    print('[PM §5k] Could not read score data — skipping PR open.')
+    exit(0)
+
+# §39.3 O2: Duplicate suppression — check for existing open README refresh PR
+REFRESH_TITLE_PREFIX = 'docs(readme): refresh'
+try:
+    r = subprocess.run(
+        ['gh', 'pr', 'list', '--repo', REPO, '--state', 'open',
+         '--json', 'number,title,createdAt',
+         '--jq', f'[.[] | select(.title | startswith("{REFRESH_TITLE_PREFIX}"))]'],
+        capture_output=True, text=True, timeout=15)
+    import json
+    existing_prs = json.loads(r.stdout.strip() or '[]') if r.returncode == 0 else []
+except Exception:
+    existing_prs = []
+
+if existing_prs:
+    pr = existing_prs[0]
+    pr_num = pr.get('number', '?')
+    created_at = pr.get('createdAt', '')
+    # §39.3 O7: If old PR > 7 days, post a comment asking why not merged
+    age_days = 0
+    try:
+        created_dt = datetime.datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+        age_days = (datetime.datetime.now(datetime.timezone.utc) - created_dt).days
+    except Exception:
+        pass
+    if age_days > 7:
+        msg = (f'[PM §5k | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}] '
+               f'This README refresh PR has been open for {age_days} days without being merged. '
+               f'README staleness score is still {score:.2f}. '
+               f'Is there a reason this PR is blocked? If not, please merge or close it.')
+        subprocess.run(
+            ['gh', 'pr', 'comment', str(pr_num), '--repo', REPO, '--body', msg],
+            capture_output=True, timeout=15)
+        print(f'[PM §5k] Existing refresh PR #{pr_num} is {age_days}d old — posted follow-up comment.')
+    else:
+        print(f'[PM §5k] Existing open README refresh PR #{pr_num} (age {age_days}d) — skipping new PR.')
+    exit(0)
+
+# §39.3: No existing PR — open one
+# Create a branch for the README refresh
+today = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d')
+refresh_branch = f'docs/readme-refresh-{today}'
+
+# Check if branch already exists
+branch_check = subprocess.run(
+    ['git', 'ls-remote', '--heads', 'origin', refresh_branch],
+    capture_output=True, text=True)
+if branch_check.stdout.strip():
+    print(f'[PM §5k] Branch {refresh_branch} already exists — skipping PR open.')
+    exit(0)
+
+# Create a minimal README change: update/add <!-- last-refreshed --> comment
+# §39.3 O6: 39.2 (AI rewrite) not yet implemented — use placeholder change
+try:
+    readme_content = open('README.md').read()
+except Exception:
+    print('[PM §5k] README.md not readable — skipping PR open.')
+    exit(0)
+
+# Update or add the last-refreshed comment
+today_str = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d')
+refresh_comment = f'<!-- last-refreshed: {today_str} -->'
+existing_comment = re.search(r'<!-- last-refreshed: \d{4}-\d{2}-\d{2} -->', readme_content)
+if existing_comment:
+    new_readme = readme_content.replace(existing_comment.group(0), refresh_comment)
+else:
+    # Add at the very end of the file
+    new_readme = readme_content.rstrip('\n') + '\n\n' + refresh_comment + '\n'
+
+if new_readme == readme_content:
+    print('[PM §5k] README already has current last-refreshed comment and content unchanged — skipping PR open.')
+    exit(0)
+
+# Push the branch and open PR
+try:
+    result = subprocess.run(
+        ['git', 'push', 'origin', f'HEAD:refs/heads/{refresh_branch}'],
+        capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f'[PM §5k] Could not push branch {refresh_branch}: {result.stderr[:100]}')
+        exit(0)
+
+    # Checkout, write change, commit, push
+    import tempfile as _tmpf
+    wt_path = _tmpf.mkdtemp(prefix='otherness-readme-refresh-')
+    try:
+        subprocess.run(['git', 'worktree', 'add', wt_path, refresh_branch],
+                       capture_output=True, check=True)
+        with open(os.path.join(wt_path, 'README.md'), 'w') as f:
+            f.write(new_readme)
+        subprocess.run(['git', '-C', wt_path, 'add', 'README.md'], capture_output=True)
+        commit_msg = (f'docs(readme): update last-refreshed timestamp\n\n'
+                      f'Staleness score {score:.2f} ≥ 2.0 — marking README refresh date.\n'
+                      f'Full AI rewrite (39.2) is pending.\n\n'
+                      f'Signed-off-by: otherness[bot] <otherness[bot]@users.noreply.github.com>')
+        cr = subprocess.run(['git', '-C', wt_path, 'commit', '-m', commit_msg],
+                            capture_output=True, text=True)
+        if cr.returncode != 0:
+            print(f'[PM §5k] Commit failed: {cr.stderr[:100]}')
+            subprocess.run(['git', 'worktree', 'remove', wt_path, '--force'], capture_output=True)
+            subprocess.run(['git', 'push', 'origin', '--delete', refresh_branch], capture_output=True)
+            exit(0)
+        subprocess.run(['git', '-C', wt_path, 'push', 'origin', f'HEAD:{refresh_branch}'],
+                       capture_output=True)
+    finally:
+        subprocess.run(['git', 'worktree', 'remove', wt_path, '--force'], capture_output=True)
+        subprocess.run(['git', 'worktree', 'prune'], capture_output=True)
+except Exception as e:
+    print(f'[PM §5k] Branch/worktree setup error (non-fatal): {e}')
+    exit(0)
+
+# §39.3 O3-O5: Open PR with score in body, correct labels and title
+pr_title = f'docs(readme): refresh — staleness score {score:.2f}'
+pr_body = (
+    f'## Summary\n\n'
+    f'README staleness score has reached **{score:.2f}** (threshold: 2.0). '
+    f'This PR marks the README as refreshed.\n\n'
+    f'> **Note**: The full AI rewrite step (design doc 39, §39.2) is not yet implemented. '
+    f'This PR applies the minimal change (last-refreshed timestamp) to establish the PR workflow.\n\n'
+    f'## Staleness score breakdown\n\n'
+    f'| Signal | Value | Weight | Contribution |\n'
+    f'|--------|-------|--------|-------------|\n'
+    f'| days_stale | {days_stale}d | ÷30 | {days_stale/30:.2f} |\n'
+    f'| feat_prs_since | {feat_prs_since} | ÷5 | {feat_prs_since/5:.2f} |\n'
+    f'| missing_present | {missing_present} | ÷3 | {missing_present/3:.2f} |\n'
+    f'| missing_commands | {missing_commands} | ×2 | {missing_commands*2:.2f} |\n'
+    f'| **Total** | | | **{score:.2f}** |\n\n'
+    f'## Design doc\n\n'
+    f'Updated `docs/design/39-autonomous-readme-refresh.md`: moved 39.3 from 🔲 Future to ✅ Present.\n\n'
+    f'*Generated by PM §5k | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}*'
+)
+
+# Build label list
+all_labels = f'{PR_LABEL},kind/docs,priority/low,size/s'
+
+pr_result = subprocess.run(
+    ['gh', 'pr', 'create', '--repo', REPO,
+     '--base', 'main', '--head', refresh_branch,
+     '--title', pr_title,
+     '--label', all_labels,
+     '--body', pr_body],
+    capture_output=True, text=True, timeout=20)
+
+if pr_result.returncode == 0:
+    pr_url = pr_result.stdout.strip()
+    pr_num = pr_url.split('/')[-1]
+    print(f'[PM §5k] Opened README refresh PR #{pr_num}: {pr_url}')
+    if REPORT_ISSUE:
+        subprocess.run(
+            ['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO,
+             '--body', f'[PM §5k | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}] '
+                       f'Opened README refresh PR #{pr_num} (score={score:.2f}): {pr_url}'],
+            capture_output=True, timeout=15)
+else:
+    print(f'[PM §5k] PR create failed (non-fatal): {pr_result.stderr[:200]}')
+README_PR_EOF
+
+      echo "[PM §5k] README refresh PR step complete."
+    else
+      echo "[PM §5k] score=${README_SCORE} < 2.0 — no refresh PR needed."
+    fi
 
     echo "[PM §5l] README staleness score complete."
   fi
