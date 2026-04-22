@@ -611,7 +611,7 @@
       "note": "already done per design doc"
     },
     "issue-808": {
-      "state": "todo",
+      "state": "assigned",
       "title": "feat: Queue composition audit must run every 10 batches and post a plain-language summary: COORD",
       "labels": [
         "priority/medium",
@@ -623,7 +623,15 @@
       "priority": "medium",
       "issue": "808",
       "blocked": true,
-      "blocked_reason": "Deprioritised per design doc 45"
+      "blocked_reason": "Deprioritised per design doc 45",
+      "assigned_to": "sess-9c950add",
+      "assigned_at": "2026-04-22T23:28:09Z",
+      "branch": "feat/issue-808",
+      "worktree": "../otherness.issue-808",
+      "file_spaces": [
+        "agents/",
+        "scripts/"
+      ]
     },
     "issue-807": {
       "state": "done",
@@ -1302,6 +1310,11 @@
     "sess-5e236663": {
       "last_seen": "2026-04-22T22:28:10Z",
       "item": "issue-895",
+      "cycle": 1
+    },
+    "sess-9c950add": {
+      "last_seen": "2026-04-22T23:28:09Z",
+      "item": "issue-808",
       "cycle": 1
     }
   },
