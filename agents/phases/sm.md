@@ -1266,7 +1266,45 @@ except Exception:
 print(f'[SM §4c] Learn cadence: {days_since}d since last PROVENANCE.md entry (max={MAX_DAYS}d)')
 
 if days_since < MAX_DAYS:
-    print(f'[SM §4c] Learn cadence OK — {days_since}d < {MAX_DAYS}d floor. No action needed.')
+    # §884: Skill-extraction contract verification — PROVENANCE.md fresh is necessary but not sufficient.
+    # A learn session that wrote only PROVENANCE.md prose (no skill file, no REJECTION: entry)
+    # is a no-op session. Detect this and treat cadence as not satisfied.
+    skill_artifact_ok = True
+    try:
+        import os as _os
+        skills_dir = _os.path.expanduser('~/.otherness/agents/skills')
+        # Read last PROVENANCE.md entry (block starting with last ## date)
+        prov_content = open(_os.path.join(skills_dir, 'PROVENANCE.md')).read()
+        # Find the last dated block
+        blocks = re.split(r'^## (\d{4}-\d{2}-\d{2})', prov_content, flags=re.MULTILINE)
+        if len(blocks) >= 3:
+            last_block = blocks[-1]  # text of the last dated entry
+            # Check for REJECTION: entry
+            has_rejection = bool(re.search(r'^REJECTION:', last_block, re.MULTILINE))
+            # Check if any skill file was modified in git since the last PROVENANCE date
+            last_date_str = sorted(re.findall(r'^## (\d{4}-\d{2}-\d{2})', prov_content, re.MULTILINE))[-1]
+            git_r = subprocess.run(
+                ['git', '-C', skills_dir, 'log', '--since', last_date_str,
+                 '--name-only', '--format=', '--', '*.md'],
+                capture_output=True, text=True, timeout=10)
+            skill_files_changed = [
+                f for f in git_r.stdout.strip().splitlines()
+                if f and 'PROVENANCE' not in f and 'README' not in f
+            ]
+            has_skill_artifact = bool(skill_files_changed)
+            if not has_skill_artifact and not has_rejection:
+                skill_artifact_ok = False
+                print(f'[SM §4c] WARNING: PROVENANCE.md fresh ({days_since}d) but no skill artifact '
+                      f'and no REJECTION: entry in last block. Learn session may be a no-op.')
+    except Exception as _e:
+        pass  # fail-open: if we cannot check, assume OK
+
+    if skill_artifact_ok:
+        print(f'[SM §4c] Learn cadence OK — {days_since}d < {MAX_DAYS}d floor. No action needed.')
+    else:
+        print(f'[SM §4c] Cadence NOT satisfied: PROVENANCE.md fresh but no skill artifact. '
+              f'Treating as overdue — learn session needed.')
+        days_since = MAX_DAYS  # Force the overdue branch
 else:
     # Step 2: Check if a learn issue is already open or a learn branch is active
     try:

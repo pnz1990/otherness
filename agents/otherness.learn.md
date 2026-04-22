@@ -451,3 +451,68 @@ source material:
 - **Never internalize** patterns from projects that appear to be toy demos, marketing content,
   or AI-generated tutorials without human curation.
 - **Always commit** before exiting, even if only the provenance log was updated.
+
+---
+
+## Skill-extraction contract (design doc 31 §Future → ✅)
+
+Every learn session must satisfy this contract before closing the learn issue. Closing an issue without satisfying the contract means the cadence clock advances without genuine learning — this is the "learn session no-op" anti-pattern.
+
+### Contract obligations
+
+**C1 — Produce a skill artifact or document why you could not.**
+
+A skill artifact means:
+- A new `agents/skills/<name>.md` file (NEW_SKILL), OR
+- A meaningful addition (≥2 lines of new content) to an existing `agents/skills/<name>.md` file (EXTEND_SKILL)
+
+If neither is possible, document why in a `REJECTION:` entry in PROVENANCE.md:
+
+```
+## YYYY-MM-DD
+...
+REJECTION: <reason-code>
+Reason: <one-sentence explanation>
+```
+
+Valid reason codes:
+- `insufficient-patterns` — the repo had too few patterns to generalize
+- `skill-already-exists` — the pattern was already captured in an existing skill file
+- `too-project-specific` — the pattern is specific to the studied project, not transferable
+
+**C2 — If only PROVENANCE.md was updated (no skill file change, no REJECTION: entry): do NOT close the learn issue.**
+
+Post this comment on the learn issue:
+```
+⚠️ Learn session produced no skill artifact. Rejection reason: [code]. Issue kept open for next attempt.
+```
+
+Then leave the issue open. The next learn session will pick it up.
+
+**C3 — SM §4c confirms skill artifact before treating cycle as complete.**
+
+SM §4c reads the REJECTION: check from PROVENANCE.md. A PROVENANCE.md entry dated today that contains only prose (no skill file written, no REJECTION: entry) is treated as a no-op session — cadence is NOT reset.
+
+### How to check if you satisfied the contract
+
+```bash
+# Count skill files before and after
+BEFORE=$(ls ~/.otherness/agents/skills/*.md | grep -v PROVENANCE | grep -v README | wc -l)
+# ... (do the learn session) ...
+AFTER=$(ls ~/.otherness/agents/skills/*.md | grep -v PROVENANCE | grep -v README | wc -l)
+
+if [ "$AFTER" -gt "$BEFORE" ]; then
+  echo "Contract satisfied: new skill file added."
+elif git -C ~/.otherness diff --name-only HEAD agents/skills/ | grep -qv "PROVENANCE\|README"; then
+  echo "Contract satisfied: existing skill file extended."
+else
+  # Check for REJECTION: in latest PROVENANCE.md entry
+  REJECTION=$(tail -20 ~/.otherness/agents/skills/PROVENANCE.md | grep "^REJECTION:")
+  if [ -n "$REJECTION" ]; then
+    echo "Contract satisfied: REJECTION entry documented."
+  else
+    echo "Contract NOT satisfied — no skill artifact and no REJECTION entry."
+    echo "Do not close the learn issue. Comment on it and leave open."
+  fi
+fi
+```
