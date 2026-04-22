@@ -3553,9 +3553,20 @@ echo "[SM §4f] progress=${PROGRESS_CLASS} (vision_prs=${VISION_PRS:-0} merged=$
 # A non-advancing system must never show GREEN to the human.
 if [ "${PROGRESS_CLASS}" = "STABLE" ] || [ "${PROGRESS_CLASS}" = "STALLED" ]; then
   if [ "${HEALTH:-GREEN}" = "GREEN" ]; then
-    HEALTH="AMBER"
-    echo "[SM §4f] Health upgraded GREEN→AMBER: progress=${PROGRESS_CLASS}"
-  fi
+     HEALTH="AMBER"
+     echo "[SM §4f] Health upgraded GREEN→AMBER: progress=${PROGRESS_CLASS}"
+   fi
+fi
+
+# §4f: 0-meaningful-PRs honesty gate (design doc 21 §Future → ✅)
+# If MEANINGFUL_PRS == 0 AND HEALTH is still GREEN: upgrade to AMBER.
+# GREEN must mean "shipped real work" — not just "CI passed and queue was non-empty."
+# Does not override RED. Fail-open: unset MEANINGFUL_PRS treated as non-zero.
+_MEANINGFUL_WARN=""
+if [ "${MEANINGFUL_PRS:-1}" = "0" ] && [ "${HEALTH:-GREEN}" = "GREEN" ]; then
+  HEALTH="AMBER"
+  _MEANINGFUL_WARN="⚠️ AMBER — 0 meaningful PRs this session (chore-only or zero-ship)"
+  echo "[SM §4f] Health GREEN→AMBER: MEANINGFUL_PRS=0"
 fi
 
 # §4f: Simulation calibration staleness check (design doc 23 §Future → ✅)
@@ -4013,12 +4024,13 @@ REPORT_BODY=$(cat <<BODY_EOF
 | PRs shipped | ${MEANINGFUL_PRS:-0} meaningful (${MERGED:-0} total) | vision ${_VISION_RATIO} |
 | Queue | ${TODO_COUNT:-0} todo | in-review: ${IN_REVIEW:-0} |
 | Last PR | ${_LAST_PR_DISPLAY} | |
-| Skills | ${SKILLS_COUNT:-?} skill files | last learn: ${LAST_LEARN:-unknown} |
-| Sim calibrated | ${SIM_CALIB_LABEL:-unknown} | ${SIM_CALIB_WARN:-ok} |
-| Sim delta | ${SIM_DELTA:-(no data)} | |
-| Needs-human | ${NEEDS_HUMAN_COUNT:-0} open | ${ACTION:-continue} |
-| Managed | ${MANAGED_VELOCITY_LABEL:-unknown} | ${MANAGED_VELOCITY_WARN:-} |
-${METRICS_TREND:+
+ | Skills | ${SKILLS_COUNT:-?} skill files | last learn: ${LAST_LEARN:-unknown} |
+ | Sim calibrated | ${SIM_CALIB_LABEL:-unknown} | ${SIM_CALIB_WARN:-ok} |
+ | Sim delta | ${SIM_DELTA:-(no data)} | |
+ | Needs-human | ${NEEDS_HUMAN_COUNT:-0} open | ${ACTION:-continue} |
+ | Managed | ${MANAGED_VELOCITY_LABEL:-unknown} | ${MANAGED_VELOCITY_WARN:-} |
+${_MEANINGFUL_WARN:+| Honesty gate | ${_MEANINGFUL_WARN} | |
+}${METRICS_TREND:+
 > ${METRICS_TREND}}
 BODY_EOF
 )
