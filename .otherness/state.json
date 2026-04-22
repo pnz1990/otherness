@@ -1265,6 +1265,36 @@
       "priority": "medium",
       "pr_merged": true,
       "done_at": "2026-04-22T23:40:59Z"
+    },
+    "issue-939": {
+      "state": "in_review",
+      "title": "feat: 39.4",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "assigned_to": "sess-9c950add",
+      "assigned_at": "2026-04-22T23:45:06Z",
+      "branch": "feat/issue-939",
+      "worktree": "../otherness.issue-939",
+      "file_spaces": [
+        "agents/"
+      ],
+      "pr_number": 0
+    },
+    "issue-938": {
+      "state": "todo",
+      "title": "feat: 36.1",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ]
     }
   },
   "session_heartbeats": {
@@ -1319,9 +1349,9 @@
       "cycle": 1
     },
     "sess-9c950add": {
-      "last_seen": "2026-04-22T23:28:09Z",
-      "item": "issue-808",
-      "cycle": 1
+      "last_seen": "2026-04-22T23:43:24Z",
+      "item": "coord",
+      "cycle": 2
     }
   },
   "pm_cycle_count": 10,
