@@ -275,11 +275,11 @@ accidental PII exposure in traces. This is not configurable by the agent.
 - ✅ Design doc written with four-layer model (2026-04-21)
 - ✅ AWS backend recommendation updated to include AMP + AMG (2026-04-21)
 - ✅ Prometheus clarification: accepts OTLP metrics, not traces (2026-04-21)
+- ✅ 44.1 — `otherness-config-template.yaml`: `observability.otlp` section added (backend, enabled, service_name, endpoint_secret, headers_secret) (PR #901, 2026-04-22)
 
 ## Future (🔲)
 
 **Layer 1 — Session telemetry (OTLP)**
-- 🔲 44.1 — `otherness-config-template.yaml`: add `observability.otlp` section (backend, enabled, service_name, endpoint_secret, headers_secret)
 - 🔲 44.2 — `otherness-scheduled.yml` Step 3: read OTLP config; if enabled + secrets present: inject `experimental.openTelemetry: true` into opencode config, set `OPENCODE_OTEL_ENABLED=true`
 - 🔲 44.3 — `otherness-scheduled.yml` Steps A and B: when `OPENCODE_OTEL_ENABLED=true`, inject OTEL env vars with resource attributes (project, session, batch, step)
 - 🔲 44.4 — AWS X-Ray backend: add ADOT sidecar container step to workflow when `backend: aws-xray` is configured
