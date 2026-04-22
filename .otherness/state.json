@@ -617,6 +617,7 @@
         "priority/medium",
         "area/agent-loop",
         "size/s",
+        "blocked",
         "kind/enhancement"
       ],
       "priority": "medium",
@@ -1021,7 +1022,7 @@
       "pr_number": 904
     },
     "issue-884": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: `/otherness.learn` must have a time-bounded skill-extraction contract",
       "labels": [
         "priority/medium",
@@ -1029,7 +1030,10 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 919,
+      "done_at": "2026-04-22T21:02:56Z"
     },
     "issue-885": {
       "state": "done",
