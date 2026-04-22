@@ -1188,15 +1188,17 @@
       "priority": "medium"
     },
     "issue-900": {
-      "state": "todo",
-      "title": "feat: 44.1",
+      "state": "done",
+      "title": "feat(observability): add observability.otlp section to config template (44.1)",
       "labels": [
         "priority/medium",
         "area/agent-loop",
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-22T21:35:33Z"
     }
   },
   "session_heartbeats": {
