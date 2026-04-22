@@ -881,6 +881,85 @@ print(f"[SM §4b-qa-rejection] State updated with {len(new_rejections)} new reje
 QA_REJECT_EOF
 ```
 
+## 4b-skill-citation. Skill loading discipline check (design doc 31 §Future → ✅)
+
+Verify ENG is actually loading skills before implementation, not just accumulating them.
+Check the last 5 merged feat/* PRs — each must include a "Loaded skill:" line in the description.
+
+```bash
+python3 - <<'SKILL_CITE_EOF'
+import subprocess, json, os, re
+
+REPO = os.environ.get('REPO', '')
+
+# Fail-open: if API unavailable or fewer than 5 PRs, skip silently
+try:
+    r = subprocess.run(
+        ['gh', 'pr', 'list', '--repo', REPO, '--state', 'merged',
+         '--limit', '20', '--json', 'title,body,headRefName'],
+        capture_output=True, text=True, timeout=20)
+    if r.returncode != 0:
+        print("[SM §4b-skill-citation] gh pr list failed — skipping (fail-open).")
+        raise SystemExit(0)
+    prs = json.loads(r.stdout)
+except SystemExit:
+    raise
+except Exception as e:
+    print(f"[SM §4b-skill-citation] API error — skipping: {e}")
+    raise SystemExit(0)
+
+# Filter to feat/* PRs only
+feat_prs = [pr for pr in prs
+            if pr.get('headRefName', '').startswith('feat/') or
+               pr.get('title', '').lower().startswith('feat(')]
+
+if len(feat_prs) < 5:
+    print(f"[SM §4b-skill-citation] Only {len(feat_prs)} feat PRs found (need 5) — skipping.")
+    raise SystemExit(0)
+
+last_5 = feat_prs[:5]
+cited_count = sum(
+    1 for pr in last_5
+    if re.search(r'[Ll]oaded [Ss]kill:', pr.get('body', '') or '')
+)
+
+print(f"[SM §4b-skill-citation] Last 5 feat PRs: {cited_count}/5 cite a skill file.")
+
+if cited_count < 3:
+    ISSUE_TITLE = "chore(skills): skill loading discipline has drifted — ENG is not citing skill files"
+    existing = subprocess.run(
+        ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+         '--search', 'skill loading discipline has drifted',
+         '--json', 'number', '--jq', 'length'],
+        capture_output=True, text=True, timeout=15)
+    count = int(existing.stdout.strip() or '0')
+    if count == 0:
+        subprocess.run(
+            ['gh', 'issue', 'create', '--repo', REPO,
+             '--title', ISSUE_TITLE,
+             '--label', 'otherness,kind/chore,priority/medium,area/skills',
+             '--body', (
+                 "## SM §4b-skill-citation finding\n\n"
+                 f"Only {cited_count} of the last 5 `feat/*` PRs include a `Loaded skill:` line "
+                 "in their description (threshold: 3/5).\n\n"
+                 "Skills accumulate in `agents/skills/` but agents are not confirming which "
+                 "skills they loaded before implementation. This makes skill accumulation "
+                 "unverifiable.\n\n"
+                 "## What to fix\n\n"
+                 "ENG §2c requires listing the skill files checked and logging "
+                 "`Loaded skill: \`<filename>\`` in the PR description.\n\n"
+                 "Review recent PRs and ensure ENG includes this line going forward.\n\n"
+                 "Design ref: docs/design/31-stage-2-skills-expansion.md §Future"
+             )],
+            capture_output=True, timeout=15)
+        print(f"[SM §4b-skill-citation] Opened chore issue: skill loading discipline drifted ({cited_count}/5).")
+    else:
+        print("[SM §4b-skill-citation] Issue already open — not duplicating.")
+else:
+    print(f"[SM §4b-skill-citation] Skill loading discipline OK ({cited_count}/5 PRs cite a skill).")
+SKILL_CITE_EOF
+```
+
 
 ## 4c. Cross-project learning (if AUTONOMOUS_MODE and monitor.projects configured)
 
