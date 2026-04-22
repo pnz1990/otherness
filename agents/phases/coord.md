@@ -18,9 +18,6 @@ To update vision or design:  /otherness.vibe-vision
 item — one that is achievable, unblocked, and moves the roadmap forward. A skipped item is
 better than a wrong item. Verify before committing.
 
-**Cognitive stance: optimistic incrementalist — What can be shipped quickly?**
-<!-- Design ref: docs/design/31-stage-2-skills-expansion.md §Future → ✅ (issue-795) -->
-
 Load skill: `~/.otherness/agents/skills/role-based-agent-identity.md` §COORD before acting.
 
 ---
@@ -54,38 +51,8 @@ try:
     }
     with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
 except Exception as e:
-     print(f"Heartbeat write failed (non-fatal): {e}")
+    print(f"Heartbeat write failed (non-fatal): {e}")
 EOF
-
-# §1a: Concurrent session deduplication guard (design doc 15 §Future → ✅)
-# If another session has a heartbeat <2 minutes old: stagger by sleeping 30s.
-# Advisory only — branch-lock still handles actual collisions. Fail-open.
-python3 - <<'CONCURRENT_EOF'
-import json, datetime, os, time
-
-MY_SESSION = os.environ.get('MY_SESSION_ID', '')
-try:
-    r = __import__('subprocess').run(
-        ['git', 'show', 'origin/_state:.otherness/state.json'],
-        capture_output=True, text=True, timeout=5)
-    s = json.loads(r.stdout) if r.returncode == 0 else {}
-    beats = s.get('session_heartbeats', {})
-    now = datetime.datetime.now(datetime.timezone.utc)
-    concurrent = [
-        sid for sid, hb in beats.items()
-        if sid != MY_SESSION
-        and hb.get('last_seen', '')
-        and (now - datetime.datetime.fromisoformat(
-            hb['last_seen'].replace('Z', '+00:00'))).total_seconds() < 120
-    ]
-    if concurrent:
-        print(f'[COORD §1a] Concurrent session(s) detected: {concurrent} — staggering 30s.')
-        time.sleep(30)
-    else:
-        print(f'[COORD §1a] No concurrent sessions — proceeding.')
-except Exception as e:
-    pass  # fail-open: skip guard on any error
-CONCURRENT_EOF
 
 # Stop sentinel
 if [ -f ".otherness/stop-after-current" ] && [ -z "$ITEM_ID" ]; then
@@ -252,316 +219,75 @@ fi
 
 ---
 
-## 1b-sim. Simulation recovery action — adjust session behavior
+## 1b.5 Preflight gate — PREFLIGHT_CHECK (GO/NO-GO before claiming work)
 
-Read `recovery_action` from `_state:.otherness/sim-prediction.json` (written by SM §4e).
-Log the action and set `SIM_RECOVERY_ACTION` for downstream claim logic.
-Graceful fallback: if the file is absent or unreadable, proceed normally.
+Reads all session-safety signals from `state.json` in a **single atomic read** and
+produces a `PREFLIGHT_PASS` or `PREFLIGHT_HOLD <reason>` decision before any queue
+operation or item claim.
 
-**Design ref**: `docs/design/23-simulation-as-anchor.md §Step 4`.
-
-```bash
-SIM_RECOVERY_ACTION=$(python3 - <<'SIMEOF'
-import subprocess, json, os
-
-try:
-    r = subprocess.run(
-        ['git','show','origin/_state:.otherness/sim-prediction.json'],
-        capture_output=True, text=True, timeout=10)
-    if r.returncode != 0:
-        print('none'); exit(0)
-    pred = json.loads(r.stdout.strip())
-    action = pred.get('recovery_action', 'none')
-    consecutive = pred.get('recovery_action_consecutive', 0)
-    print(action)
-    import sys
-    print(f"[COORD §1b-sim] recovery_action={action} (consecutive_below_floor={consecutive})", file=sys.stderr)
-except Exception as e:
-    import sys
-    print(f"[COORD §1b-sim] sim-prediction.json unreadable (non-fatal): {e}", file=sys.stderr)
-    print('none')
-SIMEOF
-)
-export SIM_RECOVERY_ACTION
-
-case "$SIM_RECOVERY_ACTION" in
-  trigger_learn)
-    echo "[COORD §1b-sim] recovery_action=trigger_learn — queue priority will favor skill-growth items this session."
-    ;;
-  prioritize_ci_fix)
-    echo "[COORD §1b-sim] recovery_action=prioritize_ci_fix — will prefer kind/bug and CI-fix items when claiming."
-    ;;
-  escalate_oldest_needs_human)
-    echo "[COORD §1b-sim] recovery_action=escalate_oldest_needs_human — posting reminder on oldest needs-human issue."
-    OLDEST_NH=$(gh issue list --repo $REPO --state open --label needs-human \
-      --json number,createdAt \
-      --jq 'sort_by(.createdAt) | .[0].number' 2>/dev/null || echo "")
-    if [ -n "$OLDEST_NH" ]; then
-      gh issue comment "$OLDEST_NH" --repo $REPO \
-        --body "[COORD §1b-sim] Simulation recovery: this needs-human issue is blocking throughput. Please resolve or close. (recovery_action=escalate_oldest_needs_human)" 2>/dev/null || true
-      echo "[COORD §1b-sim] Posted reminder on needs-human issue #$OLDEST_NH."
-    fi
-    ;;
-  trigger_vision_synthesis)
-    echo "[COORD §1b-sim] recovery_action=trigger_vision_synthesis — queue is low; vibe-vision-auto will run in §1e if queue stays empty."
-    ;;
-  none|"")
-    echo "[COORD §1b-sim] recovery_action=none — simulation signals nominal."
-    ;;
-  *)
-    echo "[COORD §1b-sim] Unknown recovery_action='$SIM_RECOVERY_ACTION' — ignoring (non-fatal)."
-    SIM_RECOVERY_ACTION=none
-    ;;
-esac
-```
-
----
-
-## 1b-vision. Vision pressure set — build at session start (design doc 36 §36.1)
-
-Before claiming any item, read `docs/design/*.md` and build an in-memory vision pressure set.
-This set contains the first 40 chars (lowercased) of each `🔲 Future` item.
-The §1e claim logic uses this set to boost vision-backed items.
+**Fail-open**: if `state.json` is absent or unreadable, emit `PREFLIGHT_PASS` and continue.
+A missing state file is a first-run condition, not a hold condition.
 
 ```bash
-VISION_PRESSURE_SET=$(python3 - <<'VPEOF'
-import re, os, sys
+# PREFLIGHT_CHECK — O1: single atomic read of all safety signals
+PREFLIGHT_RESULT=$(python3 - <<'PREFLIGHT_EOF'
+import json, os, sys
 
-design_dir = 'docs/design'
-items = []
-doc_count = 0
-
-if os.path.isdir(design_dir):
-    for fname in sorted(os.listdir(design_dir)):
-        if not fname.endswith('.md'): continue
-        try:
-            content = open(f'{design_dir}/{fname}').read()
-            # Find ## Future section
-            m = re.search(r'^## Future.*?\n(.*?)(?=^## |\Z)', content,
-                          re.MULTILINE | re.DOTALL)
-            if m:
-                found = re.findall(r'^- 🔲 (?!.*🚫)(.+)', m.group(1), re.MULTILINE)
-                if found:
-                    doc_count += 1
-                    for item in found:
-                        # Strip trailing comments (— ...)
-                        clean = re.sub(r'\s*—.*$', '', item).strip()
-                        # Take first 40 chars lowercased as the key
-                        key = clean[:40].lower()
-                        if key:
-                            items.append(key)
-        except Exception:
-            pass
-
-print(f"[COORD §1b-vision] Vision pressure set: {len(items)} items from {doc_count} design docs.", file=sys.stderr)
-# Export as newline-separated string (empty if no items)
-print('\n'.join(items))
-VPEOF
-)
-export VISION_PRESSURE_SET
-# Log to stdout (stderr output from python block is not captured here)
-_VPS_COUNT=$(echo "$VISION_PRESSURE_SET" | grep -c . 2>/dev/null || echo "0")
-echo "[COORD §1b-vision] Vision pressure set built: ${_VPS_COUNT} items."
-```
-
----
-
-## 1b-preflight. Unified startup signal reader (design doc 35 §Future → ✅)
-
-Read all behavioral signals from `state.json` at session start. Apply them in
-priority order. Set `COORD_ACTION` for downstream phases to consume.
-
-Priority order (highest first):
-1. Open `needs-human` issues → log count, set `COORD_ACTION=caution`
-2. `housekeeping_streak ≥ 3` → set `COORD_ACTION=vision-first` (queue-gen runs vibe-vision-auto first)
-3. `next_session_directive` non-null → set `COORD_ACTION=directive`
-4. `frame_lock_detected` true → set `COORD_ACTION=learn-prefer`
-5. No signal → `COORD_ACTION=none`
-
-```bash
-# §1b-preflight: unified signal reader — design doc 35 §Future → ✅
-COORD_ACTION=$(python3 - <<'PREFLIGHT_EOF'
-import subprocess, json, os, sys
-
-REPO = os.environ.get('REPO', '')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
 MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
 OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
 
-# Read state.json signals — graceful fallback if missing or malformed
+# O5: fail-open — if state unreadable, PASS
 try:
     with open('.otherness/state.json') as f:
-        state = json.load(f)
+        s = json.load(f)
 except Exception as e:
-    print(f"[COORD §1b-preflight] state.json unreadable (non-fatal): {e}", file=sys.stderr)
-    print('none')
+    print(f"PREFLIGHT_PASS (state unreadable: {e})")
     sys.exit(0)
 
-housekeeping_streak = int(state.get('housekeeping_streak', 0) or 0)
-next_session_directive = state.get('next_session_directive') or ''
-frame_lock_detected = bool(state.get('frame_lock_detected', False))
-silent_session_count = int(state.get('silent_session_count', 0) or 0)
+# O1: single atomic read of all named signals
+streak         = s.get('housekeeping_streak', 0)
+recovery       = s.get('recovery_action', None) or 'none'
+frame_lock     = s.get('frame_lock_detected', False)
+silent_count   = s.get('silent_session_count', 0)
+directive      = s.get('directive', None) or 'none'
 
-# Check open needs-human issues
-needs_human_count = 0
-try:
-    r = subprocess.run(
-        ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
-         '--label', 'needs-human', '--json', 'number', '--jq', 'length'],
-        capture_output=True, text=True, timeout=10)
-    needs_human_count = int(r.stdout.strip() or '0')
-except Exception:
-    pass
+# O2: single-line summary
+print(f"Preflight: streak={streak} | recovery={recovery} | frame_lock={str(frame_lock).lower()} | silent={silent_count} | directive={directive}")
 
-# Determine COORD_ACTION using priority order
-action = 'none'
-if needs_human_count > 0:
-    action = 'caution'
-elif housekeeping_streak >= 3:
-    action = 'vision-first'
-elif next_session_directive:
-    action = 'directive'
-elif frame_lock_detected:
-    action = 'learn-prefer'
+# O3: HOLD conditions
+hold_reasons = []
+if streak >= 3:
+    hold_reasons.append(f"housekeeping_streak={streak} (≥3) — chore-loop detected; run vibe-vision or manually add features before claiming")
+if frame_lock is True:
+    hold_reasons.append(f"frame_lock_detected=true — frame-lock break required before claiming new work")
 
-print(f"[COORD §1b-preflight] needs_human={needs_human_count} streak={housekeeping_streak} "
-      f"directive={next_session_directive!r} frame_lock={frame_lock_detected} "
-      f"silent_sessions={silent_session_count} action={action}", file=sys.stderr)
-
-print(action)
+if hold_reasons:
+    reason = "; ".join(hold_reasons)
+    print(f"PREFLIGHT_HOLD {reason}")
+else:
+    print("PREFLIGHT_PASS")
 PREFLIGHT_EOF
 )
-export COORD_ACTION
 
-# Act on COORD_ACTION signals
-case "$COORD_ACTION" in
-  caution)
-    NEEDS_HUMAN_COUNT=$(gh issue list --repo $REPO --state open --label needs-human \
-      --json number --jq 'length' 2>/dev/null || echo "?")
-    echo "[COORD §1b-preflight] action=caution — ${NEEDS_HUMAN_COUNT} needs-human issues open. Proceeding carefully."
-    ;;
-  vision-first)
-    echo "[COORD §1b-preflight] action=vision-first — housekeeping_streak ≥ 3. Vibe-vision-auto will run before queue-gen."
-    # COORD_ACTION=vision-first is consumed by §1c: it runs vibe-vision-auto first
-    ;;
-  directive)
-    DIRECTIVE=$(python3 -c "
-import json
-try:
-    s = json.load(open('.otherness/state.json'))
-    print(s.get('next_session_directive', ''))
-except: print('')
-" 2>/dev/null || echo "")
-    echo "[COORD §1b-preflight] action=directive — next_session_directive='${DIRECTIVE}'. Claim priority adjusted."
-    ;;
-  learn-prefer)
-    echo "[COORD §1b-preflight] action=learn-prefer — frame_lock_detected. Prefer skill-growth items when claiming."
-    ;;
-  none)
-    echo "[COORD §1b-preflight] action=none — all signals nominal."
-    ;;
-  *)
-    echo "[COORD §1b-preflight] Unknown action='${COORD_ACTION}' — treating as none."
-    COORD_ACTION=none
-    ;;
-esac
+# Print the preflight summary (first line)
+echo "$PREFLIGHT_RESULT" | head -1
 
-# §1b-session-type: declare session type at START based on queue composition (design doc 35 §Future → ✅)
-# Before claiming any item, inspect the top 3 items in the queue.
-# Write session_type_declared: feature-rich|mixed|chore-only to state.json.
-# If chore-only: trigger queue enrichment guard (§1c) BEFORE first claim.
-# Fail-open: errors write session_type_declared=unknown and proceed.
-SESSION_TYPE_DECLARED=$(python3 - <<'SESSTYPE_EOF'
-import json, subprocess, os, sys
+# Extract GO/NO-GO decision (last line)
+PREFLIGHT_DECISION=$(echo "$PREFLIGHT_RESULT" | tail -1)
 
-REPO = os.environ.get('REPO', '')
-
-# Read top 3 todo items from state.json
-try:
-    with open('.otherness/state.json') as f: s = json.load(f)
-except Exception as e:
-    print(f'[COORD §1b-session-type] state.json unreadable (non-fatal): {e}', file=sys.stderr)
-    print('unknown')
-    sys.exit(0)
-
-features = s.get('features', {})
-
-# Get claimed items (branch locks) from remote
-claimed = set()
-try:
-    ls = subprocess.check_output(['git', 'ls-remote', '--heads', 'origin'], text=True)
-    for line in ls.splitlines():
-        if 'refs/heads/feat/' in line:
-            claimed.add(line.split('refs/heads/feat/')[-1].strip())
-except Exception:
-    pass
-
-PRIORITY_MAP = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}
-
-def _sort_key(item_id, item_data):
-    pri = PRIORITY_MAP.get(item_data.get('priority'), 4)
-    title = item_data.get('title', '').lower()
-    labels = item_data.get('labels', [])
-    is_hygiene = (title.startswith('hygiene:') or 'kind/chore' in labels)
-    return (pri + (10 if is_hygiene else 0), item_id)
-
-candidates = []
-for item_id, d in features.items():
-    if d.get('state') != 'todo': continue
-    if item_id in claimed: continue
-    candidates.append((item_id, d))
-
-candidates.sort(key=lambda x: _sort_key(x[0], x[1]))
-top3 = candidates[:3]
-
-if not top3:
-    print('[COORD §1b-session-type] Queue empty — session_type_declared=unknown', file=sys.stderr)
-    session_type = 'unknown'
-else:
-    CHORE_KINDS = {'kind/chore', 'kind/docs'}
-    FEATURE_KINDS = {'kind/enhancement', 'kind/bug'}
-
-    def is_feature(d):
-        labels = d.get('labels', [])
-        title = d.get('title', '').lower()
-        if title.startswith('hygiene:') or 'kind/chore' in labels: return False
-        if any(l in FEATURE_KINDS for l in labels): return True
-        # Default: items with no labels are treated as features
-        return not any(l in CHORE_KINDS for l in labels)
-
-    feature_count = sum(1 for _, d in top3 if is_feature(d))
-    chore_count = len(top3) - feature_count
-
-    if feature_count == 0:
-        session_type = 'chore-only'
-    elif chore_count == 0:
-        session_type = 'feature-rich'
-    else:
-        session_type = 'mixed'
-
-    print(f'[COORD §1b-session-type] top3={[id for id,_ in top3]} '
-          f'feature={feature_count} chore={chore_count} → session_type={session_type}',
-          file=sys.stderr)
-
-# Write to state.json
-try:
-    with open('.otherness/state.json') as f: s = json.load(f)
-    s['session_type_declared'] = session_type
-    with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
-except Exception as e:
-    print(f'[COORD §1b-session-type] write failed (non-fatal): {e}', file=sys.stderr)
-
-print(session_type)
-SESSTYPE_EOF
-)
-export SESSION_TYPE_DECLARED
-echo "[COORD §1b-session-type] session_type_declared=${SESSION_TYPE_DECLARED}"
-
-# If chore-only at start: force queue enrichment guard before any claim
-# (guard will be re-run in §1c, but this ensures it fires even if §1c skips it)
-if [ "${SESSION_TYPE_DECLARED:-unknown}" = "chore-only" ]; then
-  echo "[COORD §1b-session-type] chore-only queue declared — enrichment guard will fire in §1c before first claim."
-  # Set flag for §1c to pick up
-  export QUEUE_NEEDS_ENRICHMENT=true
+if echo "$PREFLIGHT_DECISION" | grep -q "^PREFLIGHT_HOLD"; then
+  HOLD_REASON=$(echo "$PREFLIGHT_DECISION" | sed 's/^PREFLIGHT_HOLD //')
+  echo "[COORD §1b.5] PREFLIGHT_HOLD: $HOLD_REASON"
+  # O4: post to report issue before exiting
+  gh issue comment "$REPORT_ISSUE" --repo "$REPO" \
+    --body "[COORD §1b.5 PREFLIGHT_HOLD | ${MY_SESSION_ID:-sess-unknown} | otherness@${OTHERNESS_VERSION:-unknown}] Session held before claiming work. Reason: $HOLD_REASON" 2>/dev/null
+  # Exit cleanly — no claim, no queue operation
+  export STATE_MSG="[${MY_SESSION_ID}] preflight hold: $HOLD_REASON"
+  # run STATE MANAGEMENT write block
+  exit 0
+else
+  echo "[COORD §1b.5] PREFLIGHT_PASS — proceeding to queue and claim."
 fi
 ```
 
@@ -574,40 +300,6 @@ If queue is null or empty, acquire the queue-gen lock and generate.
 **The lock uses `refs/heads/otherness/queue-gen`. The loser waits for `_state` to update.**
 
 ```bash
-# §1c-vision-first: if COORD_ACTION=vision-first (housekeeping_streak ≥ 3 from §1b-preflight),
-# run vibe-vision-auto NOW before checking the queue or generating items.
-# This ensures a stale-streak session synthesizes vision before claiming chores.
-if [ "${COORD_ACTION:-none}" = "vision-first" ]; then
-  AGENTS_PATH_VF=$(python3 -c "
-import re, os
-section = None
-for line in open('otherness-config.yaml'):
-    s = re.match(r'^(\w[\w_]*):', line)
-    if s: section = s.group(1)
-    if section == 'maqa':
-        m = re.match(r'\s+agents_path:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?', line)
-        if m: print(os.path.expanduser(m.group(1).strip())); break
-" 2>/dev/null || echo "$HOME/.otherness/agents")
-  if [ -f "$AGENTS_PATH_VF/vibe-vision-auto.md" ]; then
-    echo "[COORD §1c] COORD_ACTION=vision-first — running vibe-vision-auto before queue-gen..."
-    # [AI-STEP] Read and follow $AGENTS_PATH_VF/vibe-vision-auto.md in the current worktree.
-    # After the scan completes, clear housekeeping_streak in state.json (reset to 0).
-    python3 -c "
-import json
-try:
-    with open('.otherness/state.json') as f: s = json.load(f)
-    s['housekeeping_streak'] = 0
-    with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
-    print('[COORD §1c] housekeeping_streak reset to 0 after vision synthesis.')
-except Exception as e:
-    print(f'[COORD §1c] streak reset non-fatal: {e}')
-" 2>/dev/null
-    git pull origin main --quiet 2>/dev/null || true
-  else
-    echo "[COORD §1c] COORD_ACTION=vision-first but vibe-vision-auto.md not found at $AGENTS_PATH_VF — skipping."
-  fi
-fi
-
 git fetch origin _state --quiet 2>/dev/null
 git show origin/_state:.otherness/state.json > .otherness/state.json 2>/dev/null || true
 
@@ -1056,13 +748,6 @@ if injected == 0:
 
 if injected > 0:
     print(f"[COORD §1c-guard] Enriched queue with {injected} enhancement item(s).")
-    # §1c-guard metric: increment chore_only_guard_count in state.json (design doc 35 §Future → ✅)
-    try:
-        with open('.otherness/state.json') as _f: _s = json.load(_f)
-        _s['chore_only_guard_count'] = _s.get('chore_only_guard_count', 0) + 1
-        with open('.otherness/state.json', 'w') as _f: json.dump(_s, _f, indent=2)
-    except Exception as _e:
-        print(f"[COORD §1c-guard] counter increment failed (non-fatal): {_e}")
     subprocess.run(['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO,
                     '--body', f"[COORD §1c-guard | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}] "
                               f"Chore-only queue detected ({chore_count} items). "
@@ -1179,81 +864,16 @@ allowed_areas = [a.strip() for a in os.environ.get('ALLOWED_AREAS','').split(','
 # Hygiene items (kind/chore or title starts with 'hygiene:') get deprioritized by +10
 # so features always claim before hygiene items at the same priority level.
 # Design ref: docs/design/29-continuous-code-hygiene.md §Future O3
-# Simulation recovery: SIM_RECOVERY_ACTION from §1b-sim adjusts sort key:
-#   prioritize_ci_fix  → kind/bug items get -5 boost (claimed before enhancements)
-#   trigger_learn      → no sort change (existing learn paths handle this)
-# Design ref: docs/design/23-simulation-as-anchor.md §Step 4
-# Vision pressure boost (design doc 36 §36.2 — issue-722):
-#   items whose title+body match a VPS key get -1 boost; non-matching items get +1.
-#   Fail-open: if VPS is unset or match raises, boost=0 (no behavior change).
 PRIORITY_MAP = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}
-SIM_RECOVERY = os.environ.get('SIM_RECOVERY_ACTION', 'none')
-
-# Build vision pressure set from env (set by §1b-vision)
-_VPS_KEYS = []
-try:
-    _vps_raw = os.environ.get('VISION_PRESSURE_SET', '')
-    if _vps_raw.strip():
-        _VPS_KEYS = [k.strip() for k in _vps_raw.splitlines() if k.strip()]
-except Exception:
-    _VPS_KEYS = []
-
-def _is_vision_backed(title, body=''):
-    """Return True if any VPS key appears in title+body (case-insensitive substring)."""
-    if not _VPS_KEYS:
-        return False
-    try:
-        haystack = (title + ' ' + body).lower()
-        return any(k in haystack for k in _VPS_KEYS)
-    except Exception:
-        return False
-
-def _has_design_doc_ref(title, body='', labels=None):
-    """§35.4: Return True if item references a design doc.
-    Design ref: docs/design/35-vision-alignment-signal.md §35.4 → ✅
-    Heuristic: queue-gen items have 'feat:' title + 'kind/enhancement' label +
-    body containing 'docs/design/' — but body is not stored in state.json.
-    Fallback: 'feat:' title prefix with 'kind/enhancement' label identifies
-    design-doc-backed items (all queue-gen issues match this pattern).
-    Direct body check: if body contains 'docs/design/' or '🔲 →' (case-insensitive).
-    """
-    if labels is None:
-        labels = []
-    body_lower = body.lower()
-    if 'docs/design/' in body_lower or '🔲 →' in body_lower or 'design doc' in body_lower:
-        return True
-    # Fallback when body is absent from state.json: infer from title+labels
-    title_lower = title.lower()
-    if title_lower.startswith('feat:') and (
-        'kind/enhancement' in labels or
-        any(l.startswith('kind/enhancement') for l in labels)
-    ):
-        return True
-    return False
 
 def _item_sort_key(item_id, item_data):
     pri = PRIORITY_MAP.get(item_data.get('priority'), 4)
     title = item_data.get('title', '').lower()
-    body = item_data.get('body', '')
     labels = item_data.get('labels', [])
     is_hygiene = (title.startswith('hygiene:') or
                   'kind/chore' in labels or
                   any(l.startswith('kind/chore') for l in labels))
-    is_bug = 'kind/bug' in labels or any(l.startswith('kind/bug') for l in labels)
-    boost = 0
-    if SIM_RECOVERY == 'prioritize_ci_fix' and is_bug:
-        boost = -5  # promote bugs above enhancements when CI fix is recovery action
-    # §35.4: Vision-alignment filter — prefer design-doc-backed items (+5 penalty for non-backed)
-    # Design ref: docs/design/35-vision-alignment-signal.md §35.4
-    if not is_hygiene:
-        if not _has_design_doc_ref(title, body, labels):
-            boost += 5  # deprioritise items with no design doc reference
-    # Vision pressure tiebreaker (±1 within same priority tier; O1: tiebreaker not override)
-    if _is_vision_backed(title, body):
-        boost -= 1  # vision-backed: sort earlier
-    else:
-        boost += 1  # non-vision-backed: sort later
-    return (pri + boost + (10 if is_hygiene else 0), item_id)
+    return (pri + (10 if is_hygiene else 0), item_id)
 
 # Build sorted candidates list (O1: features before hygiene; O2: priority-ordered)
 _candidates = []
@@ -1261,9 +881,6 @@ for id, d in features.items():
     if d.get('state') != 'todo': continue
     if id in claimed: continue
     if not deps_met(id): continue
-    # Skip items marked blocked (failed 3+ sessions) — design doc 21 §Future → ✅
-    if 'blocked' in d.get('labels', []) or d.get('failed_attempts', 0) >= 3:
-        continue
     # Area filter for bounded agents
     if allowed_areas:
         item_areas = d.get('areas', [])
@@ -1676,63 +1293,6 @@ if os.path.isdir(design_dir):
 
 print(f"[COORD §1f] Inline queue-gen complete: {new_items} issues created.")
 INLINE_QGEN
-
-      # §1f-refill: Update state.json with newly created issues (design doc 21 §Future → ✅)
-      # Without this update, QUEUE_REMAINING stays 0 and the session exits to SM/PM
-      # even though fresh items were just created. Adding them to state.json lets the
-      # §1f gate re-check and continue the session without waiting for the next run.
-      python3 - <<'REFILL_STATE_EOF'
-import subprocess, json, os, re
-
-REPO = os.environ.get('REPO', '')
-
-try:
-    with open('.otherness/state.json') as f: s = json.load(f)
-except Exception:
-    s = {}
-
-# Fetch newly created otherness-labelled issues not yet in state.json
-try:
-    r = subprocess.run(
-        ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
-         '--label', 'otherness,kind/enhancement', '--limit', '20',
-         '--json', 'number,title,labels',
-         '--jq', '[.[] | {number:.number, title:.title, labels:[.labels[].name]}]'],
-        capture_output=True, text=True, timeout=15)
-    issues = json.loads(r.stdout) if r.returncode == 0 else []
-except Exception as e:
-    print(f'[COORD §1f-refill] API error (non-fatal): {e}')
-    issues = []
-
-added = 0
-for issue in issues:
-    item_id = f"issue-{issue['number']}"
-    if item_id not in s.get('features', {}):
-        s.setdefault('features', {})[item_id] = {
-            'state': 'todo',
-            'title': issue['title'],
-            'labels': issue.get('labels', []),
-            'priority': 'medium',
-            'issue': str(issue['number']),
-        }
-        added += 1
-
-if added > 0:
-    with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
-    print(f'[COORD §1f-refill] Added {added} new issues to state.json — session can continue.')
-else:
-    print('[COORD §1f-refill] No new issues to add to state.json.')
-REFILL_STATE_EOF
-
-      # Re-compute QUEUE_REMAINING after refill so §1f gate sees the new items
-      QUEUE_REMAINING=$(python3 -c "
-import json
-try:
-    s = json.load(open('.otherness/state.json'))
-    print(len([v for v in s.get('features',{}).values() if v.get('state') == 'todo']))
-except: print(0)
-" 2>/dev/null || echo "0")
-      echo "[COORD §1f] After refill: QUEUE_REMAINING=${QUEUE_REMAINING}"
       git push origin --delete "$QUEUE_LOCK_BRANCH" 2>/dev/null || true
       echo "[COORD §1f] Queue-gen lock released."
     else
