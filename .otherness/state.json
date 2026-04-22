@@ -801,7 +801,7 @@
       "done_at": "2026-04-22T03:17:16Z"
     },
     "issue-723": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 37.2",
       "labels": [
         "priority/medium",
@@ -810,7 +810,9 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "723"
+      "issue": "723",
+      "pr_merged": true,
+      "done_at": "2026-04-22T05:14:36Z"
     },
     "issue-722": {
       "state": "done",
@@ -917,5 +919,9 @@
   "managed_feat_prs_7d": 62,
   "last_session_id": "sess-b4417de5",
   "last_session_at": "2026-04-21T22:35:46Z",
-  "housekeeping_streak": 0
+  "housekeeping_streak": 0,
+  "last_session_health": "GREEN",
+  "last_session_prs": 1,
+  "last_session_vision_backed": 1,
+  "report_issue": 827
 }
