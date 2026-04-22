@@ -1228,7 +1228,7 @@
       "cycle": 1
     }
   },
-  "pm_cycle_count": 6,
+  "pm_cycle_count": 7,
   "vision_aligned": true,
   "consecutive_vision_misaligned": 0,
   "sm_cycle_count": 99,
@@ -1239,8 +1239,8 @@
   "last_session_at": "2026-04-22T13:09:51Z",
   "housekeeping_streak": 0,
   "last_session_health": "GREEN",
-  "last_session_prs": 2,
-  "last_session_vision_backed": 2,
+  "last_session_prs": 1,
+  "last_session_vision_backed": 1,
   "report_issue": 827,
   "batch_count": 2,
   "meaningful_pr_guarantee_failed": false
