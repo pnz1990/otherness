@@ -1228,7 +1228,7 @@
       "done_at": "2026-04-22T22:37:53Z"
     },
     "issue-929": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Workflow disabled detection from within the loop: when a scheduled workflow is disabled vi",
       "labels": [
         "priority/medium",
@@ -1236,7 +1236,9 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-22T23:33:35Z"
     },
     "issue-930": {
       "state": "todo",
