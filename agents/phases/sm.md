@@ -631,6 +631,118 @@ $([ -n "$COMPETITIVE_LINE" ] && echo "$COMPETITIVE_LINE" || true)"
 
 gh issue comment "$REPORT_ISSUE" --repo "$REPO" --body "$REPORT_BODY" 2>/dev/null
 echo "[SM §4b] Batch report posted"
+
+# §4b-qa-rejection: QA rejection pattern tracker (design doc 38 §Future 38.6 → ✅)
+# Detect feat/* branches closed without merging (QA rejection proxy).
+# Record rejection type in state.json. Open issue if same type repeats 3+ times.
+# Design ref: docs/design/38-qa-ci-gate.md §Future 38.6
+python3 - <<'QA_REJECT_EOF'
+import subprocess, json, os, re, datetime
+
+REPO = os.environ.get('REPO', '')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
+
+try:
+    with open('.otherness/state.json') as f:
+        state = json.load(f)
+except Exception:
+    raise SystemExit(0)  # fail-open
+
+# Find recently closed PRs on feat/* branches that were NOT merged
+try:
+    closed_prs = subprocess.check_output(
+        ['gh', 'pr', 'list', '--repo', REPO, '--state', 'closed',
+         '--search', 'head:feat/ NOT is:merged',
+         '--limit', '10',
+         '--json', 'number,title,headRefName,closedAt,body'],
+        text=True, timeout=15)
+    prs = json.loads(closed_prs)
+except Exception as e:
+    print(f"[SM §4b-qa-rejection] gh pr list error (non-fatal): {e}")
+    raise SystemExit(0)
+
+if not prs:
+    print("[SM §4b-qa-rejection] No unmerged closed feat/* PRs found.")
+    raise SystemExit(0)
+
+# Classify rejection reason from PR body / title keywords
+def classify(pr):
+    text = (pr.get('title', '') + ' ' + pr.get('body', '')).lower()
+    if any(k in text for k in ['ci fail', 'ci red', 'check fail', 'test fail', 'build fail']):
+        return 'ci_failure'
+    if any(k in text for k in ['spec', 'obligation', 'zone 1', 'design ref']):
+        return 'spec_violation'
+    if any(k in text for k in ['scope', 'out of scope', 'too large', 'scope creep']):
+        return 'scope_creep'
+    if any(k in text for k in ['test missing', 'no test', 'missing test', 'untested']):
+        return 'test_missing'
+    return 'other'
+
+# Record rejections in state.json
+rejections = state.setdefault('qa_rejections', [])
+existing_prs = {r.get('pr_number') for r in rejections if 'pr_number' in r}
+
+new_rejections = []
+for pr in prs:
+    if pr['number'] in existing_prs:
+        continue  # already recorded
+    reason = classify(pr)
+    rec = {
+        'pr_number': pr['number'],
+        'branch': pr.get('headRefName', ''),
+        'reason': reason,
+        'closed_at': pr.get('closedAt', ''),
+        'session': MY_SESSION_ID
+    }
+    rejections.append(rec)
+    new_rejections.append(rec)
+    print(f"[SM §4b-qa-rejection] Recorded rejection: PR #{pr['number']} branch={pr.get('headRefName','')} reason={reason}")
+
+if not new_rejections:
+    print("[SM §4b-qa-rejection] No new rejections to record.")
+    raise SystemExit(0)
+
+# Keep only last 20 rejections (rolling window)
+state['qa_rejections'] = rejections[-20:]
+
+# Check for repeated pattern (same reason 3+ of last 5 rejections)
+last5 = state['qa_rejections'][-5:]
+from collections import Counter
+reason_counts = Counter(r.get('reason', 'other') for r in last5)
+for reason, count in reason_counts.items():
+    if count >= 3:
+        # Open chore issue if not already open
+        search_title = f'QA rejection pattern: {reason}'
+        try:
+            existing = subprocess.check_output(
+                ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+                 '--search', search_title, '--json', 'number', '--jq', 'length'],
+                text=True, timeout=10)
+            if int(existing.strip() or '0') == 0:
+                body = (f"## QA Rejection Pattern Detected\n\n"
+                        f"SM §4b-qa-rejection has detected the same QA rejection reason "
+                        f"`{reason}` in {count} of the last 5 closed unmerged PRs.\n\n"
+                        f"**Rejection type**: `{reason}`\n"
+                        f"**Count in last 5**: {count}\n\n"
+                        f"ENG may need a targeted skill for this failure mode. "
+                        f"Review recent rejected PRs and consider creating or loading "
+                        f"an appropriate skill file in `agents/skills/`.\n\n"
+                        f"Design ref: docs/design/38-qa-ci-gate.md §38.6")
+                subprocess.run(
+                    ['gh', 'issue', 'create', '--repo', REPO,
+                     '--title', f'QA rejection pattern: `{reason}` in last 3 sessions — ENG may need a targeted skill',
+                     '--label', 'otherness,kind/chore,priority/high,area/agent-loop',
+                     '--body', body],
+                    capture_output=True, timeout=15)
+                print(f"[SM §4b-qa-rejection] Opened chore issue: QA rejection pattern {reason}")
+        except Exception as e:
+            print(f"[SM §4b-qa-rejection] issue check error (non-fatal): {e}")
+
+with open('.otherness/state.json', 'w') as f:
+    json.dump(state, f, indent=2)
+print(f"[SM §4b-qa-rejection] State updated with {len(new_rejections)} new rejection(s).")
+QA_REJECT_EOF
 ```
 
 
