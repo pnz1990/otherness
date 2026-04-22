@@ -594,7 +594,7 @@
       "issue": "810"
     },
     "issue-809": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 43.1",
       "labels": [
         "priority/medium",
@@ -603,7 +603,8 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "809"
+      "issue": "809",
+      "note": "already done per design doc"
     },
     "issue-808": {
       "state": "todo",
@@ -709,7 +710,7 @@
       "issue": "753"
     },
     "issue-752": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Queue guard firing frequency tracked and acted on: `coord.md \u00a71c` queue refusal guard fire",
       "labels": [
         "priority/medium",
@@ -718,10 +719,11 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "752"
+      "issue": "752",
+      "note": "duplicate"
     },
     "issue-751": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: PM \u00a75: otherness self-improvement rate vs. managed project improvement rate",
       "labels": [
         "priority/medium",
@@ -730,10 +732,11 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "751"
+      "issue": "751",
+      "note": "duplicate"
     },
     "issue-750": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: `/otherness.upgrade` interactive command updated to respect upgrade_policy",
       "labels": [
         "priority/medium",
@@ -742,10 +745,11 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "750"
+      "issue": "750",
+      "note": "duplicate - already done"
     },
     "issue-728": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 41.1",
       "labels": [
         "priority/medium",
@@ -754,7 +758,11 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "728"
+      "issue": "728",
+      "pr_number": 846,
+      "branch": "feat/issue-728",
+      "pr_merged": true,
+      "done_at": "2026-04-22T08:15:16Z"
     },
     "issue-727": {
       "state": "done",
