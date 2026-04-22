@@ -813,7 +813,7 @@
       "issue": "723"
     },
     "issue-722": {
-      "state": "in_review",
+      "state": "done",
       "title": "feat: 36.2",
       "labels": [
         "priority/medium",
@@ -823,10 +823,13 @@
       ],
       "priority": "medium",
       "issue": "722",
-      "pr_number": 822
+      "pr_number": 822,
+      "pr_merged": true,
+      "pr_num": 822,
+      "done_at": "2026-04-22T03:00:00Z"
     },
     "issue-719": {
-      "state": "in_review",
+      "state": "done",
       "title": "feat: Metrics trend surfacing in SM health comment",
       "labels": [
         "priority/medium",
@@ -837,7 +840,10 @@
       "priority": "medium",
       "issue": "719",
       "pr_number": "819",
-      "assigned_to": "sess-fac66d42"
+      "assigned_to": "sess-fac66d42",
+      "pr_merged": true,
+      "pr_num": 819,
+      "done_at": "2026-04-22T02:00:00Z"
     },
     "issue-702": {
       "state": "todo",
