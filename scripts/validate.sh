@@ -258,6 +258,33 @@ except:
         echo "  OK: scheduled workflow has ${OPENCODE_STEP_COUNT} opencode steps (dual-step: vision + run)"
       fi
     fi
+
+    # YAML syntax check — design doc 28 §28.1
+    # Validates that SCAN 5 pressure rewrites (doc 37 §37.5) have not broken the workflow YAML.
+    # Fail-open: if PyYAML is not available, skip with a warning (don't block CI).
+    YAML_VALID=$(python3 -c "
+import sys
+try:
+    import yaml
+except ImportError:
+    print('SKIP_NO_YAML'); sys.exit(0)
+try:
+    yaml.safe_load(open('$WORKFLOW_FILE').read())
+    print('OK')
+except yaml.YAMLError as e:
+    print(f'FAIL: {e}')
+" 2>/dev/null || echo "SKIP_ERR")
+
+    case "$YAML_VALID" in
+      OK)
+        echo "  OK: otherness-scheduled.yml is valid YAML" ;;
+      SKIP_NO_YAML|SKIP_ERR)
+        echo "  WARN: could not validate YAML syntax (PyYAML unavailable or parse error reading check) — skipping" ;;
+      FAIL*)
+        echo "  ERROR: otherness-scheduled.yml has invalid YAML syntax — likely caused by a broken SCAN 5 pressure rewrite. Restore the file or fix the indentation."
+        echo "  Detail: $YAML_VALID"
+        exit 1 ;;
+    esac
   fi
 fi
 

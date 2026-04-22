@@ -732,6 +732,42 @@ else:
 SCAN5_EOF
 ```
 
+## SCAN 5 — YAML safety gate (design doc 28 §28.1)
+
+**When implementing §37.5 (actual workflow file rewrite)**: after writing the new pressure
+block to `.github/workflows/otherness-scheduled.yml`, validate YAML syntax before committing.
+
+```bash
+# [AI-STEP — activate when §37.5 is implemented] After writing the pressure block:
+# validate YAML syntax and revert on error (design doc 28 §28.1)
+WORKFLOW_FILE=".github/workflows/otherness-scheduled.yml"
+if [ -f "$WORKFLOW_FILE" ] && git diff --quiet "$WORKFLOW_FILE" 2>/dev/null; then
+  : # no changes — skip check
+elif [ -f "$WORKFLOW_FILE" ]; then
+  YAML_CHECK=$(python3 -c "
+import sys
+try:
+    import yaml
+except ImportError:
+    print('SKIP'); sys.exit(0)
+try:
+    yaml.safe_load(open('$WORKFLOW_FILE').read())
+    print('OK')
+except yaml.YAMLError as e:
+    print(f'FAIL: {e}')
+" 2>/dev/null || echo "SKIP")
+
+  if echo "$YAML_CHECK" | grep -q "^FAIL"; then
+    echo "[SCAN 5 YAML ERROR] Invalid YAML after pressure rewrite — reverting."
+    git checkout -- "$WORKFLOW_FILE" 2>/dev/null || true
+    gh issue comment $REPORT_ISSUE --repo $REPO \
+      --body "[SCAN 5 YAML ERROR | VIBE-VISION-AUTO] Pressure rewrite produced invalid YAML in $WORKFLOW_FILE — reverted. Detail: $YAML_CHECK" 2>/dev/null || true
+  else
+    echo "[SCAN 5] YAML syntax valid after pressure rewrite."
+  fi
+fi
+```
+
 ---
 
 ## COMMIT
