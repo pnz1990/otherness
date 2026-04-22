@@ -138,14 +138,13 @@ releases:
 ## Present (✅)
 
 - ✅ 40.1 — PM §5o: patch release trigger — 7-day age + ≥3 fix/security/chore PRs + no feat PRs + CI green + no NEEDS HUMAN. Auto-cut patch with `gh release create --generate-notes`. Opt-out via `releases.enabled: false`. (PR #TBD, 2026-04-22)
+- ✅ 40.3 — PM §5p: major release detection — scan PRs since last tag for breaking change signals (conventional `feat!:`, keywords "breaking", "incompatible", "migration required"). Also scan design doc Zone 3 / Future sections. When detected: open one `needs-human priority/high` issue titled `[RELEASE] vX.0.0 candidate` with breaking reason, shipped features, and draft release notes. Dedup: skip if one is already open (<14d), post follow-up if >14d old. Never cuts autonomously. Opt-out via `releases.enabled: false`. (PR #894)
 
 ---
 
 ## Future (🔲)
 
 - 🔲 40.2 — PM §5l: minor release trigger — 7-day age + ≥3 feat PRs + ≥1 new Present item since tag + CI green + no open feature PRs. Auto-cut minor with curated summary section.
-- 🔲 40.2 — PM §5l: minor release trigger — 7-day age + ≥3 feat PRs + ≥1 new Present item since tag + CI green + no open feature PRs. Auto-cut minor with curated summary section.
-- 🔲 40.3 — PM §5l: major release detection — detect breaking API changes or architectural pivots. Open `needs-human kind/release` issue with draft release notes. Never cut autonomously.
 - 🔲 40.4 — PM §5l: release notes template — curated summary above `--generate-notes` output. Group feat PRs by design doc area. Include "Upgrading" section from AGENTS.md breaking changes.
 - 🔲 40.5 — `otherness-config.yaml`: add `releases:` section with `enabled`, `min_days_between`, `major_human_only` fields. `major_human_only` is read-only — any PR that sets it to `false` is rejected by QA.
 - 🔲 40.6 — validate.sh: check that `releases.major_human_only` is not set to `false` in any `otherness-config.yaml` in the repo. Hard fail if found.
