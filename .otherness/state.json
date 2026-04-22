@@ -757,7 +757,7 @@
       "issue": "728"
     },
     "issue-727": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 40.1",
       "labels": [
         "priority/medium",
@@ -766,7 +766,10 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "727"
+      "issue": "727",
+      "pr_merged": true,
+      "pr_number": 845,
+      "done_at": "2026-04-22T08:03:09Z"
     },
     "issue-726": {
       "state": "done",
