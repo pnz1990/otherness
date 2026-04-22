@@ -3423,6 +3423,31 @@ ACTION="Active"
 # Exported as SESSION_PROGRESS for downstream use (O7).
 # When STABLE or STALLED + HEALTH=GREEN: upgrade HEALTH to AMBER (O2).
 OPEN_PRS_4F=$(gh pr list --repo $REPO --state open --json number --jq 'length' 2>/dev/null || echo "0")
+
+# Guard: if MERGED is unset (§4f called standalone without §4b), recompute it.
+# This prevents a false STALLED classification in standalone calls.
+# Design ref: fix(sm) issue-702
+if [ -z "${MERGED+x}" ] || [ -z "${MERGED}" ]; then
+  echo "[SM §4f] MERGED unset — recomputing from gh pr list (standalone guard)"
+  MERGED=$(gh pr list --repo $REPO --state merged --limit 30 \
+    --json title,mergedAt \
+    --jq "[.[] | select(
+      (.title | test(\"^feat|^fix|^refactor\"; \"i\")) and
+      (.title | test(\"^chore\\\\(sm\\\\)|metrics|session complete|PRs merged|batch \"; \"i\") | not)
+    ) | .title] | length" 2>/dev/null || echo "0")
+fi
+
+# Guard: if VISION_PRS is unset, recompute it.
+if [ -z "${VISION_PRS+x}" ] || [ -z "${VISION_PRS}" ]; then
+  echo "[SM §4f] VISION_PRS unset — recomputing (standalone guard)"
+  VISION_PRS=$(gh pr list --repo $REPO --state merged --limit 30 \
+    --json title,mergedAt \
+    --jq "[.[] | select(
+      (.title | test(\"^feat|^fix|^refactor\"; \"i\")) and
+      (.title | test(\"^chore\\\\(sm\\\\)|metrics|session complete|PRs merged|batch \"; \"i\") | not)
+    ) | .title] | length" 2>/dev/null || echo "0")
+fi
+
 PROGRESS_CLASS=$(python3 -c "
 import os
 vision_prs = int(os.environ.get('VISION_PRS', '0') or '0')
