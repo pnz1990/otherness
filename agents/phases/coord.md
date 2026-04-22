@@ -1180,12 +1180,35 @@ allowed_areas = [a.strip() for a in os.environ.get('ALLOWED_AREAS','').split(','
 #   prioritize_ci_fix  → kind/bug items get -5 boost (claimed before enhancements)
 #   trigger_learn      → no sort change (existing learn paths handle this)
 # Design ref: docs/design/23-simulation-as-anchor.md §Step 4
+# Vision pressure boost (design doc 36 §36.2 — issue-722):
+#   items whose title+body match a VPS key get -1 boost; non-matching items get +1.
+#   Fail-open: if VPS is unset or match raises, boost=0 (no behavior change).
 PRIORITY_MAP = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}
 SIM_RECOVERY = os.environ.get('SIM_RECOVERY_ACTION', 'none')
+
+# Build vision pressure set from env (set by §1b-vision)
+_VPS_KEYS = []
+try:
+    _vps_raw = os.environ.get('VISION_PRESSURE_SET', '')
+    if _vps_raw.strip():
+        _VPS_KEYS = [k.strip() for k in _vps_raw.splitlines() if k.strip()]
+except Exception:
+    _VPS_KEYS = []
+
+def _is_vision_backed(title, body=''):
+    """Return True if any VPS key appears in title+body (case-insensitive substring)."""
+    if not _VPS_KEYS:
+        return False
+    try:
+        haystack = (title + ' ' + body).lower()
+        return any(k in haystack for k in _VPS_KEYS)
+    except Exception:
+        return False
 
 def _item_sort_key(item_id, item_data):
     pri = PRIORITY_MAP.get(item_data.get('priority'), 4)
     title = item_data.get('title', '').lower()
+    body = item_data.get('body', '')
     labels = item_data.get('labels', [])
     is_hygiene = (title.startswith('hygiene:') or
                   'kind/chore' in labels or
@@ -1194,6 +1217,11 @@ def _item_sort_key(item_id, item_data):
     boost = 0
     if SIM_RECOVERY == 'prioritize_ci_fix' and is_bug:
         boost = -5  # promote bugs above enhancements when CI fix is recovery action
+    # Vision pressure tiebreaker (±1 within same priority tier; O1: tiebreaker not override)
+    if _is_vision_backed(title, body):
+        boost -= 1  # vision-backed: sort earlier
+    else:
+        boost += 1  # non-vision-backed: sort later
     return (pri + boost + (10 if is_hygiene else 0), item_id)
 
 # Build sorted candidates list (O1: features before hygiene; O2: priority-ordered)
