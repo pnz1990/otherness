@@ -1241,7 +1241,7 @@
       "done_at": "2026-04-22T23:33:35Z"
     },
     "issue-930": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Skill load verification: ENG must confirm which skills were loaded before implementation",
       "labels": [
         "priority/medium",
@@ -1249,7 +1249,9 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-22T23:37:43Z"
     },
     "issue-931": {
       "state": "todo",
