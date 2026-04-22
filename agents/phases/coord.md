@@ -1023,7 +1023,9 @@ try:
 except: print(999)
 " 2>/dev/null || echo "999")
 
-  # Learn scheduling: trigger when queue is empty OR <5 items (not just >14 days)
+  # Learn scheduling: trigger when vision-backed queue is empty OR <3 items (not just >14 days)
+  # §36.4: count only vision-backed todo items — a queue of 10 chores is empty from vision standpoint
+  # Design ref: docs/design/36-vision-pressure-in-coord.md §Future 36.4 → ✅
   TODO_NOW=$(python3 -c "
 import json
 try:
@@ -1031,6 +1033,39 @@ try:
     print(len([d for d in s.get('features',{}).values() if d.get('state')=='todo']))
 except: print(0)
 " 2>/dev/null || echo "0")
+
+  # §36.4: compute VISION_BACKED_TODO_NOW — todo items matching VISION_PRESSURE_SET
+  # Fail-open: if VPS empty/unset, fall back to TODO_NOW (preserve existing behavior)
+  VISION_BACKED_TODO_NOW=$(python3 - <<'VPS_COUNT_EOF'
+import json, os, re
+
+vps_raw = os.environ.get('VISION_PRESSURE_SET', '')
+try:
+    with open('.otherness/state.json') as f:
+        s = json.load(f)
+except Exception:
+    print(0); exit(0)
+
+todo_items = [v for v in s.get('features', {}).values() if v.get('state') == 'todo']
+
+if not vps_raw.strip():
+    # Fail-open: VPS not available — return total todo count
+    print(len(todo_items)); exit(0)
+
+vps_keys = [k.strip().lower() for k in vps_raw.splitlines() if k.strip()]
+count = 0
+for item in todo_items:
+    title = (item.get('title', '') or '').lower()
+    if any(k in title for k in vps_keys):
+        count += 1
+print(count)
+VPS_COUNT_EOF
+)
+
+  echo "[COORD §1e-36.4] Vision-backed todo items: ${VISION_BACKED_TODO_NOW} / ${TODO_NOW} total."
+
+  # Use vision-backed count for learn trigger; fall back to TODO_NOW if VPS was unavailable
+  TRIGGER_COUNT="${VISION_BACKED_TODO_NOW:-${TODO_NOW}}"
 
   DAYS_SINCE_LEARN=$(python3 -c "
 import re, datetime, os
@@ -1044,15 +1079,16 @@ try:
 except: print(999)
 " 2>/dev/null || echo "999")
 
-  # Trigger learn if: queue < 5 items OR >3 days since last learn
-  if [ "${TODO_NOW:-0}" -lt 5 ] || [ "${DAYS_SINCE_LEARN:-999}" -ge 3 ]; then
+  # Trigger learn if: vision-backed queue < 3 items OR >3 days since last learn
+  # (threshold 3, not 5, because VPS-filtered count is smaller than raw count)
+  if [ "${TRIGGER_COUNT:-0}" -lt 3 ] || [ "${DAYS_SINCE_LEARN:-999}" -ge 3 ]; then
     LEARN_BRANCH="feat/learn-$(date +%Y%m%d-%H%M)"
     if git push origin "HEAD:refs/heads/$LEARN_BRANCH" 2>/dev/null; then
       LEARN_WT="../${REPO_NAME}.learn-$(date +%Y%m%d)"
       [ -d "$LEARN_WT" ] && git worktree remove "$LEARN_WT" --force 2>/dev/null
       git worktree add "$LEARN_WT" "$LEARN_BRANCH"
       gh issue comment $REPORT_ISSUE --repo $REPO \
-        --body "[STANDALONE | ${MY_SESSION_ID:-sess-unknown}] Queue low (${TODO_NOW} items, ${DAYS_SINCE_LEARN}d since learn) — triggering learn session." 2>/dev/null
+        --body "[STANDALONE | ${MY_SESSION_ID:-sess-unknown}] Queue low (${TRIGGER_COUNT} vision-backed / ${TODO_NOW} total items, ${DAYS_SINCE_LEARN}d since learn) — triggering learn session." 2>/dev/null
       # [AI-STEP] Navigate to $LEARN_WT, read and follow ~/.otherness/agents/otherness.learn.md
       # After learn PR open and CI green: merge and clean up
       gh pr merge "$LEARN_BRANCH" --repo "$REPO" --squash --delete-branch 2>/dev/null || true
