@@ -300,7 +300,21 @@ Load skill: `~/.otherness/agents/skills/ephemeral-pr-artifacts.md` before openin
 ```bash
 # [AI-STEP] Open the design doc identified in §2b.
 # Find the 🔲 Future item(s) this PR implements.
-# Move them to the ✅ Present section, adding "(PR #N, date)".
+#
+# §41.4 VERIFICATION GATE — before flipping 🔲 to ✅, verify the feature is present:
+#   - If this item adds a new state.json field:
+#     verify the field appears in _state branch after implementation
+#     (git show origin/_state:.otherness/state.json | python3 -c "import json,sys; s=json.load(sys.stdin); print('<field>' in str(s))")
+#   - If this item adds a new metrics column to docs/aide/metrics.md:
+#     verify the last row contains the column
+#     (tail -1 docs/aide/metrics.md | grep -q "<column-name>")
+#   - If this item adds a new agent instruction section:
+#     verify the section header exists in the target agent file
+#     (grep -q "<section-header>" agents/phases/<target>.md)
+#   - If verification fails: fix the implementation before marking ✅ Present.
+#   - If none of these apply (documentation-only, pure process change): proceed.
+#
+# Move verified item(s) to the ✅ Present section, adding "(PR #N, date)".
 # If new behavior was added that wasn't in the design doc: add it to ✅ Present.
 # Do NOT add new 🔲 Future items here — that is the PM's job.
 #

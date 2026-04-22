@@ -238,19 +238,32 @@ else
   #   3. If any obligation unimplemented or misimplemented: WRONG finding — must fix before approve
   # All obligations must be verified. This is the highest-priority check.
 
-  # Design reference check — MANDATORY for feature PRs
-  # [AI-STEP] Read spec.md and find the ## Design reference section.
-  # Three valid outcomes:
-  #   A) Section present with a docs/design/ file named → verify that file exists and
-  #      check that the PR diff updates it (🔲 → ✅). If design doc not updated: WRONG.
-  #      Also: check if a docs/<feature>.md customer doc exists. If not: MISS finding —
-  #      open a follow-up issue "docs: add customer doc for <feature-area>". Do NOT block merge.
-  #   B) Section present with "N/A — infrastructure change" → acceptable for chore/fix/refactor.
-  #   C) Section absent → WRONG. Post:
-  #      "[QA] WRONG — spec.md missing ## Design reference section.
-  #       Per docs/design/01-declarative-design-driven-development.md O2, every spec must
-  #       reference its design doc (or declare N/A for infra-only changes).
-  #       ENG must add this section and re-push."
+   # Design reference check — MANDATORY for feature PRs
+   # [AI-STEP] Read spec.md and find the ## Design reference section.
+   # Three valid outcomes:
+   #   A) Section present with a docs/design/ file named → verify that file exists and
+   #      check that the PR diff updates it (🔲 → ✅). If design doc not updated: WRONG.
+   #      Also: check if a docs/<feature>.md customer doc exists. If not: MISS finding —
+   #      open a follow-up issue "docs: add customer doc for <feature-area>". Do NOT block merge.
+   #   B) Section present with "N/A — infrastructure change" → acceptable for chore/fix/refactor.
+   #   C) Section absent → WRONG. Post:
+   #      "[QA] WRONG — spec.md missing ## Design reference section.
+   #       Per docs/design/01-declarative-design-driven-development.md O2, every spec must
+   #       reference its design doc (or declare N/A for infra-only changes).
+   #       ENG must add this section and re-push."
+   #
+   # §41.4 VERIFICATION GATE CHECK (QA mandatory): if this PR marks a design doc item 🔲 → ✅:
+   # [AI-STEP] Check that ENG included a verification note in spec.md or the PR description.
+   #   A verification note is one of:
+   #     - "verified state.json field ... present in _state"
+   #     - "verified metrics column ... in last row"
+   #     - "verified section ... in agents/phases/..."
+   #     - "documentation-only change" / "pure process change" (explicit exemption)
+   #   If the PR flips 🔲 → ✅ in a design doc AND no verification note is found:
+   #     WRONG finding: "[QA] WRONG — ENG §2f verification gate not satisfied.
+   #     This PR marks a design doc item ✅ Present without a verification step in spec.md.
+   #     Per docs/design/41-design-doc-integrity.md §41.4, ENG must verify the feature exists
+   #     before flipping the emoji. Add a verification note and re-push."
 fi
 ```
 
