@@ -1949,7 +1949,10 @@ try:
         if len(cells) < 8: continue
         if not cells[1].startswith('20'): continue
         try:
-            shipped = int(cells[6]) if cells[6].isdigit() else -1
+            # Schema: Date|Batch|prs_merged|needs_human|ci_red_hours|skills_count|meaningful_prs_week|todo_shipped|...
+            # todo_shipped is at index 7 (was 6 before meaningful_prs_week column was added at index 6)
+            todo_idx = 7 if len(cells) >= 11 else 6  # graceful fallback for old rows (len<11)
+            shipped = int(cells[todo_idx]) if cells[todo_idx].isdigit() else -1
             if shipped >= 0:
                 rows.append({'date': cells[1], 'batch': cells[2], 'todo_shipped': shipped})
         except: pass

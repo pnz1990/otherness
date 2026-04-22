@@ -287,26 +287,29 @@ REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '')
 # Parse batch log rows from docs/aide/metrics.md
 # Table format: | Date | Batch | prs_merged | needs_human | ci_red_hours | skills_count | todo_shipped | ... |
 try:
-    content = open('docs/aide/metrics.md').read()
-    rows = []
-    for line in content.splitlines():
-        # Match data rows (not header or separator): | 2026-... | N | ...
-        m = re.match(r'^\|\s*\d{4}-\d{2}-\d{2}\s*\|(.+)', line)
-        if m:
-            cells = [c.strip() for c in line.split('|')[1:-1]]
-            if len(cells) >= 7:
-                try:
-                    row = {
-                        'date': cells[0],
-                        'batch': cells[1],
-                        'prs_merged': int(cells[2]) if cells[2].isdigit() else 0,
-                        'needs_human': int(cells[3]) if cells[3].isdigit() else 0,
-                        'todo_shipped': int(cells[6]) if cells[6].isdigit() else 0,
-                        # meaningful_prs is column 13 (index 13); may be absent in older rows
-                        'meaningful_prs': cells[13].strip() if len(cells) > 13 else '',
-                    }
-                    rows.append(row)
-                except (ValueError, IndexError):
+     content = open('docs/aide/metrics.md').read()
+     rows = []
+     for line in content.splitlines():
+         # Match data rows (not header or separator): | 2026-... | N | ...
+         m = re.match(r'^\|\s*\d{4}-\d{2}-\d{2}\s*\|(.+)', line)
+         if m:
+             cells = [c.strip() for c in line.split('|')[1:-1]]
+             if len(cells) >= 7:
+                 try:
+                     # Schema (0-indexed): Date|Batch|prs_merged|needs_human|ci_red_hours|skills_count|meaningful_prs_week|todo_shipped|time_to_merge_avg_min|Notes
+                     # todo_shipped is at index 7 (was 6 before meaningful_prs_week column was added)
+                     todo_idx = 7 if len(cells) >= 10 else 6  # graceful fallback for old rows
+                     row = {
+                         'date': cells[0],
+                         'batch': cells[1],
+                         'prs_merged': int(cells[2]) if cells[2].isdigit() else 0,
+                         'needs_human': int(cells[3]) if cells[3].isdigit() else 0,
+                         'todo_shipped': int(cells[todo_idx]) if cells[todo_idx].isdigit() else 0,
+                         # meaningful_prs is column 13 (index 13); may be absent in older rows
+                         'meaningful_prs': cells[13].strip() if len(cells) > 13 else '',
+                     }
+                     rows.append(row)
+                 except (ValueError, IndexError):
                     pass
 except Exception:
     rows = []
