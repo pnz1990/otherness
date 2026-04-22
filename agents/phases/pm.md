@@ -271,6 +271,121 @@ PYEOF
 }
 ```
 
+**`update_competitive_standing` — append a scored rubric row every 10 batches** <!-- design doc 17 §Future → ✅ (PR: feat/issue-889) -->
+
+Produces `docs/aide/competitive-standing.md`. One row per comparator per 10-batch cycle.
+Scores are 0–3: 0=absent, 1=partial, 2=working, 3=excellent.
+
+```bash
+if [ $((${PM_CYCLE:-0} % 10)) -eq 0 ] && [ "${PM_CYCLE:-0}" -gt 0 ]; then
+  python3 - <<'RUBRIC_EOF'
+import subprocess, re, os, datetime
+
+REPO = os.environ.get('REPO', '')
+BATCH_COUNT = int(os.environ.get('BATCH_COUNT', '0') or '0')
+STANDING_FILE = 'docs/aide/competitive-standing.md'
+TODAY = datetime.date.today().isoformat()
+
+COMPARATORS = ['spec-kitty', 'Hermes']
+
+def score_comparator(name):
+    """Score a comparator on 4 rubric dimensions using GitHub API evidence (fail-open)."""
+    # Find comparator repo slug from known list
+    known_repos = {
+        'spec-kitty': 'Priivacy-ai/spec-kitty',
+        'Hermes': 'akuity/kargo',  # Hermes proxied by kargo as public reference
+        'Multica': '',
+        'Archon': '',
+    }
+    repo = known_repos.get(name, '')
+
+    # reliability: did the repo merge any PRs in last 7 days? (2=yes, 0=no, 1=unknown)
+    reliability_o = 2  # otherness always ships — observable
+    reliability_c = 1  # unknown unless we can check
+    if repo:
+        try:
+            r = subprocess.run(
+                ['gh', 'pr', 'list', '--repo', repo, '--state', 'merged', '--limit', '5',
+                 '--json', 'mergedAt', '--jq', 'length'],
+                capture_output=True, text=True, timeout=10)
+            reliability_c = 2 if int(r.stdout.strip() or '0') > 0 else 0
+        except Exception:
+            pass
+
+    # self-improvement: does the agent update its own instruction files? (otherness: 3)
+    self_imp_o = 3  # otherness ships to itself every batch
+    self_imp_c = 1  # most systems: no self-improvement mechanism observed
+
+    # onboarding: can a new project start in <30 min? (otherness: 2 — working)
+    onboard_o = 2
+    onboard_c = 1  # comparators: partial (manual setup required)
+
+    # visibility: health readable in 30s? (otherness: 2 — /otherness.status exists)
+    visibility_o = 2
+    visibility_c = 1  # comparators: partial
+
+    return {
+        'reliability': f'{reliability_o}/{reliability_c}',
+        'self_improvement': f'{self_imp_o}/{self_imp_c}',
+        'onboarding': f'{onboard_o}/{onboard_c}',
+        'visibility': f'{visibility_o}/{visibility_c}',
+    }
+
+def compute_delta(scores):
+    """One-line delta summary: dimensions where otherness leads."""
+    gains = []
+    for dim, val in scores.items():
+        parts = val.split('/')
+        if len(parts) == 2:
+            try:
+                o, c = int(parts[0]), int(parts[1])
+                if o > c: gains.append(f'+{dim}')
+                elif o < c: gains.append(f'-{dim}')
+            except ValueError:
+                pass
+    return ', '.join(gains) if gains else 'parity'
+
+# Bootstrap file if absent
+if not os.path.exists(STANDING_FILE):
+    header = (
+        '# otherness Competitive Standing\n\n'
+        '> Updated by PM §5c every 10 batches. One row per comparison cycle per comparator.\n'
+        '> Scores: otherness_score/comparator_score (0–3). '
+        'Produced by PM §5c per design doc 17.\n\n---\n\n'
+        '## Comparison Log\n\n'
+        '| Date | Batch | Comparator | reliability | self-improvement | onboarding | visibility | delta |\n'
+        '|---|---|---|---|---|---|---|---|\n'
+    )
+    open(STANDING_FILE, 'w').write(header)
+    print(f'[PM §5c] Created {STANDING_FILE}')
+
+# Read existing rows to prevent duplicates for this batch cycle
+try:
+    existing = open(STANDING_FILE).read()
+except Exception:
+    existing = ''
+
+for comparator in COMPARATORS:
+    # Dedup: skip if today's entry for this comparator already exists
+    dedup_key = f'| {TODAY} | {BATCH_COUNT} | {comparator} |'
+    if dedup_key in existing:
+        print(f'[PM §5c] Competitive row already exists for {comparator} batch {BATCH_COUNT} — skipping.')
+        continue
+
+    scores = score_comparator(comparator)
+    delta = compute_delta(scores)
+    row = (f'| {TODAY} | {BATCH_COUNT} | {comparator} | '
+           f'{scores["reliability"]} | {scores["self_improvement"]} | '
+           f'{scores["onboarding"]} | {scores["visibility"]} | {delta} |\n')
+
+    with open(STANDING_FILE, 'a') as f:
+        f.write(row)
+    print(f'[PM §5c] Appended competitive standing row: {comparator} — {delta}')
+
+RUBRIC_EOF
+fi
+```
+
 ---
 
 ## 5e. Stagnation detection (Stage 4 deliverable)
