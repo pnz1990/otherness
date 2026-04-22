@@ -104,16 +104,88 @@ for c in checks:
       echo "$_FAIL_LOG"
     fi
 
-    # [AI-STEP] Analyse $_FAIL_LOG, identify root cause, fix in $MY_WORKTREE.
-    # Common patterns to handle:
-    # - "File is not properly formatted (gofmt)" → run gofmt -w on the file
-    # - "Missing Apache 2.0 header" → add license header to new .go file
-    # - "CRD schemas are stale" → run make manifests generate, commit
-    # - "undefined:" or "cannot find" → fix import or type error in Go code
-    # - "FAIL\s+github.com/..." → read test failure, fix the test or the code
-    # Push the fix, then loop back to recheck.
-    # If the failure is not fixable (external infra, permissions): break and post [NEEDS HUMAN].
-    sleep 30
+    # §38.3 — Pattern-matching CI fix loop (design doc 38 §Future 38.3 → ✅)
+    # Attempt a deterministic fix before falling back to [AI-STEP] judgment.
+    # Known-pattern fixes run first; unknown patterns fall through to [AI-STEP] below.
+    _FIX_APPLIED=false
+    if [ -n "$_FAIL_LOG" ]; then
+      # Pattern 1: Go formatting
+      if echo "$_FAIL_LOG" | grep -qi "not properly formatted\|gofmt"; then
+        echo "[QA §3a] Pattern: gofmt — running gofmt -w"
+        find "$MY_WORKTREE" -name "*.go" -exec gofmt -w {} + 2>/dev/null || true
+        _FIX_APPLIED=true
+      fi
+
+      # Pattern 2: CRLF line endings (otherness lint check)
+      if echo "$_FAIL_LOG" | grep -qi "CRLF\|line ending\|carriage return"; then
+        echo "[QA §3a] Pattern: CRLF — stripping carriage returns from agent files"
+        find "$MY_WORKTREE/agents" -name "*.md" -exec sed -i 's/\r//' {} + 2>/dev/null || true
+        _FIX_APPLIED=true
+      fi
+
+      # Pattern 3: validate.sh — hardcoded project path
+      if echo "$_FAIL_LOG" | grep -qi "hardcoded.*project\|specific project"; then
+        echo "[QA §3a] Pattern: hardcoded path — review agents/*.md for project-specific strings"
+        # [AI-STEP] Read the specific validate.sh error line, locate the offending string,
+        # and replace it with a generic placeholder or remove it.
+        _FIX_APPLIED=false  # needs judgment — fall through to AI-STEP
+      fi
+
+      # Pattern 4: missing required file (validate.sh check)
+      if echo "$_FAIL_LOG" | grep -qi "required.*file.*missing\|not found.*required"; then
+        echo "[QA §3a] Pattern: missing required file — check agents/phases/ and agents/skills/"
+        # [AI-STEP] Identify which required file is missing (read validate.sh output),
+        # create a minimal placeholder if the file should exist, or remove the reference.
+        _FIX_APPLIED=false  # needs judgment
+      fi
+
+      # Pattern 5: self-update block missing (validate.sh check)
+      if echo "$_FAIL_LOG" | grep -qi "self-update\|git.*pull.*missing"; then
+        echo "[QA §3a] Pattern: self-update block — check standalone.md contains git -C ~/.otherness pull"
+        _FIX_APPLIED=false  # needs judgment
+      fi
+
+      # Pattern 6: null bytes or binary content (lint check)
+      if echo "$_FAIL_LOG" | grep -qi "null byte\|binary\|NUL"; then
+        echo "[QA §3a] Pattern: null bytes — removing null bytes from agent files"
+        for _f in $(find "$MY_WORKTREE/agents" -name "*.md" 2>/dev/null); do
+          python3 -c "
+import sys
+data = open('$_f', 'rb').read()
+if b'\\x00' in data:
+    open('$_f', 'wb').write(data.replace(b'\\x00', b''))
+    print(f'Cleaned null bytes from $_f')
+" 2>/dev/null || true
+        done
+        _FIX_APPLIED=true
+      fi
+    fi
+
+    if [ "$_FIX_APPLIED" = "true" ]; then
+      echo "[QA §3a] Deterministic fix applied — committing and pushing"
+      (cd "$MY_WORKTREE" && \
+        git add -A && \
+        git commit -m "fix(ci): automated CI fix (attempt $_CI_ATTEMPTS) — pattern-matched from failure log" \
+          --trailer "Signed-off-by: otherness[bot] <otherness[bot]@users.noreply.github.com>" \
+          2>/dev/null && \
+        git push --force-with-lease origin "$(git rev-parse --abbrev-ref HEAD)" 2>/dev/null) || true
+      sleep 20
+    else
+      # Post failure log as PR comment so operator can see what failed
+      if [ -n "$_FAIL_LOG" ] && [ $_CI_ATTEMPTS -eq 1 ]; then
+        gh pr comment "$PR_NUM" --repo "$REPO" \
+          --body "[QA §3a | attempt $_CI_ATTEMPTS] No deterministic fix pattern matched. Failure log:\n\`\`\`\n$_FAIL_LOG\n\`\`\`" \
+          2>/dev/null || true
+      fi
+      # [AI-STEP] No known pattern matched. Read the full failure log above.
+      # Identify the root cause from $_FAIL_LOG and $_FAIL_RUN.
+      # Common unstructured fixes: wrong import path, missing function, test assertion mismatch.
+      # Make the targeted edit in $MY_WORKTREE, commit with message "fix(ci): <root cause>",
+      # push with --force-with-lease, then let the loop retry CI.
+      # If the failure is external (runner timeout, infra error, permission denied):
+      # break out of this loop and post [NEEDS HUMAN: ci-infra-failure] above.
+      sleep 30
+    fi
     continue
   fi
 
