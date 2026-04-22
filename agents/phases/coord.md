@@ -1342,6 +1342,67 @@ PYEOF
   gh issue comment $ISSUE_NUM --repo $REPO \
     --body "[$MY_SESSION_ID | otherness@${OTHERNESS_VERSION:-unknown}] Starting implementation. Branch: \`$MY_BRANCH\`" 2>/dev/null
 
+  # §43.3 Board Status: In Progress — design doc 43 §43.3
+  # Non-blocking: failure must not stop the claim or the loop (design doc 43 §O5)
+  # [AI-STEP] Read board_project_id from otherness-config.yaml (project.board_project_id).
+  # If non-empty: find the board item ID for this issue and set Status → In Progress via GraphQL.
+  # Follow the same GraphQL mutation pattern used in qa.md §3e (Done status).
+  _BOARD_PID=$(python3 -c "
+import re, os
+section=None
+for line in open('otherness-config.yaml'):
+    s=re.match(r'^(\w[\w_]*):', line)
+    if s: section=s.group(1)
+    if section=='project':
+        m=re.match(r'^\s+board_project_id:\s*[\"\'']?([^\"\'#\n\s]+)[\"\'']?', line)
+        if m: v=m.group(1).strip(); print(v) if v else None; break
+" 2>/dev/null || echo "")
+  if [ -n "$_BOARD_PID" ]; then
+    python3 - <<BOARD_IN_PROGRESS_EOF 2>/dev/null || true
+import subprocess, json, os
+
+PROJECT_ID = '${_BOARD_PID}'
+ISSUE_NUM = int('${ISSUE_NUM}')
+REPO = os.environ.get('REPO', '${REPO}')
+
+# Step 1: Get board item ID for this issue
+q1 = subprocess.run(['gh','api','graphql','-f',
+    f'query={{ node(id: "{PROJECT_ID}") {{ ... on ProjectV2 {{ items(first:200) {{ nodes {{ id content {{ ... on Issue {{ number }} }} }} }} }} }} }}'],
+    capture_output=True, text=True, timeout=15)
+try:
+    data = json.loads(q1.stdout)
+    items = data['data']['node']['items']['nodes']
+    item_id = next((i['id'] for i in items if i.get('content',{}).get('number')==ISSUE_NUM), None)
+except Exception: item_id = None
+
+if not item_id:
+    print(f'[COORD §43.3] Issue #{ISSUE_NUM} not on board — skipping Status update')
+    exit(0)
+
+# Step 2: Get Status field ID and "In Progress" option ID
+q2 = subprocess.run(['gh','api','graphql','-f',
+    f'query={{ node(id: "{PROJECT_ID}") {{ ... on ProjectV2 {{ fields(first:20) {{ nodes {{ ... on ProjectV2SingleSelectField {{ id name options {{ id name }} }} }} }} }} }} }}'],
+    capture_output=True, text=True, timeout=15)
+try:
+    fdata = json.loads(q2.stdout)
+    fields = fdata['data']['node']['fields']['nodes']
+    status_field = next((f for f in fields if f.get('name')=='Status'), None)
+    field_id = status_field['id']
+    in_progress_id = next((o['id'] for o in status_field['options']
+                           if 'progress' in o['name'].lower()), None)
+except Exception: field_id = in_progress_id = None
+
+if not field_id or not in_progress_id:
+    print('[COORD §43.3] Could not find Status/In Progress field — skipping')
+    exit(0)
+
+# Step 3: Set Status → In Progress
+mut = f'mutation {{ updateProjectV2ItemFieldValue(input: {{ projectId: "{PROJECT_ID}" itemId: "{item_id}" fieldId: "{field_id}" value: {{ singleSelectOptionId: "{in_progress_id}" }} }}) {{ projectV2Item {{ id }} }} }}'
+subprocess.run(['gh','api','graphql','-f',f'mutation={mut}'], capture_output=True, timeout=15)
+print(f'[COORD §43.3] Board Status → In Progress for issue #{ISSUE_NUM}')
+BOARD_IN_PROGRESS_EOF
+  fi
+
   # D4 classification at issue intake — classify the issue title/body before speccing.
   _D4_RESULT=$(python3 - <<'D4EOF'
 import subprocess, re, os, sys
