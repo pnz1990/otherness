@@ -1123,11 +1123,9 @@ except Exception:
     print(f"PASS {ITEM_ID}")
     sys.exit(0)
 
-is_chore = 'kind/chore' in labels or all(
-    l in ('kind/docs', 'kind/chore') for l in labels if l.startswith('kind/')
-) or (not any(l.startswith('kind/') for l in labels) is False
-      and all(l not in ('kind/enhancement', 'kind/bug') for l in labels)
-      and any(l in ('kind/chore', 'kind/docs') for l in labels))
+# is_chore: True only when ALL kind/ labels are chore/docs and at least one kind/ label exists
+_kind_labels = [l for l in labels if l.startswith('kind/')]
+is_chore = bool(_kind_labels) and all(l in ('kind/chore', 'kind/docs') for l in _kind_labels)
 
 if MEANINGFUL_PRS > 0 or not is_chore:
     # Gate does not fire: session already shipped a feature, or item is not a chore
