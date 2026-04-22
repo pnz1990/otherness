@@ -1076,15 +1076,17 @@
       "done_at": "2026-04-22T15:10:48Z"
     },
     "issue-890": {
-      "state": "todo",
-      "title": "feat: Phase-role cognitive diversity",
+      "state": "done",
+      "title": "Phase-role cognitive diversity",
       "labels": [
         "priority/medium",
         "area/agent-loop",
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr": 911,
+      "merged_at": "2026-04-22T15:50:54Z"
     },
     "issue-891": {
       "state": "todo",
