@@ -81,6 +81,11 @@ been cut autonomously on a managed project. When a PR introduces a breaking chan
 
 ### Dependencies
 
+- 🔲 Cross-session knowledge memory: evaluate ByteRover MCP (campfirein/byterover-cli)
+  as an opt-in onboarding step. Addresses the gap where the agent finishes a session
+  knowing useful codebase patterns but the next session has no memory of them. No
+  otherness code changes — MCP server + onboarding step only.
+
 Stage 11 (perpetual vision pressure — COORD must be routing queue items correctly before
 we can trust release readiness signals)
 
