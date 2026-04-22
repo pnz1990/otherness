@@ -908,6 +908,13 @@
       "pr_merged": true,
       "pr_number": 848,
       "done_at": "2026-04-22T08:25:22Z"
+    },
+    "issue-853": {
+      "state": "done",
+      "pr_merged": true,
+      "pr_number": 867,
+      "done_at": "2026-04-22T09:04:40Z",
+      "title": "feat(validate): YAML syntax check for scheduled workflow (28.1)"
     }
   },
   "session_heartbeats": {
