@@ -49,3 +49,4 @@
 | 2026-04-22 | 10 | 138 | 1 | 0 | 12 | — | 1 | ~10 | Batch 10 (Apr 22): 138 feat PRs shipped since batch 9; workflow scope blocking #788; PR #819 opened (CRITICAL, needs review) |
 
 | 2026-04-22 | 2026-04-22 | 13 | 0 | 0 | 0 | ? | 0 | 0 | sess-370630c5 |
+| 2026-04-22 | 11 | 17 | 0 | 0 | 14 | 17 | 1 | ~8 | Batch 11: competitive-standing.md shipped (#907); SM §4b now shows competitive delta |

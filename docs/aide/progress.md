@@ -1,14 +1,14 @@
 # otherness: Current Progress
 
-> Updated automatically by SM §4f every batch. Last update: 2026-04-20
+> Updated automatically by SM §4f every batch. Last update: 2026-04-22
 
 ## Current State
 
 - **Health**: 🟢 GREEN
-- **Last shipped**: feat(sm): automated docs/aide/progress.md update in SM §4f (2026-04-20)
-- **Queue depth**: 40 todo, 0 in_review
-- **Vision PRs this batch**: 15
-- **SM cycle**: 6 | Agent: otherness@e541da8
+- **Last shipped**: feat(pm): competitive-standing.md rubric artifact — PM §5c scored rubric; SM §4b competitive delta (2026-04-22, PR #907)
+- **Queue depth**: 13 todo, 0 in_review
+- **Vision PRs this batch**: 17
+- **SM cycle**: 11 | Agent: otherness@v0.2.0
 
 ## Stage Completion
 
