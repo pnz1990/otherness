@@ -300,6 +300,90 @@ else:
 M7EOF
 fi
 
+# §4a-schema-conformance: metrics.md column drift detection (design doc 33 §Future → ✅)
+# Compare header column count vs last data row column count.
+# If they differ: open a kind/bug priority/high issue (idempotent).
+# Fail-open: missing/empty metrics.md logs a warning and continues.
+python3 - <<'SCHEMA_EOF'
+import subprocess, re, os
+
+REPO = os.environ.get('REPO', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
+
+metrics_path = 'docs/aide/metrics.md'
+try:
+    with open(metrics_path) as f:
+        lines = [l.rstrip() for l in f]
+except FileNotFoundError:
+    print('[SM §4a-schema] metrics.md not found — skipping schema check.')
+    exit(0)
+
+# Find the header row (contains prs_merged) and last data row
+header_cols = None
+last_data_cols = None
+sep_found = False
+for line in lines:
+    if '---|' in line:
+        sep_found = True
+        continue
+    if line.startswith('|') and 'prs_merged' in line:
+        header_cols = [c.strip() for c in line.split('|') if c.strip()]
+        continue
+    if line.startswith('|') and sep_found and header_cols:
+        cells = [c.strip() for c in line.split('|') if c.strip()]
+        if len(cells) >= 3:
+            last_data_cols = cells
+
+if header_cols is None:
+    print('[SM §4a-schema] metrics.md has no header row — skipping schema check.')
+    exit(0)
+if last_data_cols is None:
+    print('[SM §4a-schema] metrics.md has no data rows — skipping schema check.')
+    exit(0)
+
+h = len(header_cols)
+d = len(last_data_cols)
+if h == d:
+    print(f'[SM §4a-schema] metrics.md OK: {h} columns (header matches data)')
+    exit(0)
+
+# Drift detected — open a bug issue (idempotent)
+issue_title = f'metrics.md schema drift: {h} columns defined, {d} columns written'
+try:
+    r = subprocess.run(
+        ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+         '--search', issue_title[:60], '--json', 'number', '--jq', 'length'],
+        capture_output=True, text=True, timeout=15)
+    if int(r.stdout.strip() or '0') > 0:
+        print(f'[SM §4a-schema] Drift detected ({h} vs {d}) but issue already open — skipping duplicate.')
+        exit(0)
+except Exception:
+    pass
+
+body = (
+    f'## metrics.md schema drift detected\n\n'
+    f'**Header columns**: {h} (`{", ".join(header_cols)}`)\n'
+    f'**Last data row columns**: {d}\n\n'
+    f'SM §4b is writing {d} columns but the schema header defines {h}. '
+    f'This means some columns are missing from the data rows.\n\n'
+    f'**Detected by**: SM §4a-schema-conformance (design doc 33 §Future → ✅)\n'
+    f'**Session**: {MY_SESSION_ID}'
+)
+try:
+    r2 = subprocess.run(
+        ['gh', 'issue', 'create', '--repo', REPO,
+         '--title', issue_title,
+         '--label', 'otherness,kind/bug,area/tooling,priority/high',
+         '--body', body],
+        capture_output=True, text=True, timeout=15)
+    if r2.returncode == 0:
+        print(f'[SM §4a-schema] Drift detected: {h} columns defined, {d} written. Bug issue opened: {r2.stdout.strip().split("/")[-1]}')
+    else:
+        print(f'[SM §4a-schema] Drift detected but issue creation failed (non-fatal): {r2.stderr.strip()[:80]}')
+except Exception as e:
+    print(f'[SM §4a-schema] Drift detected but issue creation error (non-fatal): {e}')
+SCHEMA_EOF
+
 # Version pinning check — is agent_version set?
 AGENT_VERSION=$(python3 -c "
 import re

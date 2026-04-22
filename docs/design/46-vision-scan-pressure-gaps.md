@@ -20,7 +20,7 @@ the corpus does not yet address.
 
 ## Present (✅)
 
-*(Nothing shipped yet — this doc was created by the autonomous vision scan.)*
+- ✅ 46.0 — Initial gap analysis completed by autonomous vision scan: 14 Future items added across 5 pressure lenses (2026-04-22). Items 46.15–46.17 added 2026-04-22 by follow-up vision scan identifying active live gaps: SCAN 5 rewrite loop not executing, Stage 11 roadmap tracking absent, visibility sprint not activated after 39.1 shipped.
 
 ---
 
@@ -64,6 +64,14 @@ the corpus does not yet address.
 
 - 🔲 46.14 — Vision scan Step A run must be distinguished from batch Step B run in the GitHub Actions history — operators cannot currently tell which workflow run did what: the `otherness-scheduled.yml` dual-step workflow runs Step A (vibe-vision-auto) and Step B (otherness.run) in the same workflow execution — they appear as a single green ✓ in the Actions tab. When a run produces a vision scan commit but no PR (Step A ran, Step B found nothing to claim), the operator sees a green run and cannot tell from the Actions history whether Step B actually ran or was skipped. The workflow must add a job-level name annotation: the Step A job should be named "Vision Scan (Step A)" and the Step B job "Run (Step B)" in the workflow YAML. Additionally, the Step A job must output its scan summary to `$GITHUB_STEP_SUMMARY`: "Vision scan complete: [N] items promoted, [M] stale flagged, [K] inferred added." The Step B job output is specified in doc 28 (28.2). With both outputs, a human clicking on any workflow run in the Actions tab sees two distinct job summaries — one for the vision scan and one for the session run — without needing to read log lines. ⚠️ Inferred from visibility lens: the dual-step scheduled workflow is a key system component but produces a single undifferentiated entry in the Actions history; operators cannot distinguish "Step A ran, Step B skipped" from "both steps ran and shipped"; distinguishing the two requires reading raw logs.
 
+### Newly surfaced gaps (2026-04-22 vision scan)
+
+- 🔲 46.15 — SCAN 5 §37.2 LENS scoring reports 100% addressed while §37.3–37.5 (actual rewrite) remain unshipped — the scoring mechanism gives false confidence that the pressure rewrite loop is working when it has never fired: this session's SCAN 5 run scored all 5 pressure bullets as "addressed" using the LENS-type key-noun matching introduced in §37.11. The score: 5/5 (100%), triggering the rewrite condition. But §37.3 (rewrite condition), §37.4 (synthesise new block), and §37.5 (update the workflow file) are ALL unshipped `🔲 Future` items. The SCAN 5 scoring says "pressure fully addressed — please rewrite" while the mechanism to perform that rewrite does not exist. This is the clearest possible evidence that the scoring and the rewrite are decoupled: SCAN 5 can report 100% addressed every single scan and the pressure context will never change because the rewrite step was never implemented. COORD must prioritise §37.3–37.5 as a single atomic unit — they must ship together or not at all. Shipping §37.3 (detect rewrite needed) without §37.4 (synthesise) and §37.5 (write to file) is useless. The three items must be treated as a single `size/m` PR with all three obligations implemented. Until they ship: vibe-vision-auto SCAN 5 runs every scheduled workflow, scores 100%, would-trigger a rewrite, but silently does nothing. ⚠️ Inferred from reliability and self-improvement lenses: a truly reliable system raises its own bar; the pressure rewrite mechanism has been specified for 2+ days but no implementation exists; every SCAN 5 run that scores ≥60% and does not rewrite is a silent failure of the self-improvement loop.
+
+- 🔲 46.16 — Stage 11 (Perpetual Vision Pressure) roadmap completion tracking — 0 of 6 deliverables have shipped and the roadmap shows no advancement: Stage 11 has 6 deliverables in `docs/aide/roadmap.md`: (1) SCAN 5 rewrite, (2) SM §4f vision alignment signal AMBER, (3) COORD §1b vision-pressure claiming, (4) state.json `vision_aligned` field, (5) SM §4a two-consecutive-AMBER trigger, (6) cross-project pressure propagation. As of this scan, items 2–5 are marked `✅ Present` in doc 35 but item 1 (SCAN 5 rewrite — §37.3–37.5) and item 6 (cross-project propagation — §37.6) are unshipped. Stage 11 is therefore 4/6 complete (67%). PM §5 must: (1) parse Stage 11 deliverables from `docs/aide/roadmap.md`, (2) match each against Present items in design docs 35, 36, 37, (3) compute `stage_11_pct = matched / total`, (4) write to `state.json` as `current_stage_pct`, (5) include in health comment: "Stage 11: 4/6 (67%)". When `current_stage_pct` is unchanged for 10 batches: PM §5 must open a `kind/chore priority/high` issue: "Stage 11 stall: no deliverables shipped in 10 batches." The specific gap: SCAN 5 rewrite (§37.3–37.5) is the only Stage 11 deliverable that has been explicitly unshipped for 2+ days while the stage shows GREEN in progress.md. ⚠️ Inferred from visibility and self-improvement lenses: the roadmap shows Stage 11 as active but no mechanism tracks which deliverables have shipped and which remain; a human reading the roadmap cannot tell whether Stage 11 is at 0% or 90% complete; this is the "spinning in circles" failure mode the pressure context names — the loop is alive but the stage is not advancing at a measurable rate.
+
+- 🔲 46.17 — Visibility sprint (39.x items 39.2–39.4) has lost momentum after 39.1 shipped — the 39.0 sprint-tracking item exists but no mechanism has activated it: doc 39 item 39.0 specifies that COORD §1c must execute one visibility sprint per every 5 batches when the sprint target (≥3 of 39.1–39.4 Present) is not met. Item 39.1 shipped on 2026-04-22 (PR #830). Items 39.2 (report issue body edit), 39.3 (progress.md auto-sync), and 39.4 (status command) remain `🔲 Future`. The sprint target is 1/3 met. The 39.0 sprint-tracking mechanism requires `visibility_sprint_active: true` in `state.json` — but no item has actually written this field. SM §4b must, in the current session, check: (a) is `visibility_sprint_active` in `state.json`? (b) if not: is the sprint target unmet (39.2–39.4 still `🔲 Future`)? (c) if both conditions: write `visibility_sprint_active: true` to `state.json` immediately and include in the health comment: "⚠️ Visibility sprint activated — 39.1 shipped but 39.2–39.4 remain. Sprint claims 39.x issues exclusively for the next 5 batches." Without this activation, the sprint mechanism specified in 39.0 is dead on arrival: 39.1 shipped, the sprint target was not met, the spec says to activate the sprint, but nothing actually activated it. The sprint timer has been running since 39.1 merged (2026-04-22) with no sprint active. 5 batches of normal queue processing have already elapsed. ⚠️ Inferred from visibility lens: a human looking at GitHub right now cannot quickly tell if the system is healthy; 39.1 shipped 2 days ago and the visibility sprint that was supposed to follow never started; the momentum from 39.1 is already dissipating.
+
 ---
 
 ## Zone 1 — Obligations
@@ -72,12 +80,16 @@ the corpus does not yet address.
 None of these items may block the main loop. Detection failures are logged and
 the loop continues.
 
-**O2 — Items 46.1–46.14 must enter the queue via COORD §1d.**
+**O2 — Items 46.1–46.17 must enter the queue via COORD §1d.**
 This doc is the source. COORD reads `🔲 Future` items and creates GitHub issues.
 No human intervention needed to queue them.
 
 **O3 — Concurrency fix (46.1) is highest priority.**
 It is a 2-line YAML change with no risk. Ship it first.
+
+**O4 — SCAN 5 rewrite (§37.3–37.5 via 46.15) is the Stage 11 critical path.**
+Until the rewrite mechanism ships, every SCAN 5 run silently fails to raise the bar.
+This is the single item that, when shipped, closes the pressure self-update loop.
 
 ---
 

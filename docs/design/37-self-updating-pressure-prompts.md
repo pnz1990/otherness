@@ -32,6 +32,8 @@ The human should never need to manually update the pressure prompts. The agent d
 - ✅ 37.1 — `agents/vibe-vision-auto.md` SCAN 5: reads the active pressure block from the `prompt:` YAML key of the Step A step in `.github/workflows/otherness-scheduled.yml` (Step A identified by containing `vibe-vision-auto.md`). Falls back to searching all workflow files if the primary source is absent. Exports `pressure_block` (full text) and `pressure_keywords` (key phrases) for use in scoring. (PR #694, 2026-04-21)
 - ✅ 37.2 — SCAN 5: per-bullet pressure scoring — for each bullet point in the current pressure block, check recent merged PRs (last 20) AND open design doc Present items. A bullet is "addressed" when its topic phrase (first 30 chars, lowercased) appears in ≥2 distinct evidence items across both sources. Per-bullet audit log emitted. `addressed_ratio = addressed_bullets / total_bullets`. (PR #828, 2026-04-22)
 
+> **⚠️ Live gap (2026-04-22):** This session's SCAN 5 scored 5/5 (100%) using LENS-type scoring (§37.11), triggering the rewrite condition. §37.3–37.5 (the actual rewrite mechanism) are unshipped. The rewrite did NOT execute. Every future SCAN 5 run will also score high and silently do nothing until §37.3–37.5 ship. See doc 46 item 46.15.
+
 ---
 
 ## Future (🔲)
