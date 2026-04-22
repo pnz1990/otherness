@@ -1112,15 +1112,121 @@ print(int((datetime.datetime.now(datetime.timezone.utc) - d).total_seconds() / 3
 
       # Step 3: Open [NEEDS HUMAN] issue if stall > 72h
       if [ "${AGE_H:-0}" -gt 72 ]; then
-        STALL_TITLE="[NEEDS HUMAN] Journey 2: reference project stalled >${AGE_H}h — restart otherness on $REF_PROJECT"
-        EXISTING=$(gh issue list --repo "$REPO" --state open \
-          --search "Journey 2: reference project stalled" \
-          --json number --jq 'length' 2>/dev/null || echo "1")
-        if [ "${EXISTING:-1}" -eq 0 ]; then
-          gh issue create --repo "$REPO" \
-            --title "$STALL_TITLE" \
-            --label "needs-human,area/agent-loop" \
-            --body "## Journey 2 failure detected by PM §5j
+
+        # Step 3a: Workflow-disabled detection (design doc 19 §Future → ✅)
+        # Before opening a generic stall issue, check whether the scheduled workflow
+        # is disabled on the ref project. If disabled: open a specific [NEEDS HUMAN: workflow-disabled]
+        # issue instead of (or in addition to) the generic stall issue.
+        WORKFLOW_DISABLED=$(python3 - <<'WFEOF'
+import subprocess, json, os, sys
+
+REF_PROJECT = os.environ.get('REF_PROJECT', '')
+REPO = os.environ.get('REPO', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
+
+if not REF_PROJECT:
+    print('UNKNOWN'); sys.exit(0)
+
+# Try gh workflow list on the ref project
+try:
+    r = subprocess.run(
+        ['gh', 'workflow', 'list', '--repo', REF_PROJECT,
+         '--json', 'name,state', '--jq', '.[]'],
+        capture_output=True, text=True, timeout=15)
+    if r.returncode != 0:
+        # API error or no access — fail-open
+        print('UNKNOWN'); sys.exit(0)
+    workflows = [json.loads(line) for line in r.stdout.strip().splitlines() if line.strip()]
+except Exception:
+    print('UNKNOWN'); sys.exit(0)
+
+# Find the otherness scheduled workflow by name (case-insensitive)
+for wf in workflows:
+    name = wf.get('name', '').lower()
+    state = wf.get('state', '')
+    if 'otherness' in name and ('scheduled' in name or 'run' in name or 'loop' in name):
+        if state in ('disabled_manually', 'disabled_inactivity'):
+            print(f'DISABLED:{wf.get("name","")}')
+            sys.exit(0)
+        elif state == 'active':
+            print('ACTIVE'); sys.exit(0)
+
+# No matching workflow found — unknown state
+print('NOT_FOUND')
+WFEOF
+)
+
+        # Act on workflow state
+        if echo "$WORKFLOW_DISABLED" | grep -q "^DISABLED:"; then
+          WF_NAME=$(echo "$WORKFLOW_DISABLED" | sed 's/^DISABLED://')
+          OWNER=$(echo "$REF_PROJECT" | cut -d'/' -f1)
+          REPO_SLUG=$(echo "$REF_PROJECT" | cut -d'/' -f2)
+          WF_URL="https://github.com/${REF_PROJECT}/actions"
+          WF_TITLE="[NEEDS HUMAN: workflow-disabled] Scheduled workflow disabled on $REF_PROJECT — re-enable to restart loop"
+          WF_EXISTING=$(gh issue list --repo "$REPO" --state open \
+            --search "workflow-disabled" \
+            --json number,title --jq "[.[] | select(.title | contains(\"$REF_PROJECT\"))] | length" 2>/dev/null || echo "1")
+          if [ "${WF_EXISTING:-1}" -eq 0 ]; then
+            gh issue create --repo "$REPO" \
+              --title "$WF_TITLE" \
+              --label "needs-human,area/agent-loop" \
+              --body "## Scheduled workflow disabled on \`$REF_PROJECT\`
+
+PM §5j detected that \`_state\` on \`$REF_PROJECT\` is stale (${AGE_H}h) and the scheduled workflow is disabled.
+
+**Workflow**: \`${WF_NAME}\`
+**State**: disabled (manually or due to inactivity)
+
+This requires human action — otherness cannot re-enable workflows programmatically.
+
+**Action**: Re-enable the workflow at: ${WF_URL}
+
+After re-enabling, the next scheduled run will resume the loop automatically.
+If the workflow was disabled due to inactivity (60-day GitHub policy): trigger a
+\`workflow_dispatch\` run once to reset the inactivity timer." 2>/dev/null
+            echo "[PM §5j] Opened [NEEDS HUMAN: workflow-disabled] issue for $REF_PROJECT."
+          else
+            echo "[PM §5j] workflow-disabled issue already open — not duplicating."
+          fi
+          JOURNEY2_HEALTH="RED"
+          echo "[PM §5j] Journey 2: RED (workflow disabled on $REF_PROJECT)"
+        elif [ "$WORKFLOW_DISABLED" = "ACTIVE" ]; then
+          echo "[PM §5j] Workflow is active on $REF_PROJECT — stall is transient (runner failure or config issue)."
+          # Fall through to generic stall issue below
+          STALL_TITLE="[NEEDS HUMAN] Journey 2: reference project stalled >${AGE_H}h — restart otherness on $REF_PROJECT"
+          EXISTING=$(gh issue list --repo "$REPO" --state open \
+            --search "Journey 2: reference project stalled" \
+            --json number --jq 'length' 2>/dev/null || echo "1")
+          if [ "${EXISTING:-1}" -eq 0 ]; then
+            gh issue create --repo "$REPO" \
+              --title "$STALL_TITLE" \
+              --label "needs-human,area/agent-loop" \
+              --body "## Journey 2 failure detected by PM §5j
+
+The reference project \`$REF_PROJECT\` has not had \`_state\` activity in ${AGE_H}h (threshold: 72h).
+
+Journey 2 is failing. The scheduled loop on the reference project has stalled.
+
+The scheduled workflow is **active** (not disabled), so this is a transient failure:
+runner crash, credential expiry, or a bug in the agent loop.
+
+**Action**: Run \`/otherness.run\` on \`$REF_PROJECT\` to restart.
+Or check the workflow run logs at: https://github.com/${REF_PROJECT}/actions" 2>/dev/null
+            echo "[PM §5j] Opened [NEEDS HUMAN] issue: Journey 2 stalled ${AGE_H}h (workflow active)."
+          else
+            echo "[PM §5j] Journey 2 stall issue already open — not duplicating."
+          fi
+        else
+          # UNKNOWN or NOT_FOUND — fall back to original generic behavior
+          STALL_TITLE="[NEEDS HUMAN] Journey 2: reference project stalled >${AGE_H}h — restart otherness on $REF_PROJECT"
+          EXISTING=$(gh issue list --repo "$REPO" --state open \
+            --search "Journey 2: reference project stalled" \
+            --json number --jq 'length' 2>/dev/null || echo "1")
+          if [ "${EXISTING:-1}" -eq 0 ]; then
+            gh issue create --repo "$REPO" \
+              --title "$STALL_TITLE" \
+              --label "needs-human,area/agent-loop" \
+              --body "## Journey 2 failure detected by PM §5j
 
 The reference project \`$REF_PROJECT\` has not had \`_state\` activity in ${AGE_H}h (threshold: 72h).
 
@@ -1128,9 +1234,10 @@ Journey 2 is failing. The scheduled loop on the reference project has stalled.
 
 **Action**: Run \`/otherness.run\` on \`$REF_PROJECT\` to restart.
 Or check if the scheduled workflow is enabled and has valid credentials." 2>/dev/null
-          echo "[PM §5j] Opened [NEEDS HUMAN] issue: Journey 2 stalled ${AGE_H}h."
-        else
-          echo "[PM §5j] Journey 2 stall issue already open — not duplicating."
+            echo "[PM §5j] Opened [NEEDS HUMAN] issue: Journey 2 stalled ${AGE_H}h."
+          else
+            echo "[PM §5j] Journey 2 stall issue already open — not duplicating."
+          fi
         fi
 
         # Step 3b: Set JOURNEY2_HEALTH for §5g
