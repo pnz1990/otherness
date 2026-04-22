@@ -582,8 +582,8 @@
       "done_at": "2026-04-21T22:12:41Z"
     },
     "issue-810": {
-      "state": "todo",
-      "title": "feat: Workflow-level silent failure detection: the agent relies on the scheduled GitHub Actions ",
+      "state": "done",
+      "title": "feat(workflow): workflow heartbeat step for silent failure detection",
       "labels": [
         "priority/medium",
         "area/agent-loop",
@@ -591,10 +591,14 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "810"
+      "issue": "810",
+      "pr_number": 878,
+      "branch": "feat/issue-810",
+      "pr_merged": true,
+      "done_at": "2026-04-22T10:55:56Z"
     },
     "issue-809": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 43.1",
       "labels": [
         "priority/medium",
@@ -603,7 +607,8 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "809"
+      "issue": "809",
+      "note": "already done per design doc"
     },
     "issue-808": {
       "state": "todo",
@@ -612,13 +617,14 @@
         "priority/medium",
         "area/agent-loop",
         "size/s",
+        "blocked",
         "kind/enhancement"
       ],
       "priority": "medium",
       "issue": "808"
     },
     "issue-807": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Session pre-flight checks must be a blocking gate, not a best-effort step: COORD \u00a71b curre",
       "labels": [
         "priority/medium",
@@ -627,10 +633,13 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "807"
+      "issue": "807",
+      "pr_merged": true,
+      "pr_number": 842,
+      "done_at": "2026-04-22T06:57:17Z"
     },
     "issue-795": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Phase-role cognitive diversity",
       "labels": [
         "priority/medium",
@@ -639,10 +648,11 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "795"
+      "issue": "795",
+      "pr_number": 837
     },
     "issue-790": {
-      "state": "todo",
+      "state": "done",
       "title": "chore(sm): reduce python block duplication in \u00a74f managed velocity check",
       "labels": [
         "area/agent-loop",
@@ -651,10 +661,13 @@
         "priority/low"
       ],
       "priority": "low",
-      "issue": "790"
+      "issue": "790",
+      "pr_number": 849,
+      "pr_merged": true,
+      "done_at": "2026-04-22T11:51:21Z"
     },
     "issue-763": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: COORD \u00a71b vision-alignment filter \u2014 prefer design-doc-backed items when claiming (35.4)",
       "labels": [
         "priority/medium",
@@ -663,10 +676,11 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "763"
+      "issue": "763",
+      "pr_number": 836
     },
     "issue-758": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 42.1",
       "labels": [
         "priority/medium",
@@ -675,10 +689,12 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "758"
+      "issue": "758",
+      "pr_merged": true,
+      "done_at": "2026-04-22T05:30:35Z"
     },
     "issue-756": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: SM \u00a74f must update `docs/aide/progress.md` every batch with accurate state: `docs/aide/pro",
       "labels": [
         "priority/medium",
@@ -687,10 +703,11 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "756"
+      "issue": "756",
+      "note": "already done"
     },
     "issue-753": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Simulation prediction DIFF",
       "labels": [
         "priority/medium",
@@ -699,10 +716,11 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "753"
+      "issue": "753",
+      "note": "already done (PR #833)"
     },
     "issue-752": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Queue guard firing frequency tracked and acted on: `coord.md \u00a71c` queue refusal guard fire",
       "labels": [
         "priority/medium",
@@ -711,10 +729,11 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "752"
+      "issue": "752",
+      "note": "duplicate"
     },
     "issue-751": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: PM \u00a75: otherness self-improvement rate vs. managed project improvement rate",
       "labels": [
         "priority/medium",
@@ -723,10 +742,11 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "751"
+      "issue": "751",
+      "note": "duplicate"
     },
     "issue-750": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: `/otherness.upgrade` interactive command updated to respect upgrade_policy",
       "labels": [
         "priority/medium",
@@ -735,10 +755,11 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "750"
+      "issue": "750",
+      "note": "duplicate - already done"
     },
     "issue-728": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 41.1",
       "labels": [
         "priority/medium",
@@ -747,10 +768,14 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "728"
+      "issue": "728",
+      "pr_number": 846,
+      "branch": "feat/issue-728",
+      "pr_merged": true,
+      "done_at": "2026-04-22T08:15:16Z"
     },
     "issue-727": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 40.1",
       "labels": [
         "priority/medium",
@@ -759,10 +784,13 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "727"
+      "issue": "727",
+      "pr_merged": true,
+      "pr_number": 845,
+      "done_at": "2026-04-22T08:03:09Z"
     },
     "issue-726": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 39.1",
       "labels": [
         "priority/medium",
@@ -771,10 +799,11 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "726"
+      "issue": "726",
+      "pr_number": 830
     },
     "issue-725": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 39.1",
       "labels": [
         "priority/medium",
@@ -801,7 +830,7 @@
       "done_at": "2026-04-22T03:17:16Z"
     },
     "issue-723": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 37.2",
       "labels": [
         "priority/medium",
@@ -810,7 +839,9 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "723"
+      "issue": "723",
+      "pr_merged": true,
+      "done_at": "2026-04-22T05:14:36Z"
     },
     "issue-722": {
       "state": "done",
@@ -846,7 +877,7 @@
       "done_at": "2026-04-22T02:00:00Z"
     },
     "issue-702": {
-      "state": "todo",
+      "state": "done",
       "title": "fix(sm): \u00a74f SESSION_PROGRESS defaults to STALLED when MERGED env unset in standalone call",
       "labels": [
         "area/agent-loop",
@@ -855,7 +886,10 @@
         "priority/low"
       ],
       "priority": "low",
-      "issue": "702"
+      "issue": "702",
+      "pr_merged": true,
+      "pr_number": 847,
+      "done_at": "2026-04-22T08:21:52Z"
     },
     "issue-681": {
       "state": "done",
@@ -870,7 +904,7 @@
       "priority": "medium"
     },
     "issue-664": {
-      "state": "todo",
+      "state": "done",
       "title": "docs: SM \u00a74f JOURNEY counts show 0 when definition-of-done.md lacks \u2705/\u274c markers",
       "labels": [
         "size/xs",
@@ -878,7 +912,296 @@
         "priority/low"
       ],
       "priority": "low",
-      "issue": "664"
+      "issue": "664",
+      "pr_merged": true,
+      "pr_number": 848,
+      "done_at": "2026-04-22T08:25:22Z"
+    },
+    "issue-853": {
+      "state": "done",
+      "pr_merged": true,
+      "pr_number": 867,
+      "done_at": "2026-04-22T09:04:40Z",
+      "title": "feat(validate): YAML syntax check for scheduled workflow (28.1)"
+    },
+    "issue-870": {
+      "state": "done",
+      "title": "feat: SM health signal must degrade to AMBER when 0 meaningful PRs shipped this session",
+      "issue": "870",
+      "priority": "medium",
+      "labels": [
+        "kind/enhancement",
+        "area/agent-loop",
+        "size/s",
+        "priority/medium",
+        "otherness"
+      ],
+      "created_at": "2026-04-22T10:06:17Z",
+      "assigned_to": "sess-64880371",
+      "assigned_at": "2026-04-22T10:44:44Z",
+      "branch": "feat/issue-870",
+      "worktree": "../otherness.issue-870",
+      "file_spaces": [
+        "agents/",
+        "scripts/"
+      ],
+      "pr_merged": true,
+      "note": "already implemented \u2014 queue was stale"
+    },
+    "issue-871": {
+      "state": "done",
+      "title": "feat: first-run bootstrap guard \u2014 detect and recover missing _state on session start",
+      "issue": "871",
+      "priority": "medium",
+      "labels": [
+        "kind/enhancement",
+        "area/onboarding",
+        "size/s",
+        "priority/medium",
+        "otherness"
+      ],
+      "created_at": "2026-04-22T10:06:17Z",
+      "pr_merged": true,
+      "note": "already implemented \u2014 queue was stale"
+    },
+    "issue-872": {
+      "state": "done",
+      "title": "feat: SM health comment must include skills_count and last-learn date every batch",
+      "issue": "872",
+      "priority": "medium",
+      "labels": [
+        "kind/enhancement",
+        "area/agent-loop",
+        "size/s",
+        "priority/medium",
+        "otherness"
+      ],
+      "created_at": "2026-04-22T10:06:17Z",
+      "pr_merged": true,
+      "note": "already implemented \u2014 queue was stale"
+    },
+    "issue-869": {
+      "state": "done",
+      "pr_number": "873",
+      "title": "fix: metrics schema-execution drift \u2014 data rows missing skills_count column"
+    },
+    "issue-882": {
+      "state": "done",
+      "title": "feat: COORD \u00a71e must refuse to claim a `kind/chore` item when no `kind/enhancement` or `kind/bug",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "assigned_to": "sess-7af2b350",
+      "assigned_at": "2026-04-22T11:41:09Z",
+      "branch": "feat/issue-882",
+      "worktree": "../otherness.issue-882",
+      "file_spaces": [
+        "agents/",
+        "scripts/"
+      ],
+      "pr_number": 902,
+      "pr_merged": true,
+      "done_at": "2026-04-22T13:09:00Z"
+    },
+    "issue-883": {
+      "state": "done",
+      "title": "feat(workflow): add post-run assertion step to job summary (28.2)",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-22T14:01:47Z",
+      "pr_number": 904
+    },
+    "issue-884": {
+      "state": "done",
+      "title": "feat: `/otherness.learn` must have a time-bounded skill-extraction contract",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "pr_merged": true,
+      "pr_number": 919,
+      "done_at": "2026-04-22T21:02:56Z"
+    },
+    "issue-885": {
+      "state": "done",
+      "title": "feat(metrics): add meaningful_prs_week velocity column \u2014 time-normalised delivery rate",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "assigned_to": "sess-82cfece1",
+      "assigned_at": "2026-04-22T12:40:55Z",
+      "branch": "feat/issue-885",
+      "worktree": "../otherness.issue-885",
+      "file_spaces": [
+        "agents/phases/",
+        "docs/aide/"
+      ],
+      "pr_number": 901,
+      "pr_merged": true,
+      "done_at": "2026-04-22T13:02:32Z"
+    },
+    "issue-889": {
+      "state": "done",
+      "title": "feat: PM competitive comparison must produce a verifiable rubric artifact, not just `\u26a0\ufe0f Inferred",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "assigned_to": "sess-e032e99d",
+      "assigned_at": "2026-04-22T14:57:09Z",
+      "branch": "feat/issue-889",
+      "worktree": "../otherness.issue-889",
+      "file_spaces": [
+        "agents/",
+        "scripts/"
+      ],
+      "pr_merged": true,
+      "pr_number": 907,
+      "done_at": "2026-04-22T15:10:48Z"
+    },
+    "issue-890": {
+      "state": "done",
+      "title": "Phase-role cognitive diversity",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "pr": 911,
+      "merged_at": "2026-04-22T15:50:54Z"
+    },
+    "issue-891": {
+      "state": "done",
+      "title": "feat: 36.4 COORD queue-depth vision pressure",
+      "priority": "medium",
+      "pr": 912,
+      "merged_at": "2026-04-22T16:00:52Z"
+    },
+    "issue-892": {
+      "state": "done",
+      "title": "feat: 38.6 SM QA rejection pattern tracker",
+      "priority": "medium",
+      "pr": 913,
+      "merged_at": "2026-04-22T16:08:32Z"
+    },
+    "issue-893": {
+      "state": "done",
+      "title": "feat: 39.3",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-22T20:44:41Z"
+    },
+    "issue-894": {
+      "state": "done",
+      "title": "feat: 40.3",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-22T20:54:09Z"
+    },
+    "issue-895": {
+      "state": "todo",
+      "title": "feat: 41.4",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-896": {
+      "state": "todo",
+      "title": "feat: 41.4",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-897": {
+      "state": "todo",
+      "title": "feat: 42.3",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-898": {
+      "state": "todo",
+      "title": "feat: 42.3",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-899": {
+      "state": "done",
+      "title": "feat(coord): \u00a71e \u00a743.3 board Status: In Progress at item claim",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-22T21:45:17Z",
+      "pr_number": 925
+    },
+    "issue-900": {
+      "state": "done",
+      "title": "feat(observability): add observability.otlp section to config template (44.1)",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-22T21:35:33Z"
     }
   },
   "session_heartbeats": {
@@ -906,16 +1229,44 @@
       "last_seen": "2026-04-22T00:31:45Z",
       "item": "issue-719",
       "cycle": 1
+    },
+    "sess-64880371": {
+      "last_seen": "2026-04-22T10:44:44Z",
+      "item": "issue-870",
+      "cycle": 1
+    },
+    "sess-7af2b350": {
+      "last_seen": "2026-04-22T11:41:09Z",
+      "item": "issue-882",
+      "cycle": 1
+    },
+    "sess-82cfece1": {
+      "last_seen": "2026-04-22T13:09:51Z",
+      "item": "complete",
+      "cycle": 1
+    },
+    "sess-e032e99d": {
+      "last_seen": "2026-04-22T14:57:09Z",
+      "item": "issue-889",
+      "cycle": 1
     }
   },
-  "pm_cycle_count": 5,
+  "pm_cycle_count": 8,
   "vision_aligned": true,
   "consecutive_vision_misaligned": 0,
-  "sm_cycle_count": 96,
+  "sm_cycle_count": 100,
   "managed_feat_stall_count": 0,
   "self_feat_prs_7d": 38,
   "managed_feat_prs_7d": 62,
-  "last_session_id": "sess-b4417de5",
-  "last_session_at": "2026-04-21T22:35:46Z",
-  "housekeeping_streak": 0
+  "last_session_id": "sess-82cfece1",
+  "last_session_at": "2026-04-22T13:09:51Z",
+  "housekeeping_streak": 0,
+  "last_session_health": "GREEN",
+  "last_session_prs": 1,
+  "last_session_vision_backed": 1,
+  "report_issue": 827,
+  "batch_count": 2,
+  "meaningful_pr_guarantee_failed": false,
+  "sm_batch_count": 1,
+  "last_sm_run": "2026-04-22T21:46:36Z"
 }
