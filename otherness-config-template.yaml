@@ -253,3 +253,22 @@ anchor:
   # upstream_version_file: go.mod                       # file to grep for upstream version (e.g. go.mod)
   # upstream_version_pattern: "github.com/awslabs/kro"  # pattern to find in the file (e.g. kro dependency line)
   # journeys_dir: "test/e2e/journeys"                   # path to journey files; used by SM §4g-anchor-parity
+
+# ── Observability ─────────────────────────────────────────────────────────────
+# Four-layer observability model: OTLP session telemetry, security audit log,
+# cost governance, and fleet intelligence. All layers are opt-in — no telemetry
+# is emitted without explicit configuration. See docs/design/44-otlp-observability.md.
+#
+# Layer 1: Session telemetry via OTLP (traces + metrics from the AI SDK).
+# OpenCode exports one span per LLM call (model, tokens, latency, finish reason)
+# and one span per tool invocation via experimental.openTelemetry.
+#
+# observability:
+#   otlp:
+#     enabled: false          # default: false — no telemetry without this
+#     backend: aws-xray       # aws-xray | grafana | prometheus | custom
+#     service_name: otherness # OTEL service.name resource attribute
+#     # For custom or grafana backends — name of GitHub Actions secrets:
+#     endpoint_secret: OTEL_EXPORTER_OTLP_ENDPOINT   # secret containing the OTLP endpoint URL
+#     headers_secret:  OTEL_EXPORTER_OTLP_HEADERS    # secret containing auth headers (e.g. "Authorization=Bearer ...")
+#     # For aws-xray: no secrets needed — OIDC role handles auth automatically
