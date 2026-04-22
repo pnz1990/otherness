@@ -47,5 +47,4 @@
 | 2026-04-15 | 8 | 1 | 0 | 0 | 11 | — | 1 | ~10 | Batch 8: issue-70 merged (#71); state reconstruction needed — _state lost queue on squash merges |
 | 2026-04-15 | 9 | 1 | 0 | 0 | 11 | — | 4 | ~12 | Batch 9: PR #75 — state read-back, alibi label fix, pnz1990 slug, job_family example; production-readiness blockers cleared |
 | 2026-04-22 | 10 | 138 | 1 | 0 | 12 | — | 1 | ~10 | Batch 10 (Apr 22): 138 feat PRs shipped since batch 9; workflow scope blocking #788; PR #819 opened (CRITICAL, needs review) |
-
-| 2026-04-22 | 2026-04-22 | 13 | 0 | 0 | 0 | ? | 0 | 0 | sess-370630c5 |
+| 2026-04-22 | 11 | 50 | 0 | 0 | 12 | 72 | 1 | ~12 | Batch 11 (Apr 22): PR #904 — post-run assertion step (28.2); workflow file change requires human (App token lacks workflow permission per doc 27 §M4) |
