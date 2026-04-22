@@ -322,28 +322,87 @@ mkdir -p docs/design
 ```
 
 ```bash
-# [AI-STEP] Infer 2-4 major feature areas from the codebase.
+# [AI-STEP] Infer 3-5 major feature areas from the codebase.
+# MANDATORY: Each stub MUST have ≥1 real 🔲 Future item derived from codebase evidence.
+# "Real" means: a gap actually visible in the code (missing test, missing error handler,
+# incomplete feature, TODO comment, feature listed in README but not implemented, etc.)
+# Do NOT use generic placeholders ("Add more features", "Improve performance").
 #
 # Sources to read (in order):
 # 1. Repository top-level directory structure (ls .)
-# 2. README.md sections and headings
+# 2. README.md sections, headings, and "TODO"/"WIP" markers
 # 3. Package manifest (package.json, pom.xml, go.mod, Cargo.toml, requirements.txt)
-# 4. Any existing docs/ files
+# 4. Key source files — scan for TODO/FIXME/HACK comments, incomplete stubs, empty error handlers
+# 5. Any existing docs/ files
 #
-# For each inferred feature area:
+# For each inferred feature area (minimum 3 stubs):
 # 1. Create docs/design/0N-<area-slug>.md
 # 2. Include: Status: Draft | ⚠️ Inferred — review before treating as authoritative
 # 3. Include: ## What this does (one paragraph from README or inferred)
 # 4. Include: ## Present (✅) — list major existing capabilities (inferred from code)
-# 5. Include: ## Future (🔲) — leave empty or add obvious TODOs
+# 5. Include: ## Future (🔲) — REQUIRED: at least 1 concrete item per stub, e.g.:
+#      🔲 Add error handling for <specific function> — currently returns nil/empty on failure
+#      🔲 Add tests for <specific module> — no test file exists yet
+#      🔲 Implement <feature listed in README> — mentioned but not yet coded
 # 6. Include: ## Zone 1 — Obligations (stub: "To be defined")
 #
 # If no feature areas can be identified: create docs/design/01-overview.md
-# with status: ⚠️ Inferred — project structure not yet identifiable.
+# with status: ⚠️ Inferred — project structure not yet identifiable, and add at minimum:
+#   🔲 Add documentation for core modules — README does not describe internal structure
 #
-# Example output for a web app with auth and API:
-#   docs/design/01-authentication.md
-#   docs/design/02-api-endpoints.md
+# After generating all stubs, verify the output quality gate below.
+```
+
+```bash
+# STEP 4b quality gate — verify ≥3 stubs with Future items exist
+STUBS_WITH_FUTURE=$(python3 -c "
+import os, re
+design_dir = 'docs/design'
+if not os.path.isdir(design_dir):
+    print(0)
+else:
+    count = 0
+    for fname in os.listdir(design_dir):
+        if not fname.endswith('.md'): continue
+        try:
+            content = open(f'{design_dir}/{fname}').read()
+            m = re.search(r'^## Future.*?\n(.*?)(?=^## |\Z)', content, re.MULTILINE | re.DOTALL)
+            if m and re.search(r'^- 🔲', m.group(1), re.MULTILINE):
+                count += 1
+        except: pass
+    print(count)
+" 2>/dev/null || echo "0")
+
+echo "[ONBOARD §4b] Design stubs with Future items: ${STUBS_WITH_FUTURE}"
+
+if [ "${STUBS_WITH_FUTURE:-0}" -lt 3 ]; then
+  echo "[ONBOARD §4b] GATE FAIL: fewer than 3 design stubs have Future items (found: ${STUBS_WITH_FUTURE})."
+  echo "[ONBOARD §4b] Retrying: re-reading codebase to identify more specific gaps..."
+  # [AI-STEP] Re-read the codebase: scan source files for TODO/FIXME comments, incomplete
+  # stubs, missing error handling, and features mentioned in README but not implemented.
+  # Add ≥1 concrete 🔲 Future item to each existing stub that is missing one, and create
+  # additional stubs if needed to reach ≥3. Each item must name a specific file, function,
+  # or feature — not a generic improvement.
+  # After retry: re-run this gate. If still failing, proceed anyway with a warning.
+  STUBS_WITH_FUTURE_RETRY=$(python3 -c "
+import os, re
+design_dir = 'docs/design'
+if not os.path.isdir(design_dir): print(0)
+else:
+    count = sum(1 for fname in os.listdir(design_dir)
+                if fname.endswith('.md') and
+                re.search(r'^- 🔲', open(f'{design_dir}/{fname}').read(), re.MULTILINE))
+    print(count)
+" 2>/dev/null || echo "0")
+  if [ "${STUBS_WITH_FUTURE_RETRY:-0}" -lt 3 ]; then
+    echo "[ONBOARD §4b] WARNING: still <3 stubs with Future items after retry — proceeding with ${STUBS_WITH_FUTURE_RETRY}."
+    echo "[ONBOARD §4b] COORD may generate autonomous-vision items for first batch (lower quality)."
+  else
+    echo "[ONBOARD §4b] Gate passed after retry: ${STUBS_WITH_FUTURE_RETRY} stubs with Future items."
+  fi
+else
+  echo "[ONBOARD §4b] Quality gate passed: ${STUBS_WITH_FUTURE} stubs with Future items."
+fi
 ```
 
 ---
