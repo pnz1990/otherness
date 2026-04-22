@@ -24,13 +24,13 @@ no design-doc-backed items remain.
 ## Present (✅)
 
 - ✅ 36.1 — COORD §1b-vision: builds `VISION_PRESSURE_SET` at session start — reads all `🔲 Future` items from `docs/design/*.md`, takes first 40 chars lowercased as keys. Exported as newline-separated env var. Logged: "Vision pressure set: N items from M design docs." Graceful fallback if no docs/design/ exists. (PR #689, 2026-04-21)
+- ✅ 36.2 — COORD §1e: vision-pressure claim priority boost — `_item_sort_key` reads `VISION_PRESSURE_SET`; items whose title+body match any VPS key (case-insensitive substring) receive -1 boost; non-matching items receive +1. Tiebreaker within same priority tier (O1: no override). Fail-open: VPS empty or unset → boost=0. (PR #820, 2026-04-22)
 
 ---
 
 ## Future (🔲)
 
 - 🔲 36.1 — COORD §1b: read active design doc Future items at session start — before claiming any item, build an in-memory set of all `🔲 Future` items from `docs/design/*.md`. This is the "vision pressure set" for this session.
-- 🔲 36.2 — COORD §1b: boost claim priority for vision-pressure items — when scanning open issues to claim, check if the issue title or body references a string from the vision pressure set (first 40 chars of any Future item). Issues that match are promoted to `priority/high` for claim purposes regardless of their label. Issues that don't match are treated as `priority/low` for claim purposes regardless of their label.
 - 🔲 36.3 — COORD §1b: log vision-pressure claim decisions — when claiming an item, append to the batch report: "Claimed #N [vision-backed: yes/no] — <reason>". This makes the claim logic auditable without adding overhead.
 - 🔲 36.4 — COORD §1f: queue-depth check accounts for vision pressure — the minimum queue depth guard (currently: if queue < 5, trigger learn/vision) should count only vision-backed items. A queue with 10 items that are all chores is effectively empty from a vision standpoint.
 - 🔲 36.5 — SM §4f: report vision pressure utilisation — in the health comment, include: "Vision-backed items claimed this session: N / M total claims." This closes the feedback loop: the human can see whether the pressure prompts are actually driving what gets implemented.
