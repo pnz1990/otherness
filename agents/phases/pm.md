@@ -1456,6 +1456,10 @@ try:
 except: print(0)
 " 2>/dev/null || echo "0")
 
+if [ "${PM_PATCH_CYCLE_MOD:-0}" -ne 0 ]; then
+  echo "[PM §5o] Skipping this cycle (cycle mod ${PM_PATCH_CYCLE_MOD} ≠ 0)."
+else
+
 python3 - <<'PATCH_RELEASE_EOF'
 import subprocess, re, os, json, datetime, sys
 
@@ -1662,7 +1666,9 @@ except Exception:
 print('[PM §5o] Patch release trigger complete.')
 PATCH_RELEASE_EOF
 
-# Increment pm_patch_cycle counter in state.json
+fi  # end cycle gate
+
+# Increment pm_patch_cycle counter in state.json (always — counts every call, not just when trigger fires)
 python3 - <<'CYCLE_EOF'
 import json
 try:
