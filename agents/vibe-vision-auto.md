@@ -547,11 +547,35 @@ def _extract_bullets(block):
     """Extract one entry per bullet line from a pressure block.
 
     Design ref: docs/design/37-self-updating-pressure-prompts.md §37.2
+    Design ref: docs/design/17-vision-evolution-cadence.md §Future (issue-928)
     Each bullet is a distinct scoring unit. Strip leading '- ', trailing '?',
-    and return the full bullet text (lowercased) for topic-phrase matching.
-    Returns list of (raw_bullet_text, topic_phrase) tuples where topic_phrase
-    is the first 30 chars lowercased — used for substring matching.
+    and return the full bullet text (lowercased) for domain-noun matching.
+    Returns list of (raw_bullet_text, domain_nouns) tuples where domain_nouns
+    is a list of extracted domain nouns — used for multi-noun evidence matching.
+
+    Domain noun expansion (issue-928): instead of matching the first 30 chars
+    of the bullet verbatim (which fails for abstract lenses like "Is the
+    onboarding good enough?"), extract concrete domain terms that appear in
+    both the bullet and in PR titles / Present items.
     """
+    # Domain noun dictionary: concrete terms per domain area.
+    # Design ref: docs/design/17-vision-evolution-cadence.md §Future
+    DOMAIN_NOUNS = {
+        # Onboarding domain
+        'onboard', 'setup', 'first-run', 'setup-guide', 'onboarding',
+        # Visibility / health domain
+        'dashboard', 'health', 'visib', 'visibility', 'progress', 'status',
+        'report', 'metrics', 'schema', 'observ',
+        # Skills / learning domain
+        'learn', 'skill', 'session', 'quality',
+        # Agent loop domain
+        'coord', 'queue', 'session', 'agent', 'loop', 'phase',
+        # Release / throughput domain
+        'release', 'throughput', 'meaningful', 'ship',
+        # Competitive / vision domain
+        'competi', 'vision', 'pressure', 'roadmap',
+    }
+
     bullets = []
     for line in block.splitlines():
         stripped = line.strip()
@@ -560,8 +584,13 @@ def _extract_bullets(block):
         text = stripped[2:].strip().rstrip('?').strip()
         if len(text) < 5:
             continue
-        topic = text[:30].lower()
-        bullets.append((text, topic))
+        text_lower = text.lower()
+        # Extract domain nouns that appear in this bullet text
+        found_nouns = [n for n in DOMAIN_NOUNS if n in text_lower]
+        # Fallback: if no domain noun found, use first-30-char topic prefix
+        if not found_nouns:
+            found_nouns = [text_lower[:30]]
+        bullets.append((text, found_nouns))
     return bullets
 
 # Primary: parse prompt: section of Step A in otherness-scheduled.yml
@@ -644,28 +673,34 @@ if os.path.isdir(design_dir):
             pass
 
 # 2c: Per-bullet scoring — §37.2 spec O1–O5
-# A bullet is "addressed" when ≥2 distinct evidence items match its topic phrase.
-# Evidence items: PR titles + Present doc items. Substring match on first 30 chars.
+# A bullet is "addressed" when ≥2 distinct evidence items match ANY of its domain nouns.
+# Evidence items: PR titles + Present doc items. Substring match on each domain noun.
+# Design ref: docs/design/17-vision-evolution-cadence.md §Future (issue-928):
+# Uses domain_nouns list (from _extract_bullets) instead of first-30-char prefix,
+# so abstract lens bullets like "Is the onboarding good enough?" resolve to concrete
+# nouns ('onboard', 'setup', ...) that appear in PR titles and Present items.
 
 addressed_bullets = 0
 total_bullets = len(pressure_bullets)
 
-for idx, (bullet_text, topic) in enumerate(pressure_bullets, 1):
+for idx, (bullet_text, domain_nouns) in enumerate(pressure_bullets, 1):
     match_count = 0
-    # Count PR title matches
+    matched_evidence = set()
+    # Count evidence items matching ANY domain noun (each evidence item counted once)
     for pr_title in pr_titles:
-        if topic in pr_title:
+        if any(noun in pr_title for noun in domain_nouns) and pr_title not in matched_evidence:
             match_count += 1
-    # Count Present item matches
+            matched_evidence.add(pr_title)
     for pitem in present_items:
-        if topic in pitem:
+        if any(noun in pitem for noun in domain_nouns) and pitem not in matched_evidence:
             match_count += 1
+            matched_evidence.add(pitem)
     is_addressed = match_count >= 2
     if is_addressed:
         addressed_bullets += 1
     # Per-bullet audit log (§37.2 O5)
     print(f'[SCAN 5] Bullet {idx}/{total_bullets}: "{bullet_text[:40]}" '
-          f'→ addressed={is_addressed} ({match_count} matches)')
+          f'(nouns={domain_nouns[:3]}) → addressed={is_addressed} ({match_count} matches)')
 
 ratio = addressed_bullets / total_bullets if total_bullets > 0 else 0
 print(f'[SCAN 5] Pressure addressed: {addressed_bullets}/{total_bullets} bullets ({ratio:.0%})')
