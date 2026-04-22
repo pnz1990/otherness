@@ -618,7 +618,7 @@
       "issue": "808"
     },
     "issue-807": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Session pre-flight checks must be a blocking gate, not a best-effort step: COORD \u00a71b curre",
       "labels": [
         "priority/medium",
@@ -627,10 +627,13 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "807"
+      "issue": "807",
+      "pr_merged": true,
+      "pr_number": 842,
+      "done_at": "2026-04-22T06:57:17Z"
     },
     "issue-795": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Phase-role cognitive diversity",
       "labels": [
         "priority/medium",
@@ -639,7 +642,8 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "795"
+      "issue": "795",
+      "pr_number": 837
     },
     "issue-790": {
       "state": "todo",
@@ -654,7 +658,7 @@
       "issue": "790"
     },
     "issue-763": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: COORD \u00a71b vision-alignment filter \u2014 prefer design-doc-backed items when claiming (35.4)",
       "labels": [
         "priority/medium",
@@ -663,10 +667,11 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "763"
+      "issue": "763",
+      "pr_number": 836
     },
     "issue-758": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 42.1",
       "labels": [
         "priority/medium",
@@ -675,7 +680,9 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "758"
+      "issue": "758",
+      "pr_merged": true,
+      "done_at": "2026-04-22T05:30:35Z"
     },
     "issue-756": {
       "state": "todo",
@@ -762,7 +769,7 @@
       "issue": "727"
     },
     "issue-726": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 39.1",
       "labels": [
         "priority/medium",
@@ -771,7 +778,8 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "726"
+      "issue": "726",
+      "pr_number": 830
     },
     "issue-725": {
       "state": "todo",
@@ -801,7 +809,7 @@
       "done_at": "2026-04-22T03:17:16Z"
     },
     "issue-723": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 37.2",
       "labels": [
         "priority/medium",
@@ -810,7 +818,9 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "723"
+      "issue": "723",
+      "pr_merged": true,
+      "done_at": "2026-04-22T05:14:36Z"
     },
     "issue-722": {
       "state": "done",
@@ -908,14 +918,18 @@
       "cycle": 1
     }
   },
-  "pm_cycle_count": 5,
+  "pm_cycle_count": 6,
   "vision_aligned": true,
   "consecutive_vision_misaligned": 0,
-  "sm_cycle_count": 96,
+  "sm_cycle_count": 97,
   "managed_feat_stall_count": 0,
   "self_feat_prs_7d": 38,
   "managed_feat_prs_7d": 62,
-  "last_session_id": "sess-b4417de5",
-  "last_session_at": "2026-04-21T22:35:46Z",
-  "housekeeping_streak": 0
+  "last_session_id": "sess-d7c168c2",
+  "last_session_at": "2026-04-22T06:59:42Z",
+  "housekeeping_streak": 0,
+  "last_session_health": "GREEN",
+  "last_session_prs": 1,
+  "last_session_vision_backed": 1,
+  "report_issue": 827
 }
