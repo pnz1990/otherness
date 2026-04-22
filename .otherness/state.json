@@ -785,7 +785,7 @@
       "pr_number": 830
     },
     "issue-725": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 39.1",
       "labels": [
         "priority/medium",
