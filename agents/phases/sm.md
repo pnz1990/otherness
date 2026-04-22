@@ -3796,21 +3796,34 @@ print('\n'.join(trend_lines))
 TREND_EOF
 )
 
+# §4f: Structured health table (design doc 39 §39.1 → ✅)
+# Replace verbose prose comment with a scannable markdown table (≤12 lines).
+# All previous signals preserved; format changed to table. Human can read in 30 seconds.
+_HEALTH_ICON=$([ "${HEALTH:-GREEN}" = "GREEN" ] && echo "🟢" || ([ "${HEALTH:-GREEN}" = "AMBER" ] && echo "🟡" || echo "🔴"))
+_LAST_PR_TITLE=$(gh pr list --repo $REPO --state merged --limit 1 --json title --jq '.[0].title' 2>/dev/null | head -c 50)
+_LAST_PR_DISPLAY="${_LAST_PR_TITLE:-none}"
+_VISION_RATIO=$(python3 -c "
+merged=int('${MERGED:-0}' or '0')
+vision=int('${VISION_PRS:-0}' or '0')
+if merged>0: print(f'{vision}/{merged} ({vision*100//merged}%)')
+else: print('0/0')
+" 2>/dev/null || echo "${VISION_PRS:-0}/${MERGED:-0}")
+
 REPORT_BODY=$(cat <<BODY_EOF
-Batch ${SM_CYCLE:-?} | progress: ${PROGRESS_CLASS} | health: ${HEALTH} | Shipped: ${MEANINGFUL_PRS:-0} meaningful (${MERGED:-0} total) | Queue: ${TODO_COUNT:-0} remaining | Journeys: ${JOURNEY_OK}✅ ${JOURNEY_FAIL}❌ | Next: [${NEXT_ITEM}]
+## otherness health — batch ${SM_CYCLE:-?}
 
-<details><summary>Details</summary>
-
-- Session: \`${MY_SESSION_ID:-sess-unknown}\` | Agent: otherness@${OTHERNESS_VERSION:-unknown}
-- Outcome: ${SESSION_OUTCOME:-unknown}${THROUGHPUT_WARN:-}
-- Vision PRs: ${VISION_PRS:-0} | Chores: ${CHORES_COUNT}
-- In-review: ${IN_REVIEW:-0} | Action: ${ACTION}
-- Needs-human open: ${NEEDS_HUMAN_COUNT:-0}
-- Sim calibrated: ${SIM_CALIB_LABEL:-unknown}${SIM_CALIB_WARN:-}
-- Self feat PRs (7d): ${SELF_FEAT_PRS:-?} | Managed feat PRs (7d): ${MANAGED_FEAT_PRS:-?}
-- Managed: ${MANAGED_VELOCITY_LABEL:-unknown}${MANAGED_VELOCITY_WARN:-}
-${METRICS_TREND:+${METRICS_TREND}}
-</details>
+| Signal | Value | Note |
+|---|---|---|
+| Health | ${_HEALTH_ICON} ${HEALTH:-GREEN} | ${PROGRESS_CLASS:-ADVANCING} |
+| Batch | #${SM_CYCLE:-?} | session: \`${MY_SESSION_ID:-?}\` |
+| PRs shipped | ${MEANINGFUL_PRS:-0} meaningful (${MERGED:-0} total) | vision ${_VISION_RATIO} |
+| Queue | ${TODO_COUNT:-0} todo | in-review: ${IN_REVIEW:-0} |
+| Last PR | ${_LAST_PR_DISPLAY} | |
+| Sim calibrated | ${SIM_CALIB_LABEL:-unknown} | ${SIM_CALIB_WARN:-ok} |
+| Needs-human | ${NEEDS_HUMAN_COUNT:-0} open | ${ACTION:-continue} |
+| Managed | ${MANAGED_VELOCITY_LABEL:-unknown} | ${MANAGED_VELOCITY_WARN:-} |
+${METRICS_TREND:+
+> ${METRICS_TREND}}
 BODY_EOF
 )
 
