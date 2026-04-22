@@ -4185,6 +4185,180 @@ README_SHIPPED_EOF
 
 ---
 
+## 4f-integrity. Design doc integrity spot-check (every 5 SM batches, design doc 41 §41.1)
+
+<!-- design ref: docs/design/41-design-doc-integrity.md §41.1 -->
+
+```bash
+# Gate: run every 5 SM batches only
+SM_BATCH_MOD=$(python3 -c "
+import json
+try:
+    s = json.load(open('.otherness/state.json'))
+    print(s.get('sm_batch_count', 0) % 5)
+except: print(0)
+" 2>/dev/null || echo "0")
+
+if [ "${SM_BATCH_MOD:-0}" -ne 0 ]; then
+  echo "[SM §4f-integrity] Skipping this cycle (batch mod ${SM_BATCH_MOD} ≠ 0)."
+else
+
+python3 - <<'INTEGRITY_EOF'
+import subprocess, re, os, json, sys
+
+REPO = os.environ.get('REPO', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
+
+print('[SM §4f-integrity] Design doc integrity spot-check...')
+
+# Load state.json from _state branch for field existence check
+try:
+    state_r = subprocess.run(
+        ['git', 'show', 'origin/_state:.otherness/state.json'],
+        capture_output=True, text=True, timeout=10)
+    if state_r.returncode == 0:
+        actual_state = json.loads(state_r.stdout)
+    else:
+        actual_state = {}
+except Exception:
+    actual_state = {}
+
+# Load local state.json for drift counts
+try:
+    with open('.otherness/state.json') as f:
+        local_state = json.load(f)
+except Exception:
+    local_state = {}
+
+drift_counts = local_state.get('doc_drift_counts', {})
+
+# Scan design docs for ✅ Present items that reference state.json fields
+# Patterns:
+#   `state.json.foo`  →  field name: foo
+#   state.json` add `foo`  →  field name: foo
+#   write `foo` to state.json  →  field name: foo
+#   `state.json`: add `foo` field  →  field name: foo
+STATE_FIELD_PATTERNS = [
+    re.compile(r'`state\.json\.(\w+)`'),
+    re.compile(r'state\.json[`\s].*?`(\w+)`'),
+    re.compile(r'write\s+`(\w+)`\s+to\s+state\.json'),
+    re.compile(r'state\.json.*?:\s+add\s+`(\w+)`\s+field'),
+    re.compile(r'`(\w+)`.*?to\s+state\.json'),
+]
+
+PRESENT_PATTERN = re.compile(r'^- ✅ (.+)$', re.MULTILINE)
+
+drift_found = {}
+design_dir = 'docs/design'
+if not os.path.isdir(design_dir):
+    print('[SM §4f-integrity] No docs/design/ directory — skipping.')
+    sys.exit(0)
+
+for fname in sorted(os.listdir(design_dir)):
+    if not fname.endswith('.md'):
+        continue
+    try:
+        content = open(f'{design_dir}/{fname}').read()
+        present_items = PRESENT_PATTERN.findall(content)
+        for item in present_items:
+            for pat in STATE_FIELD_PATTERNS:
+                for field in pat.findall(item):
+                    # Check if field exists in actual state.json
+                    if field not in actual_state:
+                        key = f'{fname}:{field}'
+                        print(f'[SM §4f-integrity] [DOC-DRIFT] ✅ Present item claims state.json.{field} exists — not found (in {fname})')
+                        drift_found[key] = field
+    except Exception as e:
+        print(f'[SM §4f-integrity] scan error for {fname}: {e}')
+
+# Update drift counts and check threshold
+new_counts = {}
+for key, field in drift_found.items():
+    new_counts[key] = drift_counts.get(key, 0) + 1
+
+# Persist updated counts
+try:
+    local_state['doc_drift_counts'] = {**drift_counts, **new_counts}
+    with open('.otherness/state.json', 'w') as f:
+        json.dump(local_state, f, indent=2)
+except Exception as e:
+    print(f'[SM §4f-integrity] drift count write error (non-fatal): {e}')
+
+# Check for fields with count >= 3 and open bug issues
+fields_at_threshold = {k: v for k, v in new_counts.items() if v >= 3}
+for key, count in fields_at_threshold.items():
+    field = drift_found.get(key, key)
+    issue_title = f'Design doc integrity: ✅ Present item not reflected in state.json ({field}) — possible implementation drift'
+
+    # Dedup: check for existing open issue
+    try:
+        existing_r = subprocess.run(
+            ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+             '--search', issue_title[:60], '--json', 'number', '--jq', 'length'],
+            capture_output=True, text=True, timeout=15)
+        if int(existing_r.stdout.strip() or '0') > 0:
+            print(f'[SM §4f-integrity] Issue already open for {field} — skipping duplicate.')
+            continue
+    except Exception:
+        pass
+
+    body = (
+        f'## Design doc integrity drift detected\n\n'
+        f'SM §4f-integrity found that a ✅ Present item in `docs/design/` '
+        f'claims `state.json.{field}` exists, but the field was not found in the '
+        f'actual `state.json` on the `_state` branch.\n\n'
+        f'This has persisted across {count} consecutive spot-checks (threshold: 3).\n\n'
+        f'**Field**: `{field}`\n'
+        f'**Design doc**: {key.split(":")[0]}\n\n'
+        f'## What to investigate\n'
+        f'- Did the implementation that marks this ✅ actually write `{field}` to state.json?\n'
+        f'- Was the field name changed without updating the design doc?\n'
+        f'- Was the feature reverted or removed after being marked ✅?\n\n'
+        f'Reported by SM §4f-integrity | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}'
+    )
+    try:
+        issue_r = subprocess.run(
+            ['gh', 'issue', 'create', '--repo', REPO,
+             '--title', issue_title,
+             '--label', 'otherness,kind/bug,priority/high,area/agent-loop',
+             '--body', body],
+            capture_output=True, text=True, timeout=15)
+        if issue_r.returncode == 0:
+            print(f'[SM §4f-integrity] Opened bug issue: {issue_r.stdout.strip()}')
+            # Reset count after opening
+            local_state['doc_drift_counts'][key] = 0
+            with open('.otherness/state.json', 'w') as f:
+                json.dump(local_state, f, indent=2)
+    except Exception as e:
+        print(f'[SM §4f-integrity] issue create error (non-fatal): {e}')
+
+total_drift = len(drift_found)
+if total_drift == 0:
+    print('[SM §4f-integrity] No doc-drift found — all checked ✅ Present items align with state.json.')
+else:
+    print(f'[SM §4f-integrity] {total_drift} doc-drift finding(s). See above.')
+
+print('[SM §4f-integrity] Spot-check complete.')
+INTEGRITY_EOF
+
+fi  # end batch gate
+
+# Increment sm_batch_count (always — counts every call)
+python3 - <<'BATCH_COUNT_EOF'
+import json
+try:
+    with open('.otherness/state.json') as f: s = json.load(f)
+    s['sm_batch_count'] = s.get('sm_batch_count', 0) + 1
+    with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
+except Exception:
+    pass
+BATCH_COUNT_EOF
+```
+
+---
+
 ## 4g. Merge session branch PR (opencode/* branches only)
 
 When the agent runs via GitHub Actions, OpenCode creates a PR from the session branch
