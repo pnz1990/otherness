@@ -116,6 +116,12 @@ if [ "${FIRST_RUN_SESSION:-false}" = "true" ]; then
 fi
 export FIRST_RUN_SESSION
 
+# Session-scoped meaningful PR counter — incremented by ENG/QA after each feature PR merge.
+# Used by §1e-chore-gate to enforce the minimum meaningful-PR contract at claim time.
+# Design ref: docs/design/21-session-throughput.md §Future (issue-882)
+MEANINGFUL_PRS_THIS_SESSION=${MEANINGFUL_PRS_THIS_SESSION:-0}
+export MEANINGFUL_PRS_THIS_SESSION
+
 # Stop sentinel
 if [ -f ".otherness/stop-after-current" ] && [ -z "$ITEM_ID" ]; then
   python3 -c "
@@ -1089,6 +1095,157 @@ except: print(0)
   # Identify 3-5 concrete Next items (labeled ⚠️ Inferred) and create issues for them.
   # These become the queue. Do NOT idle — always have work.
   continue
+fi
+
+# §1e-chore-gate: Proactive queue enrichment at claim time (design doc 21 §Future → ✅, issue-882)
+# If MEANINGFUL_PRS_THIS_SESSION==0 AND selected item is kind/chore:
+#   (1) Scan docs/design/*.md for an unissued 🔲 Future item
+#   (2) Create a GitHub issue for it and claim that instead
+#   (3) Fallback: write meaningful_pr_guarantee_failed=true to state.json, claim the chore
+# Fail-open: any error → claim the item as normal.
+_CHORE_GATE_RESULT=$( python3 - <<'CHORE_GATE_EOF'
+import json, subprocess, re, os, sys
+
+REPO = os.environ.get('REPO', '')
+ITEM_ID = os.environ.get('ITEM_ID', '')
+MEANINGFUL_PRS = int(os.environ.get('MEANINGFUL_PRS_THIS_SESSION', '0') or '0')
+
+# Fail-open guard: missing vars → pass through
+if not REPO or not ITEM_ID:
+    print(f"PASS {ITEM_ID}")
+    sys.exit(0)
+
+# Check if the claimed item is kind/chore
+try:
+    with open('.otherness/state.json') as f: s = json.load(f)
+    labels = s.get('features', {}).get(ITEM_ID, {}).get('labels', [])
+except Exception:
+    print(f"PASS {ITEM_ID}")
+    sys.exit(0)
+
+is_chore = 'kind/chore' in labels or all(
+    l in ('kind/docs', 'kind/chore') for l in labels if l.startswith('kind/')
+) or (not any(l.startswith('kind/') for l in labels) is False
+      and all(l not in ('kind/enhancement', 'kind/bug') for l in labels)
+      and any(l in ('kind/chore', 'kind/docs') for l in labels))
+
+if MEANINGFUL_PRS > 0 or not is_chore:
+    # Gate does not fire: session already shipped a feature, or item is not a chore
+    print(f"PASS {ITEM_ID}")
+    sys.exit(0)
+
+print(f"[COORD §1e-chore-gate] MEANINGFUL_PRS_THIS_SESSION=0 and item '{ITEM_ID}' is kind/chore — scanning for feature item to inject.", file=sys.stderr)
+
+# Collect done/merged items for dedup
+done_titles = set(
+    v.get('title', '').lower() for v in s.get('features', {}).values()
+    if v.get('state') == 'done' and v.get('title')
+)
+try:
+    merged_prs = subprocess.check_output(
+        ['gh', 'pr', 'list', '--repo', REPO, '--state', 'merged', '--limit', '100',
+         '--json', 'title', '--jq', '.[].title'], text=True, timeout=15).lower().splitlines()
+except Exception:
+    merged_prs = []
+
+try:
+    open_issues = subprocess.check_output(
+        ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open', '--limit', '200',
+         '--json', 'title', '--jq', '.[].title'], text=True, timeout=15).lower().splitlines()
+except Exception:
+    open_issues = []
+
+def is_done_or_open(desc):
+    d = desc.lower().strip()
+    d = re.sub(r'^⚠️\s*(inferred|observed):\s*', '', d)
+    key = d[:40]
+    if d in done_titles: return True
+    if any(key in pr for pr in merged_prs): return True
+    if any(key in oi for oi in open_issues): return True
+    return False
+
+def open_if_absent(title, labels_str, body):
+    r = subprocess.run(
+        ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+         '--search', title[:60], '--json', 'number', '--jq', 'length'],
+        capture_output=True, text=True, timeout=15)
+    if int(r.stdout.strip() or '0') == 0:
+        r2 = subprocess.run(
+            ['gh', 'issue', 'create', '--repo', REPO,
+             '--title', title, '--label', labels_str, '--body', body],
+            capture_output=True, text=True, timeout=15)
+        if r2.returncode == 0:
+            return r2.stdout.strip().split('/')[-1]
+    return None
+
+# Scan docs/design/ for an unissued 🔲 Future item
+design_dir = 'docs/design'
+injected_id = None
+if os.path.isdir(design_dir):
+    for fname in sorted(os.listdir(design_dir)):
+        if not fname.endswith('.md'): break
+        try:
+            content = open(f'{design_dir}/{fname}').read()
+            m = re.search(r'^## Future.*?\n(.*?)(?=^## |\Z)', content,
+                          re.MULTILINE | re.DOTALL)
+            if not m: continue
+            items = re.findall(r'^- 🔲 (?!.*🚫)(.+)', m.group(1), re.MULTILINE)
+            for item in items:
+                desc = re.sub(r'\s*—.*$', '', item).strip()
+                if is_done_or_open(desc): continue
+                title = f"feat: {desc[:90]}"
+                body = (f"## Design reference\n"
+                        f"- **Design doc**: `docs/design/{fname}`\n"
+                        f"- **Section**: `§ Future`\n"
+                        f"- **Implements**: {desc} (🔲 → ✅)\n\n"
+                        f"## Summary\n\n"
+                        f"§1e-chore-gate injected: session has 0 meaningful PRs; "
+                        f"forcing feature work before chore claim.\n\n"
+                        f"Full item: {item}")
+                num = open_if_absent(title,
+                                     'otherness,kind/enhancement,area/agent-loop,size/s,priority/medium',
+                                     body)
+                if num:
+                    injected_id = f"issue-{num}"
+                    print(f"[COORD §1e-chore-gate] Injected issue #{num}: {title[:60]}", file=sys.stderr)
+                    break
+        except Exception:
+            pass
+        if injected_id:
+            break
+
+if injected_id:
+    # Add injected issue to state.json as todo
+    try:
+        r = subprocess.run(['gh', 'issue', 'view', injected_id.split('-')[1], '--repo', REPO,
+                           '--json', 'title,labels', '--jq', '{title:.title,labels:[.labels[].name]}'],
+                          capture_output=True, text=True, timeout=15)
+        if r.returncode == 0:
+            d = json.loads(r.stdout)
+            s.setdefault('features', {})[injected_id] = {
+                'state': 'todo', 'title': d.get('title',''),
+                'labels': d.get('labels', []), 'priority': 'medium'
+            }
+            with open('.otherness/state.json', 'w') as f2: json.dump(s, f2, indent=2)
+    except Exception:
+        pass
+    print(f"REPLACE {injected_id}")
+else:
+    # Fallback: no unissued Future items — write guarantee_failed flag, claim the chore
+    try:
+        s['meaningful_pr_guarantee_failed'] = True
+        with open('.otherness/state.json', 'w') as f2: json.dump(s, f2, indent=2)
+    except Exception:
+        pass
+    print(f"[COORD §1e-chore-gate] No unissued Future items found — allowing chore claim (meaningful_pr_guarantee_failed=true).", file=sys.stderr)
+    print(f"PASS {ITEM_ID}")
+CHORE_GATE_EOF
+)
+_GATE_ACTION=$(echo "$_CHORE_GATE_RESULT" | grep -E '^(REPLACE|PASS)' | head -1 | awk '{print $1}')
+_GATE_ITEM=$(echo "$_CHORE_GATE_RESULT" | grep -E '^(REPLACE|PASS)' | head -1 | awk '{print $2}')
+if [ "$_GATE_ACTION" = "REPLACE" ] && [ -n "$_GATE_ITEM" ]; then
+  echo "[COORD §1e-chore-gate] Replacing chore $ITEM_ID with feature $_GATE_ITEM"
+  ITEM_ID="$_GATE_ITEM"
 fi
 
 # Atomic claim via branch creation
