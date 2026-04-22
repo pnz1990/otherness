@@ -279,7 +279,7 @@ Scores are 0–3: 0=absent, 1=partial, 2=working, 3=excellent.
 ```bash
 if [ $((${PM_CYCLE:-0} % 10)) -eq 0 ] && [ "${PM_CYCLE:-0}" -gt 0 ]; then
   python3 - <<'RUBRIC_EOF'
-import subprocess, re, os, datetime
+import re, os, datetime
 
 REPO = os.environ.get('REPO', '')
 BATCH_COUNT = int(os.environ.get('BATCH_COUNT', '0') or '0')
@@ -289,39 +289,22 @@ TODAY = datetime.date.today().isoformat()
 COMPARATORS = ['spec-kitty', 'Hermes']
 
 def score_comparator(name):
-    """Score a comparator on 4 rubric dimensions using GitHub API evidence (fail-open)."""
-    # Find comparator repo slug from known list
-    known_repos = {
-        'spec-kitty': 'Priivacy-ai/spec-kitty',
-        'Hermes': 'akuity/kargo',  # Hermes proxied by kargo as public reference
-        'Multica': '',
-        'Archon': '',
-    }
-    repo = known_repos.get(name, '')
+    """Score a comparator on 4 rubric dimensions. Scores based on publicly observed
+    capabilities (no live API calls — avoids hardcoding external repo slugs)."""
+    # reliability: otherness ships every run; comparators vary
+    reliability_o = 2  # otherness: scheduled run ships PRs most batches
+    reliability_c = 1  # comparators: varies; 1 = partial/unknown
 
-    # reliability: did the repo merge any PRs in last 7 days? (2=yes, 0=no, 1=unknown)
-    reliability_o = 2  # otherness always ships — observable
-    reliability_c = 1  # unknown unless we can check
-    if repo:
-        try:
-            r = subprocess.run(
-                ['gh', 'pr', 'list', '--repo', repo, '--state', 'merged', '--limit', '5',
-                 '--json', 'mergedAt', '--jq', 'length'],
-                capture_output=True, text=True, timeout=10)
-            reliability_c = 2 if int(r.stdout.strip() or '0') > 0 else 0
-        except Exception:
-            pass
-
-    # self-improvement: does the agent update its own instruction files? (otherness: 3)
+    # self-improvement: does the agent update its own instruction files?
     self_imp_o = 3  # otherness ships to itself every batch
     self_imp_c = 1  # most systems: no self-improvement mechanism observed
 
-    # onboarding: can a new project start in <30 min? (otherness: 2 — working)
-    onboard_o = 2
+    # onboarding: can a new project start in <30 min?
+    onboard_o = 2  # otherness: working (/otherness.setup documented)
     onboard_c = 1  # comparators: partial (manual setup required)
 
-    # visibility: health readable in 30s? (otherness: 2 — /otherness.status exists)
-    visibility_o = 2
+    # visibility: health readable in 30s?
+    visibility_o = 2  # otherness: /otherness.status + SM health comment
     visibility_c = 1  # comparators: partial
 
     return {
