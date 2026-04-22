@@ -1266,5 +1266,7 @@
   "last_session_vision_backed": 1,
   "report_issue": 827,
   "batch_count": 2,
-  "meaningful_pr_guarantee_failed": false
+  "meaningful_pr_guarantee_failed": false,
+  "sm_batch_count": 1,
+  "last_sm_run": "2026-04-22T21:46:36Z"
 }
