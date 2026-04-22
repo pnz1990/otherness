@@ -48,3 +48,4 @@
 | 2026-04-22 | 10 | 138 | 1 | 0 | 12 | 1 | ~10 | Batch 10 (Apr 22): 138 feat PRs shipped since batch 9; workflow scope blocking #788; PR #819 opened (CRITICAL, needs review) |
 
 | 2026-04-22 | 2026-04-22 | 13 | 0 | 0 | 0 | 0 | 0 | sess-370630c5 |
+| 2026-04-22 | 97 | 20 | 0 | 0 | 12 | 1 | ~8 | PR #842 merged (coord §1b.5 PREFLIGHT_CHECK gate); vision_prs=0; outcome=unknown |
