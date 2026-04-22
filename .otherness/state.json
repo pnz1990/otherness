@@ -822,8 +822,8 @@
       "issue": "722"
     },
     "issue-719": {
-      "state": "todo",
-      "title": "feat: Metrics trend surfacing in SM health comment: metrics are collected every batch but SM onl",
+      "state": "in_review",
+      "title": "feat: Metrics trend surfacing in SM health comment",
       "labels": [
         "priority/medium",
         "area/agent-loop",
@@ -831,7 +831,9 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "719"
+      "issue": "719",
+      "pr_number": "819",
+      "assigned_to": "sess-fac66d42"
     },
     "issue-702": {
       "state": "todo",
@@ -889,6 +891,11 @@
       "last_seen": "2026-04-21T20:35:02Z",
       "item": "complete",
       "cycle": 10
+    },
+    "sess-fac66d42": {
+      "last_seen": "2026-04-22T00:31:45Z",
+      "item": "issue-719",
+      "cycle": 1
     }
   },
   "pm_cycle_count": 4,
