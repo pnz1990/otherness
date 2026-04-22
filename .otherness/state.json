@@ -618,7 +618,7 @@
       "issue": "808"
     },
     "issue-807": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Session pre-flight checks must be a blocking gate, not a best-effort step: COORD \u00a71b curre",
       "labels": [
         "priority/medium",
@@ -627,7 +627,10 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "807"
+      "issue": "807",
+      "pr_merged": true,
+      "pr_number": 842,
+      "done_at": "2026-04-22T06:57:17Z"
     },
     "issue-795": {
       "state": "done",
