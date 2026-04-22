@@ -1054,7 +1054,7 @@
       "done_at": "2026-04-22T13:02:32Z"
     },
     "issue-889": {
-      "state": "todo",
+      "state": "assigned",
       "title": "feat: PM competitive comparison must produce a verifiable rubric artifact, not just `\u26a0\ufe0f Inferred",
       "labels": [
         "priority/medium",
@@ -1062,7 +1062,15 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "assigned_to": "sess-e032e99d",
+      "assigned_at": "2026-04-22T14:57:09Z",
+      "branch": "feat/issue-889",
+      "worktree": "../otherness.issue-889",
+      "file_spaces": [
+        "agents/",
+        "scripts/"
+      ]
     },
     "issue-890": {
       "state": "todo",
@@ -1225,6 +1233,11 @@
     "sess-82cfece1": {
       "last_seen": "2026-04-22T13:09:51Z",
       "item": "complete",
+      "cycle": 1
+    },
+    "sess-e032e99d": {
+      "last_seen": "2026-04-22T14:57:09Z",
+      "item": "issue-889",
       "cycle": 1
     }
   },
