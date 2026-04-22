@@ -621,7 +621,9 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "808"
+      "issue": "808",
+      "blocked": true,
+      "blocked_reason": "Deprioritised per design doc 45"
     },
     "issue-807": {
       "state": "done",
@@ -1204,7 +1206,7 @@
       "done_at": "2026-04-22T21:35:33Z"
     },
     "issue-928": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Vision evolution cadence must have a defined \"pressure addressed\" criterion that makes the",
       "labels": [
         "priority/medium",
@@ -1213,7 +1215,9 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-22T22:37:53Z"
     },
     "issue-929": {
       "state": "todo",
