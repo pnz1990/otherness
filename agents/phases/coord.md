@@ -1205,6 +1205,29 @@ def _is_vision_backed(title, body=''):
     except Exception:
         return False
 
+def _has_design_doc_ref(title, body='', labels=None):
+    """§35.4: Return True if item references a design doc.
+    Design ref: docs/design/35-vision-alignment-signal.md §35.4 → ✅
+    Heuristic: queue-gen items have 'feat:' title + 'kind/enhancement' label +
+    body containing 'docs/design/' — but body is not stored in state.json.
+    Fallback: 'feat:' title prefix with 'kind/enhancement' label identifies
+    design-doc-backed items (all queue-gen issues match this pattern).
+    Direct body check: if body contains 'docs/design/' or '🔲 →' (case-insensitive).
+    """
+    if labels is None:
+        labels = []
+    body_lower = body.lower()
+    if 'docs/design/' in body_lower or '🔲 →' in body_lower or 'design doc' in body_lower:
+        return True
+    # Fallback when body is absent from state.json: infer from title+labels
+    title_lower = title.lower()
+    if title_lower.startswith('feat:') and (
+        'kind/enhancement' in labels or
+        any(l.startswith('kind/enhancement') for l in labels)
+    ):
+        return True
+    return False
+
 def _item_sort_key(item_id, item_data):
     pri = PRIORITY_MAP.get(item_data.get('priority'), 4)
     title = item_data.get('title', '').lower()
@@ -1217,6 +1240,11 @@ def _item_sort_key(item_id, item_data):
     boost = 0
     if SIM_RECOVERY == 'prioritize_ci_fix' and is_bug:
         boost = -5  # promote bugs above enhancements when CI fix is recovery action
+    # §35.4: Vision-alignment filter — prefer design-doc-backed items (+5 penalty for non-backed)
+    # Design ref: docs/design/35-vision-alignment-signal.md §35.4
+    if not is_hygiene:
+        if not _has_design_doc_ref(title, body, labels):
+            boost += 5  # deprioritise items with no design doc reference
     # Vision pressure tiebreaker (±1 within same priority tier; O1: tiebreaker not override)
     if _is_vision_backed(title, body):
         boost -= 1  # vision-backed: sort earlier
