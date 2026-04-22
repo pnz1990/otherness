@@ -511,6 +511,41 @@ SHIPPED_TITLES=$(gh pr list --repo "$REPO" --state merged --limit 10 \
     (.title | test("^chore\\(sm\\)|^chore\\(metrics\\)|session complete|batch [0-9]"; "i") | not)
   ) | .title] | .[:3] | join(\"  \n- \")" 2>/dev/null || echo "")
 
+# §4b-velocity: meaningful_prs_per_week — time-normalised delivery rate (design doc 33 §Future → ✅)
+# Count feat/fix/refactor PRs merged in the rolling 7-day window using GitHub API mergedAt.
+# Fail-open: API error → write '?' so the row is never skipped.
+MEANINGFUL_PRS_WEEK=$(python3 - <<'VELOCITY_EOF'
+import subprocess, json, os, datetime, re
+
+REPO = os.environ.get('REPO', '')
+EXCLUDE_PAT = re.compile(
+    r'^chore\(sm\)|^chore\(metrics\)|batch\s+\d+|session complete|PRs merged', re.IGNORECASE)
+
+try:
+    since = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=7)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    r = subprocess.run(
+        ['gh', 'pr', 'list', '--repo', REPO, '--state', 'merged', '--limit', '100',
+         '--json', 'title,mergedAt'],
+        capture_output=True, text=True, timeout=20)
+    if r.returncode != 0:
+        print('?')
+    else:
+        prs = json.loads(r.stdout.strip() or '[]')
+        meaningful = [
+            pr for pr in prs
+            if not EXCLUDE_PAT.match(pr.get('title', ''))
+            and re.match(r'^(feat|fix|refactor)', pr.get('title', ''), re.IGNORECASE)
+            and pr.get('mergedAt', '') >= since
+        ]
+        # Express as prs/week (float with 1 decimal)
+        print(f'{len(meaningful):.1f}')
+except Exception:
+    print('?')
+VELOCITY_EOF
+)
+export MEANINGFUL_PRS_WEEK
+echo "[SM §4b-velocity] meaningful_prs_week=${MEANINGFUL_PRS_WEEK:-?}"
+
 # Q2: What is in the queue?
 TODO_COUNT=$(python3 -c "
 import json, subprocess
@@ -3810,8 +3845,8 @@ OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
 REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
 
 # Column indices (0-based) in the batch log table
-# Header: Date | Batch | prs_merged | needs_human | ci_red_hours | skills_count | todo_shipped | time_to_merge_avg_min | Notes
-COL_TTM = 7   # time_to_merge_avg_min
+# Header: Date | Batch | prs_merged | needs_human | ci_red_hours | skills_count | meaningful_prs_week | todo_shipped | time_to_merge_avg_min | Notes
+COL_TTM = 8   # time_to_merge_avg_min (shifted +1 due to meaningful_prs_week insertion at index 6)
 COL_NH  = 3   # needs_human
 
 def parse_float(v):

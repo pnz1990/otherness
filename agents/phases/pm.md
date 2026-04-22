@@ -386,6 +386,101 @@ try:
 except Exception as e:
     print(f'[PM] meaningful_prs stagnation check failed (non-fatal): {e}')
 
+# §5e-velocity: meaningful_prs_per_week stall check (design doc 33 §Future → ✅)
+# Flag when meaningful_prs_week < 1.0 for 2 consecutive batches (≈2 weeks of data).
+# Also note "Velocity: healthy" when ≥ 3.0 for 4 consecutive batches.
+# meaningful_prs_week column is index 5 (0-based) in the new schema: after skills_count.
+try:
+    velocity_rows = []
+    for r_row in rows:
+        cells_raw = None
+        # Re-parse from content with new column count
+        try:
+            # meaningful_prs_week is column index 5 (Date|Batch|prs_merged|needs_human|ci_red_hours|skills_count|meaningful_prs_week|todo_shipped|...)
+            raw_cells = [c.strip() for c in r_row.get('_raw', '').split('|')[1:-1]] if r_row.get('_raw') else []
+        except Exception:
+            raw_cells = []
+        velocity_rows.append(r_row)
+
+    # Re-parse directly from metrics.md for meaningful_prs_week column (index 6, 0-based after header split)
+    velocity_data = []
+    try:
+        content = open('docs/aide/metrics.md').read()
+        for line in content.splitlines():
+            m2 = re.match(r'^\|\s*\d{4}-\d{2}-\d{2}\s*\|(.+)', line)
+            if m2:
+                cells_v = [c.strip() for c in line.split('|')[1:-1]]
+                # Schema: Date(0) | Batch(1) | prs_merged(2) | needs_human(3) | ci_red_hours(4) | skills_count(5) | meaningful_prs_week(6) | todo_shipped(7) | ...
+                if len(cells_v) >= 7:
+                    try:
+                        mpw = cells_v[6].strip()
+                        velocity_data.append({'batch': cells_v[1], 'date': cells_v[0], 'meaningful_prs_week': mpw})
+                    except (IndexError, ValueError):
+                        pass
+    except Exception:
+        pass
+
+    if len(velocity_data) >= 2:
+        last2_v = velocity_data[-2:]
+        last4_v = velocity_data[-4:]
+
+        def _parse_float(v):
+            try:
+                return float(v.lstrip('~').strip())
+            except (ValueError, AttributeError):
+                return None
+
+        vals_2 = [_parse_float(r['meaningful_prs_week']) for r in last2_v]
+        vals_4 = [_parse_float(r['meaningful_prs_week']) for r in last4_v]
+
+        # Velocity stall: both last 2 values < 1.0 and not None/unknown
+        if all(v is not None and v < 1.0 for v in vals_2):
+            VELOCITY_STALL_TITLE = 'Velocity stall: fewer than 1 meaningful PR/week for 14d'
+            existing_vs = subprocess.run(
+                ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+                 '--search', 'Velocity stall', '--json', 'number', '--jq', 'length'],
+                capture_output=True, text=True)
+            count_vs = int(existing_vs.stdout.strip() or '0')
+            if count_vs == 0:
+                r_vs = subprocess.run(
+                    ['gh', 'issue', 'create', '--repo', REPO,
+                     '--title', VELOCITY_STALL_TITLE,
+                     '--label', 'kind/chore,priority/medium,otherness',
+                     '--body', (
+                         f'PM §5e velocity check triggered.\n\n'
+                         f'`meaningful_prs_week` has been < 1.0 for the last 2 batches:\n' +
+                         '\n'.join(f'- {r["date"]} batch {r["batch"]}: {r["meaningful_prs_week"]} prs/week' for r in last2_v) +
+                         '\n\nThe system is running sessions but not advancing product features at a sustaining rate. '
+                         'Target: ≥3 meaningful PRs/week.\n\n'
+                         'Investigate: Are sessions shipping chore-only PRs? Is the queue depleted? Is CI blocking?'
+                     )],
+                    capture_output=True, text=True)
+                if r_vs.returncode == 0:
+                    print(f'[PM §5e] Velocity stall detected — opened issue: {r_vs.stdout.strip()}')
+                else:
+                    print(f'[PM §5e] Velocity stall but failed to open issue: {r_vs.stderr.strip()}')
+            else:
+                print(f'[PM §5e] Velocity stall detected but issue already open — skipping.')
+        else:
+            print(f'[PM §5e] Velocity OK. Last 2 meaningful_prs_week: {[r["meaningful_prs_week"] for r in last2_v]}')
+
+        # Healthy velocity: ≥ 3.0 for 4 consecutive batches → post note to report issue
+        if len(vals_4) == 4 and all(v is not None and v >= 3.0 for v in vals_4):
+            avg_v = sum(v for v in vals_4 if v is not None) / len(vals_4)
+            health_note = (
+                f'[📋 PM §5e | {os.environ.get("MY_SESSION_ID","sess-unknown")} | '
+                f'otherness@{os.environ.get("OTHERNESS_VERSION","unknown")}] '
+                f'✅ Velocity: healthy ({avg_v:.1f} prs/week avg over 4 batches). '
+                f'System advancing product features at ≥3 PRs/week sustained rate.'
+            )
+            subprocess.run(['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO, '--body', health_note],
+                           capture_output=True)
+            print(f'[PM §5e] Healthy velocity noted: {avg_v:.1f} prs/week')
+    else:
+        print(f'[PM §5e] Not enough velocity data (need ≥ 2 rows with meaningful_prs_week column).')
+except Exception as e:
+    print(f'[PM §5e] meaningful_prs_week velocity check failed (non-fatal): {e}')
+
 # needs_human spike: post warning comment only (no issue — it may be legitimate)
 if needs_human_spike:
     msg = ('[📋 PM | ' + os.environ.get('MY_SESSION_ID', 'sess-unknown') + ' | '
