@@ -1133,7 +1133,7 @@
       "done_at": "2026-04-22T20:54:09Z"
     },
     "issue-895": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 41.4",
       "labels": [
         "priority/medium",
@@ -1144,7 +1144,7 @@
       "priority": "medium"
     },
     "issue-896": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 41.4",
       "labels": [
         "priority/medium",
@@ -1155,7 +1155,7 @@
       "priority": "medium"
     },
     "issue-897": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 42.3",
       "labels": [
         "priority/medium",
@@ -1166,7 +1166,7 @@
       "priority": "medium"
     },
     "issue-898": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 42.3",
       "labels": [
         "priority/medium",
@@ -1202,6 +1202,51 @@
       "priority": "medium",
       "pr_merged": true,
       "done_at": "2026-04-22T21:35:33Z"
+    },
+    "issue-928": {
+      "state": "todo",
+      "title": "feat: Vision evolution cadence must have a defined \"pressure addressed\" criterion that makes the",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "otherness",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-929": {
+      "state": "todo",
+      "title": "feat: Workflow disabled detection from within the loop: when a scheduled workflow is disabled vi",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-930": {
+      "state": "todo",
+      "title": "feat: Skill load verification: ENG must confirm which skills were loaded before implementation",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
+    },
+    "issue-931": {
+      "state": "todo",
+      "title": "feat: Onboarding generates `docs/design/` stubs from real codebase analysis: `/otherness.onboard",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium"
     }
   },
   "session_heartbeats": {
@@ -1248,6 +1293,11 @@
     "sess-e032e99d": {
       "last_seen": "2026-04-22T14:57:09Z",
       "item": "issue-889",
+      "cycle": 1
+    },
+    "sess-5e236663": {
+      "last_seen": "2026-04-22T22:28:10Z",
+      "item": "issue-895",
       "cycle": 1
     }
   },
