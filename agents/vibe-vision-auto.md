@@ -247,15 +247,93 @@ Cap at 5 new items per scan to avoid queue flooding.
 
 ```bash
 python3 - <<'INFER_EOF'
-import re, os, subprocess, json
+import re, os, subprocess, json, datetime
 
 design_dir = 'docs/design'
 max_new_items = 5
 added = 0
 
+REPO = os.environ.get('REPO', '')
+
 if not os.path.isdir(design_dir):
     print("[SCAN 3] No docs/design/ directory — skipping.")
     exit(0)
+
+# §42.1 — Pre-scan: check age of existing ⚠️ Inferred items with (date: YYYY-MM-DD).
+# Items older than 30 days with no open GitHub issue → create a re-issue.
+# Cap: 3 re-issues per scan run. Graceful fallback on API errors.
+MAX_REISSUES = 3
+reissues_created = 0
+today = datetime.date.today()
+DATE_PATTERN = re.compile(r'⚠️ Inferred from.*?\(date:\s*(\d{4}-\d{2}-\d{2})\)')
+
+print('[SCAN 3] §42.1: checking age of existing ⚠️ Inferred items with date annotations...')
+
+for fname in sorted(os.listdir(design_dir)):
+    if not fname.endswith('.md') or reissues_created >= MAX_REISSUES:
+        break
+    try:
+        content = open(os.path.join(design_dir, fname)).read()
+        # Find all 🔲 ⚠️ Inferred items that have a (date: ...) annotation
+        for line in content.splitlines():
+            if reissues_created >= MAX_REISSUES:
+                break
+            if not (line.startswith('- 🔲') and '⚠️ Inferred from' in line):
+                continue
+            dm = DATE_PATTERN.search(line)
+            if not dm:
+                continue
+            try:
+                item_date = datetime.date.fromisoformat(dm.group(1))
+                age_days = (today - item_date).days
+            except ValueError:
+                continue
+            if age_days <= 30:
+                continue  # not old enough
+            # Extract item text (strip the '- 🔲 ' prefix)
+            item_text = re.sub(r'^- 🔲 ', '', line).strip()
+            title_key = item_text[:40].strip()
+            issue_title = f'feat: {item_text[:90]}'
+
+            # Deduplication check (§42.1 O3)
+            try:
+                r = subprocess.run(
+                    ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+                     '--search', title_key[:40], '--json', 'number', '--jq', 'length'],
+                    capture_output=True, text=True, timeout=15)
+                if int(r.stdout.strip() or '0') > 0:
+                    continue  # issue already exists
+            except Exception as e:
+                print(f'[SCAN 3] re-issue check failed (non-fatal): {e}')
+                continue
+
+            # Create re-issue (§42.1 O4)
+            try:
+                cr = subprocess.run(
+                    ['gh', 'issue', 'create', '--repo', REPO,
+                     '--title', issue_title,
+                     '--label', 'otherness,kind/enhancement,priority/medium',
+                     '--body', (f'## Design reference\n'
+                                f'- **Design doc**: `docs/design/{fname}`\n'
+                                f'- **Section**: `§ Future`\n'
+                                f'- **Implements**: {item_text[:100]} (🔲 → ✅)\n\n'
+                                f'## Summary\n\n'
+                                f'SCAN 3 §42.1 re-issue: this item has been `⚠️ Inferred` for {age_days} days '
+                                f'without a corresponding GitHub issue. Auto-created to ensure it enters the queue.\n\n'
+                                f'Full item: {item_text}')],
+                    capture_output=True, text=True, timeout=15)
+                if cr.returncode == 0:
+                    reissues_created += 1
+                    print(f'[SCAN 3] §42.1 re-issued ({age_days}d old): {issue_title[:60]}')
+            except Exception as e:
+                print(f'[SCAN 3] re-issue create failed (non-fatal): {e}')
+    except Exception as e:
+        print(f'[SCAN 3] §42.1 age-check error for {fname} (non-fatal): {e}')
+
+if reissues_created > 0:
+    print(f'[SCAN 3] §42.1 created {reissues_created} re-issue(s) for aged inferred items.')
+else:
+    print('[SCAN 3] §42.1 no aged inferred items needing re-issue.')
 
 # Collect all existing Future items (to avoid duplicates)
 existing_future = set()
@@ -294,6 +372,7 @@ print(f'[SCAN 3] Found {len(code_todos)} untracked code intent markers.')
 
 # Add to a catch-all hygiene doc or the most recently modified design doc
 # Find the most relevant doc by keyword matching
+today_str = today.strftime('%Y-%m-%d')
 for fpath, lineno, kind, msg in code_todos[:max_new_items]:
     if added >= max_new_items:
         break
@@ -329,7 +408,8 @@ for fpath, lineno, kind, msg in code_todos[:max_new_items]:
         if msg.lower()[:40] in content.lower():
             continue
 
-        new_item = f'- 🔲 {msg} — ⚠️ Inferred from `{fpath}:{lineno}` ({kind})'
+        # §42.1 O1: include (date: YYYY-MM-DD) annotation on new inferred items
+        new_item = f'- 🔲 {msg} — ⚠️ Inferred from `{fpath}:{lineno}` ({kind}) (date: {today_str})'
 
         # Insert into Future section
         future_match = re.search(r'^(## Future.*?\n)', content, re.MULTILINE)
@@ -432,7 +512,7 @@ DEPRECATE_EOF
 
 ---
 
-## SCAN 5 — Self-updating pressure prompts (design doc 28 §Future → ✅)
+## SCAN 5 — Self-updating pressure prompts (design doc 37 §37.1, §37.2)
 
 Evaluate whether the current vision pressure context is still pushing the right things.
 When pressure areas are substantially addressed, add a design doc Future item to trigger
@@ -454,7 +534,6 @@ REPO = os.environ.get('REPO', '')
 
 workflow_dir = '.github/workflows'
 pressure_block = ''
-pressure_keywords = []
 pressure_file = None
 
 def _extract_pressure_block(content):
@@ -464,10 +543,26 @@ def _extract_pressure_block(content):
         content, re.DOTALL)
     return m.group(1).strip() if m else ''
 
-def _extract_keywords(block):
-    """Extract key phrases from a pressure block."""
-    keywords = re.findall(r'- (?:Is )?(\w[\w\s]{3,30})\??', block)
-    return [k.lower().strip() for k in keywords if len(k) > 5]
+def _extract_bullets(block):
+    """Extract one entry per bullet line from a pressure block.
+
+    Design ref: docs/design/37-self-updating-pressure-prompts.md §37.2
+    Each bullet is a distinct scoring unit. Strip leading '- ', trailing '?',
+    and return the full bullet text (lowercased) for topic-phrase matching.
+    Returns list of (raw_bullet_text, topic_phrase) tuples where topic_phrase
+    is the first 30 chars lowercased — used for substring matching.
+    """
+    bullets = []
+    for line in block.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith('- '):
+            continue
+        text = stripped[2:].strip().rstrip('?').strip()
+        if len(text) < 5:
+            continue
+        topic = text[:30].lower()
+        bullets.append((text, topic))
+    return bullets
 
 # Primary: parse prompt: section of Step A in otherness-scheduled.yml
 SCHEDULED_WORKFLOW = os.path.join(workflow_dir, 'otherness-scheduled.yml')
@@ -484,7 +579,6 @@ if os.path.isfile(SCHEDULED_WORKFLOW):
                 extracted = _extract_pressure_block(block_str)
                 if extracted:
                     pressure_block = extracted
-                    pressure_keywords = _extract_keywords(pressure_block)
                     pressure_file = 'otherness-scheduled.yml (Step A prompt)'
                     break
     except Exception as e:
@@ -502,53 +596,99 @@ if not pressure_block and os.path.isdir(workflow_dir):
                 extracted = _extract_pressure_block(content)
                 if extracted:
                     pressure_block = extracted
-                    pressure_keywords = _extract_keywords(pressure_block)
                     pressure_file = fname
                     break
         except Exception:
             continue
 
-if not pressure_file or not pressure_keywords:
+# Extract bullets — one per bullet line (§37.2: per-bullet scoring unit)
+pressure_bullets = _extract_bullets(pressure_block) if pressure_block else []
+
+if not pressure_file or not pressure_bullets:
     print('[SCAN 5] No pressure block found — skipping.')
     sys.exit(0)
 
-print(f'[SCAN 5] Found pressure block in {pressure_file}: {len(pressure_keywords)} keywords')
-print(f'[SCAN 5] Keywords: {pressure_keywords[:5]}')
+print(f'[SCAN 5] Found pressure block in {pressure_file}: {len(pressure_bullets)} bullets')
 
-# Step 2: Check how many pressure areas have shipped recently (last 20 merged PRs)
+# Step 2: Build evidence corpus — merged PRs (last 20) AND design doc Present items.
+# Design ref: docs/design/37-self-updating-pressure-prompts.md §37.2
+# Both sources contribute evidence. Each PR title = 1 evidence item.
+# Each ✅ Present line in any docs/design/*.md = 1 evidence item.
+
+# 2a: Collect recent merged PR titles
 try:
-    recent_prs = subprocess.check_output(
+    pr_titles = subprocess.check_output(
         ['gh', 'pr', 'list', '--repo', REPO, '--state', 'merged',
          '--limit', '20', '--json', 'title', '--jq', '.[].title'],
-        text=True, timeout=20).lower()
+        text=True, timeout=20).lower().splitlines()
+    pr_titles = [t.strip() for t in pr_titles if t.strip()]
 except Exception:
-    recent_prs = ''
+    pr_titles = []
 
-addressed = 0
-total = len(pressure_keywords)
+# 2b: Collect ✅ Present items from all docs/design/*.md files
+present_items = []
+design_dir = 'docs/design'
+if os.path.isdir(design_dir):
+    for fname in sorted(os.listdir(design_dir)):
+        if not fname.endswith('.md'):
+            continue
+        try:
+            doc_content = open(os.path.join(design_dir, fname)).read()
+            present_match = re.search(
+                r'^## Present.*?\n(.*?)(?=^## |\Z)', doc_content,
+                re.MULTILINE | re.DOTALL)
+            if present_match:
+                items = re.findall(r'^- ✅ (.+)', present_match.group(1), re.MULTILINE)
+                present_items.extend(i.lower().strip() for i in items)
+        except Exception:
+            pass
 
-for kw in pressure_keywords:
-    kw_words = kw.split()[:3]  # use first 3 words as search key
-    kw_key = ' '.join(kw_words)
-    if any(kw_key in pr_title for pr_title in recent_prs.splitlines()):
-        addressed += 1
+# 2c: Per-bullet scoring — §37.2 spec O1–O5
+# A bullet is "addressed" when ≥2 distinct evidence items match its topic phrase.
+# Evidence items: PR titles + Present doc items. Substring match on first 30 chars.
 
-ratio = addressed / total if total > 0 else 0
-print(f'[SCAN 5] Pressure addressed: {addressed}/{total} areas ({ratio:.0%})')
+addressed_bullets = 0
+total_bullets = len(pressure_bullets)
+
+for idx, (bullet_text, topic) in enumerate(pressure_bullets, 1):
+    match_count = 0
+    # Count PR title matches
+    for pr_title in pr_titles:
+        if topic in pr_title:
+            match_count += 1
+    # Count Present item matches
+    for pitem in present_items:
+        if topic in pitem:
+            match_count += 1
+    is_addressed = match_count >= 2
+    if is_addressed:
+        addressed_bullets += 1
+    # Per-bullet audit log (§37.2 O5)
+    print(f'[SCAN 5] Bullet {idx}/{total_bullets}: "{bullet_text[:40]}" '
+          f'→ addressed={is_addressed} ({match_count} matches)')
+
+ratio = addressed_bullets / total_bullets if total_bullets > 0 else 0
+print(f'[SCAN 5] Pressure addressed: {addressed_bullets}/{total_bullets} bullets ({ratio:.0%})')
 
 # Step 3: If addressed ratio >= 60%, add a Future item to trigger pressure rewrite
+# Design ref: docs/design/37-self-updating-pressure-prompts.md §37.3 (separate item)
+# This step preserved from §37.1; scoring now uses per-bullet ratio from §37.2.
 STALENESS_THRESHOLD = 0.60
 
 if ratio >= STALENESS_THRESHOLD:
     print(f'[SCAN 5] Pressure context is ≥{STALENESS_THRESHOLD:.0%} addressed — adding rewrite reminder.')
 
-    # Find best design doc to attach to (doc 28 for dual-step workflow)
-    design_dir = 'docs/design'
+    # Find best design doc to attach to (doc 37 for self-updating pressure prompts)
     target_doc = None
     for fname in sorted(os.listdir(design_dir) if os.path.isdir(design_dir) else []):
-        if fname.startswith('28-') or 'dual-step' in fname or 'scheduled' in fname:
+        if fname.startswith('37-') or 'pressure' in fname:
             target_doc = fname
             break
+    if not target_doc:
+        for fname in sorted(os.listdir(design_dir) if os.path.isdir(design_dir) else []):
+            if fname.startswith('28-') or 'dual-step' in fname or 'scheduled' in fname:
+                target_doc = fname
+                break
     if not target_doc:
         # Fallback: first design doc
         docs = sorted(os.listdir(design_dir)) if os.path.isdir(design_dir) else []
@@ -560,7 +700,8 @@ if ratio >= STALENESS_THRESHOLD:
             content = open(fpath).read()
             new_item = (
                 f'- 🔲 Rewrite vision pressure context in scheduled workflow: '
-                f'{addressed}/{total} pressure areas addressed in recent PRs — '
+                f'{addressed_bullets}/{total_bullets} pressure bullets addressed '
+                f'(≥2 matches each in merged PRs + design doc Present items) — '
                 f'the bar needs to be raised. Update the "Context for this vision scan:" '
                 f'block to push on the remaining open gaps. '
                 f'⚠️ Inferred from pressure staleness scan: {ratio:.0%} addressed.'

@@ -196,13 +196,12 @@ If a `[AI]` step is ambiguous: re-read spec.md Zone 1 before acting.
 
 ## Present (✅)
 
-*(Nothing shipped yet in this design doc.)*
+- ✅ 43.1 — `otherness-config-template.yaml`: added `project.board_project_id` (GraphQL node ID of the GitHub Projects v2 board) and `project.active_milestone` fields under the `project:` section, with documentation comments explaining their purpose and how to find the values. When set, these fields are read by COORD, ENG, and QA to set board status and milestone. When empty: all board operations are silently skipped.
 
 ---
 
 ## Future (🔲)
 
-- 🔲 43.1 — `otherness-config-template.yaml`: add `project.board_project_id` and `project.active_milestone` fields. These are read by COORD, ENG, and QA to set board status and milestone on every issue they touch.
 - 🔲 43.2 — COORD §1d: when creating a GitHub issue, immediately add it to the project board with `Status: Todo` and set the `active_milestone`. Two API calls after `gh issue create`.
 - 🔲 43.3 — ENG §2a: when claiming an item (writing heartbeat), set board `Status: In Progress` for the issue. One GraphQL mutation.
 - 🔲 43.4 — ENG §2f: when opening the PR, set board `Status: In Review`. One GraphQL mutation.
