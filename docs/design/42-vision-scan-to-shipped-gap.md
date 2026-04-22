@@ -42,13 +42,11 @@ automatic escalation rather than just adding more items to category 1.
 
 ## Present (✅)
 
-*(Nothing shipped yet.)*
+- ✅ 42.1 — SCAN 3 inferred-item age tracking: new `⚠️ Inferred` items written by SCAN 3 now include `(date: YYYY-MM-DD)`. On each scan run, SCAN 3 pre-scans existing annotated items; items >30 days old with no corresponding open GitHub issue get a re-issue (capped at 3/run, deduped, `otherness,kind/enhancement,priority/medium` labels). (PR #831, 2026-04-22)
 
 ---
 
 ## Future (🔲)
-
-- 🔲 42.1 — SCAN 3 inferred-item age tracking: when `vibe-vision-auto.md` SCAN 3 writes a `🔲 ⚠️ Inferred` item to a design doc, it must also record the item's creation date as a comment in the line: `- 🔲 item text ⚠️ Inferred from \`file:line\` (date: YYYY-MM-DD)`. On subsequent scan runs, SCAN 3 must check all `⚠️ Inferred` items that include a `(date:...)` annotation. If the item's age exceeds 30 days AND there is no open GitHub issue with a title matching the item text (first 40 chars): SCAN 3 must re-open a GitHub issue for it directly (not just annotate the design doc). The item was identified as a real gap 30 days ago. If no one created an issue for it, the scan must create one now. Without age tracking and re-issue logic, SCAN 3 is an accurate gap detector that produces results no one acts on.
 
 - 🔲 42.2 — Vision scan must report "gap stagnation ratio" in its output: each SCAN run must compute: (a) `new_gaps` = items written this run, (b) `gaps_aged_30d` = `⚠️ Inferred` items older than 30 days with no corresponding closed issue, (c) `gaps_shipped` = items promoted to ✅ this run. The ratio `gaps_aged_30d / (new_gaps + gaps_shipped)` is the "gap stagnation ratio". If the ratio exceeds 2.0 (more than twice as many stale gaps as new+shipped): the scan must include a prominent `[⚠️ GAP STAGNATION: N old gaps are not shipping]` message in the report issue comment. This converts the vision scan from a silent background process into a visible accountability signal. A human who sees this message knows the loop is identifying problems faster than it is solving them.
 
