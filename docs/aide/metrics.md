@@ -13,6 +13,7 @@
 | `needs_human` | [NEEDS HUMAN] issues opened this batch | ↓ (autonomy) |
 | `ci_red_hours` | Hours main CI was red this batch | ↓ (stability) |
 | `skills_count` | Total skill files in agents/skills/ (excl. PROVENANCE, README) | ↑ (knowledge) |
+| `meaningful_prs_week` | feat/fix/refactor PRs merged in the rolling 7-day window (time-normalised velocity) | ↑ (delivery rate) |
 | `todo_shipped` | Backlog items moved to done this batch | ↑ (velocity) |
 | `time_to_merge_avg_min` | Average minutes from PR open to merge (excl. CRITICAL tier wait) | ↓ (efficiency) |
 
@@ -20,13 +21,13 @@
 
 ## Batch Log
 
-| Date | Batch | prs_merged | needs_human | ci_red_hours | skills_count | todo_shipped | time_to_merge_avg_min | Notes |
-|---|---|---|---|---|---|---|---|---|
-| 2026-04-14 | 1 | 1 | 1 | ~0.5 | 4 | 0 | — | Bootstrap: CI fix PR; CRITICAL tier PRs awaiting review |
-| 2026-04-14 | 2 | 4 | 2 | 0 | 5 | 4 | ~12 | Shipped #11 #12 #14 #15; CRITICAL #13 #16 pending human |
-| 2026-04-14 | 3 | 5 | 0 | 0 | 5 | 6 | ~8 | Merged all CRITICAL PRs; shipped #17 #18; Stage 1 complete |
-| 2026-04-14 | 4 | 4 | 0 | 0 | 6 | 3 | ~10 | Shipped #25 #29 #31; autonomous learn scheduling live; 6 skills |
-| 2026-04-14 | 5 | 4 | 1 | 0 | 10 | 3 | ~7 | Simplify pass (-12 lines, 3 bugs fixed PR#36 CRITICAL); 4 learn sessions; Stage 2 complete |
+| Date | Batch | prs_merged | needs_human | ci_red_hours | skills_count | meaningful_prs_week | todo_shipped | time_to_merge_avg_min | Notes |
+|---|---|---|---|---|---|---|---|---|---|
+| 2026-04-14 | 1 | 1 | 1 | ~0.5 | 4 | — | 0 | — | Bootstrap: CI fix PR; CRITICAL tier PRs awaiting review |
+| 2026-04-14 | 2 | 4 | 2 | 0 | 5 | — | 4 | ~12 | Shipped #11 #12 #14 #15; CRITICAL #13 #16 pending human |
+| 2026-04-14 | 3 | 5 | 0 | 0 | 5 | — | 6 | ~8 | Merged all CRITICAL PRs; shipped #17 #18; Stage 1 complete |
+| 2026-04-14 | 4 | 4 | 0 | 0 | 6 | — | 3 | ~10 | Shipped #25 #29 #31; autonomous learn scheduling live; 6 skills |
+| 2026-04-14 | 5 | 4 | 1 | 0 | 10 | — | 3 | ~7 | Simplify pass (-12 lines, 3 bugs fixed PR#36 CRITICAL); 4 learn sessions; Stage 2 complete |
 
 ---
 
@@ -41,10 +42,10 @@
 **Batch 4→5**: Human direction: "invent but also simplify." Both honored simultaneously. Simplification audit found 3 real bugs in standalone.md (-12 lines). Four learn sessions ran: OpenHands (ephemeral-pr-artifacts), LiteLLM (explicit-anti-patterns), AutoGen (triage-discipline), Pydantic AI (agent-responsibility). Skills 6→10. Stage 2 complete. PR #36 (CRITICAL simplification) awaits human review.
 
 **Next target**: Stage 3 — onboarding quality (#27 epic). Also: merge PR #36 to make the -12 line simplification effective.
-| 2026-04-15 | 6 | 1 | 0 | 0 | 11 | 1 | ~8 | Batch 6: docs vision rewrite merged (#64); state write reliability bug found and queued (#62); onboarding audit queued (#61) |
-| 2026-04-15 | 7 | 3 | 0 | 0 | 11 | 3 | ~6 | Batch 7: roles PR #66 (CRITICAL, autonomous), state fix #67, quick-start #68; autonomous_mode=true first full use |
-| 2026-04-15 | 8 | 1 | 0 | 0 | 11 | 1 | ~10 | Batch 8: issue-70 merged (#71); state reconstruction needed — _state lost queue on squash merges |
-| 2026-04-15 | 9 | 1 | 0 | 0 | 11 | 4 | ~12 | Batch 9: PR #75 — state read-back, alibi label fix, pnz1990 slug, job_family example; production-readiness blockers cleared |
-| 2026-04-22 | 10 | 138 | 1 | 0 | 12 | 1 | ~10 | Batch 10 (Apr 22): 138 feat PRs shipped since batch 9; workflow scope blocking #788; PR #819 opened (CRITICAL, needs review) |
+| 2026-04-15 | 6 | 1 | 0 | 0 | 11 | — | 1 | ~8 | Batch 6: docs vision rewrite merged (#64); state write reliability bug found and queued (#62); onboarding audit queued (#61) |
+| 2026-04-15 | 7 | 3 | 0 | 0 | 11 | — | 3 | ~6 | Batch 7: roles PR #66 (CRITICAL, autonomous), state fix #67, quick-start #68; autonomous_mode=true first full use |
+| 2026-04-15 | 8 | 1 | 0 | 0 | 11 | — | 1 | ~10 | Batch 8: issue-70 merged (#71); state reconstruction needed — _state lost queue on squash merges |
+| 2026-04-15 | 9 | 1 | 0 | 0 | 11 | — | 4 | ~12 | Batch 9: PR #75 — state read-back, alibi label fix, pnz1990 slug, job_family example; production-readiness blockers cleared |
+| 2026-04-22 | 10 | 138 | 1 | 0 | 12 | — | 1 | ~10 | Batch 10 (Apr 22): 138 feat PRs shipped since batch 9; workflow scope blocking #788; PR #819 opened (CRITICAL, needs review) |
 
-| 2026-04-22 | 2026-04-22 | 13 | 0 | 0 | 0 | 0 | 0 | sess-370630c5 |
+| 2026-04-22 | 2026-04-22 | 13 | 0 | 0 | 0 | ? | 0 | 0 | sess-370630c5 |
