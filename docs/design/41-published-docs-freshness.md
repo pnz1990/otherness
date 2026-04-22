@@ -61,7 +61,7 @@ the per-command detail pages AND a consolidated `docs/cli-reference.md` overview
 - ✅ `docs.yml` Step 4: verify CLI docs in sync — PR CI fails if `docs/reference/cli/` is stale (2026-04-20) ⚠️ Stale — referenced file not found
 - ✅ `docs.yml` Step 1: auto-generate CLI docs on every push to `cmd/kardinal/**` (2026-04-20) ⚠️ Stale — referenced file not found
 - ✅ `docs.yml` deploys to `pnz1990.github.io/kardinal-promoter` on every merge to main (2026-04-20) ⚠️ Stale — referenced file not found
-- ✅ 41.4 — PM §5j-comparison: comparison doc accuracy check — scans `docs/comparison.md` ❌ rows, matches against design doc ✅ Present items, opens `kind/docs priority/medium` issue when row is stale. Graceful skip if comparison.md absent. Dedup: at most one open issue per row. Runs every N_PM_CYCLES. (PR #896, 2026-04-22)
+- ✅ 41.4 — PM §5j-comparison: comparison doc accuracy check — scans `docs/comparison.md` ❌ rows, matches against design doc ✅ Present items, opens `kind/docs priority/medium` issue when row is stale. Graceful skip if comparison.md absent. Dedup: at most one open issue per row. Runs every N_PM_CYCLES. (PR #896, 2026-04-22) ⚠️ Stale — referenced file not found
 
 ## Future (🔲)
 
