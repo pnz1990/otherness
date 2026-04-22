@@ -1096,15 +1096,11 @@
       "merged_at": "2026-04-22T16:00:52Z"
     },
     "issue-892": {
-      "state": "todo",
-      "title": "feat: 38.6",
-      "labels": [
-        "priority/medium",
-        "area/agent-loop",
-        "size/s",
-        "kind/enhancement"
-      ],
-      "priority": "medium"
+      "state": "done",
+      "title": "feat: 38.6 SM QA rejection pattern tracker",
+      "priority": "medium",
+      "pr": 913,
+      "merged_at": "2026-04-22T16:08:32Z"
     },
     "issue-893": {
       "state": "todo",
