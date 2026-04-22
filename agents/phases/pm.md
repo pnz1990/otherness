@@ -330,6 +330,7 @@ def compute_delta(scores):
 
 # Bootstrap file if absent
 if not os.path.exists(STANDING_FILE):
+    os.makedirs(os.path.dirname(STANDING_FILE), exist_ok=True)
     header = (
         '# otherness Competitive Standing\n\n'
         '> Updated by PM §5c every 10 batches. One row per comparison cycle per comparator.\n'
