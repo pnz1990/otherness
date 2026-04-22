@@ -1327,7 +1327,7 @@
   "pm_cycle_count": 9,
   "vision_aligned": true,
   "consecutive_vision_misaligned": 0,
-  "sm_cycle_count": 101,
+  "sm_cycle_count": 102,
   "managed_feat_stall_count": 0,
   "self_feat_prs_7d": 38,
   "managed_feat_prs_7d": 62,
@@ -1338,7 +1338,7 @@
   "last_session_prs": 1,
   "last_session_vision_backed": 1,
   "report_issue": 827,
-  "batch_count": 2,
+  "batch_count": 3,
   "meaningful_pr_guarantee_failed": false,
   "sm_batch_count": 1,
   "last_sm_run": "2026-04-22T21:46:36Z"
