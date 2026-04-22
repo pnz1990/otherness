@@ -247,15 +247,93 @@ Cap at 5 new items per scan to avoid queue flooding.
 
 ```bash
 python3 - <<'INFER_EOF'
-import re, os, subprocess, json
+import re, os, subprocess, json, datetime
 
 design_dir = 'docs/design'
 max_new_items = 5
 added = 0
 
+REPO = os.environ.get('REPO', '')
+
 if not os.path.isdir(design_dir):
     print("[SCAN 3] No docs/design/ directory — skipping.")
     exit(0)
+
+# §42.1 — Pre-scan: check age of existing ⚠️ Inferred items with (date: YYYY-MM-DD).
+# Items older than 30 days with no open GitHub issue → create a re-issue.
+# Cap: 3 re-issues per scan run. Graceful fallback on API errors.
+MAX_REISSUES = 3
+reissues_created = 0
+today = datetime.date.today()
+DATE_PATTERN = re.compile(r'⚠️ Inferred from.*?\(date:\s*(\d{4}-\d{2}-\d{2})\)')
+
+print('[SCAN 3] §42.1: checking age of existing ⚠️ Inferred items with date annotations...')
+
+for fname in sorted(os.listdir(design_dir)):
+    if not fname.endswith('.md') or reissues_created >= MAX_REISSUES:
+        break
+    try:
+        content = open(os.path.join(design_dir, fname)).read()
+        # Find all 🔲 ⚠️ Inferred items that have a (date: ...) annotation
+        for line in content.splitlines():
+            if reissues_created >= MAX_REISSUES:
+                break
+            if not (line.startswith('- 🔲') and '⚠️ Inferred from' in line):
+                continue
+            dm = DATE_PATTERN.search(line)
+            if not dm:
+                continue
+            try:
+                item_date = datetime.date.fromisoformat(dm.group(1))
+                age_days = (today - item_date).days
+            except ValueError:
+                continue
+            if age_days <= 30:
+                continue  # not old enough
+            # Extract item text (strip the '- 🔲 ' prefix)
+            item_text = re.sub(r'^- 🔲 ', '', line).strip()
+            title_key = item_text[:40].strip()
+            issue_title = f'feat: {item_text[:90]}'
+
+            # Deduplication check (§42.1 O3)
+            try:
+                r = subprocess.run(
+                    ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+                     '--search', title_key[:40], '--json', 'number', '--jq', 'length'],
+                    capture_output=True, text=True, timeout=15)
+                if int(r.stdout.strip() or '0') > 0:
+                    continue  # issue already exists
+            except Exception as e:
+                print(f'[SCAN 3] re-issue check failed (non-fatal): {e}')
+                continue
+
+            # Create re-issue (§42.1 O4)
+            try:
+                cr = subprocess.run(
+                    ['gh', 'issue', 'create', '--repo', REPO,
+                     '--title', issue_title,
+                     '--label', 'otherness,kind/enhancement,priority/medium',
+                     '--body', (f'## Design reference\n'
+                                f'- **Design doc**: `docs/design/{fname}`\n'
+                                f'- **Section**: `§ Future`\n'
+                                f'- **Implements**: {item_text[:100]} (🔲 → ✅)\n\n'
+                                f'## Summary\n\n'
+                                f'SCAN 3 §42.1 re-issue: this item has been `⚠️ Inferred` for {age_days} days '
+                                f'without a corresponding GitHub issue. Auto-created to ensure it enters the queue.\n\n'
+                                f'Full item: {item_text}')],
+                    capture_output=True, text=True, timeout=15)
+                if cr.returncode == 0:
+                    reissues_created += 1
+                    print(f'[SCAN 3] §42.1 re-issued ({age_days}d old): {issue_title[:60]}')
+            except Exception as e:
+                print(f'[SCAN 3] re-issue create failed (non-fatal): {e}')
+    except Exception as e:
+        print(f'[SCAN 3] §42.1 age-check error for {fname} (non-fatal): {e}')
+
+if reissues_created > 0:
+    print(f'[SCAN 3] §42.1 created {reissues_created} re-issue(s) for aged inferred items.')
+else:
+    print('[SCAN 3] §42.1 no aged inferred items needing re-issue.')
 
 # Collect all existing Future items (to avoid duplicates)
 existing_future = set()
@@ -294,6 +372,7 @@ print(f'[SCAN 3] Found {len(code_todos)} untracked code intent markers.')
 
 # Add to a catch-all hygiene doc or the most recently modified design doc
 # Find the most relevant doc by keyword matching
+today_str = today.strftime('%Y-%m-%d')
 for fpath, lineno, kind, msg in code_todos[:max_new_items]:
     if added >= max_new_items:
         break
@@ -329,7 +408,8 @@ for fpath, lineno, kind, msg in code_todos[:max_new_items]:
         if msg.lower()[:40] in content.lower():
             continue
 
-        new_item = f'- 🔲 {msg} — ⚠️ Inferred from `{fpath}:{lineno}` ({kind})'
+        # §42.1 O1: include (date: YYYY-MM-DD) annotation on new inferred items
+        new_item = f'- 🔲 {msg} — ⚠️ Inferred from `{fpath}:{lineno}` ({kind}) (date: {today_str})'
 
         # Insert into Future section
         future_match = re.search(r'^(## Future.*?\n)', content, re.MULTILINE)
