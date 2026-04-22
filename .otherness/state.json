@@ -1007,15 +1007,18 @@
       "done_at": "2026-04-22T13:09:00Z"
     },
     "issue-883": {
-      "state": "todo",
-      "title": "feat: 28.2",
+      "state": "done",
+      "title": "feat(workflow): add post-run assertion step to job summary (28.2)",
       "labels": [
         "priority/medium",
         "area/agent-loop",
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-22T14:01:47Z",
+      "pr_number": 904
     },
     "issue-884": {
       "state": "todo",
