@@ -982,7 +982,7 @@
       "title": "fix: metrics schema-execution drift \u2014 data rows missing skills_count column"
     },
     "issue-882": {
-      "state": "todo",
+      "state": "assigned",
       "title": "feat: COORD \u00a71e must refuse to claim a `kind/chore` item when no `kind/enhancement` or `kind/bug",
       "labels": [
         "priority/medium",
@@ -990,7 +990,15 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "assigned_to": "sess-7af2b350",
+      "assigned_at": "2026-04-22T11:41:09Z",
+      "branch": "feat/issue-882",
+      "worktree": "../otherness.issue-882",
+      "file_spaces": [
+        "agents/",
+        "scripts/"
+      ]
     },
     "issue-883": {
       "state": "todo",
@@ -1055,6 +1063,11 @@
     "sess-64880371": {
       "last_seen": "2026-04-22T10:44:44Z",
       "item": "issue-870",
+      "cycle": 1
+    },
+    "sess-7af2b350": {
+      "last_seen": "2026-04-22T11:41:09Z",
+      "item": "issue-882",
       "cycle": 1
     }
   },
