@@ -275,7 +275,7 @@ accidental PII exposure in traces. This is not configurable by the agent.
 - ✅ Design doc written with four-layer model (2026-04-21)
 - ✅ AWS backend recommendation updated to include AMP + AMG (2026-04-21)
 - ✅ Prometheus clarification: accepts OTLP metrics, not traces (2026-04-21)
-- ✅ 44.1 — `otherness-config-template.yaml`: `observability.otlp` section added (backend, enabled, service_name, endpoint_secret, headers_secret) (PR #901, 2026-04-22)
+- ✅ 44.1 — `otherness-config-template.yaml`: `observability.otlp` section added (backend, enabled, service_name, endpoint_secret, headers_secret) (PR #924, 2026-04-22)
 
 ## Future (🔲)
 
