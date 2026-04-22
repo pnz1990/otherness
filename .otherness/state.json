@@ -651,7 +651,7 @@
       "pr_number": 837
     },
     "issue-790": {
-      "state": "todo",
+      "state": "done",
       "title": "chore(sm): reduce python block duplication in \u00a74f managed velocity check",
       "labels": [
         "area/agent-loop",
@@ -660,7 +660,10 @@
         "priority/low"
       ],
       "priority": "low",
-      "issue": "790"
+      "issue": "790",
+      "pr_number": 849,
+      "pr_merged": true,
+      "done_at": "2026-04-22T11:51:21Z"
     },
     "issue-763": {
       "state": "done",
@@ -999,8 +1002,7 @@
         "agents/",
         "scripts/"
       ],
-      "pr_number": 886,
-      "needs_human": true
+      "pr_number": 886
     },
     "issue-883": {
       "state": "todo",
@@ -1087,5 +1089,6 @@
   "last_session_prs": 1,
   "last_session_vision_backed": 1,
   "report_issue": 827,
-  "batch_count": 1
+  "batch_count": 2,
+  "meaningful_pr_guarantee_failed": false
 }
