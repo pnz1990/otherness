@@ -378,5 +378,22 @@ else:
     print("  OK: all ✅ Present state.json field references found in state.json")
 STATE_DRIFT_CHECK
 
+# 9. Check cognitive-stance preambles in phase files (informational — not blocking)
+# Design ref: docs/design/31-stage-2-skills-expansion.md §Future → ✅ (issue-795)
+echo "[9/9] Checking cognitive-stance preambles in phase files..."
+_MISSING_STANCES=0
+for _phase in coord eng qa sm; do
+  _phase_file="$AGENTS_DIR/phases/${_phase}.md"
+  if [ -f "$_phase_file" ]; then
+    if ! grep -q "Cognitive stance:" "$_phase_file" 2>/dev/null; then
+      echo "  [WARN] phases/${_phase}.md: missing 'Cognitive stance:' preamble — consider adding one"
+      _MISSING_STANCES=$((_MISSING_STANCES + 1))
+    fi
+  fi
+done
+if [ "$_MISSING_STANCES" -eq 0 ]; then
+  echo "  OK: all phase files have cognitive-stance preambles"
+fi
+
 echo ""
 echo "=== validate: PASSED ==="
