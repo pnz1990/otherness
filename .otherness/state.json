@@ -1103,7 +1103,7 @@
       "merged_at": "2026-04-22T16:08:32Z"
     },
     "issue-893": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 39.3",
       "labels": [
         "priority/medium",
@@ -1111,7 +1111,9 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-22T20:44:41Z"
     },
     "issue-894": {
       "state": "todo",
