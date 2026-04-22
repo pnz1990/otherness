@@ -54,6 +54,68 @@ except Exception as e:
     print(f"Heartbeat write failed (non-fatal): {e}")
 EOF
 
+# §1a-bootstrap: First-run bootstrap guard (design doc 32 §Future → ✅)
+# Detect zero-batch-history and apply bootstrap mode to prevent assumption failures.
+# Fail-open: if metrics.md cannot be read, treat as ongoing project (FIRST_RUN_SESSION=false).
+FIRST_RUN_SESSION=$(python3 - <<'BOOTSTRAP_EOF'
+import os, sys
+
+metrics_path = 'docs/aide/metrics.md'
+state_path = '.otherness/state.json'
+
+# Check batch history: metrics.md absent or no data rows = first run
+has_data_rows = False
+try:
+    with open(metrics_path) as f:
+        sep_found = False
+        header_found = False
+        for line in f:
+            if '---|' in line:
+                sep_found = True
+                continue
+            if 'prs_merged' in line:
+                header_found = True
+                continue
+            if line.startswith('|') and sep_found and header_found:
+                cells = [c.strip() for c in line.split('|') if c.strip()]
+                if len(cells) >= 3:
+                    has_data_rows = True
+                    break
+except FileNotFoundError:
+    pass
+except Exception:
+    # Fail-open: cannot read metrics.md → not a first run
+    print('false')
+    sys.exit(0)
+
+if has_data_rows:
+    print('false')
+    sys.exit(0)
+
+# Zero-batch-history detected — seed state.json skeleton if missing
+try:
+    import json
+    with open(state_path) as f:
+        json.load(f)  # verify it's valid
+except Exception:
+    import os
+    os.makedirs(os.path.dirname(state_path), exist_ok=True)
+    with open(state_path, 'w') as f:
+        json.dump({'batch_count': 0, 'features': {}, 'session_heartbeats': {}}, f, indent=2)
+    import sys as _sys
+    print('[COORD §1a-bootstrap] state.json seeded (was missing/invalid)', file=_sys.stderr)
+
+print('true')
+BOOTSTRAP_EOF
+)
+
+if [ "${FIRST_RUN_SESSION:-false}" = "true" ]; then
+  echo "[COORD §1a-bootstrap] Zero batch history detected — bootstrap mode active"
+  gh issue comment "${REPORT_ISSUE:-1}" --repo "${REPO:-}" \
+    --body "[FIRST RUN | ${MY_SESSION_ID:-sess-unknown} | otherness@${OTHERNESS_VERSION:-unknown}] Zero batch history — bootstrap mode active. First metrics row will be written at session end by SM §4f." 2>/dev/null || true
+fi
+export FIRST_RUN_SESSION
+
 # Stop sentinel
 if [ -f ".otherness/stop-after-current" ] && [ -z "$ITEM_ID" ]; then
   python3 -c "
@@ -763,8 +825,13 @@ GUARD_EOF
 ## 1d. Stale item watchdog (SM sub-task — run every coord cycle)
 
 Reset items stuck in `assigned` with no live heartbeat for >2 hours. Delete the stale branch lock.
+Bootstrap guard: skip on first run (no items can be stale with zero history).
 
 ```bash
+# §1d bootstrap guard: skip stale watchdog on first run (no items exist yet)
+if [ "${FIRST_RUN_SESSION:-false}" = "true" ]; then
+  echo "[COORD §1d] First-run session — skipping stale watchdog (no items to be stale)"
+else
 python3 - <<'EOF'
 import json, datetime, subprocess, os
 
@@ -827,6 +894,7 @@ if qlock_result.stdout.strip():
 if changed:
     with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
 EOF
+fi
 ```
 
 ---
