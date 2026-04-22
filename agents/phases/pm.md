@@ -1439,3 +1439,243 @@ except Exception as e:
 print(f'[PM §5n] Dual improvement rate check complete.')
 DUAL_RATE_EOF
 ```
+
+---
+
+## 5o. Patch release trigger (runs every 3 PM cycles, design doc 40 §40.1)
+
+<!-- design ref: docs/design/40-autonomous-releases.md §40.1 -->
+
+```bash
+# Gate: run every 3 PM cycles only
+PM_PATCH_CYCLE_MOD=$(python3 -c "
+import json
+try:
+    s = json.load(open('.otherness/state.json'))
+    print(s.get('pm_patch_cycle', 0) % 3)
+except: print(0)
+" 2>/dev/null || echo "0")
+
+if [ "${PM_PATCH_CYCLE_MOD:-0}" -ne 0 ]; then
+  echo "[PM §5o] Skipping this cycle (cycle mod ${PM_PATCH_CYCLE_MOD} ≠ 0)."
+else
+
+python3 - <<'PATCH_RELEASE_EOF'
+import subprocess, re, os, json, datetime, sys
+
+REPO = os.environ.get('REPO', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
+
+print('[PM §5o] Patch release trigger check...')
+
+# O3: opt-out via config
+releases_enabled = True
+try:
+    content = open('otherness-config.yaml').read()
+    m = re.search(r'^\s*releases:\s*\n((?:\s+.+\n?)*)', content, re.MULTILINE)
+    if m:
+        block = m.group(1)
+        enabled_m = re.search(r'\s+enabled:\s*(true|false)', block)
+        if enabled_m and enabled_m.group(1) == 'false':
+            releases_enabled = False
+    # Also handle flat key
+    if re.search(r'releases\.enabled:\s*false', content):
+        releases_enabled = False
+except Exception:
+    pass
+
+if not releases_enabled:
+    print('[PM §5o] releases.enabled=false — skipped.')
+    sys.exit(0)
+
+# Read min_days_between (default 7)
+min_days = 7
+try:
+    content = open('otherness-config.yaml').read()
+    m = re.search(r'^\s*releases:\s*\n((?:\s+.+\n?)*)', content, re.MULTILINE)
+    if m:
+        d_m = re.search(r'\s+min_days_between:\s*(\d+)', m.group(1))
+        if d_m:
+            min_days = int(d_m.group(1))
+except Exception:
+    pass
+
+# O5: get latest tag; skip if none
+try:
+    last_tag_r = subprocess.run(
+        ['git', 'describe', '--tags', '--abbrev=0'],
+        capture_output=True, text=True, timeout=10)
+    last_tag = last_tag_r.stdout.strip()
+except Exception:
+    last_tag = ''
+
+if not last_tag:
+    print('[PM §5o] No existing tag found — cannot compute NEXT. Skipping.')
+    sys.exit(0)
+
+# O1: tag age check
+try:
+    tag_date_r = subprocess.run(
+        ['git', 'log', '-1', '--format=%ct', last_tag],
+        capture_output=True, text=True, timeout=10)
+    tag_ts = int(tag_date_r.stdout.strip())
+    tag_age_days = (datetime.datetime.now(datetime.timezone.utc).timestamp() - tag_ts) / 86400
+except Exception:
+    tag_age_days = 0
+
+if tag_age_days < min_days:
+    print(f'[PM §5o] Last tag {last_tag} is {tag_age_days:.1f}d old (min {min_days}d) — hold.')
+    sys.exit(0)
+
+# O2: count fix/security/chore and feat PRs since last tag
+try:
+    prs_since_r = subprocess.run(
+        ['gh', 'pr', 'list', '--repo', REPO, '--state', 'merged', '--limit', '100',
+         '--json', 'title,mergedAt', '--jq',
+         f'[.[] | select(.mergedAt > "{last_tag_r.stdout.strip()}" or true)] | .[].title'],
+        capture_output=True, text=True, timeout=20)
+    # Use git log to find PRs merged since last tag
+    pr_titles_r = subprocess.run(
+        ['git', 'log', f'{last_tag}..HEAD', '--merges', '--oneline'],
+        capture_output=True, text=True, timeout=10)
+    pr_lines = pr_titles_r.stdout.strip().splitlines()
+except Exception:
+    pr_lines = []
+
+# Also fetch PR titles from gh for accuracy
+try:
+    since_dt_r = subprocess.run(
+        ['git', 'log', '-1', '--format=%aI', last_tag],
+        capture_output=True, text=True, timeout=10)
+    since_dt = since_dt_r.stdout.strip()
+    gh_prs_r = subprocess.run(
+        ['gh', 'pr', 'list', '--repo', REPO, '--state', 'merged', '--limit', '200',
+         '--json', 'title,mergedAt'],
+        capture_output=True, text=True, timeout=20)
+    if gh_prs_r.returncode == 0:
+        gh_prs = json.loads(gh_prs_r.stdout)
+        prs_since = [p['title'] for p in gh_prs if p.get('mergedAt', '') > since_dt]
+    else:
+        prs_since = []
+except Exception:
+    prs_since = []
+
+fix_count = sum(1 for t in prs_since if re.match(r'^(fix|security|chore)(\([^)]+\))?:', t, re.IGNORECASE))
+feat_count = sum(1 for t in prs_since if re.match(r'^feat(\([^)]+\))?:', t, re.IGNORECASE))
+
+print(f'[PM §5o] Since {last_tag}: fix/security/chore={fix_count}, feat={feat_count}')
+
+if fix_count < 3:
+    print(f'[PM §5o] fix_count={fix_count} < 3 — patch threshold not met. Hold.')
+    sys.exit(0)
+
+if feat_count > 0:
+    print(f'[PM §5o] feat_count={feat_count} > 0 — this is a minor release candidate, not a patch. Hold.')
+    sys.exit(0)
+
+# O4: CI green check
+ci_green = True
+try:
+    ci_r = subprocess.run(
+        ['gh', 'run', 'list', '--repo', REPO, '--branch', 'main', '--limit', '5',
+         '--json', 'conclusion,status', '--jq',
+         '[.[] | select(.status == "completed")] | .[0].conclusion'],
+        capture_output=True, text=True, timeout=15)
+    last_conclusion = ci_r.stdout.strip().strip('"')
+    if last_conclusion and last_conclusion != 'success':
+        ci_green = False
+except Exception:
+    ci_green = True  # fail-open
+
+if not ci_green:
+    print(f'[PM §5o] CI not green (last conclusion: {last_conclusion}) — hold.')
+    sys.exit(0)
+
+# O5/O7: needs-human check
+needs_human = 0
+try:
+    nh_r = subprocess.run(
+        ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+         '--label', 'needs-human', '--json', 'number', '--jq', 'length'],
+        capture_output=True, text=True, timeout=15)
+    needs_human = int(nh_r.stdout.strip() or '0')
+except Exception:
+    needs_human = 0
+
+if needs_human > 0:
+    print(f'[PM §5o] {needs_human} open needs-human issue(s) — hold.')
+    sys.exit(0)
+
+# O4/dedup: check HEAD is not already tagged
+try:
+    head_tags_r = subprocess.run(
+        ['git', 'tag', '--points-at', 'HEAD'],
+        capture_output=True, text=True, timeout=10)
+    if head_tags_r.stdout.strip():
+        print(f'[PM §5o] HEAD already tagged: {head_tags_r.stdout.strip()} — skipping.')
+        sys.exit(0)
+except Exception:
+    pass
+
+# All conditions met — compute NEXT tag
+try:
+    parts = last_tag.lstrip('v').split('.')
+    parts[2] = str(int(parts[2]) + 1)
+    next_tag = 'v' + '.'.join(parts)
+except Exception as e:
+    print(f'[PM §5o] Could not compute next tag from {last_tag}: {e} — skipping.')
+    sys.exit(0)
+
+print(f'[PM §5o] All conditions met. Cutting patch release {next_tag}...')
+
+# Try to read PROJECT_NAME for title
+try:
+    pn_m = re.search(r'^\s*project_name:\s*(.+)', open('otherness-config.yaml').read(), re.MULTILINE)
+    project_name = pn_m.group(1).strip().strip('"\'') if pn_m else next_tag
+except Exception:
+    project_name = next_tag
+
+release_r = subprocess.run(
+    ['gh', 'release', 'create', next_tag,
+     '--repo', REPO,
+     '--title', f'{project_name} {next_tag}',
+     '--generate-notes',
+     '--latest'],
+    capture_output=True, text=True, timeout=30)
+
+if release_r.returncode == 0:
+    release_url = release_r.stdout.strip()
+    print(f'[PM §5o] Patch release {next_tag} created: {release_url}')
+    comment_body = (f'[PM §5o | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}] '
+                    f'Patch release {next_tag} created: {release_url}. '
+                    f'Since {last_tag}: {fix_count} fix/security/chore PRs, 0 feat PRs, CI green, no needs-human.')
+else:
+    print(f'[PM §5o] Release create failed: {release_r.stderr[:200]}')
+    comment_body = (f'[PM §5o | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}] '
+                    f'Patch release {next_tag} FAILED: {release_r.stderr[:150]}')
+
+try:
+    subprocess.run(
+        ['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO, '--body', comment_body],
+        capture_output=True, timeout=15)
+except Exception:
+    pass
+
+print('[PM §5o] Patch release trigger complete.')
+PATCH_RELEASE_EOF
+
+fi  # end cycle gate
+
+# Increment pm_patch_cycle counter in state.json (always — counts every call, not just when trigger fires)
+python3 - <<'CYCLE_EOF'
+import json
+try:
+    with open('.otherness/state.json') as f: s = json.load(f)
+    s['pm_patch_cycle'] = s.get('pm_patch_cycle', 0) + 1
+    with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
+except Exception as e:
+    pass
+CYCLE_EOF
+```
