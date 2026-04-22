@@ -1089,15 +1089,11 @@
       "merged_at": "2026-04-22T15:50:54Z"
     },
     "issue-891": {
-      "state": "todo",
-      "title": "feat: 36.4",
-      "labels": [
-        "priority/medium",
-        "area/agent-loop",
-        "size/s",
-        "kind/enhancement"
-      ],
-      "priority": "medium"
+      "state": "done",
+      "title": "feat: 36.4 COORD queue-depth vision pressure",
+      "priority": "medium",
+      "pr": 912,
+      "merged_at": "2026-04-22T16:00:52Z"
     },
     "issue-892": {
       "state": "todo",
