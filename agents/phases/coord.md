@@ -116,6 +116,12 @@ if [ "${FIRST_RUN_SESSION:-false}" = "true" ]; then
 fi
 export FIRST_RUN_SESSION
 
+# Session-scoped meaningful PR counter — incremented by ENG/QA after each feature PR merge.
+# Used by §1e-chore-gate to enforce the minimum meaningful-PR contract at claim time.
+# Design ref: docs/design/21-session-throughput.md §Future (issue-882)
+MEANINGFUL_PRS_THIS_SESSION=${MEANINGFUL_PRS_THIS_SESSION:-0}
+export MEANINGFUL_PRS_THIS_SESSION
+
 # Stop sentinel
 if [ -f ".otherness/stop-after-current" ] && [ -z "$ITEM_ID" ]; then
   python3 -c "
