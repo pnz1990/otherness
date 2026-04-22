@@ -582,8 +582,8 @@
       "done_at": "2026-04-21T22:12:41Z"
     },
     "issue-810": {
-      "state": "todo",
-      "title": "feat: Workflow-level silent failure detection: the agent relies on the scheduled GitHub Actions ",
+      "state": "done",
+      "title": "feat(workflow): workflow heartbeat step for silent failure detection",
       "labels": [
         "priority/medium",
         "area/agent-loop",
@@ -591,7 +591,11 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": "810"
+      "issue": "810",
+      "pr_number": 878,
+      "branch": "feat/issue-810",
+      "pr_merged": true,
+      "done_at": "2026-04-22T10:55:56Z"
     },
     "issue-809": {
       "state": "done",
@@ -917,7 +921,7 @@
       "title": "feat(validate): YAML syntax check for scheduled workflow (28.1)"
     },
     "issue-870": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: SM health signal must degrade to AMBER when 0 meaningful PRs shipped this session",
       "issue": "870",
       "priority": "medium",
@@ -928,10 +932,20 @@
         "priority/medium",
         "otherness"
       ],
-      "created_at": "2026-04-22T10:06:17Z"
+      "created_at": "2026-04-22T10:06:17Z",
+      "assigned_to": "sess-64880371",
+      "assigned_at": "2026-04-22T10:44:44Z",
+      "branch": "feat/issue-870",
+      "worktree": "../otherness.issue-870",
+      "file_spaces": [
+        "agents/",
+        "scripts/"
+      ],
+      "pr_merged": true,
+      "note": "already implemented \u2014 queue was stale"
     },
     "issue-871": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: first-run bootstrap guard \u2014 detect and recover missing _state on session start",
       "issue": "871",
       "priority": "medium",
@@ -942,10 +956,12 @@
         "priority/medium",
         "otherness"
       ],
-      "created_at": "2026-04-22T10:06:17Z"
+      "created_at": "2026-04-22T10:06:17Z",
+      "pr_merged": true,
+      "note": "already implemented \u2014 queue was stale"
     },
     "issue-872": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: SM health comment must include skills_count and last-learn date every batch",
       "issue": "872",
       "priority": "medium",
@@ -956,7 +972,9 @@
         "priority/medium",
         "otherness"
       ],
-      "created_at": "2026-04-22T10:06:17Z"
+      "created_at": "2026-04-22T10:06:17Z",
+      "pr_merged": true,
+      "note": "already implemented \u2014 queue was stale"
     },
     "issue-869": {
       "state": "done",
@@ -989,12 +1007,17 @@
       "last_seen": "2026-04-22T00:31:45Z",
       "item": "issue-719",
       "cycle": 1
+    },
+    "sess-64880371": {
+      "last_seen": "2026-04-22T10:44:44Z",
+      "item": "issue-870",
+      "cycle": 1
     }
   },
   "pm_cycle_count": 6,
   "vision_aligned": true,
   "consecutive_vision_misaligned": 0,
-  "sm_cycle_count": 97,
+  "sm_cycle_count": 98,
   "managed_feat_stall_count": 0,
   "self_feat_prs_7d": 38,
   "managed_feat_prs_7d": 62,
@@ -1004,5 +1027,6 @@
   "last_session_health": "GREEN",
   "last_session_prs": 1,
   "last_session_vision_backed": 1,
-  "report_issue": 827
+  "report_issue": 827,
+  "batch_count": 1
 }
