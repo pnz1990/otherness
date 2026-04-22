@@ -3950,6 +3950,59 @@ if merged>0: print(f'{vision}/{merged} ({vision*100//merged}%)')
 else: print('0/0')
 " 2>/dev/null || echo "${VISION_PRS:-0}/${MERGED:-0}")
 
+# §4f: Skills and learn-date signal (design doc 31 §Future → ✅)
+# Compute skills_count (*.md in agents/skills/ excl. README, PROVENANCE) and
+# last learn date from PROVENANCE.md. Fail-open on any read error.
+_SKILLS_LEARN=$(python3 - <<'SKILLS_EOF'
+import re, os, datetime
+
+# skills_count: *.md files in agents/skills/ excluding README.md and PROVENANCE.md
+skills_dir = os.path.expanduser('~/.otherness/agents/skills')
+try:
+    files = [f for f in os.listdir(skills_dir)
+             if f.endswith('.md') and f not in ('README.md', 'PROVENANCE.md')]
+    skills_count = len(files)
+except Exception:
+    skills_count = '?'
+
+# Last learn date: most recent ## YYYY-MM-DD header in PROVENANCE.md
+provenance_path = os.path.join(skills_dir, 'PROVENANCE.md')
+last_learn_date = None
+try:
+    with open(provenance_path) as f:
+        for line in f:
+            m = re.match(r'^## (\d{4}-\d{2}-\d{2})', line)
+            if m:
+                d = m.group(1)
+                if last_learn_date is None or d > last_learn_date:
+                    last_learn_date = d
+except Exception:
+    pass
+
+# Color-code the learn date
+if last_learn_date:
+    try:
+        learn_dt = datetime.date.fromisoformat(last_learn_date)
+        age_days = (datetime.date.today() - learn_dt).days
+        if age_days < 14:
+            color = '🟢'
+        elif age_days <= 30:
+            color = '🟡'
+        else:
+            color = '🔴'
+        learn_label = f'{color} {last_learn_date} ({age_days}d ago)'
+    except Exception:
+        learn_label = last_learn_date
+else:
+    learn_label = 'unknown'
+
+print(f'SKILLS_COUNT={skills_count}')
+print(f'LAST_LEARN={learn_label}')
+SKILLS_EOF
+)
+SKILLS_COUNT=$(echo "$_SKILLS_LEARN" | grep '^SKILLS_COUNT=' | cut -d= -f2-)
+LAST_LEARN=$(echo "$_SKILLS_LEARN" | grep '^LAST_LEARN=' | cut -d= -f2-)
+
 REPORT_BODY=$(cat <<BODY_EOF
 ## otherness health — batch ${SM_CYCLE:-?}
 
@@ -3960,6 +4013,7 @@ REPORT_BODY=$(cat <<BODY_EOF
 | PRs shipped | ${MEANINGFUL_PRS:-0} meaningful (${MERGED:-0} total) | vision ${_VISION_RATIO} |
 | Queue | ${TODO_COUNT:-0} todo | in-review: ${IN_REVIEW:-0} |
 | Last PR | ${_LAST_PR_DISPLAY} | |
+| Skills | ${SKILLS_COUNT:-?} skill files | last learn: ${LAST_LEARN:-unknown} |
 | Sim calibrated | ${SIM_CALIB_LABEL:-unknown} | ${SIM_CALIB_WARN:-ok} |
 | Sim delta | ${SIM_DELTA:-(no data)} | |
 | Needs-human | ${NEEDS_HUMAN_COUNT:-0} open | ${ACTION:-continue} |
