@@ -1116,7 +1116,7 @@
       "done_at": "2026-04-22T20:44:41Z"
     },
     "issue-894": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 40.3",
       "labels": [
         "priority/medium",
@@ -1124,7 +1124,9 @@
         "size/s",
         "kind/enhancement"
       ],
-      "priority": "medium"
+      "priority": "medium",
+      "pr_merged": true,
+      "done_at": "2026-04-22T20:54:09Z"
     },
     "issue-895": {
       "state": "todo",
