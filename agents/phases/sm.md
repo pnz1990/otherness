@@ -392,8 +392,144 @@ for line in open('otherness-config.yaml'):
     if m: print(m.group(1)); break
 " 2>/dev/null || echo "")
 if [ -z "$AGENT_VERSION" ]; then
-  CURRENT_TAG=$(git -C ~/.otherness describe --tags --abbrev=0 2>/dev/null || echo "unpinned")
-  echo "[SM] agent_version not pinned — currently on $CURRENT_TAG"
+   CURRENT_TAG=$(git -C ~/.otherness describe --tags --abbrev=0 2>/dev/null || echo "unpinned")
+   echo "[SM] agent_version not pinned — currently on $CURRENT_TAG"
+fi
+```
+
+---
+
+## 4a-speckit. Speckit release check (every 10 SM cycles, design doc 42 §42.3)
+
+Check if speckit has a newer release with reliability or context-parsing fixes.
+Opens a `kind/chore` issue when the installed version is >1 minor behind.
+Skips gracefully if speckit is not installed or API is unavailable.
+
+<!-- design ref: docs/design/42-speckit-integration.md §42.3 -->
+
+```bash
+SM_CYCLE=$(python3 -c "
+import json
+try:
+    s = json.load(open('.otherness/state.json'))
+    print(s.get('sm_cycle_count', 0))
+except: print(0)
+" 2>/dev/null || echo "0")
+
+if [ $((${SM_CYCLE:-0} % 10)) -eq 0 ] && [ "${SM_CYCLE:-0}" -gt 0 ]; then
+  echo "[SM §4a-speckit] Running speckit release check (sm_cycle=$SM_CYCLE)..."
+
+  python3 - <<'SPECKIT_RELEASE_EOF'
+import subprocess, re, os, sys, json
+
+REPO = os.environ.get('REPO', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'SM')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+PR_LABEL = os.environ.get('PR_LABEL', 'otherness')
+
+# §42.3 O2: Check if speckit is installed
+try:
+    r = subprocess.run(['specify', '--version'], capture_output=True, text=True, timeout=5)
+    if r.returncode != 0:
+        print('[SM §4a-speckit] speckit not installed — skipped.')
+        sys.exit(0)
+    installed_ver_str = r.stdout.strip()
+except Exception:
+    print('[SM §4a-speckit] speckit not installed or not found — skipped.')
+    sys.exit(0)
+
+# Parse installed version
+installed_match = re.search(r'(\d+)\.(\d+)\.(\d+)', installed_ver_str)
+if not installed_match:
+    print(f'[SM §4a-speckit] Could not parse installed version: {installed_ver_str} — skipped.')
+    sys.exit(0)
+installed = tuple(int(x) for x in installed_match.groups())
+
+# §42.3 O1: Query GitHub API for latest release
+try:
+    api_r = subprocess.run(
+        ['gh', 'api', 'repos/github/spec-kit/releases/latest',
+         '--jq', '{tag: .tag_name, body: .body}'],
+        capture_output=True, text=True, timeout=15)
+    if api_r.returncode != 0:
+        print(f'[SM §4a-speckit] GitHub API unavailable — skipped (fail-open).')
+        sys.exit(0)
+    release_data = json.loads(api_r.stdout.strip())
+    latest_tag = release_data.get('tag', '')
+    release_body = release_data.get('body', '')
+except Exception as e:
+    print(f'[SM §4a-speckit] API query failed (non-fatal): {e} — skipped.')
+    sys.exit(0)
+
+latest_match = re.search(r'(\d+)\.(\d+)\.(\d+)', latest_tag)
+if not latest_match:
+    print(f'[SM §4a-speckit] Could not parse latest version: {latest_tag} — skipped.')
+    sys.exit(0)
+latest = tuple(int(x) for x in latest_match.groups())
+
+print(f'[SM §4a-speckit] installed={".".join(map(str, installed))}, '
+      f'latest={".".join(map(str, latest))}')
+
+# §42.3 O3: Check if >1 minor behind (same major)
+if latest[0] != installed[0]:
+    print(f'[SM §4a-speckit] Major version difference — not auto-flagging (major upgrade requires human).')
+    sys.exit(0)
+
+if latest[1] <= installed[1] + 1:
+    print(f'[SM §4a-speckit] Version OK (within 1 minor) — no action needed.')
+    sys.exit(0)
+
+# Check release notes for reliability/context-parsing keywords
+KEYWORDS = ['non-interactive', 'bom', 'context', 'upsert']
+body_lower = release_body.lower()
+relevant_keywords = [kw for kw in KEYWORDS if kw in body_lower]
+
+if not relevant_keywords:
+    print(f'[SM §4a-speckit] Version {".".join(map(str, latest))} is >1 minor ahead but no '
+          f'relevant keywords in release notes. No action.')
+    sys.exit(0)
+
+# §42.3 O4: Deduplication
+issue_title = f'chore: update speckit from v{".".join(map(str, installed))} to v{".".join(map(str, latest))}'
+try:
+    dedup_r = subprocess.run(
+        ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+         '--search', 'speckit', '--json', 'number', '--jq', 'length'],
+        capture_output=True, text=True, timeout=10)
+    if int(dedup_r.stdout.strip() or '0') > 0:
+        print(f'[SM §4a-speckit] Speckit update issue already open — skipped.')
+        sys.exit(0)
+except Exception:
+    pass
+
+# Open issue
+issue_body = (
+    f'## Speckit update recommended\n\n'
+    f'Installed: `v{".".join(map(str, installed))}` | Latest: `v{".".join(map(str, latest))}`\n\n'
+    f'The installed version is more than 1 minor behind. The latest release contains '
+    f'relevant keywords: `{", ".join(relevant_keywords)}`.\n\n'
+    f'## What to do\n\n'
+    f'Update speckit in the environment where otherness runs:\n'
+    f'```\nnpm install -g @github/spec-kit@{".".join(map(str, latest))}\n```\n'
+    f'Or update the pinned version in `otherness-config.yaml` under `speckit.version`.\n\n'
+    f'*Generated by SM §4a-speckit | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}*'
+)
+
+r = subprocess.run(
+    ['gh', 'issue', 'create', '--repo', REPO,
+     '--title', issue_title,
+     '--label', f'{PR_LABEL},kind/chore,priority/medium,size/xs',
+     '--body', issue_body],
+    capture_output=True, text=True, timeout=15)
+
+if r.returncode == 0:
+    issue_num = r.stdout.strip().split('/')[-1]
+    print(f'[SM §4a-speckit] Opened update issue #{issue_num}: {issue_title[:60]}')
+else:
+    print(f'[SM §4a-speckit] Issue create failed (non-fatal): {r.stderr[:100]}')
+SPECKIT_RELEASE_EOF
+
+  echo "[SM §4a-speckit] Speckit release check complete."
 fi
 ```
 

@@ -41,6 +41,7 @@ A speckit release is NOT worth adopting when it only contains:
 - ✅ speckit version upgraded from 0.7.2 → 0.7.4 (2026-04-21)
 - ✅ `SPECKIT_COPILOT_ALLOW_ALL_TOOLS=1` set in scheduled workflow — non-interactive sessions no longer prompt for permissions (2026-04-21)
 - ✅ decisions.md writes use marker-based upsert pattern (`specify memory set`) instead of raw `cat >>` — prevents concurrent session corruption (2026-04-21)
+- ✅ 42.3 — SM §4a-speckit: speckit release check every 10 SM cycles. Queries `gh api repos/github/spec-kit/releases/latest`, compares against `specify --version`, opens `kind/chore` issue if >1 minor behind AND release body contains reliability/context-parsing keywords ("non-interactive", "BOM", "context", "upsert"). Graceful skip if speckit not installed or API unavailable. Dedup: at most one open speckit update issue. (PR #897, 2026-04-22)
 
 ---
 
@@ -48,7 +49,7 @@ A speckit release is NOT worth adopting when it only contains:
 
 - 🔲 42.1 — `scripts/validate.sh`: add check that speckit version installed locally matches the pinned version in `onboarding-new-project.md`. Fails if `specify --version` returns a version older than the pinned one. Prevents "works on my machine" issues when the local speckit is behind the version otherness expects.
 - 🔲 42.2 — `otherness-config-template.yaml`: add `speckit.version` field. Projects can pin their own speckit version independently of otherness's local install. The ENG startup block reads this field and runs `uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@<version>` if the installed version differs.
-- 🔲 42.3 — `SM §4a`: add speckit release check. Every 10 SM cycles: query `https://api.github.com/repos/github/spec-kit/releases/latest`, compare against current install, open `kind/chore` issue if the installed version is >1 minor behind and the release contains session-reliability or context-parsing fixes (keywords: "non-interactive", "BOM", "context", "upsert").
+- ✅ 42.3 — see ✅ Present section above. (PR #897, 2026-04-22)
 - 🔲 42.4 — `eng.md §2d`: migrate `decisions.md` writes to use `specify memory set "<key>" "<value>"` when speckit ≥ 0.7.3 is available. Fall back to `cat >>` if speckit is absent or older. The marker-based upsert prevents duplicate entries and handles concurrent sessions safely.
 
 ---
