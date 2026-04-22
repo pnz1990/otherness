@@ -281,6 +281,44 @@ except yaml.YAMLError as e:
       SKIP_NO_YAML|SKIP_ERR)
         echo "  WARN: could not validate YAML syntax (PyYAML unavailable or parse error reading check) — skipping" ;;
       FAIL*)
+
+    # Bash syntax check on the run: blocks inside the workflow
+    # Catches missing fi, unmatched quotes, etc. that YAML parsers miss.
+    # This is what would have caught the 5-hour outage on 2026-04-22.
+    BASH_VALID=$(python3 -c "
+import sys, subprocess
+try:
+    import yaml
+    wf = yaml.safe_load(open('$WORKFLOW_FILE').read())
+    jobs = wf.get('jobs', {})
+    errors = []
+    for job_name, job in jobs.items():
+        for step in job.get('steps', []):
+            script = step.get('run', '')
+            if not script: continue
+            r = subprocess.run(['bash', '-n'], input=script,
+                               capture_output=True, text=True)
+            if r.returncode != 0:
+                errors.append(f'step \"{step.get(\"name\",\"unnamed\")}\": {r.stderr.strip()}')
+    if errors:
+        print('FAIL: ' + ' | '.join(errors))
+    else:
+        print('OK')
+except Exception as e:
+    print(f'SKIP: {e}')
+" 2>/dev/null || echo "SKIP_ERR")
+
+    case "$BASH_VALID" in
+      OK)
+        echo "  OK: all workflow run: blocks pass bash -n syntax check" ;;
+      SKIP*)
+        echo "  WARN: could not run bash syntax check — skipping" ;;
+      FAIL*)
+        echo "  ERROR: bash syntax error in workflow run: block"
+        echo "         $BASH_VALID"
+        echo "         Fix before pushing — this will break all scheduled sessions."
+        ERRORS=$((ERRORS+1)) ;;
+    esac
         echo "  ERROR: otherness-scheduled.yml has invalid YAML syntax — likely caused by a broken SCAN 5 pressure rewrite. Restore the file or fix the indentation."
         echo "  Detail: $YAML_VALID"
         exit 1 ;;
