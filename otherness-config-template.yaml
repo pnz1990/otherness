@@ -217,6 +217,15 @@ monitor:
 #                           # infers Future items from TODO/FIXME in code.
 #                           # Set false to disable (e.g. projects with human-only vision).
 
+# ── Vision configuration ──────────────────────────────────────────────────────
+# Controls how SCAN 5 (self-updating pressure prompts) evaluates staleness.
+# Design ref: docs/design/37-self-updating-pressure-prompts.md §37.12
+#
+# vision:
+#   pressure_max_age_days: 14   # max days before pressure context MUST be rewritten
+#                               # regardless of addressed ratio (default: 14 = 2 weeks)
+#                               # Set to 7 (aggressive), 14 (default), or 30 (relaxed).
+
 # ── Simulation calibration ────────────────────────────────────────────────────
 # Controls how often SM §4e re-calibrates simulation parameters against real batch
 # history. Managed projects inherit otherness fleet defaults on startup and
