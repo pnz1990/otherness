@@ -460,8 +460,8 @@
       "done_at": "2026-04-23T10:09:34Z"
     },
     "issue-817": {
-      "state": "todo",
-      "title": "feat(observability): deploy AWS observability backend (account 569190534191) and wire all projects",
+      "state": "done",
+      "title": "feat(observability): AWS OTLP backend \u2014 IaC, config, and user guide (44.1, 44.5)",
       "labels": [
         "size/l",
         "area/tooling",
@@ -470,7 +470,13 @@
       ],
       "priority": "high",
       "issue": 817,
-      "file_spaces": []
+      "file_spaces": [],
+      "assigned_to": "sess-a6b9cc4b",
+      "assigned_at": "2026-04-23T10:46:46Z",
+      "branch": "feat/issue-817",
+      "worktree": "../otherness.issue-817",
+      "merged_at": "2026-04-23T10:59:16Z",
+      "pr_number": 985
     },
     "issue-815": {
       "state": "todo",
