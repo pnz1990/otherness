@@ -51,7 +51,7 @@
       "file_spaces": []
     },
     "issue-951": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: ENG \u00a72f: when opening the PR, set board `Status: In Review`. One GraphQL mutation.",
       "labels": [
         "priority/medium",
@@ -61,7 +61,9 @@
       ],
       "priority": "medium",
       "issue": 951,
-      "file_spaces": []
+      "file_spaces": [],
+      "pr_merged": true,
+      "done_at": "2026-04-23T09:53:31Z"
     },
     "issue-950": {
       "state": "todo",
