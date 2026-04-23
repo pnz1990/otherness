@@ -1759,14 +1759,14 @@ PYEOF
   # Increment TOTAL_CLAIMS_THIS_SESSION always; VISION_BACKED_CLAIMS_THIS_SESSION only on match.
   # Fail-open: VPS unset or empty → treat as non-vision-backed (conservative).
   TOTAL_CLAIMS_THIS_SESSION=$(( ${TOTAL_CLAIMS_THIS_SESSION:-0} + 1 ))
-  _VPS_MATCH=$(python3 - <<'VPS_MATCH_EOF'
+  _VPS_RESULT=$(python3 - <<'VPS_MATCH_EOF'
 import os, json
 
 vps_raw = os.environ.get('VISION_PRESSURE_SET', '')
 item_id = os.environ.get('ITEM_ID', '')
 
 if not vps_raw.strip():
-    print('0')  # VPS unavailable — fail-open: not backed
+    print('0|')  # VPS unavailable — fail-open: not backed, no key
     exit(0)
 
 vps_keys = [k.strip().lower() for k in vps_raw.splitlines() if k.strip()]
@@ -1777,20 +1777,32 @@ try:
         s = json.load(f)
     title = s.get('features', {}).get(item_id, {}).get('title', '').lower()
 except Exception:
-    print('0')
+    print('0|')
     exit(0)
 
-if any(k in title for k in vps_keys):
-    print('1')
-else:
-    print('0')
+for k in vps_keys:
+    if k in title:
+        print(f'1|{k}'); exit(0)
+print('0|')
 VPS_MATCH_EOF
   )
+  _VPS_MATCH=$(echo "$_VPS_RESULT" | cut -d'|' -f1)
+  _VPS_KEY=$(echo "$_VPS_RESULT" | cut -d'|' -f2)
   if [ "${_VPS_MATCH:-0}" = "1" ]; then
     VISION_BACKED_CLAIMS_THIS_SESSION=$(( ${VISION_BACKED_CLAIMS_THIS_SESSION:-0} + 1 ))
     echo "[COORD §36.5] vision-backed claim: $ITEM_ID (${VISION_BACKED_CLAIMS_THIS_SESSION}/${TOTAL_CLAIMS_THIS_SESSION})"
+    # §36.3 Log vision-pressure claim decision to batch report — design doc 36 §36.3 → ✅
+    ISSUE_NUM_LOG=$(echo "$ITEM_ID" | grep -oE '[0-9]+' | head -1)
+    gh issue comment "$REPORT_ISSUE" --repo "$REPO" \
+      --body "[COORD §36.3 | ${MY_SESSION_ID:-sess-unknown}] Claimed #${ISSUE_NUM_LOG} [vision-backed: yes] — matched VPS key '${_VPS_KEY}'" \
+      2>/dev/null || true
   else
     echo "[COORD §36.5] non-vision-backed claim: $ITEM_ID (${VISION_BACKED_CLAIMS_THIS_SESSION:-0}/${TOTAL_CLAIMS_THIS_SESSION})"
+    # §36.3 Log vision-pressure claim decision to batch report — design doc 36 §36.3 → ✅
+    ISSUE_NUM_LOG=$(echo "$ITEM_ID" | grep -oE '[0-9]+' | head -1)
+    gh issue comment "$REPORT_ISSUE" --repo "$REPO" \
+      --body "[COORD §36.3 | ${MY_SESSION_ID:-sess-unknown}] Claimed #${ISSUE_NUM_LOG} [vision-backed: no] — no VPS key match" \
+      2>/dev/null || true
   fi
   export VISION_BACKED_CLAIMS_THIS_SESSION TOTAL_CLAIMS_THIS_SESSION
 
