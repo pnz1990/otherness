@@ -1,7 +1,7 @@
 {
   "features": {
     "issue-956": {
-      "state": "todo",
+      "state": "done",
       "title": "45.3: COORD issue-creation must always set board Status:Todo and active milestone",
       "labels": [
         "area/agent-loop",
@@ -11,7 +11,9 @@
       ],
       "priority": "high",
       "issue": 956,
-      "file_spaces": []
+      "file_spaces": [],
+      "pr_merged": true,
+      "done_at": "2026-04-23T08:11:37Z"
     },
     "issue-953": {
       "state": "done",
