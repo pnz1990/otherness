@@ -673,6 +673,63 @@ for it in new_items:
     if it not in sorted_items:
         sorted_items.append(it)
 
+def _coord_post_create_setup(num):
+    # §43.2: add to project board (Status:Todo) and assign active_milestone. Non-blocking.
+    try:
+        import re as _re2
+        _bpid = ''; _ms = ''; _sec = None
+        for _ln in open('otherness-config.yaml'):
+            _s = _re2.match(r'^(\w[\w_]*):', _ln)
+            if _s: _sec = _s.group(1)
+            if _sec == 'project':
+                _m = _re2.match(r'^\s+board_project_id:\s*["\']?([^"\'#\n\s]+)["\']?', _ln)
+                if _m: _bpid = _m.group(1).strip()
+                _m2 = _re2.match(r'^\s+active_milestone:\s*["\']?([^"\'#\n]+)["\']?', _ln)
+                if _m2: _ms = _m2.group(1).strip()
+        if _bpid:
+            try:
+                subprocess.run(['gh','project','item-add',_bpid,'--owner','@me',
+                    '--url',f'https://github.com/{REPO}/issues/{num}'],
+                    capture_output=True, timeout=15)
+                _q = (f'query={{node(id:"{_bpid}"){{...on ProjectV2{{'
+                      f'items(first:200){{nodes{{id content{{...on Issue{{number}}}}}}}}'
+                      f'fields(first:20){{nodes{{...on ProjectV2SingleSelectField{{'
+                      f'id name options{{id name}}}}}}}}}}}}}}}')
+                _r = subprocess.run(['gh','api','graphql','-f',f'query={_q}'],
+                    capture_output=True, text=True, timeout=15)
+                _data = json.loads(_r.stdout)
+                _nd = _data['data']['node']
+                _iid = next((i['id'] for i in _nd['items']['nodes']
+                    if i.get('content',{}).get('number')==int(num)), None)
+                _sf = next((f for f in _nd['fields']['nodes']
+                    if f.get('name')=='Status'), None)
+                if _iid and _sf:
+                    _fid = _sf['id']
+                    _tid = next((o['id'] for o in _sf['options']
+                        if 'todo' in o['name'].lower()), None)
+                    if _tid:
+                        _mut = (f'mutation{{updateProjectV2ItemFieldValue(input:{{'
+                                f'projectId:"{_bpid}" itemId:"{_iid}" fieldId:"{_fid}"'
+                                f' value:{{singleSelectOptionId:"{_tid}"}}}})'
+                                f'{{projectV2Item{{id}}}}}}')
+                        subprocess.run(['gh','api','graphql','-f',f'mutation={_mut}'],
+                            capture_output=True, timeout=15)
+                        print(f'[COORD §43.2] Board Status → Todo for issue #{num}')
+            except Exception: pass
+        if _ms:
+            try:
+                _mr = subprocess.run(
+                    ['gh','api',f'repos/{REPO}/milestones',
+                     '--jq',f'.[] | select(.title == "{_ms}") | .number'],
+                    capture_output=True, text=True, timeout=15)
+                _mn = _mr.stdout.strip()
+                if _mn:
+                    subprocess.run(['gh','issue','edit',str(num),'--repo',REPO,
+                        '--milestone',_mn], capture_output=True, timeout=15)
+                    print(f'[COORD §43.2] Milestone "{_ms}" set for issue #{num}')
+            except Exception: pass
+    except Exception: pass
+
 def open_if_absent(title, labels, body):
     r = subprocess.run(
         ['gh','issue','list','--repo',REPO,'--state','open',
@@ -685,6 +742,7 @@ def open_if_absent(title, labels, body):
             capture_output=True, text=True)
         if r2.returncode == 0:
             num = r2.stdout.strip().split('/')[-1]
+            _coord_post_create_setup(num)
             return num
     return None
 
@@ -813,6 +871,63 @@ def is_done(desc):
     key = d[:60]
     return any(key in pr for pr in merged_prs)
 
+def _coord_post_create_setup(num):
+    # §43.2: add to project board (Status:Todo) and assign active_milestone. Non-blocking.
+    try:
+        import re as _re2
+        _bpid = ''; _ms = ''; _sec = None
+        for _ln in open('otherness-config.yaml'):
+            _s = _re2.match(r'^(\w[\w_]*):', _ln)
+            if _s: _sec = _s.group(1)
+            if _sec == 'project':
+                _m = _re2.match(r'^\s+board_project_id:\s*["\']?([^"\'#\n\s]+)["\']?', _ln)
+                if _m: _bpid = _m.group(1).strip()
+                _m2 = _re2.match(r'^\s+active_milestone:\s*["\']?([^"\'#\n]+)["\']?', _ln)
+                if _m2: _ms = _m2.group(1).strip()
+        if _bpid:
+            try:
+                subprocess.run(['gh','project','item-add',_bpid,'--owner','@me',
+                    '--url',f'https://github.com/{REPO}/issues/{num}'],
+                    capture_output=True, timeout=15)
+                _q = (f'query={{node(id:"{_bpid}"){{...on ProjectV2{{'
+                      f'items(first:200){{nodes{{id content{{...on Issue{{number}}}}}}}}'
+                      f'fields(first:20){{nodes{{...on ProjectV2SingleSelectField{{'
+                      f'id name options{{id name}}}}}}}}}}}}}}}')
+                _r = subprocess.run(['gh','api','graphql','-f',f'query={_q}'],
+                    capture_output=True, text=True, timeout=15)
+                _data = json.loads(_r.stdout)
+                _nd = _data['data']['node']
+                _iid = next((i['id'] for i in _nd['items']['nodes']
+                    if i.get('content',{}).get('number')==int(num)), None)
+                _sf = next((f for f in _nd['fields']['nodes']
+                    if f.get('name')=='Status'), None)
+                if _iid and _sf:
+                    _fid = _sf['id']
+                    _tid = next((o['id'] for o in _sf['options']
+                        if 'todo' in o['name'].lower()), None)
+                    if _tid:
+                        _mut = (f'mutation{{updateProjectV2ItemFieldValue(input:{{'
+                                f'projectId:"{_bpid}" itemId:"{_iid}" fieldId:"{_fid}"'
+                                f' value:{{singleSelectOptionId:"{_tid}"}}}})'
+                                f'{{projectV2Item{{id}}}}}}')
+                        subprocess.run(['gh','api','graphql','-f',f'mutation={_mut}'],
+                            capture_output=True, timeout=15)
+                        print(f'[COORD §43.2] Board Status → Todo for issue #{num}')
+            except Exception: pass
+        if _ms:
+            try:
+                _mr = subprocess.run(
+                    ['gh','api',f'repos/{REPO}/milestones',
+                     '--jq',f'.[] | select(.title == "{_ms}") | .number'],
+                    capture_output=True, text=True, timeout=15)
+                _mn = _mr.stdout.strip()
+                if _mn:
+                    subprocess.run(['gh','issue','edit',str(num),'--repo',REPO,
+                        '--milestone',_mn], capture_output=True, timeout=15)
+                    print(f'[COORD §43.2] Milestone "{_ms}" set for issue #{num}')
+            except Exception: pass
+    except Exception: pass
+
 def open_if_absent(title, labels, body):
     r = subprocess.run(['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
                         '--search', title[:60], '--json', 'number', '--jq', 'length'],
@@ -822,7 +937,9 @@ def open_if_absent(title, labels, body):
                              '--title', title, '--label', labels, '--body', body],
                             capture_output=True, text=True)
         if r2.returncode == 0:
-            return r2.stdout.strip().split('/')[-1]
+            num = r2.stdout.strip().split('/')[-1]
+            _coord_post_create_setup(num)
+            return num
     return None
 
 injected = 0
@@ -1245,6 +1362,63 @@ def is_done(d):
     if d_lower in done_titles: return True
     return any(d_lower[:60] in pr for pr in merged_prs)
 
+def _coord_post_create_setup(num):
+    # §43.2: add to project board (Status:Todo) and assign active_milestone. Non-blocking.
+    try:
+        import re as _re2
+        _bpid = ''; _ms = ''; _sec = None
+        for _ln in open('otherness-config.yaml'):
+            _s = _re2.match(r'^(\w[\w_]*):', _ln)
+            if _s: _sec = _s.group(1)
+            if _sec == 'project':
+                _m = _re2.match(r'^\s+board_project_id:\s*["\']?([^"\'#\n\s]+)["\']?', _ln)
+                if _m: _bpid = _m.group(1).strip()
+                _m2 = _re2.match(r'^\s+active_milestone:\s*["\']?([^"\'#\n]+)["\']?', _ln)
+                if _m2: _ms = _m2.group(1).strip()
+        if _bpid:
+            try:
+                subprocess.run(['gh','project','item-add',_bpid,'--owner','@me',
+                    '--url',f'https://github.com/{REPO}/issues/{num}'],
+                    capture_output=True, timeout=15)
+                _q = (f'query={{node(id:"{_bpid}"){{...on ProjectV2{{'
+                      f'items(first:200){{nodes{{id content{{...on Issue{{number}}}}}}}}'
+                      f'fields(first:20){{nodes{{...on ProjectV2SingleSelectField{{'
+                      f'id name options{{id name}}}}}}}}}}}}}}}')
+                _r = subprocess.run(['gh','api','graphql','-f',f'query={_q}'],
+                    capture_output=True, text=True, timeout=15)
+                _data = json.loads(_r.stdout)
+                _nd = _data['data']['node']
+                _iid = next((i['id'] for i in _nd['items']['nodes']
+                    if i.get('content',{}).get('number')==int(num)), None)
+                _sf = next((f for f in _nd['fields']['nodes']
+                    if f.get('name')=='Status'), None)
+                if _iid and _sf:
+                    _fid = _sf['id']
+                    _tid = next((o['id'] for o in _sf['options']
+                        if 'todo' in o['name'].lower()), None)
+                    if _tid:
+                        _mut = (f'mutation{{updateProjectV2ItemFieldValue(input:{{'
+                                f'projectId:"{_bpid}" itemId:"{_iid}" fieldId:"{_fid}"'
+                                f' value:{{singleSelectOptionId:"{_tid}"}}}})'
+                                f'{{projectV2Item{{id}}}}}}')
+                        subprocess.run(['gh','api','graphql','-f',f'mutation={_mut}'],
+                            capture_output=True, timeout=15)
+                        print(f'[COORD §43.2] Board Status → Todo for issue #{num}')
+            except Exception: pass
+        if _ms:
+            try:
+                _mr = subprocess.run(
+                    ['gh','api',f'repos/{REPO}/milestones',
+                     '--jq',f'.[] | select(.title == "{_ms}") | .number'],
+                    capture_output=True, text=True, timeout=15)
+                _mn = _mr.stdout.strip()
+                if _mn:
+                    subprocess.run(['gh','issue','edit',str(num),'--repo',REPO,
+                        '--milestone',_mn], capture_output=True, timeout=15)
+                    print(f'[COORD §43.2] Milestone "{_ms}" set for issue #{num}')
+            except Exception: pass
+    except Exception: pass
+
 def open_if_absent(title, labels, body):
     r = subprocess.run(['gh','issue','list','--repo',REPO,'--state','open',
                         '--search',title[:60],'--json','number','--jq','length'],
@@ -1254,12 +1428,12 @@ def open_if_absent(title, labels, body):
                              '--title',title,'--label',labels,'--body',body],
                             capture_output=True, text=True)
         if r2.returncode == 0:
-            return r2.stdout.strip().split('/')[-1]
+            num = r2.stdout.strip().split('/')[-1]
+            _coord_post_create_setup(num)
+            return num
     return None
 
 created = 0
-
-# Source 1: roadmap.md — earliest incomplete stage
 try:
     roadmap = open('docs/aide/roadmap.md').read()
     stages = re.split(r'^## Stage', roadmap, flags=re.MULTILINE)
@@ -1380,6 +1554,63 @@ def is_done_or_open(desc):
     if any(key in oi for oi in open_issues): return True
     return False
 
+def _coord_post_create_setup(num):
+    # §43.2: add to project board (Status:Todo) and assign active_milestone. Non-blocking.
+    try:
+        import re as _re2
+        _bpid = ''; _ms = ''; _sec = None
+        for _ln in open('otherness-config.yaml'):
+            _s = _re2.match(r'^(\w[\w_]*):', _ln)
+            if _s: _sec = _s.group(1)
+            if _sec == 'project':
+                _m = _re2.match(r'^\s+board_project_id:\s*["\']?([^"\'#\n\s]+)["\']?', _ln)
+                if _m: _bpid = _m.group(1).strip()
+                _m2 = _re2.match(r'^\s+active_milestone:\s*["\']?([^"\'#\n]+)["\']?', _ln)
+                if _m2: _ms = _m2.group(1).strip()
+        if _bpid:
+            try:
+                subprocess.run(['gh','project','item-add',_bpid,'--owner','@me',
+                    '--url',f'https://github.com/{REPO}/issues/{num}'],
+                    capture_output=True, timeout=15)
+                _q = (f'query={{node(id:"{_bpid}"){{...on ProjectV2{{'
+                      f'items(first:200){{nodes{{id content{{...on Issue{{number}}}}}}}}'
+                      f'fields(first:20){{nodes{{...on ProjectV2SingleSelectField{{'
+                      f'id name options{{id name}}}}}}}}}}}}}}}')
+                _r = subprocess.run(['gh','api','graphql','-f',f'query={_q}'],
+                    capture_output=True, text=True, timeout=15)
+                _data = json.loads(_r.stdout)
+                _nd = _data['data']['node']
+                _iid = next((i['id'] for i in _nd['items']['nodes']
+                    if i.get('content',{}).get('number')==int(num)), None)
+                _sf = next((f for f in _nd['fields']['nodes']
+                    if f.get('name')=='Status'), None)
+                if _iid and _sf:
+                    _fid = _sf['id']
+                    _tid = next((o['id'] for o in _sf['options']
+                        if 'todo' in o['name'].lower()), None)
+                    if _tid:
+                        _mut = (f'mutation{{updateProjectV2ItemFieldValue(input:{{'
+                                f'projectId:"{_bpid}" itemId:"{_iid}" fieldId:"{_fid}"'
+                                f' value:{{singleSelectOptionId:"{_tid}"}}}})'
+                                f'{{projectV2Item{{id}}}}}}')
+                        subprocess.run(['gh','api','graphql','-f',f'mutation={_mut}'],
+                            capture_output=True, timeout=15)
+                        print(f'[COORD §43.2] Board Status → Todo for issue #{num}')
+            except Exception: pass
+        if _ms:
+            try:
+                _mr = subprocess.run(
+                    ['gh','api',f'repos/{REPO}/milestones',
+                     '--jq',f'.[] | select(.title == "{_ms}") | .number'],
+                    capture_output=True, text=True, timeout=15)
+                _mn = _mr.stdout.strip()
+                if _mn:
+                    subprocess.run(['gh','issue','edit',str(num),'--repo',REPO,
+                        '--milestone',_mn], capture_output=True, timeout=15)
+                    print(f'[COORD §43.2] Milestone "{_ms}" set for issue #{num}')
+            except Exception: pass
+    except Exception: pass
+
 def open_if_absent(title, labels_str, body):
     r = subprocess.run(
         ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
@@ -1391,7 +1622,9 @@ def open_if_absent(title, labels_str, body):
              '--title', title, '--label', labels_str, '--body', body],
             capture_output=True, text=True, timeout=15)
         if r2.returncode == 0:
-            return r2.stdout.strip().split('/')[-1]
+            num = r2.stdout.strip().split('/')[-1]
+            _coord_post_create_setup(num)
+            return num
     return None
 
 # Scan docs/design/ for an unissued 🔲 Future item
@@ -1750,6 +1983,63 @@ def is_done(d):
         if desc_key in pr_title.strip(): return True
     return False
 
+def _coord_post_create_setup(num):
+    # §43.2: add to project board (Status:Todo) and assign active_milestone. Non-blocking.
+    try:
+        import re as _re2
+        _bpid = ''; _ms = ''; _sec = None
+        for _ln in open('otherness-config.yaml'):
+            _s = _re2.match(r'^(\w[\w_]*):', _ln)
+            if _s: _sec = _s.group(1)
+            if _sec == 'project':
+                _m = _re2.match(r'^\s+board_project_id:\s*["\']?([^"\'#\n\s]+)["\']?', _ln)
+                if _m: _bpid = _m.group(1).strip()
+                _m2 = _re2.match(r'^\s+active_milestone:\s*["\']?([^"\'#\n]+)["\']?', _ln)
+                if _m2: _ms = _m2.group(1).strip()
+        if _bpid:
+            try:
+                subprocess.run(['gh','project','item-add',_bpid,'--owner','@me',
+                    '--url',f'https://github.com/{REPO}/issues/{num}'],
+                    capture_output=True, timeout=15)
+                _q = (f'query={{node(id:"{_bpid}"){{...on ProjectV2{{'
+                      f'items(first:200){{nodes{{id content{{...on Issue{{number}}}}}}}}'
+                      f'fields(first:20){{nodes{{...on ProjectV2SingleSelectField{{'
+                      f'id name options{{id name}}}}}}}}}}}}}}}')
+                _r = subprocess.run(['gh','api','graphql','-f',f'query={_q}'],
+                    capture_output=True, text=True, timeout=15)
+                _data = json.loads(_r.stdout)
+                _nd = _data['data']['node']
+                _iid = next((i['id'] for i in _nd['items']['nodes']
+                    if i.get('content',{}).get('number')==int(num)), None)
+                _sf = next((f for f in _nd['fields']['nodes']
+                    if f.get('name')=='Status'), None)
+                if _iid and _sf:
+                    _fid = _sf['id']
+                    _tid = next((o['id'] for o in _sf['options']
+                        if 'todo' in o['name'].lower()), None)
+                    if _tid:
+                        _mut = (f'mutation{{updateProjectV2ItemFieldValue(input:{{'
+                                f'projectId:"{_bpid}" itemId:"{_iid}" fieldId:"{_fid}"'
+                                f' value:{{singleSelectOptionId:"{_tid}"}}}})'
+                                f'{{projectV2Item{{id}}}}}}')
+                        subprocess.run(['gh','api','graphql','-f',f'mutation={_mut}'],
+                            capture_output=True, timeout=15)
+                        print(f'[COORD §43.2] Board Status → Todo for issue #{num}')
+            except Exception: pass
+        if _ms:
+            try:
+                _mr = subprocess.run(
+                    ['gh','api',f'repos/{REPO}/milestones',
+                     '--jq',f'.[] | select(.title == "{_ms}") | .number'],
+                    capture_output=True, text=True, timeout=15)
+                _mn = _mr.stdout.strip()
+                if _mn:
+                    subprocess.run(['gh','issue','edit',str(num),'--repo',REPO,
+                        '--milestone',_mn], capture_output=True, timeout=15)
+                    print(f'[COORD §43.2] Milestone "{_ms}" set for issue #{num}')
+            except Exception: pass
+    except Exception: pass
+
 def open_if_absent(title, labels, body):
     r = subprocess.run(['gh','issue','list','--repo',REPO,'--state','open',
                         '--search',title[:60],'--json','number','--jq','length'],
@@ -1759,7 +2049,9 @@ def open_if_absent(title, labels, body):
                              '--title',title,'--label',labels,'--body',body],
                             capture_output=True, text=True)
         if r2.returncode == 0:
-            return r2.stdout.strip().split('/')[-1]
+            num = r2.stdout.strip().split('/')[-1]
+            _coord_post_create_setup(num)
+            return num
     return None
 
 design_dir = 'docs/design'
