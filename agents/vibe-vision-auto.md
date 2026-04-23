@@ -912,6 +912,76 @@ fi
 
 ---
 
+## GAP STAGNATION RATIO (design doc 42.2)
+
+Compute gap stagnation metrics from this scan run and append to report comment.
+
+```bash
+# Count new_gaps (⚠️ Inferred items added to docs/ this scan run)
+NEW_GAPS=$(git diff docs/ 2>/dev/null | \
+  grep '^+' | grep -v '^+++' | \
+  grep -c '⚠️ Inferred\|⚠️ Observed' 2>/dev/null || echo 0)
+
+# Count gaps_shipped (🔲 lines removed → ✅ transitions this run)
+GAPS_SHIPPED=$(git diff docs/ 2>/dev/null | \
+  grep '^-' | grep -v '^---' | \
+  grep -c '🔲' 2>/dev/null || echo 0)
+
+# Count gaps_aged_30d (open ⚠️ Inferred GitHub issues older than 30 days)
+GAPS_AGED_30D=$(python3 - <<'GAP_STALE_EOF'
+import subprocess, json, datetime, os, re
+
+REPO = os.environ.get('REPO', '')
+if not REPO:
+    print(0); exit(0)
+
+try:
+    r = subprocess.run(
+        ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+         '--search', 'Inferred', '--limit', '200',
+         '--json', 'number,title,createdAt'],
+        capture_output=True, text=True, timeout=15)
+    if r.returncode != 0:
+        print(0); exit(0)
+    issues = json.loads(r.stdout or '[]')
+except Exception:
+    print(0); exit(0)
+
+threshold = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=30)
+count = 0
+for issue in issues:
+    try:
+        created = datetime.datetime.fromisoformat(
+            issue.get('createdAt', '').replace('Z', '+00:00'))
+        if created < threshold:
+            count += 1
+    except Exception:
+        pass
+print(count)
+GAP_STALE_EOF
+)
+
+# Compute stagnation ratio
+GAP_STAGNATION=$(python3 -c "
+new_gaps = int('${NEW_GAPS:-0}')
+gaps_shipped = int('${GAPS_SHIPPED:-0}')
+gaps_aged = int('${GAPS_AGED_30D:-0}')
+denominator = new_gaps + gaps_shipped
+if denominator == 0:
+    ratio_str = 'N/A (no new/shipped gaps this run)'
+else:
+    ratio = gaps_aged / denominator
+    ratio_str = f'{ratio:.1f}'
+    if ratio > 2.0:
+        ratio_str += f' [⚠️ GAP STAGNATION: {gaps_aged} old gaps are not shipping]'
+print(f'Gap stagnation: new={new_gaps} shipped={gaps_shipped} aged_30d={gaps_aged} ratio={ratio_str}')
+" 2>/dev/null || echo "Gap stagnation: metrics unavailable")
+
+echo "[VIBE-VISION-AUTO] $GAP_STAGNATION"
+```
+
+---
+
 ## COMMIT
 
 If any files changed, commit to the session branch (Step B will see the changes
@@ -945,9 +1015,14 @@ Signed-off-by: otherness[bot] <otherness[bot]@users.noreply.github.com>" 2>/dev/
   gh issue comment $REPORT_ISSUE --repo $REPO \
     --body "[🌀 VIBE-VISION-AUTO] Autonomous vision scan complete.
 $SUMMARY
+$GAP_STAGNATION
 Step B (run) will pick up any updated queue items." 2>/dev/null || true
 else
   echo "[VIBE-VISION-AUTO] No doc changes — design docs are current."
+  # Still report gap stagnation even when no doc changes (O4)
+  gh issue comment $REPORT_ISSUE --repo $REPO \
+    --body "[🌀 VIBE-VISION-AUTO] Autonomous vision scan complete (no doc changes).
+$GAP_STAGNATION" 2>/dev/null || true
 fi
 
 echo "[VIBE-VISION-AUTO] Step A complete. Exiting for Step B."
