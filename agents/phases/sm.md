@@ -395,6 +395,32 @@ if [ -z "$AGENT_VERSION" ]; then
    CURRENT_TAG=$(git -C ~/.otherness describe --tags --abbrev=0 2>/dev/null || echo "unpinned")
    echo "[SM] agent_version not pinned — currently on $CURRENT_TAG"
 fi
+
+# §4a-simplify: Simplification cycle — every 30 batches, ensure a chore issue exists.
+# Design ref: docs/design/45-distil-and-simplify.md §45.5
+# Skip at SM_CYCLE=0 (first run). Fail silently.
+if [ $((${SM_CYCLE:-0} % 30)) -eq 0 ] && [ "${SM_CYCLE:-0}" -gt 0 ]; then
+  _SIMPLIFY_EXISTING=$(gh issue list --repo "$REPO" --state open \
+    --search "Simplification cycle" --json number --jq 'length' 2>/dev/null || echo "0")
+  if [ "${_SIMPLIFY_EXISTING:-0}" -eq 0 ]; then
+    gh issue create --repo "$REPO" \
+      --title "chore: Simplification cycle — distil sm.md, coord.md, eng.md, qa.md" \
+      --label "kind/chore,priority/high,size/m,area/agent-loop" \
+      --body "Scheduled simplification cycle (every 30 batches, SM_CYCLE=${SM_CYCLE}).
+
+Audit phase files for dead weight. See docs/design/45-distil-and-simplify.md.
+
+Checklist:
+- [ ] Count [AI-STEP] sections in all phase files; any >50% [AI-STEP] is a removal candidate
+- [ ] Identify non-executing sections (no output in last 30 sessions)
+- [ ] Distil: remove/compress dead weight, move aspirational content to design docs
+- [ ] Verify core workflow chain executes completely after simplification" \
+      2>/dev/null || true
+    echo "[SM §4a-simplify] Simplification cycle issue opened (SM_CYCLE=${SM_CYCLE})."
+  else
+    echo "[SM §4a-simplify] Simplification cycle issue already open — skipping (SM_CYCLE=${SM_CYCLE})."
+  fi
+fi
 ```
 
 ---
