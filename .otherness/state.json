@@ -1,0 +1,18 @@
+{
+  "features": {
+    "issue-958": {
+      "state": "done",
+      "title": "45.6: [AI-STEP] elimination in qa.md",
+      "pr_merged": true,
+      "pr_number": 965,
+      "done_at": "2026-04-23T05:16:43Z"
+    }
+  },
+  "session_heartbeats": {
+    "sess-ad8fd509": {
+      "last_seen": "2026-04-23T05:09:55Z",
+      "item": "coord",
+      "cycle": 1
+    }
+  }
+}
