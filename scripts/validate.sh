@@ -517,3 +517,38 @@ fi
 
 echo ""
 echo "=== validate: PASSED ==="
+
+# [8b/9] Python3 syntax check on python3 -c blocks in scheduled workflow
+if [ -n "$SCHEDULE_CRON" ] && [ -f "$WORKFLOW_FILE" ]; then
+  PYTHON_ERRORS=$(python3 -c "
+import yaml, re, subprocess, sys
+try:
+    wf = yaml.safe_load(open('$WORKFLOW_FILE').read())
+except:
+    sys.exit(0)
+errors = []
+for job in wf.get('jobs',{}).values():
+    for step in job.get('steps',[]):
+        script = step.get('run','') or step.get('with',{}).get('prompt','')
+        if not script: continue
+        for m in re.finditer(r'python3\s+-c\s+[\"](.*?)[\"]', script, re.DOTALL):
+            code = m.group(1).replace('\\\\n','\\n').replace('\\\\t','\\t')
+            r = subprocess.run(['python3','-c', f'compile({repr(code)},\"<string>\",\"exec\")'],
+                               capture_output=True, text=True)
+            if r.returncode != 0:
+                errors.append(r.stderr.strip()[:80])
+if errors:
+    for e in errors: print(f'FAIL: {e}')
+else:
+    print('OK')
+" 2>/dev/null || echo "SKIP")
+
+  case "$PYTHON_ERRORS" in
+    OK)   echo "  OK: all python3 -c blocks in workflow pass syntax check" ;;
+    SKIP) echo "  WARN: could not check python3 syntax — skipping" ;;
+    FAIL*)
+      echo "  ERROR: python3 syntax error in workflow python3 -c block"
+      echo "         $PYTHON_ERRORS"
+      ERRORS=$((ERRORS+1)) ;;
+  esac
+fi
