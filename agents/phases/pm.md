@@ -2549,3 +2549,300 @@ else:
 
 MAJOR_RELEASE_EOF
 ```
+
+---
+
+## 5q. Minor release trigger (runs every 5 PM cycles, design doc 40 §40.2)
+
+Auto-cut a minor release (vX.Y+1.0) when feature accumulation conditions are met.
+
+<!-- design ref: docs/design/40-autonomous-releases.md §40.2 -->
+
+```bash
+# Gate: run every 5 PM cycles only
+PM_MINOR_CYCLE_MOD=$(python3 -c "
+import json
+try:
+    s = json.load(open('.otherness/state.json'))
+    print(s.get('pm_minor_cycle', 0) % 5)
+except: print(0)
+" 2>/dev/null || echo "0")
+
+if [ "${PM_MINOR_CYCLE_MOD:-0}" -ne 0 ]; then
+  echo "[PM §5q] Skipping this cycle (cycle mod ${PM_MINOR_CYCLE_MOD} ≠ 0)."
+else
+
+python3 - <<'MINOR_RELEASE_EOF'
+import subprocess, re, os, json, datetime, sys
+
+REPO = os.environ.get('REPO', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
+
+print('[PM §5q] Minor release trigger check...')
+
+# O5: opt-out via config
+releases_enabled = True
+try:
+    content = open('otherness-config.yaml').read()
+    m = re.search(r'^\s*releases:\s*\n((?:\s+.+\n?)*)', content, re.MULTILINE)
+    if m:
+        block = m.group(1)
+        enabled_m = re.search(r'\s+enabled:\s*(true|false)', block)
+        if enabled_m and enabled_m.group(1) == 'false':
+            releases_enabled = False
+    if re.search(r'releases\.enabled:\s*false', content):
+        releases_enabled = False
+except Exception:
+    pass
+
+if not releases_enabled:
+    print('[PM §5q] releases.enabled=false — skipped.')
+    sys.exit(0)
+
+# Read min_days_between (default 7)
+min_days = 7
+try:
+    content = open('otherness-config.yaml').read()
+    m = re.search(r'^\s*releases:\s*\n((?:\s+.+\n?)*)', content, re.MULTILINE)
+    if m:
+        d_m = re.search(r'\s+min_days_between:\s*(\d+)', m.group(1))
+        if d_m:
+            min_days = int(d_m.group(1))
+except Exception:
+    pass
+
+# Get latest tag
+try:
+    last_tag_r = subprocess.run(
+        ['git', 'describe', '--tags', '--abbrev=0'],
+        capture_output=True, text=True, timeout=10)
+    last_tag = last_tag_r.stdout.strip()
+except Exception:
+    last_tag = ''
+
+if not last_tag:
+    print('[PM §5q] No existing tag found — cannot compute NEXT. Skipping.')
+    sys.exit(0)
+
+# Tag age check
+try:
+    tag_date_r = subprocess.run(
+        ['git', 'log', '-1', '--format=%ct', last_tag],
+        capture_output=True, text=True, timeout=10)
+    tag_ts = int(tag_date_r.stdout.strip())
+    tag_age_days = (datetime.datetime.now(datetime.timezone.utc).timestamp() - tag_ts) / 86400
+except Exception:
+    tag_age_days = 0
+
+if tag_age_days < min_days:
+    print(f'[PM §5q] Last tag {last_tag} is {tag_age_days:.1f}d old (min {min_days}d) — hold.')
+    sys.exit(0)
+
+# Count feat PRs and fix PRs since last tag
+try:
+    since_dt_r = subprocess.run(
+        ['git', 'log', '-1', '--format=%aI', last_tag],
+        capture_output=True, text=True, timeout=10)
+    since_dt = since_dt_r.stdout.strip()
+    gh_prs_r = subprocess.run(
+        ['gh', 'pr', 'list', '--repo', REPO, '--state', 'merged', '--limit', '200',
+         '--json', 'title,mergedAt'],
+        capture_output=True, text=True, timeout=20)
+    if gh_prs_r.returncode == 0:
+        gh_prs = json.loads(gh_prs_r.stdout)
+        prs_since = [p['title'] for p in gh_prs if p.get('mergedAt', '') > since_dt]
+    else:
+        prs_since = []
+except Exception:
+    prs_since = []
+
+feat_count = sum(1 for t in prs_since if re.match(r'^feat(\([^)]+\))?:', t, re.IGNORECASE))
+fix_count = sum(1 for t in prs_since if re.match(r'^(fix|security|chore)(\([^)]+\))?:', t, re.IGNORECASE))
+
+print(f'[PM §5q] Since {last_tag}: feat={feat_count}, fix/chore={fix_count}')
+
+if feat_count < 3:
+    print(f'[PM §5q] feat_count={feat_count} < 3 — minor threshold not met. Hold.')
+    sys.exit(0)
+
+# Check ≥1 new ✅ Present item in docs/design/ since last tag
+try:
+    design_log_r = subprocess.run(
+        ['git', 'log', f'{last_tag}..HEAD', '--name-only', '--oneline', '--', 'docs/design/'],
+        capture_output=True, text=True, timeout=10)
+    new_present_count = design_log_r.stdout.count('✅') + len(
+        re.findall(r'docs/design/', design_log_r.stdout))
+    # Simpler: check if docs/design/ has any commits since last tag
+    has_design_changes = bool(design_log_r.stdout.strip())
+except Exception:
+    has_design_changes = True  # fail-open
+
+if not has_design_changes:
+    print(f'[PM §5q] No design doc changes since {last_tag} — hold.')
+    sys.exit(0)
+
+# CI green check
+ci_green = True
+last_conclusion = 'unknown'
+try:
+    ci_r = subprocess.run(
+        ['gh', 'run', 'list', '--repo', REPO, '--branch', 'main', '--limit', '5',
+         '--json', 'conclusion,status', '--jq',
+         '[.[] | select(.status == "completed")] | .[0].conclusion'],
+        capture_output=True, text=True, timeout=15)
+    last_conclusion = ci_r.stdout.strip().strip('"')
+    if last_conclusion and last_conclusion not in ('success', ''):
+        ci_green = False
+except Exception:
+    ci_green = True  # fail-open
+
+if not ci_green:
+    print(f'[PM §5q] CI not green (last conclusion: {last_conclusion}) — hold.')
+    sys.exit(0)
+
+# needs-human check
+needs_human = 0
+try:
+    nh_r = subprocess.run(
+        ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
+         '--label', 'needs-human', '--json', 'number', '--jq', 'length'],
+        capture_output=True, text=True, timeout=15)
+    needs_human = int(nh_r.stdout.strip() or '0')
+except Exception:
+    needs_human = 0
+
+if needs_human > 0:
+    print(f'[PM §5q] {needs_human} open needs-human issue(s) — hold.')
+    sys.exit(0)
+
+# No open in_review feature PRs in state.json
+try:
+    state = json.load(open('.otherness/state.json'))
+    in_review_count = sum(
+        1 for v in state.get('features', {}).values()
+        if v.get('state') == 'in_review')
+except Exception:
+    in_review_count = 0
+
+if in_review_count > 0:
+    print(f'[PM §5q] {in_review_count} in_review PR(s) still open — hold.')
+    sys.exit(0)
+
+# HEAD not already tagged
+try:
+    head_tags_r = subprocess.run(
+        ['git', 'tag', '--points-at', 'HEAD'],
+        capture_output=True, text=True, timeout=10)
+    if head_tags_r.stdout.strip():
+        print(f'[PM §5q] HEAD already tagged: {head_tags_r.stdout.strip()} — skipping.')
+        sys.exit(0)
+except Exception:
+    pass
+
+# Major version boundary check: never cross 0.x → 1.0 autonomously
+try:
+    parts = last_tag.lstrip('v').split('.')
+    major = int(parts[0])
+    minor = int(parts[1])
+    patch = int(parts[2]) if len(parts) > 2 else 0
+except Exception:
+    print(f'[PM §5q] Could not parse tag {last_tag} — skipping.')
+    sys.exit(0)
+
+# Refuse to cut v1.0.0 autonomously (that's a major boundary)
+if major == 0 and minor >= 99:
+    print(f'[PM §5q] Minor version at 99 — would cross major boundary. [NEEDS HUMAN].')
+    sys.exit(0)
+
+next_tag = f'v{major}.{minor + 1}.0'
+print(f'[PM §5q] All conditions met. Cutting minor release {next_tag}...')
+
+# Read PROJECT_NAME
+try:
+    pn_m = re.search(r'^\s*project_name:\s*(.+)', open('otherness-config.yaml').read(), re.MULTILINE)
+    project_name = pn_m.group(1).strip().strip('"\'') if pn_m else next_tag
+except Exception:
+    project_name = next_tag
+
+# Build curated summary (feat PRs grouped by area)
+AREA_LABELS = ['area/agent-loop', 'area/skills', 'area/onboarding', 'area/tooling', 'area/docs']
+grouped = {a: [] for a in AREA_LABELS}
+ungrouped = []
+
+try:
+    gh_prs_full_r = subprocess.run(
+        ['gh', 'pr', 'list', '--repo', REPO, '--state', 'merged', '--limit', '200',
+         '--json', 'title,mergedAt,number,labels'],
+        capture_output=True, text=True, timeout=20)
+    if gh_prs_full_r.returncode == 0:
+        gh_prs_full = json.loads(gh_prs_full_r.stdout)
+        feat_prs_full = [
+            p for p in gh_prs_full
+            if p.get('mergedAt', '') > since_dt
+            and re.match(r'^feat(\([^)]+\))?:', p.get('title', ''), re.IGNORECASE)
+        ]
+        for pr in feat_prs_full:
+            pr_labels = [l.get('name', '') for l in pr.get('labels', [])]
+            placed = False
+            for area in AREA_LABELS:
+                if area in pr_labels:
+                    grouped[area].append(f'- #{pr["number"]}: {pr["title"]}')
+                    placed = True
+                    break
+            if not placed:
+                ungrouped.append(f'- #{pr["number"]}: {pr["title"]}')
+except Exception:
+    pass
+
+curated_notes = '## What\'s new\n\n'
+for area, items in grouped.items():
+    if items:
+        curated_notes += f'### {area}\n' + '\n'.join(items) + '\n\n'
+if ungrouped:
+    curated_notes += '### Other\n' + '\n'.join(ungrouped) + '\n\n'
+
+release_r = subprocess.run(
+    ['gh', 'release', 'create', next_tag,
+     '--repo', REPO,
+     '--title', f'{project_name} {next_tag}',
+     '--notes', curated_notes,
+     '--latest'],
+    capture_output=True, text=True, timeout=30)
+
+if release_r.returncode == 0:
+    release_url = release_r.stdout.strip()
+    print(f'[PM §5q] Minor release {next_tag} created: {release_url}')
+    comment_body = (f'[PM §5q | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}] '
+                    f'Minor release {next_tag} created: {release_url}. '
+                    f'Since {last_tag}: {feat_count} feat PRs, CI green, no needs-human, '
+                    f'design docs updated.')
+else:
+    print(f'[PM §5q] Release create failed: {release_r.stderr[:200]}')
+    comment_body = (f'[PM §5q | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}] '
+                    f'Minor release {next_tag} FAILED: {release_r.stderr[:150]}')
+
+try:
+    subprocess.run(
+        ['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO, '--body', comment_body],
+        capture_output=True, timeout=15)
+except Exception:
+    pass
+
+print('[PM §5q] Minor release trigger complete.')
+MINOR_RELEASE_EOF
+
+fi  # end cycle gate
+
+# Increment pm_minor_cycle counter
+python3 - <<'MINOR_CYCLE_EOF'
+import json
+try:
+    with open('.otherness/state.json') as f: s = json.load(f)
+    s['pm_minor_cycle'] = s.get('pm_minor_cycle', 0) + 1
+    with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
+except Exception:
+    pass
+MINOR_CYCLE_EOF
+```
