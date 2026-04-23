@@ -759,10 +759,105 @@ if ratio >= STALENESS_THRESHOLD:
                 print(f'[SCAN 5] Pressure rewrite item already present — skipping.')
         except Exception as e:
             print(f'[SCAN 5] Error updating {target_doc}: {e}')
-    else:
-        print('[SCAN 5] No design doc found to attach pressure rewrite item to.')
+     else:
+         print('[SCAN 5] No design doc found to attach pressure rewrite item to.')
 else:
     print(f'[SCAN 5] Pressure context still relevant ({ratio:.0%} addressed < {STALENESS_THRESHOLD:.0%} threshold) — no action needed.')
+
+# Step 4 (42.4): Time-based staleness trigger — independent of keyword match rate.
+# Design ref: docs/design/42-vision-scan-to-shipped-gap.md §42.4 (🔲 → ✅)
+#
+# A pressure context can become stale not because keywords were shipped,
+# but because the project's focus shifted (e.g. agent loop → onboarding).
+# If the pressure block has not been rewritten in >30 days, add a Future
+# item regardless of keyword match rate.
+#
+# How to detect age: look for a <!-- pressure-rewritten: YYYY-MM-DD --> comment
+# in the pressure block or in the scheduled workflow file. If the comment is
+# absent, treat the age as unknown (conservative: add the rewrite reminder).
+# If present, parse the date and compare to today.
+
+PRESSURE_STALE_DAYS = 30  # trigger after this many days without rewrite
+
+# Extract rewrite date from workflow content
+rewrite_date = None
+if pressure_file and os.path.isfile(SCHEDULED_WORKFLOW):
+    try:
+        content = open(SCHEDULED_WORKFLOW).read()
+        dm = re.search(r'<!--\s*pressure-rewritten:\s*(\d{4}-\d{2}-\d{2})\s*-->', content)
+        if dm:
+            import datetime
+            rewrite_date = datetime.date.fromisoformat(dm.group(1))
+    except Exception:
+        pass
+
+if rewrite_date is None:
+    # No timestamp found — conservative: treat as if it has never been rewritten.
+    # This ensures the check fires on the first scan after this feature ships.
+    pressure_age_days = PRESSURE_STALE_DAYS + 1  # triggers the check
+    age_desc = 'no rewrite timestamp found (conservative: treating as stale)'
+else:
+    import datetime
+    pressure_age_days = (datetime.date.today() - rewrite_date).days
+    age_desc = f'{pressure_age_days}d since last rewrite ({rewrite_date})'
+
+print(f'[SCAN 5 §42.4] Pressure age: {age_desc}')
+
+if pressure_age_days > PRESSURE_STALE_DAYS and ratio < STALENESS_THRESHOLD:
+    # Only fire time-based trigger when keyword-match didn't already fire
+    # (to avoid duplicate Future items)
+    print(f'[SCAN 5 §42.4] Pressure context is >{PRESSURE_STALE_DAYS}d old — adding time-based rewrite reminder.')
+
+    target_doc = None
+    if os.path.isdir(design_dir):
+        for fname in sorted(os.listdir(design_dir)):
+            if fname.startswith('37-') or 'pressure' in fname:
+                target_doc = fname
+                break
+        if not target_doc:
+            for fname in sorted(os.listdir(design_dir)):
+                if fname.startswith('42-') or 'vision-scan' in fname or 'shipped-gap' in fname:
+                    target_doc = fname
+                    break
+        if not target_doc:
+            docs = sorted(os.listdir(design_dir))
+            target_doc = next((f for f in docs if f.endswith('.md')), None)
+
+    if target_doc:
+        fpath = os.path.join(design_dir, target_doc)
+        try:
+            content = open(fpath).read()
+            new_item = (
+                f'- 🔲 Rewrite vision pressure context (time-based staleness): '
+                f'pressure block is >{PRESSURE_STALE_DAYS}d old ({age_desc}). '
+                f'The bar must be raised even when keyword match rate is below the threshold — '
+                f'time-based staleness means the system\'s focus has shifted without the pressure '
+                f'prompts keeping pace. Update the "Context for this vision scan:" block. '
+                f'Add a <!-- pressure-rewritten: YYYY-MM-DD --> comment after rewriting. '
+                f'⚠️ Inferred from SCAN 5 §42.4 time-based staleness trigger.'
+            )
+            REWRITE_MARKER = 'Rewrite vision pressure context (time-based staleness)'
+            if REWRITE_MARKER not in content:
+                if '## Future' in content:
+                    future_pos = content.index('## Future')
+                    lines = content[future_pos:].split('\n')
+                    insert_after = future_pos + len(lines[0]) + len(lines[1]) + 2
+                    content = content[:insert_after] + '\n' + new_item + '\n' + content[insert_after:]
+                else:
+                    content += f'\n## Future (🔲)\n\n{new_item}\n'
+                with open(fpath, 'w') as f:
+                    f.write(content)
+                print(f'[SCAN 5 §42.4] Added time-based rewrite item to {target_doc}')
+            else:
+                print(f'[SCAN 5 §42.4] Time-based rewrite item already present — skipping.')
+        except Exception as e:
+            print(f'[SCAN 5 §42.4] Error updating {target_doc}: {e}')
+    else:
+        print('[SCAN 5 §42.4] No design doc found to attach item to.')
+elif pressure_age_days <= PRESSURE_STALE_DAYS:
+    print(f'[SCAN 5 §42.4] Pressure context is fresh ({age_desc}) — no time-based trigger.')
+else:
+    print(f'[SCAN 5 §42.4] Keyword-match already fired ({ratio:.0%} ≥ {STALENESS_THRESHOLD:.0%}) — time-based trigger suppressed to avoid duplicate items.')
 
 SCAN5_EOF
 ```
