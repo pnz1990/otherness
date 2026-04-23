@@ -1838,6 +1838,25 @@ pr_body = (
 # Build label list
 all_labels = f'{PR_LABEL},kind/docs,priority/low,size/s'
 
+# §5k label creation fallback (issue-917): ensure required labels exist before PR create.
+# On freshly onboarded projects, labels like kind/docs may not exist; gh pr create
+# fails silently without them. Create any missing labels (non-fatal if creation fails).
+_labels_to_ensure = [l for l in ['kind/docs', 'priority/low', 'size/s', PR_LABEL] if l]
+for _lbl in _labels_to_ensure:
+    try:
+        _r = subprocess.run(
+            ['gh', 'label', 'list', '--repo', REPO, '--json', 'name',
+             '--jq', f'[.[] | select(.name == "{_lbl}")] | length'],
+            capture_output=True, text=True, timeout=10)
+        if _r.returncode == 0 and _r.stdout.strip() == '0':
+            subprocess.run(
+                ['gh', 'label', 'create', '--repo', REPO, _lbl,
+                 '--color', 'ededed', '--description', f'Auto-created by otherness PM §5k'],
+                capture_output=True, timeout=10)
+            print(f'[PM §5k] Created missing label: {_lbl}')
+    except Exception as _e:
+        print(f'[PM §5k] Label check for {_lbl} failed (non-fatal): {_e}')
+
 pr_result = subprocess.run(
     ['gh', 'pr', 'create', '--repo', REPO,
      '--base', 'main', '--head', refresh_branch,
