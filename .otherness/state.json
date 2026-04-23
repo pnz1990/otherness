@@ -330,7 +330,7 @@
       "file_spaces": []
     },
     "issue-858": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 37.12",
       "labels": [
         "area/agent-loop",
@@ -340,7 +340,10 @@
       ],
       "priority": "low",
       "issue": 858,
-      "file_spaces": []
+      "file_spaces": [],
+      "pr_merged": true,
+      "pr_number": 992,
+      "done_at": "2026-04-23T12:00:00Z"
     },
     "issue-857": {
       "state": "todo",
