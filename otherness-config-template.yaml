@@ -263,12 +263,21 @@ anchor:
 # OpenCode exports one span per LLM call (model, tokens, latency, finish reason)
 # and one span per tool invocation via experimental.openTelemetry.
 #
-# observability:
-#   otlp:
-#     enabled: false          # default: false — no telemetry without this
-#     backend: aws-xray       # aws-xray | grafana | prometheus | custom
-#     service_name: otherness # OTEL service.name resource attribute
-#     # For custom or grafana backends — name of GitHub Actions secrets:
-#     endpoint_secret: OTEL_EXPORTER_OTLP_ENDPOINT   # secret containing the OTLP endpoint URL
-#     headers_secret:  OTEL_EXPORTER_OTLP_HEADERS    # secret containing auth headers (e.g. "Authorization=Bearer ...")
-#     # For aws-xray: no secrets needed — OIDC role handles auth automatically
+# To enable: set enabled: true and configure your backend. Then in GitHub repo
+# settings → Variables, set OTHERNESS_OTLP_ENABLED=true to activate workflow injection.
+# IaC for the AWS backend is in infra/observability/ — see infra/observability/README.md.
+#
+observability:
+  otlp:
+    enabled: false          # default: false — no telemetry without this
+    backend: aws-xray       # aws-xray | grafana | prometheus | custom
+    service_name: otherness # OTEL service.name resource attribute
+
+    # aws-xray backend: no endpoint secret needed — OIDC role handles SigV4 auth.
+    # Set this to the name of the GitHub Actions secret holding the AMP remote write
+    # endpoint URL (output from infra/observability/ Terraform apply).
+    amp_endpoint_secret: AMP_REMOTE_WRITE_ENDPOINT  # GitHub secret name → AMP endpoint URL
+
+    # grafana / prometheus / custom backends: set these secrets instead.
+    # endpoint_secret: OTEL_EXPORTER_OTLP_ENDPOINT   # secret → OTLP endpoint URL
+    # headers_secret:  OTEL_EXPORTER_OTLP_HEADERS    # secret → auth headers (e.g. "Authorization=Bearer ...")

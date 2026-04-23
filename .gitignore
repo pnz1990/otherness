@@ -1,3 +1,4 @@
 # Local working-tree artifacts — never commit these to main.
 # handoff.md is stored on the _state branch for distributed access.
 .otherness/handoff.md
+infra/observability/terraform.tfstate*
