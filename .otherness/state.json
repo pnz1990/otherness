@@ -48,7 +48,16 @@
       ],
       "priority": "medium",
       "issue": 952,
-      "file_spaces": []
+      "file_spaces": [
+        "agents/",
+        ".github/workflows/"
+      ],
+      "assigned_to": null,
+      "assigned_at": null,
+      "branch": null,
+      "worktree": null,
+      "failed_attempts": 1,
+      "blocked_reason": "workflows-permission: GitHub App token lacks workflows scope to push .github/workflows/ changes"
     },
     "issue-951": {
       "state": "done",
@@ -265,7 +274,14 @@
       ],
       "priority": "low",
       "issue": 864,
-      "file_spaces": []
+      "file_spaces": [
+        "otherness-config-template.yaml",
+        "agents/phases/eng.md"
+      ],
+      "assigned_to": null,
+      "assigned_at": null,
+      "branch": null,
+      "worktree": null
     },
     "issue-863": {
       "state": "todo",
@@ -320,7 +336,7 @@
       "file_spaces": []
     },
     "issue-859": {
-      "state": "todo",
+      "state": "in_review",
       "title": "feat: 38.5",
       "labels": [
         "area/agent-loop",
@@ -330,7 +346,13 @@
       ],
       "priority": "low",
       "issue": 859,
-      "file_spaces": []
+      "file_spaces": [
+        "agents/phases/qa.md"
+      ],
+      "assigned_to": "sess-f95ca388",
+      "assigned_at": "2026-04-23T12:40:08Z",
+      "branch": "feat/issue-859",
+      "pr_number": 997
     },
     "issue-858": {
       "state": "done",
