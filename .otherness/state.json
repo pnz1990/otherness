@@ -353,7 +353,7 @@
       "file_spaces": []
     },
     "issue-856": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 35.5",
       "labels": [
         "area/agent-loop",
@@ -363,7 +363,11 @@
       ],
       "priority": "low",
       "issue": 856,
-      "file_spaces": []
+      "file_spaces": [],
+      "assigned_to": "sess-a6b9cc4b",
+      "assigned_at": "2026-04-23T11:17:56Z",
+      "merged_at": "2026-04-23T11:22:26Z",
+      "pr_number": 988
     },
     "issue-855": {
       "state": "done",
