@@ -2200,12 +2200,16 @@ feat_count = sum(1 for t in prs_since if re.match(r'^feat(\([^)]+\))?:', t, re.I
 
 print(f'[PM §5o] Since {last_tag}: fix/security/chore={fix_count}, feat={feat_count}')
 
-if fix_count < 3:
-    print(f'[PM §5o] fix_count={fix_count} < 3 — patch threshold not met. Hold.')
-    sys.exit(0)
-
-if feat_count > 0:
-    print(f'[PM §5o] feat_count={feat_count} > 0 — this is a minor release candidate, not a patch. Hold.')
+# Determine release type: minor if feat>=3, patch if fix>=3 and feat==0
+RELEASE_TYPE = None
+if feat_count >= 3:
+    RELEASE_TYPE = 'minor'
+    print(f'[PM §5o] feat_count={feat_count} >= 3 — minor release candidate.')
+elif fix_count >= 3 and feat_count == 0:
+    RELEASE_TYPE = 'patch'
+    print(f'[PM §5o] fix_count={fix_count} >= 3 and feat_count=0 — patch release candidate.')
+else:
+    print(f'[PM §5o] feat={feat_count} fix={fix_count} — threshold not met (need feat>=3 or fix>=3). Hold.')
     sys.exit(0)
 
 # O4: CI green check
@@ -2252,16 +2256,18 @@ try:
 except Exception:
     pass
 
-# All conditions met — compute NEXT tag
+# All conditions met — compute NEXT tag using RELEASE_TYPE set above
 try:
     parts = last_tag.lstrip('v').split('.')
-    parts[2] = str(int(parts[2]) + 1)
-    next_tag = 'v' + '.'.join(parts)
+    if RELEASE_TYPE == 'minor':
+        next_tag = f"v{parts[0]}.{int(parts[1])+1}.0"
+    else:
+        next_tag = f"v{parts[0]}.{parts[1]}.{int(parts[2])+1}"
 except Exception as e:
     print(f'[PM §5o] Could not compute next tag from {last_tag}: {e} — skipping.')
     sys.exit(0)
 
-print(f'[PM §5o] All conditions met. Cutting patch release {next_tag}...')
+print(f'[PM §5o] All conditions met. Cutting {RELEASE_TYPE} release {next_tag}...')
 
 # Try to read PROJECT_NAME for title
 try:
