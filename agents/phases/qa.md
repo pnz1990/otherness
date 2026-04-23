@@ -330,7 +330,85 @@ else
          2>/dev/null || true
        exit 1
      fi
-     echo "[QA §3b] Verification gate: verification note found ✓"
+      echo "[QA §3b] Verification gate: verification note found ✓"
+    fi
+
+   # §41.5 docs gate — user-visible feature without docs update (design doc 41 §41.5)
+   # Fires only when: (a) this PR flips a 🔲 → ✅ AND (b) the feature is user-visible
+   # User-visible signals in the flipped item text: CLI, CRD, UI, endpoint, api, command, flag, output
+   # Pass condition: any docs file in the diff (docs/*.md, README.md, excluding agents/, .specify/, docs/design/, docs/aide/)
+   # Fail-open: any exception → skip check (no false WRONG findings)
+   if [ "${_FLIPS_CHECKMARK:-0}" -gt 0 ] || [ "${_REMOVES_FUTURE:-0}" -gt 0 ]; then
+     _DOCS_GATE_RESULT=$(python3 - <<'DOCSGATE_EOF' 2>/dev/null || echo "SKIP"
+import subprocess, re, os, sys
+
+PR_NUM = os.environ.get('PR_NUM', '')
+REPO = os.environ.get('REPO', '')
+SPEC_FILE = os.environ.get('SPEC_FILE', '')
+
+if not PR_NUM or not REPO:
+    print('SKIP')
+    sys.exit(0)
+
+# Step 1: Extract the flipped item description from the diff
+try:
+    diff = subprocess.check_output(
+        ['gh', 'pr', 'diff', PR_NUM, '--repo', REPO],
+        text=True, timeout=20)
+except Exception:
+    print('SKIP')
+    sys.exit(0)
+
+# Find lines that removed 🔲 (flipped to ✅)
+removed_future = [l[1:].strip() for l in diff.splitlines()
+                  if l.startswith('-') and '🔲' in l and not l.startswith('---')]
+
+if not removed_future:
+    print('PASS')
+    sys.exit(0)
+
+# Step 2: Check if any flipped item is user-visible
+USER_VISIBLE_KEYWORDS = re.compile(
+    r'\b(cli|crd|ui|endpoint|api|command|flag|output|interface|webhook|'
+    r'dashboard|page|button|menu|config\s+field|yaml\s+field|argument)\b',
+    re.IGNORECASE)
+
+is_user_visible = any(USER_VISIBLE_KEYWORDS.search(item) for item in removed_future)
+
+if not is_user_visible:
+    print('PASS')
+    sys.exit(0)
+
+# Step 3: Check for a docs file in the diff
+DOC_EXCLUDE = re.compile(r'^(agents/|\.specify/|docs/design/|docs/aide/)')
+doc_files_in_diff = []
+for line in diff.splitlines():
+    if line.startswith('+++ b/') or line.startswith('--- a/'):
+        path = line.split(' b/', 1)[-1].split(' a/', 1)[-1].strip()
+        if (path.endswith('.md') or path == 'README.md') and not DOC_EXCLUDE.match(path):
+            doc_files_in_diff.append(path)
+
+if doc_files_in_diff:
+    print(f'PASS (doc files found: {", ".join(doc_files_in_diff[:2])})')
+    sys.exit(0)
+
+# Step 4: Fail — user-visible feature with no docs update
+flipped_item = removed_future[0][:100]
+print(f'WRONG: user-visible feature flipped to ✅ Present without docs update. '
+      f'Flipped item: "{flipped_item}". '
+      f'ENG must update a docs file (docs/*.md, README.md) or declare docs are auto-generated.')
+DOCSGATE_EOF
+)
+     if echo "$_DOCS_GATE_RESULT" | grep -q "^WRONG:"; then
+       _DOCS_GATE_MSG=$(echo "$_DOCS_GATE_RESULT" | head -1)
+       echo "[QA §41.5] WRONG — docs gate: $_DOCS_GATE_MSG"
+       gh pr comment "$PR_NUM" --repo "$REPO" \
+         --body "[🔍 QA §41.5] WRONG — User-visible feature marked ✅ Present without a docs update. $_DOCS_GATE_MSG Per \`docs/design/41-published-docs-freshness.md §41.5\`, ENG must update a docs file or declare the feature is auto-documented by Layer 1." \
+         2>/dev/null || true
+       exit 1
+     else
+       echo "[QA §41.5] Docs gate: $_DOCS_GATE_RESULT"
+     fi
    fi
 fi
 ```
