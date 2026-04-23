@@ -777,7 +777,20 @@ else:
 # absent, treat the age as unknown (conservative: add the rewrite reminder).
 # If present, parse the date and compare to today.
 
-PRESSURE_STALE_DAYS = 30  # trigger after this many days without rewrite
+PRESSURE_STALE_DAYS = int(subprocess.check_output(
+    ['python3', '-c', '''
+import re
+section = None
+try:
+    for line in open("otherness-config.yaml"):
+        s = re.match(r"^(\w[\w_]*):", line)
+        if s: section = s.group(1)
+        if section == "vision":
+            m = re.match(r"\s+pressure_max_age_days:\s*(\d+)", line)
+            if m: print(m.group(1)); exit()
+except: pass
+print("14")
+'''], text=True, timeout=5).strip() or '14')  # configurable max age; default 14 days (design doc 37.12)
 
 # Extract rewrite date from workflow content
 rewrite_date = None
@@ -803,10 +816,11 @@ else:
 
 print(f'[SCAN 5 §42.4] Pressure age: {age_desc}')
 
-if pressure_age_days > PRESSURE_STALE_DAYS and ratio < STALENESS_THRESHOLD:
-    # Only fire time-based trigger when keyword-match didn't already fire
-    # (to avoid duplicate Future items)
-    print(f'[SCAN 5 §42.4] Pressure context is >{PRESSURE_STALE_DAYS}d old — adding time-based rewrite reminder.')
+if pressure_age_days > PRESSURE_STALE_DAYS:
+    # Mandatory trigger (design doc 37.12 O3): max-age is independent of addressed ratio.
+    # Unlike the ratio-based trigger, this fires regardless of how many pressure bullets
+    # were addressed — a stale pressure context is a stale context, period.
+    print(f'[SCAN 5 §42.4] Pressure context is >{PRESSURE_STALE_DAYS}d old — mandatory time-based rewrite reminder (37.12).')
 
     target_doc = None
     if os.path.isdir(design_dir):
@@ -853,11 +867,9 @@ if pressure_age_days > PRESSURE_STALE_DAYS and ratio < STALENESS_THRESHOLD:
         except Exception as e:
             print(f'[SCAN 5 §42.4] Error updating {target_doc}: {e}')
     else:
-        print('[SCAN 5 §42.4] No design doc found to attach item to.')
-elif pressure_age_days <= PRESSURE_STALE_DAYS:
-    print(f'[SCAN 5 §42.4] Pressure context is fresh ({age_desc}) — no time-based trigger.')
+         print('[SCAN 5 §42.4] No design doc found to attach item to.')
 else:
-    print(f'[SCAN 5 §42.4] Keyword-match already fired ({ratio:.0%} ≥ {STALENESS_THRESHOLD:.0%}) — time-based trigger suppressed to avoid duplicate items.')
+    print(f'[SCAN 5 §42.4] Pressure context is fresh ({age_desc} ≤ {PRESSURE_STALE_DAYS}d) — no time-based trigger.')
 
 SCAN5_EOF
 ```
