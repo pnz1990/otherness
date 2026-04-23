@@ -1,0 +1,11 @@
+{
+  "sm_cycle_count": 1,
+  "batch_count": 1,
+  "features": {
+    "issue-953": {
+      "state": "done",
+      "pr_merged": true,
+      "pr_number": 971
+    }
+  }
+}
