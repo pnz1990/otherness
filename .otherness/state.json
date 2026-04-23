@@ -170,7 +170,7 @@
       "note": "already implemented"
     },
     "issue-917": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: PM \u00a75k label creation fallback \u2014 create missing labels before PR open",
       "labels": [
         "area/agent-loop",
@@ -180,7 +180,10 @@
       ],
       "priority": "low",
       "issue": 917,
-      "file_spaces": []
+      "file_spaces": [],
+      "pr_merged": true,
+      "pr_number": 991,
+      "done_at": "2026-04-23T11:51:21Z"
     },
     "issue-894": {
       "state": "todo",
