@@ -2,3 +2,8 @@
 # handoff.md is stored on the _state branch for distributed access.
 .otherness/handoff.md
 infra/observability/terraform.tfstate*
+
+# Build artifacts
+.ruff_cache/
+.DS_Store
+__pycache__/

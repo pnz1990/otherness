@@ -1029,23 +1029,10 @@ except: print(0)
     if [ "${CYCLES_SINCE:-0}" -lt 3 ]; then
       echo "[SM §4h] Rate limit: ${CYCLES_SINCE} cycles since last run (min: 3) — skipping."
     else
-      if [ -f ~/.otherness/agents/autonomous-vision.md ]; then
-        echo "[SM §4h] Running autonomous vision synthesis..."
-        # [AI-STEP: follow ~/.otherness/agents/autonomous-vision.md inline]
-        echo "[SM §4h] Autonomous vision synthesis complete."
-        python3 - <<PYEOF
-import json
-try:
-    s = json.load(open('.otherness/state.json'))
-    s['last_auto_vision_cycle'] = int('${SM_CYCLE:-0}')
-    open('.otherness/state.json', 'w').write(json.dumps(s, indent=2))
-except: pass
-PYEOF
-      else
-        echo "[SM §4h] ~/.otherness/agents/autonomous-vision.md not found — skipping."
-      fi
+      # autonomous-vision.md removed in cleanup — vision synthesis now handled by
+      # Step A (vibe-vision-auto.md) in the scheduled workflow. Nothing to do here.
+      echo "[SM §4h] Vision synthesis handled by Step A. Skipping SM trigger."
     fi
-  fi
 fi
 
 echo "[SM §4h] Autonomous vision trigger check complete."
