@@ -567,5 +567,6 @@
   },
   "sm_cycle_count": 2,
   "batch_count": 3,
-  "last_batch_at": "2026-04-23T09:02:42Z"
+  "last_batch_at": "2026-04-23T09:02:42Z",
+  "pm_cycle_count": 1
 }
