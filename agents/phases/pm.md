@@ -2195,8 +2195,8 @@ try:
 except Exception:
     prs_since = []
 
-fix_count = sum(1 for t in prs_since if re.match(r'^(fix|security|chore)(\([^)]+\))?:', t, re.IGNORECASE))
-feat_count = sum(1 for t in prs_since if re.match(r'^feat(\([^)]+\))?:', t, re.IGNORECASE))
+fix_count = sum(1 for t in prs_since if re.match(r'^(fix|security|chore)', t, re.IGNORECASE))
+feat_count = sum(1 for t in prs_since if re.match(r'^feat', t, re.IGNORECASE))
 
 print(f'[PM §5o] Since {last_tag}: fix/security/chore={fix_count}, feat={feat_count}')
 
