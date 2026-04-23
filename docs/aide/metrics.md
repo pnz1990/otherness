@@ -52,3 +52,4 @@
 | 2026-04-22 | 11 | 17 | 0 | 0 | 14 | 17 | 1 | ~8 | Batch 11: competitive-standing.md shipped (#907); SM §4b now shows competitive delta |
 | 2026-04-22 | 12 | 50 | 0 | 0 | 12 | 23 | 1 | ~15 | Batch 12: feat(pm) §5k README refresh PR opening merged (#916, CRITICAL-A autonomous); MISS#917 filed (label fallback); feature-rich session |
 | 2026-04-22 | 13 | 50 | 0 | 0 | 12 | 1 | 1 | ~12 | Batch 13: SCAN 5 domain-noun expansion for onboarding/visibility lens scoring (PR #932); state sync: resolved 4 stale todo items; queue refilled with 4 new design-doc items |
+| 2026-04-23 | 6 | 50 | 0 | 0 | 12 | 1 | ~45min | 25 | feature-rich | — | — | [AI-STEP] elimination 45.2 (PR #961) |
