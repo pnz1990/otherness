@@ -44,7 +44,7 @@ This design doc specifies the correct CI gate:
 ---
 
 ## Future (🔲)
-- 🔲 38.5 — `qa.md §3a`: distinguish flaky external checks — checks that fail with "infrastructure" errors (runner timeout, network error, external service unavailable) get one automatic retry before being treated as a real failure.
+- ✅ 38.5 — `qa.md §3a`: distinguish flaky external checks — checks that fail with "infrastructure" errors (runner timeout, network error, external service unavailable) get one automatic retry before being treated as a real failure. (PR #859, 2026-04-23)
 - ✅ 38.6 — SM §4b-qa-rejection: QA rejection pattern tracker — detects unmerged closed feat/* PRs, classifies rejection reason (ci_failure / spec_violation / scope_creep / test_missing / other) from PR title/body, stores rolling 20-entry list in state.json as `qa_rejections`. If same reason ≥3 of last 5: opens `kind/chore priority/high` issue. Fail-open on gh CLI errors. (issue-892, 2026-04-22)
 
 ---

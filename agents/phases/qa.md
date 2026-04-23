@@ -39,6 +39,8 @@ The review comment should teach, not just block. Max 3 QA cycles.
 
 _CI_ATTEMPTS=0
 _CI_FIXED=false
+# §38.5: track check names already given one infrastructure-flaky retry — colon-separated
+_INFRA_RETRIED_NAMES=""
 
 while true; do
   # Get aggregate status of all checks on this PR
@@ -59,6 +61,31 @@ for c in pending: print(f'PENDING: {c[\"name\"]}')
   echo "[QA §3a] Checks: $_FAILING"
 
   if echo "$_FAILING" | grep -q "^FAIL:"; then
+
+    # §38.5 — Infrastructure-flaky check retry (design doc 38 §38.5 → ✅)
+    # Checks with `timed_out` conclusion, or names/logs indicating runner/network issues,
+    # get one automatic re-poll after 30s before counting against the attempt limit.
+    # A check name is only retried once — tracked in _INFRA_RETRIED_NAMES.
+    _INFRA_CHECK=$(echo "$_CHECKS" | python3 -c "
+import json, sys, os
+checks = json.load(sys.stdin)
+already_retried = os.environ.get('_INFRA_RETRIED_NAMES', '').split(':')
+infra_keywords = ['timed_out']
+for c in checks:
+    name = c.get('name', '')
+    conclusion = c.get('conclusion', '')
+    # timed_out = infrastructure signal; action_required is NOT (it means a required approval)
+    if conclusion == 'timed_out' and name not in already_retried:
+        print(name); break
+" _INFRA_RETRIED_NAMES="$_INFRA_RETRIED_NAMES" 2>/dev/null || echo "")
+
+    if [ -n "$_INFRA_CHECK" ]; then
+      echo "[QA §3a] Infrastructure-flaky check '${_INFRA_CHECK}' — retrying once (not counting against attempt limit)."
+      _INFRA_RETRIED_NAMES="${_INFRA_RETRIED_NAMES:+${_INFRA_RETRIED_NAMES}:}${_INFRA_CHECK}"
+      sleep 30
+      continue
+    fi
+
     _CI_ATTEMPTS=$((_CI_ATTEMPTS + 1))
     echo "[QA §3a] CI failing (attempt $_CI_ATTEMPTS/3)"
 
