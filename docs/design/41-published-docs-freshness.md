@@ -69,7 +69,7 @@ the per-command detail pages AND a consolidated `docs/cli-reference.md` overview
 - 🔲 41.2 — `docs.yml` path triggers: add `README.md` and `docs/comparison.md` to the `paths:` list so a push touching either file triggers a docs build + deploy. Currently these files can change without a docs redeploy.
 - 🔲 41.3 — PM §5j: version staleness check — scan `README.md` for version strings matching `v[0-9]+\.[0-9]+\.[0-9]+`. Compare against latest GitHub release tag. If >1 minor version behind: open `kind/docs priority/high` issue with the stale line and the correct value.
 - ✅ 41.4 — see ✅ Present section above. (PR #896, 2026-04-22)
-- 🔲 41.5 — QA §3b: docs gate for user-visible features — when a PR marks a `🔲 Future` item `✅ Present` AND the feature is user-visible (CLI command, CRD field, UI behaviour), QA checks that either (a) a docs file was modified or (b) the feature is auto-documented by Layer 1. If neither: WRONG finding with exact missing doc reference.
+- ✅ 41.5 — QA §3b: docs gate for user-visible features — when a PR marks a `🔲 Future` item `✅ Present` AND the feature text contains user-visible keywords (CLI, CRD, UI, endpoint, api, command, flag, etc.), QA checks for a docs file in the diff. If none found: WRONG finding with exact missing doc reference. Fail-open on exceptions. (PR #issue-948, 2026-04-23)
 - 🔲 41.6 — Immediate fixes (not blocked on design completion): README version v0.5.0 → v0.8.1; comparison.md: Subscription watchers row flipped from ❌ to ✅.
 
 ---
