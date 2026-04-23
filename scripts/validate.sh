@@ -17,7 +17,7 @@ echo "=== otherness validate ==="
 #             <owner>/<X> that isn't <owner>/otherness. Falls back gracefully.
 #   Rule 2 — reads fleet project names from otherness-config.yaml monitor.projects
 #             and catches them in project-reference context.
-echo "[1/8] Checking for hardcoded project paths in agent files..."
+echo "[1/10] Checking for hardcoded project paths in agent files..."
 
 # Resolve owner from config (used in Rule 1)
 OWNER=$(python3 -c "
@@ -94,7 +94,7 @@ done
 # Skill paths use ~/.otherness/agents/skills/<name>.md — on a CI runner ~/.otherness
 # doesn't exist, but the files are present in the repo at agents/skills/<name>.md.
 # We resolve both locations: prefer the expanded ~ path, fall back to repo-local.
-echo "[2/8] Checking skill references..."
+echo "[2/10] Checking skill references..."
 MISSING=0
 while IFS= read -r line; do
   # Extract path after "Load skill: read `" up to closing backtick
@@ -116,7 +116,7 @@ done < <(grep "Load skill: read" "$AGENTS_DIR/standalone.md" "$AGENTS_DIR/phases
 [ $MISSING -eq 0 ] && echo "  OK: all skill refs resolve" || exit 1
 
 # 3. Check required files exist
-echo "[3/8] Checking required files..."
+echo "[3/10] Checking required files..."
 REQUIRED=(
   "$AGENTS_DIR/standalone.md"
   "$AGENTS_DIR/bounded-standalone.md"
@@ -164,7 +164,7 @@ done
 [ $MISSING_FILES -eq 0 ] && echo "  OK: all required files present" || exit 1
 
 # 4. Check self-update is present in standalone.md
-echo "[4/8] Checking self-update mechanism..."
+echo "[4/10] Checking self-update mechanism..."
 if ! grep -q "git -C ~/.otherness pull" "$AGENTS_DIR/standalone.md"; then
   echo "  ERROR: standalone.md missing self-update (git pull) mechanism"
   exit 1
@@ -174,7 +174,7 @@ echo "  OK: self-update present"
 # 5. Check all spec.md files contain ## Design reference
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 SPECS_DIR="$ROOT_DIR/.specify/specs"
-echo "[5/8] Checking spec files for ## Design reference..."
+echo "[5/10] Checking spec files for ## Design reference..."
 if [ ! -d "$SPECS_DIR" ]; then
   echo "  OK: no .specify/specs/ directory — skipping spec lint"
 else
@@ -189,7 +189,7 @@ else
 fi
 
 # 6. Check every agent file has a ## MODE block
-echo "[6/8] Checking agent files for ## MODE block..."
+echo "[6/10] Checking agent files for ## MODE block..."
 MISSING_MODE=0
 for agent_file in "$AGENTS_DIR"/*.md "$AGENTS_DIR/phases"/*.md; do
   [ -f "$agent_file" ] || continue
@@ -329,7 +329,7 @@ fi
 # 7. Check ⚠️ Inferred and ⚠️ Observed items have source attribution
 # Each such item must end with a parenthetical attribution: (source, YYYY-MM-DD)
 # Items inside fenced code blocks are excluded (they are documentation examples).
-echo "[7/8] Checking ⚠️ Inferred/Observed items have source attribution..."
+echo "[7/10] Checking ⚠️ Inferred/Observed items have source attribution..."
 python3 - <<'INFERRED_CHECK'
 import re, os, sys
 
@@ -379,7 +379,7 @@ INFERRED_CHECK
 # Design ref: docs/design/41-design-doc-integrity.md §41.3
 # Fail-open: if .otherness/state.json absent (CI without _state), skip gracefully.
 # Drift is logged as [DOC-DRIFT] warning only — not a hard error.
-echo "[8/8] Checking ✅ Present items referencing state.json fields..."
+echo "[8/10] Checking ✅ Present items referencing state.json fields..."
 python3 - <<'STATE_DRIFT_CHECK'
 import re, os, json, sys
 
@@ -443,9 +443,64 @@ else:
     print("  OK: all ✅ Present state.json field references found in state.json")
 STATE_DRIFT_CHECK
 
-# 9. Check cognitive-stance preambles in phase files (informational — not blocking)
+# 9. Check README last-refreshed comment when README is >90 days old
+# Design ref: docs/design/39-autonomous-readme-refresh.md §Future 39.5
+# Fail-open: if git is unavailable or README has no git history, skip gracefully.
+# PM §5k (item 39.3) writes <!-- last-refreshed: YYYY-MM-DD --> when it refreshes the README.
+echo "[9/10] Checking README last-refreshed comment..."
+python3 - <<'README_CHECK'
+import re, subprocess, datetime, os, sys
+
+ROOT_DIR = os.getcwd()
+readme_path = os.path.join(ROOT_DIR, 'README.md')
+
+if not os.path.exists(readme_path):
+    print("  OK: README.md not found — skipping last-refreshed check")
+    sys.exit(0)
+
+# Check for last-refreshed comment in README
+try:
+    content = open(readme_path).read()
+except Exception:
+    print("  OK: could not read README.md — skipping last-refreshed check")
+    sys.exit(0)
+
+has_comment = bool(re.search(r'<!--\s*last-refreshed:\s*\d{4}-\d{2}-\d{2}\s*-->', content))
+
+# Get README age from git
+try:
+    r = subprocess.run(
+        ['git', 'log', '--format=%ci', '-1', '--', 'README.md'],
+        capture_output=True, text=True, timeout=10
+    )
+    if r.returncode != 0 or not r.stdout.strip():
+        print("  OK: README.md has no git history — skipping last-refreshed check")
+        sys.exit(0)
+    last_modified_str = r.stdout.strip().split()[0]  # "YYYY-MM-DD"
+    last_modified = datetime.date.fromisoformat(last_modified_str)
+    age_days = (datetime.date.today() - last_modified).days
+except Exception as e:
+    print(f"  OK: could not determine README age ({e}) — skipping last-refreshed check")
+    sys.exit(0)
+
+# Only fail if README is >90 days old AND no comment exists
+if age_days > 90 and not has_comment:
+    print(f"  ERROR: README.md is {age_days} days old (last modified: {last_modified}) "
+          f"and has no <!-- last-refreshed: YYYY-MM-DD --> comment.")
+    print("  Add the comment when the README is refreshed, or run PM §5k to auto-refresh.")
+    print("  Example: <!-- last-refreshed: " + datetime.date.today().isoformat() + " -->")
+    sys.exit(1)
+elif has_comment:
+    m = re.search(r'<!--\s*last-refreshed:\s*(\d{4}-\d{2}-\d{2})\s*-->', content)
+    comment_date = m.group(1) if m else "unknown"
+    print(f"  OK: README last-refreshed comment found ({comment_date}, age: {age_days}d)")
+else:
+    print(f"  OK: README is {age_days} days old (< 90 days) — last-refreshed comment not required yet")
+README_CHECK
+
+# 10. Check cognitive-stance preambles in phase files (informational — not blocking)
 # Design ref: docs/design/31-stage-2-skills-expansion.md §Future → ✅ (issue-795)
-echo "[9/9] Checking cognitive-stance preambles in phase files..."
+echo "[10/10] Checking cognitive-stance preambles in phase files..."
 _MISSING_STANCES=0
 for _phase in coord eng qa sm; do
   _phase_file="$AGENTS_DIR/phases/${_phase}.md"

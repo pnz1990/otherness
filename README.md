@@ -1,3 +1,4 @@
+<!-- last-refreshed: 2026-04-21 -->
 # otherness
 
 _in memory of mankind_
