@@ -89,7 +89,7 @@ PM §5k (new step, runs every 10 PM cycles):
 
 - 🔲 39.2 — PM §5l: README refresh AI step — rewrite using vision.md, roadmap.md, Present items, recent PR titles as context. Preserve structure, update content.
 - ✅ 39.4 — PM §5k: duplicate suppression — checks for open README refresh PR (title starting with `docs(readme): refresh`) before creating another; if existing PR found: skip and optionally post follow-up comment after 7 days; at most one open at a time. Already implemented at `agents/phases/pm.md` §39.3 O2. (issue-939, 2026-04-22)
-- 🔲 39.5 — validate.sh check: README last-modified date recorded in a comment at top of README (e.g. `<!-- last-refreshed: 2026-04-20 -->`). validate.sh fails if no such comment exists and README is >90 days old.
+- ✅ 39.5 — validate.sh check: README last-modified date recorded in a comment at top of README (e.g. `<!-- last-refreshed: 2026-04-20 -->`). validate.sh fails if no such comment exists and README is >90 days old. (issue-945, 2026-04-23)
 
 ---
 
