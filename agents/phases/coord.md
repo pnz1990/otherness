@@ -1754,6 +1754,46 @@ PYEOF
   gh issue comment $ISSUE_NUM --repo $REPO \
     --body "[$MY_SESSION_ID | otherness@${OTHERNESS_VERSION:-unknown}] Starting implementation. Branch: \`$MY_BRANCH\`" 2>/dev/null
 
+  # §36.5 Vision-backed claim tracking — design doc 36 §36.5 → ✅
+  # After each claim, check whether the item title matches any VISION_PRESSURE_SET key.
+  # Increment TOTAL_CLAIMS_THIS_SESSION always; VISION_BACKED_CLAIMS_THIS_SESSION only on match.
+  # Fail-open: VPS unset or empty → treat as non-vision-backed (conservative).
+  TOTAL_CLAIMS_THIS_SESSION=$(( ${TOTAL_CLAIMS_THIS_SESSION:-0} + 1 ))
+  _VPS_MATCH=$(python3 - <<'VPS_MATCH_EOF'
+import os, json
+
+vps_raw = os.environ.get('VISION_PRESSURE_SET', '')
+item_id = os.environ.get('ITEM_ID', '')
+
+if not vps_raw.strip():
+    print('0')  # VPS unavailable — fail-open: not backed
+    exit(0)
+
+vps_keys = [k.strip().lower() for k in vps_raw.splitlines() if k.strip()]
+
+# Get item title from state.json
+try:
+    with open('.otherness/state.json') as f:
+        s = json.load(f)
+    title = s.get('features', {}).get(item_id, {}).get('title', '').lower()
+except Exception:
+    print('0')
+    exit(0)
+
+if any(k in title for k in vps_keys):
+    print('1')
+else:
+    print('0')
+VPS_MATCH_EOF
+  )
+  if [ "${_VPS_MATCH:-0}" = "1" ]; then
+    VISION_BACKED_CLAIMS_THIS_SESSION=$(( ${VISION_BACKED_CLAIMS_THIS_SESSION:-0} + 1 ))
+    echo "[COORD §36.5] vision-backed claim: $ITEM_ID (${VISION_BACKED_CLAIMS_THIS_SESSION}/${TOTAL_CLAIMS_THIS_SESSION})"
+  else
+    echo "[COORD §36.5] non-vision-backed claim: $ITEM_ID (${VISION_BACKED_CLAIMS_THIS_SESSION:-0}/${TOTAL_CLAIMS_THIS_SESSION})"
+  fi
+  export VISION_BACKED_CLAIMS_THIS_SESSION TOTAL_CLAIMS_THIS_SESSION
+
   # §43.3 Board Status: In Progress — design doc 43 §43.3
   # Non-blocking: failure must not stop the claim or the loop (design doc 43 §O5)
   # Read board_project_id from otherness-config.yaml (project.board_project_id).
