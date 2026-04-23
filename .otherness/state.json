@@ -92,7 +92,7 @@
       "file_spaces": []
     },
     "issue-948": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: QA \u00a73b: docs gate for user-visible features \u2014 when a PR marks a `\ud83d\udd32 Future` item `\u2705 Present",
       "labels": [
         "priority/medium",
@@ -102,7 +102,9 @@
       ],
       "priority": "medium",
       "issue": 948,
-      "file_spaces": []
+      "file_spaces": [],
+      "pr_merged": true,
+      "done_at": "2026-04-23T10:19:52Z"
     },
     "issue-947": {
       "state": "todo",
@@ -197,7 +199,7 @@
       "file_spaces": []
     },
     "issue-884": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: `/otherness.learn` must have a time-bounded skill-extraction contract",
       "labels": [
         "priority/medium",
@@ -207,7 +209,8 @@
       ],
       "priority": "medium",
       "issue": 884,
-      "file_spaces": []
+      "file_spaces": [],
+      "note": "already implemented"
     },
     "issue-866": {
       "state": "todo",
@@ -353,7 +356,7 @@
       "file_spaces": []
     },
     "issue-855": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Features-per-week velocity must be tracked as the primary speed signal",
       "labels": [
         "priority/medium",
@@ -363,10 +366,11 @@
       ],
       "priority": "medium",
       "issue": 855,
-      "file_spaces": []
+      "file_spaces": [],
+      "note": "already implemented"
     },
     "issue-854": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: `/otherness.learn` must have a time-bounded skill-extraction contract",
       "labels": [
         "priority/medium",
@@ -376,7 +380,8 @@
       ],
       "priority": "medium",
       "issue": 854,
-      "file_spaces": []
+      "file_spaces": [],
+      "note": "already implemented"
     },
     "issue-852": {
       "state": "done",
@@ -395,7 +400,7 @@
       "note": "already implemented as \u00a71e-chore-gate"
     },
     "issue-851": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Workflow-level silent failure detection: the agent relies on the scheduled GitHub Actions ",
       "labels": [
         "priority/medium",
@@ -405,7 +410,8 @@
       ],
       "priority": "medium",
       "issue": 851,
-      "file_spaces": []
+      "file_spaces": [],
+      "note": "already implemented"
     },
     "issue-808": {
       "state": "todo",
@@ -476,7 +482,7 @@
       "file_spaces": []
     },
     "issue-745": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: validate.sh check [8/8]: \u2705 Present items referencing state.json fields must be verifiable",
       "labels": [
         "priority/medium",
@@ -486,7 +492,8 @@
       ],
       "priority": "medium",
       "issue": 745,
-      "file_spaces": []
+      "file_spaces": [],
+      "note": "already implemented"
     }
   },
   "session_heartbeats": {
