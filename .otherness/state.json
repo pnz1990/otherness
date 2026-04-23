@@ -475,5 +475,7 @@
       "cycle": 1
     }
   },
-  "bounded_sessions": {}
+  "bounded_sessions": {},
+  "pm_cycle_count": 1,
+  "sm_cycle_count": 1
 }
