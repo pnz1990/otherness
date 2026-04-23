@@ -305,84 +305,21 @@ fi
 # If they differ: open a kind/bug priority/high issue (idempotent).
 # Fail-open: missing/empty metrics.md logs a warning and continues.
 python3 - <<'SCHEMA_EOF'
-import subprocess, re, os
-
-REPO = os.environ.get('REPO', '')
-MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
-
+import os
 metrics_path = 'docs/aide/metrics.md'
 try:
-    with open(metrics_path) as f:
-        lines = [l.rstrip() for l in f]
-except FileNotFoundError:
-    print('[SM §4a-schema] metrics.md not found — skipping schema check.')
-    exit(0)
-
-# Find the header row (contains prs_merged) and last data row
-header_cols = None
-last_data_cols = None
-sep_found = False
-for line in lines:
-    if '---|' in line:
-        sep_found = True
-        continue
-    if line.startswith('|') and 'prs_merged' in line:
-        header_cols = [c.strip() for c in line.split('|') if c.strip()]
-        continue
-    if line.startswith('|') and sep_found and header_cols:
-        cells = [c.strip() for c in line.split('|') if c.strip()]
-        if len(cells) >= 3:
-            last_data_cols = cells
-
-if header_cols is None:
-    print('[SM §4a-schema] metrics.md has no header row — skipping schema check.')
-    exit(0)
-if last_data_cols is None:
-    print('[SM §4a-schema] metrics.md has no data rows — skipping schema check.')
-    exit(0)
-
-h = len(header_cols)
-d = len(last_data_cols)
-if h == d:
-    print(f'[SM §4a-schema] metrics.md OK: {h} columns (header matches data)')
-    exit(0)
-
-# Drift detected — open a bug issue (idempotent)
-issue_title = f'metrics.md schema drift: {h} columns defined, {d} columns written'
-try:
-    r = subprocess.run(
-        ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
-         '--search', issue_title[:60], '--json', 'number', '--jq', 'length'],
-        capture_output=True, text=True, timeout=15)
-    if int(r.stdout.strip() or '0') > 0:
-        print(f'[SM §4a-schema] Drift detected ({h} vs {d}) but issue already open — skipping duplicate.')
-        exit(0)
-except Exception:
-    pass
-
-body = (
-    f'## metrics.md schema drift detected\n\n'
-    f'**Header columns**: {h} (`{", ".join(header_cols)}`)\n'
-    f'**Last data row columns**: {d}\n\n'
-    f'SM §4b is writing {d} columns but the schema header defines {h}. '
-    f'This means some columns are missing from the data rows.\n\n'
-    f'**Detected by**: SM §4a-schema-conformance (design doc 33 §Future → ✅)\n'
-    f'**Session**: {MY_SESSION_ID}'
-)
-try:
-    r2 = subprocess.run(
-        ['gh', 'issue', 'create', '--repo', REPO,
-         '--title', issue_title,
-         '--label', 'otherness,kind/bug,area/tooling,priority/high',
-         '--body', body],
-        capture_output=True, text=True, timeout=15)
-    if r2.returncode == 0:
-        print(f'[SM §4a-schema] Drift detected: {h} columns defined, {d} written. Bug issue opened: {r2.stdout.strip().split("/")[-1]}')
-    else:
-        print(f'[SM §4a-schema] Drift detected but issue creation failed (non-fatal): {r2.stderr.strip()[:80]}')
-except Exception as e:
-    print(f'[SM §4a-schema] Drift detected but issue creation error (non-fatal): {e}')
+    lines_m = [l for l in open(metrics_path) if l.startswith('|')]
+    header = next((l for l in lines_m if 'prs_merged' in l), None)
+    data = [l for l in lines_m if '---|' not in l and 'prs_merged' not in l]
+    if not header or not data: print('[SM] metrics.md has no data rows.'); exit(0)
+    h = len([c for c in header.split('|') if c.strip()])
+    d = len([c for c in data[-1].split('|') if c.strip()])
+    if h == d: print(f'[SM] metrics schema OK ({h} cols)')
+    else: print(f'[SM] SCHEMA MISMATCH: header={h} vs last_row={d}')
+except FileNotFoundError: print('[SM] metrics.md not found — skipping.')
+except Exception as e: print(f'[SM] schema error (non-fatal): {e}')
 SCHEMA_EOF
+
 
 # Version pinning check — is agent_version set?
 AGENT_VERSION=$(python3 -c "
@@ -425,141 +362,18 @@ fi
 
 ---
 
-## 4a-speckit. Speckit release check (every 10 SM cycles, design doc 42 §42.3)
-
-Check if speckit has a newer release with reliability or context-parsing fixes.
-Opens a `kind/chore` issue when the installed version is >1 minor behind.
-Skips gracefully if speckit is not installed or API is unavailable.
-
-<!-- design ref: docs/design/42-speckit-integration.md §42.3 -->
+## 4a-speckit. Speckit release check (every 10 SM cycles)
 
 ```bash
-SM_CYCLE=$(python3 -c "
-import json
-try:
-    s = json.load(open('.otherness/state.json'))
-    print(s.get('sm_cycle_count', 0))
-except: print(0)
-" 2>/dev/null || echo "0")
-
 if [ $((${SM_CYCLE:-0} % 10)) -eq 0 ] && [ "${SM_CYCLE:-0}" -gt 0 ]; then
-  echo "[SM §4a-speckit] Running speckit release check (sm_cycle=$SM_CYCLE)..."
-
-  python3 - <<'SPECKIT_RELEASE_EOF'
-import subprocess, re, os, sys, json
-
-REPO = os.environ.get('REPO', '')
-MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'SM')
-OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
-PR_LABEL = os.environ.get('PR_LABEL', 'otherness')
-
-# §42.3 O2: Check if speckit is installed
-try:
-    r = subprocess.run(['specify', '--version'], capture_output=True, text=True, timeout=5)
-    if r.returncode != 0:
-        print('[SM §4a-speckit] speckit not installed — skipped.')
-        sys.exit(0)
-    installed_ver_str = r.stdout.strip()
-except Exception:
-    print('[SM §4a-speckit] speckit not installed or not found — skipped.')
-    sys.exit(0)
-
-# Parse installed version
-installed_match = re.search(r'(\d+)\.(\d+)\.(\d+)', installed_ver_str)
-if not installed_match:
-    print(f'[SM §4a-speckit] Could not parse installed version: {installed_ver_str} — skipped.')
-    sys.exit(0)
-installed = tuple(int(x) for x in installed_match.groups())
-
-# §42.3 O1: Query GitHub API for latest release
-try:
-    api_r = subprocess.run(
-        ['gh', 'api', 'repos/github/spec-kit/releases/latest',
-         '--jq', '{tag: .tag_name, body: .body}'],
-        capture_output=True, text=True, timeout=15)
-    if api_r.returncode != 0:
-        print(f'[SM §4a-speckit] GitHub API unavailable — skipped (fail-open).')
-        sys.exit(0)
-    release_data = json.loads(api_r.stdout.strip())
-    latest_tag = release_data.get('tag', '')
-    release_body = release_data.get('body', '')
-except Exception as e:
-    print(f'[SM §4a-speckit] API query failed (non-fatal): {e} — skipped.')
-    sys.exit(0)
-
-latest_match = re.search(r'(\d+)\.(\d+)\.(\d+)', latest_tag)
-if not latest_match:
-    print(f'[SM §4a-speckit] Could not parse latest version: {latest_tag} — skipped.')
-    sys.exit(0)
-latest = tuple(int(x) for x in latest_match.groups())
-
-print(f'[SM §4a-speckit] installed={".".join(map(str, installed))}, '
-      f'latest={".".join(map(str, latest))}')
-
-# §42.3 O3: Check if >1 minor behind (same major)
-if latest[0] != installed[0]:
-    print(f'[SM §4a-speckit] Major version difference — not auto-flagging (major upgrade requires human).')
-    sys.exit(0)
-
-if latest[1] <= installed[1] + 1:
-    print(f'[SM §4a-speckit] Version OK (within 1 minor) — no action needed.')
-    sys.exit(0)
-
-# Check release notes for reliability/context-parsing keywords
-KEYWORDS = ['non-interactive', 'bom', 'context', 'upsert']
-body_lower = release_body.lower()
-relevant_keywords = [kw for kw in KEYWORDS if kw in body_lower]
-
-if not relevant_keywords:
-    print(f'[SM §4a-speckit] Version {".".join(map(str, latest))} is >1 minor ahead but no '
-          f'relevant keywords in release notes. No action.')
-    sys.exit(0)
-
-# §42.3 O4: Deduplication
-issue_title = f'chore: update speckit from v{".".join(map(str, installed))} to v{".".join(map(str, latest))}'
-try:
-    dedup_r = subprocess.run(
-        ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
-         '--search', 'speckit', '--json', 'number', '--jq', 'length'],
-        capture_output=True, text=True, timeout=10)
-    if int(dedup_r.stdout.strip() or '0') > 0:
-        print(f'[SM §4a-speckit] Speckit update issue already open — skipped.')
-        sys.exit(0)
-except Exception:
-    pass
-
-# Open issue
-issue_body = (
-    f'## Speckit update recommended\n\n'
-    f'Installed: `v{".".join(map(str, installed))}` | Latest: `v{".".join(map(str, latest))}`\n\n'
-    f'The installed version is more than 1 minor behind. The latest release contains '
-    f'relevant keywords: `{", ".join(relevant_keywords)}`.\n\n'
-    f'## What to do\n\n'
-    f'Update speckit in the environment where otherness runs:\n'
-    f'```\nnpm install -g @github/spec-kit@{".".join(map(str, latest))}\n```\n'
-    f'Or update the pinned version in `otherness-config.yaml` under `speckit.version`.\n\n'
-    f'*Generated by SM §4a-speckit | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}*'
-)
-
-r = subprocess.run(
-    ['gh', 'issue', 'create', '--repo', REPO,
-     '--title', issue_title,
-     '--label', f'{PR_LABEL},kind/chore,priority/medium,size/xs',
-     '--body', issue_body],
-    capture_output=True, text=True, timeout=15)
-
-if r.returncode == 0:
-    issue_num = r.stdout.strip().split('/')[-1]
-    print(f'[SM §4a-speckit] Opened update issue #{issue_num}: {issue_title[:60]}')
-else:
-    print(f'[SM §4a-speckit] Issue create failed (non-fatal): {r.stderr[:100]}')
-SPECKIT_RELEASE_EOF
-
-  echo "[SM §4a-speckit] Speckit release check complete."
+  LATEST_SPECKIT=$(gh release list --repo jaredpalmer/speckit --limit 1     --json tagName --jq '.[0].tagName' 2>/dev/null || echo "unknown")
+  CURRENT_SPECKIT=$(specify --version 2>/dev/null | head -1 || echo "not installed")
+  echo "[SM §4a-speckit] speckit: installed=$CURRENT_SPECKIT latest=$LATEST_SPECKIT"
+  if [ "$LATEST_SPECKIT" != "unknown" ] && [ "$CURRENT_SPECKIT" != "not installed" ]; then
+    [ "$LATEST_SPECKIT" != "$CURRENT_SPECKIT" ] &&       echo "[SM §4a-speckit] Update available: $CURRENT_SPECKIT → $LATEST_SPECKIT" ||       echo "[SM §4a-speckit] Up to date."
+  fi
 fi
 ```
-
----
 
 ## 4a-changelog. CHANGELOG.md auto-update (design doc 03 §Future → ✅)
 
@@ -799,112 +613,37 @@ echo "[SM §4b] Batch report posted"
 # Record rejection type in state.json. Open issue if same type repeats 3+ times.
 # Design ref: docs/design/38-qa-ci-gate.md §Future 38.6
 python3 - <<'QA_REJECT_EOF'
-import subprocess, json, os, re, datetime
-
+import subprocess, json, os, re
 REPO = os.environ.get('REPO', '')
-REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
-MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
-
 try:
-    with open('.otherness/state.json') as f:
-        state = json.load(f)
-except Exception:
-    raise SystemExit(0)  # fail-open
-
-# Find recently closed PRs on feat/* branches that were NOT merged
-try:
-    closed_prs = subprocess.check_output(
-        ['gh', 'pr', 'list', '--repo', REPO, '--state', 'closed',
-         '--search', 'head:feat/ NOT is:merged',
-         '--limit', '10',
-         '--json', 'number,title,headRefName,closedAt,body'],
-        text=True, timeout=15)
-    prs = json.loads(closed_prs)
+    prs = json.loads(subprocess.check_output(
+        ['gh','pr','list','--repo',REPO,'--state','closed',
+         '--search','head:feat/ NOT is:merged','--limit','10',
+         '--json','number,title,headRefName,body'],
+        text=True, timeout=15))
 except Exception as e:
-    print(f"[SM §4b-qa-rejection] gh pr list error (non-fatal): {e}")
-    raise SystemExit(0)
-
-if not prs:
-    print("[SM §4b-qa-rejection] No unmerged closed feat/* PRs found.")
-    raise SystemExit(0)
-
-# Classify rejection reason from PR body / title keywords
-def classify(pr):
-    text = (pr.get('title', '') + ' ' + pr.get('body', '')).lower()
-    if any(k in text for k in ['ci fail', 'ci red', 'check fail', 'test fail', 'build fail']):
-        return 'ci_failure'
-    if any(k in text for k in ['spec', 'obligation', 'zone 1', 'design ref']):
-        return 'spec_violation'
-    if any(k in text for k in ['scope', 'out of scope', 'too large', 'scope creep']):
-        return 'scope_creep'
-    if any(k in text for k in ['test missing', 'no test', 'missing test', 'untested']):
-        return 'test_missing'
-    return 'other'
-
-# Record rejections in state.json
-rejections = state.setdefault('qa_rejections', [])
-existing_prs = {r.get('pr_number') for r in rejections if 'pr_number' in r}
-
-new_rejections = []
+    print(f"[SM] qa-rejection error (non-fatal): {e}"); raise SystemExit(0)
+if not prs: print("[SM] No unmerged feat/* PRs."); raise SystemExit(0)
+REJECT_PATTERNS = [
+    (r'spec.*missing|no spec', 'missing-spec'),
+    (r'ci.*fail|build.*fail', 'ci-failure'),
+    (r'merge.*conflict', 'merge-conflict'),
+    (r'abandon|stale', 'abandoned'),
+    (r'scope.*too|too.*large', 'scope-too-large'),
+]
+with open('.otherness/state.json') as f: s = json.load(f)
+rejections = s.setdefault('qa_rejections', [])
 for pr in prs:
-    if pr['number'] in existing_prs:
-        continue  # already recorded
-    reason = classify(pr)
-    rec = {
-        'pr_number': pr['number'],
-        'branch': pr.get('headRefName', ''),
-        'reason': reason,
-        'closed_at': pr.get('closedAt', ''),
-        'session': MY_SESSION_ID
-    }
-    rejections.append(rec)
-    new_rejections.append(rec)
-    print(f"[SM §4b-qa-rejection] Recorded rejection: PR #{pr['number']} branch={pr.get('headRefName','')} reason={reason}")
-
-if not new_rejections:
-    print("[SM §4b-qa-rejection] No new rejections to record.")
-    raise SystemExit(0)
-
-# Keep only last 20 rejections (rolling window)
-state['qa_rejections'] = rejections[-20:]
-
-# Check for repeated pattern (same reason 3+ of last 5 rejections)
-last5 = state['qa_rejections'][-5:]
-from collections import Counter
-reason_counts = Counter(r.get('reason', 'other') for r in last5)
-for reason, count in reason_counts.items():
-    if count >= 3:
-        # Open chore issue if not already open
-        search_title = f'QA rejection pattern: {reason}'
-        try:
-            existing = subprocess.check_output(
-                ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
-                 '--search', search_title, '--json', 'number', '--jq', 'length'],
-                text=True, timeout=10)
-            if int(existing.strip() or '0') == 0:
-                body = (f"## QA Rejection Pattern Detected\n\n"
-                        f"SM §4b-qa-rejection has detected the same QA rejection reason "
-                        f"`{reason}` in {count} of the last 5 closed unmerged PRs.\n\n"
-                        f"**Rejection type**: `{reason}`\n"
-                        f"**Count in last 5**: {count}\n\n"
-                        f"ENG may need a targeted skill for this failure mode. "
-                        f"Review recent rejected PRs and consider creating or loading "
-                        f"an appropriate skill file in `agents/skills/`.\n\n"
-                        f"Design ref: docs/design/38-qa-ci-gate.md §38.6")
-                subprocess.run(
-                    ['gh', 'issue', 'create', '--repo', REPO,
-                     '--title', f'QA rejection pattern: `{reason}` in last 3 sessions — ENG may need a targeted skill',
-                     '--label', 'otherness,kind/chore,priority/high,area/agent-loop',
-                     '--body', body],
-                    capture_output=True, timeout=15)
-                print(f"[SM §4b-qa-rejection] Opened chore issue: QA rejection pattern {reason}")
-        except Exception as e:
-            print(f"[SM §4b-qa-rejection] issue check error (non-fatal): {e}")
-
-with open('.otherness/state.json', 'w') as f:
-    json.dump(state, f, indent=2)
-print(f"[SM §4b-qa-rejection] State updated with {len(new_rejections)} new rejection(s).")
+    pr_num = str(pr['number'])
+    if any(r.get('pr') == pr_num for r in rejections): continue
+    body = pr.get('body', '') or ''
+    reason = next((lbl for pat,lbl in REJECT_PATTERNS if re.search(pat,body,re.I)), 'unknown')
+    rejections.append({'pr': pr_num, 'title': pr.get('title','?')[:60], 'reason': reason})
+    rejections[:] = rejections[-20:]
+    print(f"[SM] PR #{pr_num} closed unmerged, reason={reason}")
+with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
 QA_REJECT_EOF
+
 ```
 
 ## 4b-skill-citation. Skill loading discipline check (design doc 31 §Future → ✅)
@@ -990,8 +729,8 @@ SKILL_CITE_EOF
 ## 4c. Cross-project learning (if AUTONOMOUS_MODE and monitor.projects configured)
 
 ```bash
-# Once per 5 SM cycles: sample closed needs-human issues across monitored projects
-# Extract recurring patterns → new skill entries (no project names in output)
+# Once per 5 SM cycles: mine closed needs-human issues across monitored projects
+# for recurring patterns → write generic entries to difficulty-ledger.md
 BATCH_COUNT=$(python3 -c "
 import json
 try:
@@ -1001,1788 +740,43 @@ except: print(0)
 " 2>/dev/null || echo "0")
 
 if [ $((${BATCH_COUNT:-0} % 5)) -eq 0 ] && [ "${BATCH_COUNT:-0}" -gt 0 ]; then
-  echo "[SM] Cross-project pattern mining cycle..."
-  # [AI-STEP] Cross-project needs-human pattern mining:
-  # 1. Read monitor.projects from otherness-config.yaml (list of owner/repo strings)
-  # 2. For each project in the list:
-  #    gh issue list --repo <project> --label needs-human --state closed --limit 10
-  #    --json number,title,body,comments → collect titles and comment bodies
-  # 3. Analyze patterns across ALL projects:
-  #    - Look for needs-human issues with similar root causes (e.g. "CI red >24h",
-  #      "spec missing", "merge conflict", "stale branch")
-  #    - A pattern qualifies if it appears in ≥2 different projects
-  # 4. For each qualifying pattern:
-  #    - Write a generic entry to ~/.otherness/agents/skills/difficulty-ledger.md
-  #    - Format: ## DATE: <abstract pattern name>
-  #      **Situation**: <abstract description — no project names>
-  #      **What resolved it**: <resolution pattern>
-  #      **Guard**: <preventive check for future>
-   # 5. If the pattern represents an entirely new failure class not yet in any skill file:
-   #    gh issue create --repo $REPO --title "skill: <pattern>" --label otherness
-  # If only 1 project or no patterns found: log "[SM] No cross-project patterns found."
-
-  # §4c-framelock: Frame-lock break protocol (design doc 35 §Future → ✅)
-  # When arch_convergence >= 0.65 for 3 consecutive calibrations, the learn target
-  # must be from an architecturally UNLIKE paradigm. This check detects frame-lock and
-  # opens a prioritized learn issue with arch-diversity guidance.
-  python3 - <<'FRAMELOCK_EOF'
-import json, os, subprocess, tempfile, re, datetime
-
-REPO = os.environ.get('REPO', '')
-REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
-MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
-OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
-
-FRAMELOCK_THRESHOLD = 0.65   # arch_convergence >= this for 3 consecutive calibrations
-FRAMELOCK_RESET_THRESHOLD = 0.55  # clear flag when convergence drops below this
-CONSECUTIVE_REQUIRED = 3
-
-# Step 1: Read last 3 arch_convergence values from _state sim-prediction.json git log
-arch_history = []
-state_wt = os.path.join(tempfile.gettempdir(), 'otherness-framelock-' + str(os.getpid()))
-try:
-    if os.path.exists(state_wt):
-        subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
-    subprocess.run(['git','worktree','add','--no-checkout',state_wt,'origin/_state'],
-                   capture_output=True, check=True)
-    log_r = subprocess.run(
-        ['git','-C',state_wt,'log','--format=%H',f'-{CONSECUTIVE_REQUIRED}',
-         '--','.otherness/sim-prediction.json'],
-        capture_output=True, text=True, timeout=10)
-    for sha in log_r.stdout.strip().splitlines():
-        try:
-            blob = subprocess.run(
-                ['git','-C',state_wt,'show',f'{sha}:.otherness/sim-prediction.json'],
-                capture_output=True, text=True, timeout=10)
-            if blob.returncode == 0:
-                pred = json.loads(blob.stdout)
-                arch_history.append(float(pred.get('arch_convergence_score', 0.0)))
-        except Exception:
-            pass
-except Exception as e:
-    print(f'[SM §4c-framelock] Could not read sim-prediction history (non-fatal): {e}')
-finally:
-    try:
-        subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
-    except: pass
-subprocess.run(['git','worktree','prune'], capture_output=True)
-
-if not arch_history:
-    print('[SM §4c-framelock] No arch_convergence history — skipping frame-lock check.')
-    exit(0)
-
-current_conv = arch_history[0] if arch_history else 0.0
-print(f'[SM §4c-framelock] arch_convergence history (most recent first): {[round(a,3) for a in arch_history]}')
-
-# Step 2: Read current frame_lock_detected flag from state.json
-try:
-    with open('.otherness/state.json') as f: s = json.load(f)
-    frame_lock_active = s.get('frame_lock_detected', False)
-except Exception:
-    s = {}
-    frame_lock_active = False
-
-# Step 3: Reset flag if convergence has dropped
-if frame_lock_active and current_conv < FRAMELOCK_RESET_THRESHOLD:
-    s['frame_lock_detected'] = False
-    s['frame_lock_auto_triggered'] = False  # reset auto-trigger flag when frame-lock clears
-    with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
-    print(f'[SM §4c-framelock] Frame-lock cleared (arch_convergence={current_conv:.3f} < {FRAMELOCK_RESET_THRESHOLD})')
-    exit(0)
-
-# Step 4: Detect frame-lock condition
-frame_lock_now = (
-    len(arch_history) >= CONSECUTIVE_REQUIRED and
-    all(a >= FRAMELOCK_THRESHOLD for a in arch_history[:CONSECUTIVE_REQUIRED])
-)
-print(f'[SM §4c-framelock] Frame-lock condition: {frame_lock_now} '
-      f'({len(arch_history)}/{CONSECUTIVE_REQUIRED} readings >= {FRAMELOCK_THRESHOLD})')
-
-if not frame_lock_now:
-    exit(0)
-
-# Step 5: Set frame_lock_detected flag
-s['frame_lock_detected'] = True
-with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
-
-# Step 6: Check if a frame-lock learn issue already exists
-try:
-    existing = subprocess.run(
-        ['gh','issue','list','--repo',REPO,'--state','open',
-         '--search','frame-lock','--json','number','--jq','length'],
-        capture_output=True, text=True, timeout=15)
-    if int(existing.stdout.strip() or '0') > 0:
-        print('[SM §4c-framelock] Frame-lock learn issue already open — skipping.')
-        exit(0)
-except Exception:
-    pass
-
-# Step 7: Detect current skill category distribution for the learn issue body
-skill_categories = {'agent-loop': 0, 'data-pipeline': 0, 'frontend': 0,
-                    'backend-service': 0, 'devops': 0, 'ml-training': 0}
-try:
-    provenance = open(os.path.expanduser('~/.otherness/agents/skills/PROVENANCE.md')).read()
-    sources = re.findall(r'source:\s*([^\s,\n]+)', provenance, re.IGNORECASE)
-    sources += re.findall(r'github\.com/([^/\s]+/[^/\s]+)', provenance)
-    for s_repo in sources:
-        s_lower = s_repo.lower()
-        if any(k in s_lower for k in ['agent','autonomous','bot','opencode']):
-            skill_categories['agent-loop'] += 1
-        elif any(k in s_lower for k in ['pipeline','etl','stream','kafka']):
-            skill_categories['data-pipeline'] += 1
-        elif any(k in s_lower for k in ['ui','react','vue','frontend','web']):
-            skill_categories['frontend'] += 1
-        elif any(k in s_lower for k in ['api','service','backend','server']):
-            skill_categories['backend-service'] += 1
-        elif any(k in s_lower for k in ['docker','k8s','deploy','infra','terraform']):
-            skill_categories['devops'] += 1
-        elif any(k in s_lower for k in ['ml','model','train','torch','llm']):
-            skill_categories['ml-training'] += 1
-except Exception:
-    pass
-
-dominated_category = max(skill_categories, key=skill_categories.get)
-min_count = min(skill_categories.values())
-underrepresented = [k for k, v in skill_categories.items() if v == min_count]
-today = datetime.date.today().isoformat()
-
-# Step 8: Open a frame-lock learn issue with arch-diversity guidance
-title = f'learn(arch): frame-lock detected — arch_convergence={current_conv:.3f} for {CONSECUTIVE_REQUIRED} calibrations'
-body = (
-    f'## Frame-lock break required\n\n'
-    f'SM §4c-framelock detected **architectural monoculture** (frame-lock):\n'
-    f'- arch_convergence history: {[round(a,3) for a in arch_history[:CONSECUTIVE_REQUIRED]]}\n'
-    f'- All ≥ {FRAMELOCK_THRESHOLD} for {CONSECUTIVE_REQUIRED} consecutive calibrations\n\n'
-    f'## Current skill category distribution\n\n'
-    f'```\n'
-    + '\n'.join(f'{k}: {v}' for k, v in sorted(skill_categories.items(), key=lambda x: -x[1]))
-    + f'\n```\n\n'
-    f'**Dominated by**: `{dominated_category}` ({skill_categories[dominated_category]} sources)\n'
-    f'**Underrepresented**: `{", ".join(underrepresented)}`\n\n'
-    f'## What to do\n\n'
-    f'Run `/otherness.learn` and activate **arch-diverse mode** by choosing a target from:\n'
-    f'`{underrepresented[0] if underrepresented else "data-pipeline"}` category\n\n'
-    f'See `agents/otherness.learn.md §1b-arch-diverse` for the "unlike" heuristic and '
-    f'category-to-search-terms mapping.\n\n'
-    f'The monoculture problem cannot be solved by learning more of the same.\n\n'
-    f'Reported by SM §4c-framelock | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION} | {today}'
-)
-
-try:
-    r = subprocess.run(
-        ['gh','issue','create','--repo',REPO,
-         '--title',title,'--label','otherness,priority/high,area/skills,kind/chore',
-         '--body',body],
-        capture_output=True, text=True, timeout=20)
-    if r.returncode == 0:
-        issue_url = r.stdout.strip()
-        print(f'[SM §4c-framelock] Frame-lock issue opened: {issue_url}')
-        # Post audit to report issue
-        subprocess.run(
-            ['gh','issue','comment',REPORT_ISSUE,'--repo',REPO,
-             '--body', (
-                 f'[SM §4c-framelock | {MY_SESSION_ID}] '
-                 f'Frame-lock detected: arch_convergence={current_conv:.3f} for {CONSECUTIVE_REQUIRED} calibrations. '
-                 f'Skills dominated by: {dominated_category}. '
-                 f'Learn issue opened: {issue_url}'
-             )],
-            capture_output=True, timeout=15)
-    else:
-        print(f'[SM §4c-framelock] Could not open issue: {r.stderr[:100]}')
-except Exception as e:
-    print(f'[SM §4c-framelock] Issue create error (non-fatal): {e}')
-
-# Step 9: Auto-escalation — if frame-lock persists and no human responded in >48h,
-# automatically trigger a learn session (design doc 31 §Future → ✅)
-# Conditions: arch_convergence > 0.7 AND last learn > 14 days ago
-# AND [NEEDS HUMAN] issue has been open > 48 hours without a human comment
-# AND frame_lock_auto_triggered not already set in state.json
-try:
-    AUTO_TRIGGER_THRESHOLD = 0.7   # stricter than FRAMELOCK_THRESHOLD (0.65)
-    HUMAN_RESPONSE_WAIT_H = 48     # hours before auto-triggering
-
-    # Condition a: arch_convergence > AUTO_TRIGGER_THRESHOLD
-    if current_conv <= AUTO_TRIGGER_THRESHOLD:
-        print(f'[SM §4c-framelock] Auto-trigger: arch_convergence={current_conv:.3f} <= {AUTO_TRIGGER_THRESHOLD} — skipping.')
-        exit(0)
-
-    # Condition b: last learn > 14 days ago
-    days_since_learn = 999
-    try:
-        import re as _re, datetime as _dt
-        provenance = open(os.path.expanduser('~/.otherness/agents/skills/PROVENANCE.md')).read()
-        dates = _re.findall(r'^## (\d{4}-\d{2}-\d{2})', provenance, _re.MULTILINE)
-        if dates:
-            last_learn = _dt.date.fromisoformat(sorted(dates)[-1])
-            days_since_learn = (_dt.date.today() - last_learn).days
-    except Exception:
-        days_since_learn = 999
-
-    if days_since_learn <= 14:
-        print(f'[SM §4c-framelock] Auto-trigger: last learn {days_since_learn}d ago (≤14d) — skipping.')
-        exit(0)
-
-    # Condition c: frame_lock_auto_triggered not already set
-    auto_triggered = s.get('frame_lock_auto_triggered', False)
-    if auto_triggered:
-        print('[SM §4c-framelock] Auto-trigger: already triggered this frame-lock event — skipping.')
-        exit(0)
-
-    # Condition d: [NEEDS HUMAN] frame-lock issue open > HUMAN_RESPONSE_WAIT_H and no human comment
-    import json as _json
-    from datetime import timezone as _tz, timedelta as _td
-    cutoff = datetime.datetime.now(_tz.utc) - _td(hours=HUMAN_RESPONSE_WAIT_H)
-    framelock_issue_num = None
-    try:
-        r_search = subprocess.run(
-            ['gh','issue','list','--repo',REPO,'--state','open',
-             '--search','frame-lock','--json','number,createdAt','--jq','.[0]'],
-            capture_output=True, text=True, timeout=10)
-        if r_search.returncode == 0 and r_search.stdout.strip() not in ('', 'null'):
-            iss = _json.loads(r_search.stdout)
-            issue_created = datetime.datetime.fromisoformat(iss.get('createdAt','').replace('Z','+00:00'))
-            framelock_issue_num = str(iss.get('number',''))
-            if issue_created >= cutoff:
-                print(f'[SM §4c-framelock] Auto-trigger: frame-lock issue #{framelock_issue_num} created {(datetime.datetime.now(_tz.utc)-issue_created).total_seconds()/3600:.1f}h ago — waiting {HUMAN_RESPONSE_WAIT_H}h before auto-triggering.')
-                exit(0)
-            # Check for human comments in last 48h
-            r_comments = subprocess.run(
-                ['gh','issue','view',framelock_issue_num,'--repo',REPO,
-                 '--json','comments','--jq',
-                 f'[.comments[] | select(.createdAt >= "{cutoff.strftime(\"%Y-%m-%dT%H:%M:%SZ\")}") | .author.login] | length'],
-                capture_output=True, text=True, timeout=10)
-            human_responses = int(r_comments.stdout.strip() or '0')
-            if human_responses > 0:
-                print(f'[SM §4c-framelock] Auto-trigger: {human_responses} human response(s) on issue #{framelock_issue_num} — human is engaged, skipping auto-trigger.')
-                exit(0)
-    except Exception as e:
-        print(f'[SM §4c-framelock] Auto-trigger pre-check error (non-fatal): {e}')
-        exit(0)  # fail-open: skip if check fails
-
-    # All conditions met — auto-trigger a learn session
-    print(f'[SM §4c-framelock] Auto-trigger: all conditions met (arch_conv={current_conv:.3f}, last_learn={days_since_learn}d, no human response >48h) — triggering learn session...')
-
-    import os as _os
-    repo_name = _os.path.basename(_os.getcwd())
-    import time as _time
-    learn_branch = f"feat/learn-framelock-{datetime.date.today().strftime('%Y%m%d')}"
-
-    push_result = subprocess.run(
-        ['git','push','origin',f'HEAD:refs/heads/{learn_branch}'],
-        capture_output=True, text=True, timeout=15)
-    if push_result.returncode != 0:
-        print(f'[SM §4c-framelock] Auto-trigger: branch push failed (another session may have claimed it) — skipping.')
-        exit(0)
-
-    # Mark auto-triggered in state.json
-    s['frame_lock_auto_triggered'] = True
-    with open('.otherness/state.json', 'w') as f: _json.dump(s, f, indent=2)
-
-    # Post notification comment on the [NEEDS HUMAN] issue (do not close it)
-    if framelock_issue_num:
-        subprocess.run(
-            ['gh','issue','comment',framelock_issue_num,'--repo',REPO,
-             '--body', (
-                 f'[SM §4c-framelock | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}] '
-                 f'Auto-triggering learn session (paradigm_diversity_required=true) on branch `{learn_branch}`. '
-                 f'Conditions: arch_convergence={current_conv:.3f} > 0.7, last learn={days_since_learn}d ago, '
-                 f'no human response in >48h. '
-                 f'This issue stays open for human review. '
-                 f'The system is self-healing — please review when convenient.'
-             )],
-            capture_output=True, timeout=15)
-
-    # Post to REPORT_ISSUE
-    subprocess.run(
-        ['gh','issue','comment',REPORT_ISSUE,'--repo',REPO,
-         '--body', (
-             f'[SM §4c-framelock | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}] '
-             f'Frame-lock AUTO-TRIGGER: learn session triggered on `{learn_branch}` '
-             f'(arch_convergence={current_conv:.3f}, last_learn={days_since_learn}d, >48h without human response). '
-             f'Human notification issue #{framelock_issue_num} remains open.'
-         )],
-        capture_output=True, timeout=15)
-
-    print(f'[SM §4c-framelock] Auto-trigger: learn branch {learn_branch} pushed. frame_lock_auto_triggered=true.')
-
-except SystemExit:
-    pass  # controlled exits from conditions checks above
-except Exception as e:
-    print(f'[SM §4c-framelock] Auto-trigger error (non-fatal): {e}')
-
-FRAMELOCK_EOF
-
-  # §4c-propagate: Cross-project pressure propagation (design doc 28 §Future → ✅)
-  # When a pattern is detected across ≥2 monitored projects, flag the pressure context
-  # in each affected project so their next vibe-vision scan targets the shared gap.
-  # This opens a GitHub issue on each monitored repo — the agent running there picks it up.
-  # Direct workflow edits are NOT made here (D4 design-first: issue → design doc → PR).
-  python3 - <<'PROPAGATE_EOF'
-import re, os, subprocess, datetime
-
-REPO = os.environ.get('REPO', '')
-REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
-MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
-OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
-
-# Step 1: Read monitor.projects
-monitored = []
-try:
-    in_monitor = in_projects = False
-    for line in open('otherness-config.yaml'):
-        if re.match(r'^monitor:', line): in_monitor = True
-        if in_monitor and re.match(r'\s+projects:', line): in_projects = True
-        if in_projects:
-            m = re.match(r'\s+- (.+)', line)
-            if m:
-                r = m.group(1).strip()
-                if r: monitored.append(r)
-        # Stop reading monitor section when we hit a new top-level key
-        if in_projects and re.match(r'^\w', line) and not re.match(r'^monitor:', line):
-            break
-except Exception as e:
-    print(f'[SM §4c-propagate] Config read error: {e}')
-
-if len(monitored) < 2:
-    print(f'[SM §4c-propagate] Fewer than 2 monitored projects — skipping cross-project propagation.')
-    exit(0)
-
-# Step 2: For each project, collect recent merged PR titles as a proxy for addressed areas
-project_pr_titles = {}
-for proj in monitored:
-    try:
-        result = subprocess.run(
-            ['gh', 'pr', 'list', '--repo', proj, '--state', 'merged',
-             '--limit', '20', '--json', 'title', '--jq', '.[].title'],
-            capture_output=True, text=True, timeout=20)
-        if result.returncode == 0:
-            project_pr_titles[proj] = result.stdout.lower().splitlines()
-        else:
-            project_pr_titles[proj] = []
-    except Exception:
-        project_pr_titles[proj] = []
-
-# Step 3: Find patterns — areas that appear as gaps across ≥2 projects
-# A "gap" = a known pressure category NOT mentioned in recent PRs for a project
-PRESSURE_CATEGORIES = [
-    ('test coverage', ['test', 'coverage', 'spec', 'unit test']),
-    ('error handling', ['error', 'handle', 'fallback', 'retry']),
-    ('ci stability', ['ci', 'workflow', 'pipeline', 'lint', 'build']),
-    ('documentation', ['doc', 'readme', 'comment', 'guide']),
-    ('performance', ['perf', 'speed', 'latency', 'slow', 'optim']),
-    ('security', ['security', 'auth', 'permission', 'token', 'secret']),
-]
-
-def has_coverage(pr_titles, keywords):
-    """Return True if any keyword appears in any PR title."""
-    return any(any(kw in title for kw in keywords) for title in pr_titles)
-
-# Identify categories missing from ≥2 projects
-shared_gaps = []
-for category_name, keywords in PRESSURE_CATEGORIES:
-    missing_in = [proj for proj in monitored
-                  if not has_coverage(project_pr_titles.get(proj, []), keywords)]
-    if len(missing_in) >= 2:
-        shared_gaps.append((category_name, keywords, missing_in))
-
-if not shared_gaps:
-    print('[SM §4c-propagate] No shared pressure gaps found across monitored projects.')
-    exit(0)
-
-print(f'[SM §4c-propagate] Shared gaps detected: {[g[0] for g in shared_gaps]}')
-
-# Step 4: For each monitored project with a shared gap, open a pressure issue
-today = datetime.date.today().isoformat()
-propagated = []
-
-for category_name, keywords, missing_in in shared_gaps[:2]:  # limit to top 2 gaps
-    for proj in missing_in:
-        title = f'feat: cross-project pressure — rewrite vision pressure context for {category_name}'
-        # Dedup: skip if similar issue already open
-        try:
-            existing = subprocess.run(
-                ['gh', 'issue', 'list', '--repo', proj, '--state', 'open',
-                 '--search', 'cross-project pressure', '--json', 'number', '--jq', 'length'],
-                capture_output=True, text=True, timeout=15)
-            if int(existing.stdout.strip() or '0') > 0:
-                print(f'[SM §4c-propagate] {proj}: pressure issue already open — skipping.')
-                continue
-        except Exception:
-            pass
-
-        body = (
-            f'## Cross-project pressure propagation\n\n'
-            f'**Pattern detected**: `{category_name}` is a shared gap across '
-            f'{len(missing_in)} monitored projects (no recent PRs addressing this area).\n\n'
-            f'**Action required**: Update the `Context for this vision scan:` block in '
-            f'this project\'s scheduled workflow to add explicit pressure on `{category_name}`.\n\n'
-            f'This issue was opened automatically by SM §4c-propagate on `{REPO}` as part of '
-            f'cross-project pressure propagation (design doc 28).\n\n'
-            f'## What to do\n'
-            f'1. Find the `otherness-scheduled.yml` (or equivalent) workflow.\n'
-            f'2. In the Step A (vibe-vision) `prompt:` block, add or strengthen:\n'
-            f'   ```\n'
-            f'   - Is {category_name} coverage sufficient?\n'
-            f'   ```\n'
-            f'3. Open a PR updating the workflow.\n\n'
-            f'Reported by SM §4c-propagate | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION} | {today}'
-        )
-
-        try:
-            r = subprocess.run(
-                ['gh', 'issue', 'create', '--repo', proj,
-                 '--title', title,
-                 '--label', 'otherness,kind/enhancement,priority/low,area/agent-loop',
-                 '--body', body],
-                capture_output=True, text=True, timeout=20)
-            if r.returncode == 0:
-                issue_url = r.stdout.strip()
-                print(f'[SM §4c-propagate] Created pressure issue on {proj}: {issue_url}')
-                propagated.append(f'{proj}: {category_name}')
-            else:
-                # Label may not exist on target repo — retry without label
-                r2 = subprocess.run(
-                    ['gh', 'issue', 'create', '--repo', proj,
-                     '--title', title, '--body', body],
-                    capture_output=True, text=True, timeout=20)
-                if r2.returncode == 0:
-                    print(f'[SM §4c-propagate] Created pressure issue (no label) on {proj}: {r2.stdout.strip()}')
-                    propagated.append(f'{proj}: {category_name}')
-        except Exception as e:
-            print(f'[SM §4c-propagate] Could not create issue on {proj}: {e}')
-
-# Step 5: Post audit comment to REPORT_ISSUE
-if propagated:
-    summary = '\n'.join(f'  - {p}' for p in propagated)
-    try:
-        subprocess.run(
-            ['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO,
-             '--body', (
-                 f'[SM §4c-propagate | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}] '
-                 f'Cross-project pressure propagation complete.\n'
-                 f'Shared gaps: {[g[0] for g in shared_gaps]}\n'
-                 f'Issues created:\n{summary}'
-             )],
-            capture_output=True, timeout=15)
-    except Exception:
-        pass
-else:
-    print('[SM §4c-propagate] No new pressure issues needed — all covered or already open.')
-
-PROPAGATE_EOF
+  echo "[SM §4c] Cross-project learning cycle (batch_count=$BATCH_COUNT)..."
+  MONITOR_PROJECTS=$(python3 -c "
+import re
+in_monitor=in_projects=False
+projects=[]
+for line in open('otherness-config.yaml'):
+    if re.match(r'^monitor:',line): in_monitor=True
+    if in_monitor and re.match(r'\s+projects:',line): in_projects=True
+    if in_projects:
+        m=re.match(r'\s+-\s+(.+)',line)
+        if m: projects.append(m.group(1).strip())
+print(' '.join(projects))
+" 2>/dev/null)
+  for _PROJ in $MONITOR_PROJECTS; do
+    [ -z "$_PROJ" ] && continue
+    gh issue list --repo "$_PROJ" --label needs-human --state closed --limit 10       --json title --jq '.[].title' 2>/dev/null | while read _TITLE; do
+        echo "[SM §4c] $PROJ: $_TITLE"
+      done
+  done
+  # Schedule learn if patterns suggest novel failure class
+  if ! gh issue list --repo "$REPO" --state open --search "skill:" --json number --jq 'length' 2>/dev/null | grep -q "^0$"; then
+    echo "[SM §4c] Skill issues already open — no new issues needed."
+  fi
 fi
-
-# Increment SM cycle count
-python3 -c "
-import json
-with open('.otherness/state.json') as f: s = json.load(f)
-s['sm_cycle_count'] = s.get('sm_cycle_count', 0) + 1
-with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
-" 2>/dev/null
-
-# §4c: Explicit 14-day learn-cadence enforcement (design doc 31 §Future → ✅)
-# The Type B rate trigger (§4d-learn) is necessary but not sufficient.
-# This check enforces a hard 14-day floor regardless of Type B rate.
-python3 - <<'LEARN_CADENCE_EOF'
-import re, datetime, os, subprocess
-
-REPO = os.environ.get('REPO', '')
-REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
-MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
-OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
-MAX_DAYS = 14
-
-# Step 1: Read last PROVENANCE.md entry date
-try:
-    content = open(os.path.expanduser('~/.otherness/agents/skills/PROVENANCE.md')).read()
-    dates = re.findall(r'^## (\d{4}-\d{2}-\d{2})', content, re.MULTILINE)
-    if dates:
-        last_date = datetime.date.fromisoformat(sorted(dates)[-1])
-        days_since = (datetime.date.today() - last_date).days
-    else:
-        days_since = 999
-except Exception:
-    days_since = 999  # PROVENANCE.md missing — treat as overdue
-
-print(f'[SM §4c] Learn cadence: {days_since}d since last PROVENANCE.md entry (max={MAX_DAYS}d)')
-
-if days_since < MAX_DAYS:
-    # §884: Skill-extraction contract verification — PROVENANCE.md fresh is necessary but not sufficient.
-    # A learn session that wrote only PROVENANCE.md prose (no skill file, no REJECTION: entry)
-    # is a no-op session. Detect this and treat cadence as not satisfied.
-    skill_artifact_ok = True
-    try:
-        import os as _os
-        skills_dir = _os.path.expanduser('~/.otherness/agents/skills')
-        # Read last PROVENANCE.md entry (block starting with last ## date)
-        prov_content = open(_os.path.join(skills_dir, 'PROVENANCE.md')).read()
-        # Find the last dated block
-        blocks = re.split(r'^## (\d{4}-\d{2}-\d{2})', prov_content, flags=re.MULTILINE)
-        if len(blocks) >= 3:
-            last_block = blocks[-1]  # text of the last dated entry
-            # Check for REJECTION: entry
-            has_rejection = bool(re.search(r'^REJECTION:', last_block, re.MULTILINE))
-            # Check if any skill file was modified in git since the last PROVENANCE date
-            last_date_str = sorted(re.findall(r'^## (\d{4}-\d{2}-\d{2})', prov_content, re.MULTILINE))[-1]
-            git_r = subprocess.run(
-                ['git', '-C', skills_dir, 'log', '--since', last_date_str,
-                 '--name-only', '--format=', '--', '*.md'],
-                capture_output=True, text=True, timeout=10)
-            skill_files_changed = [
-                f for f in git_r.stdout.strip().splitlines()
-                if f and 'PROVENANCE' not in f and 'README' not in f
-            ]
-            has_skill_artifact = bool(skill_files_changed)
-            if not has_skill_artifact and not has_rejection:
-                skill_artifact_ok = False
-                print(f'[SM §4c] WARNING: PROVENANCE.md fresh ({days_since}d) but no skill artifact '
-                      f'and no REJECTION: entry in last block. Learn session may be a no-op.')
-    except Exception as _e:
-        pass  # fail-open: if we cannot check, assume OK
-
-    if skill_artifact_ok:
-        print(f'[SM §4c] Learn cadence OK — {days_since}d < {MAX_DAYS}d floor. No action needed.')
-    else:
-        print(f'[SM §4c] Cadence NOT satisfied: PROVENANCE.md fresh but no skill artifact. '
-              f'Treating as overdue — learn session needed.')
-        days_since = MAX_DAYS  # Force the overdue branch
-else:
-    # Step 2: Check if a learn issue is already open or a learn branch is active
-    try:
-        open_learn = subprocess.run(
-            ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
-             '--search', 'learn(arch)', '--json', 'number', '--jq', 'length'],
-            capture_output=True, text=True, timeout=15)
-        open_count = int(open_learn.stdout.strip() or '0')
-    except Exception:
-        open_count = 0
-
-    try:
-        learn_branch = subprocess.run(
-            ['git', 'ls-remote', '--heads', 'origin'],
-            capture_output=True, text=True, timeout=10)
-        branch_active = any(
-            'feat/learn' in line
-            for line in learn_branch.stdout.splitlines()
-        )
-    except Exception:
-        branch_active = False
-
-    if open_count > 0:
-        # §4c: Verify learn issue is not stale (design doc 31 §Future → ✅)
-        # An open learn issue only satisfies cadence if it is recent OR a learn branch is active.
-        # If the issue has been open >7 days with no learn branch: escalate (don't silently accept).
-        try:
-            issue_age_days = 999
-            learn_issue_num = None
-            age_r = subprocess.run(
-                ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
-                 '--search', 'learn(arch)', '--json', 'number,createdAt',
-                 '--jq', '.[0] | "\(.number)|\(.createdAt)"'],
-                capture_output=True, text=True, timeout=15)
-            if age_r.returncode == 0 and '|' in age_r.stdout.strip():
-                parts = age_r.stdout.strip().split('|')
-                learn_issue_num = parts[0].strip()
-                created_at = parts[1].strip()
-                import datetime as _dt
-                cal = _dt.datetime.fromisoformat(created_at.replace('Z', '+00:00'))
-                issue_age_days = (_dt.datetime.now(_dt.timezone.utc) - cal).days
-        except Exception:
-            issue_age_days = 0  # fail-open: treat as fresh
-
-        if issue_age_days > 7 and not branch_active:
-            print(f'[SM §4c] Learn issue stale ({issue_age_days}d open, no feat/learn branch) — escalating.')
-            # Comment on the issue to escalate it
-            if learn_issue_num:
-                subprocess.run(
-                    ['gh', 'issue', 'comment', learn_issue_num, '--repo', REPO,
-                     '--body', (f'[SM §4c | {MY_SESSION_ID}] Learn issue has been open {issue_age_days}d '
-                                f'with no active feat/learn branch. Cadence not satisfied — PROVENANCE.md '
-                                f'has not been updated in {days_since}d. This issue needs to be claimed '
-                                f'and `/otherness.learn` run in the next session.')],
-                    capture_output=True, timeout=10)
-                # Ensure priority/high label
-                subprocess.run(
-                    ['gh', 'issue', 'edit', learn_issue_num, '--repo', REPO,
-                     '--add-label', 'priority/high'],
-                    capture_output=True, timeout=10)
-                print(f'[SM §4c] Escalation comment posted on learn issue #{learn_issue_num}.')
-        else:
-            print(f'[SM §4c] Learn issue already open ({open_count}, {issue_age_days}d) — cadence reminder satisfied.')
-    elif branch_active:
-        print(f'[SM §4c] Learn branch active — cadence satisfied (in progress).')
-    else:
-        print(f'[SM §4c] Learn overdue ({days_since}d > {MAX_DAYS}d floor) — opening priority/high issue.')
-
-        # §4c: Paradigm diversity check (design doc 31 §Future → ✅)
-        # Parse last 2 paradigm_category: fields from PROVENANCE.md to detect monoculture.
-        last_paradigms = []
-        paradigm_warning = ''
-        try:
-            prov_content = open(os.path.expanduser('~/.otherness/agents/skills/PROVENANCE.md')).read()
-            import re as _re
-            paradigm_entries = _re.findall(r'\*\*paradigm_category:\*\*\s*(\S+)', prov_content)
-            if not paradigm_entries:
-                # Try alternate format: `paradigm_category: X`
-                paradigm_entries = _re.findall(r'paradigm_category:\s*(\S+)', prov_content)
-            last_paradigms = paradigm_entries[-2:] if paradigm_entries else []
-            if len(last_paradigms) >= 2 and len(set(last_paradigms)) == 1:
-                paradigm_warning = (
-                    f'\n\n⚠️ Diversity gate: last 2 sessions both used `{last_paradigms[-1]}` paradigm. '
-                    f'This session MUST target a different paradigm to break frame-lock.')
-        except Exception:
-            last_paradigms = []
-
-        last_paradigm_line = ''
-        if last_paradigms:
-            last_paradigm_line = f'Last learn paradigm: `{last_paradigms[-1]}`. Target a different paradigm this session.\n\n'
-
-        title = f'learn(arch): cadence enforcement — PROVENANCE.md overdue ({days_since}d since last learn)'
-        body = (
-            f'## Learn cadence enforcement\n\n'
-            f'`PROVENANCE.md` last entry was {days_since} days ago. '
-            f'The 14-day floor (design doc 31 §Future) requires a learn session.\n\n'
-            f'This issue was opened automatically by SM §4c cadence enforcement.\n\n'
-            f'## What to do\n'
-            f'Run `/otherness.learn` in the next available session. '
-            f'Pick a repo from a different paradigm than the last session.\n\n'
-            f'{last_paradigm_line}'
-            f'**PROVENANCE.md format reminder**: each entry must include a `paradigm_category:` field '
-            f'(one of: `functional`, `event-sourced`, `actor-model`, `imperative-oop`, '
-            f'`declarative-config`, `reactive`, `domain-driven`, `protocol-oriented`, `other`).'
-            f'{paradigm_warning}\n\n'
-            f'Reported by SM §4c | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}'
-        )
-        r = subprocess.run(
-            ['gh', 'issue', 'create', '--repo', REPO,
-             '--title', title, '--label', 'otherness,priority/high,area/skills,kind/chore',
-             '--body', body],
-            capture_output=True, text=True, timeout=15)
-        if r.returncode == 0:
-            print(f'[SM §4c] Learn cadence issue created: {r.stdout.strip()}')
-            # Post to report issue
-            subprocess.run(
-                ['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO,
-                 '--body', f'[SM §4c | {MY_SESSION_ID}] Learn cadence overdue ({days_since}d). Created learn issue.'],
-                capture_output=True, timeout=10)
-        else:
-            print(f'[SM §4c] Failed to create learn issue: {r.stderr.strip()[:100]}')
-LEARN_CADENCE_EOF
 ```
-
----
 
 ## 4c-skill. Skill confidence check (every 10 SM cycles)
 
 ```bash
 if [ $((${BATCH_COUNT:-0} % 10)) -eq 0 ] && [ "${BATCH_COUNT:-0}" -gt 0 ]; then
-  echo "[SM] Running skill confidence check..."
-  # [AI-STEP] Check each skill file in ~/.otherness/agents/skills/ (excluding PROVENANCE, README):
-  # For each skill:
-  # 1. Check if it is referenced in phases/*.md or standalone.md:
-  #    grep -r "<skill-basename>" ~/.otherness/agents/phases/ ~/.otherness/agents/standalone.md
-  #    If not found: note as "unreferenced"
-  # 2. Check age: git -C ~/.otherness log --format='%ar' -1 -- agents/skills/<skill>.md
-  #    If last modified >180 days ago: note as "stale"
-  # 3. Check for obvious contradictions: if 2 skill files have the same topic heading:
-  #    note both as "possibly overlapping"
-  # Compile a report. Post it as a comment on $REPORT_ISSUE (informational only).
-  # Do NOT modify any skill file. Do NOT post [NEEDS HUMAN].
-  # Example comment: "[SM] Skill confidence: 12 skills checked. unreferenced: [X]. stale: [Y]."
-fi
-
-# §4c: Skill decay tracking (design doc 31 §Future → ✅)
-# Skills added >90 days ago without a PROVENANCE.md mention are candidates for revision.
-if [ $((${BATCH_COUNT:-0} % 10)) -eq 0 ] && [ "${BATCH_COUNT:-0}" -gt 0 ]; then
-  python3 - <<'DECAY_EOF'
-import os, datetime, re, subprocess
-
-REPO = os.environ.get('REPO', '')
-REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
-MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
-SKILLS_DIR = os.path.expanduser('~/.otherness/agents/skills')
-PROVENANCE = os.path.join(SKILLS_DIR, 'PROVENANCE.md')
-DECAY_DAYS = 90
-now = datetime.date.today()
-
-if not os.path.isdir(SKILLS_DIR):
-    print('[SM §4c-decay] Skills dir not found — skipping.')
-    exit(0)
-
-# Read PROVENANCE.md for skill name mentions (last 90 days)
-recent_mentions = set()
-try:
-    prov = open(PROVENANCE).read()
-    # Find all YYYY-MM-DD headers and collect text in subsequent 30 lines
-    blocks = re.split(r'^## (\d{4}-\d{2}-\d{2})', prov, flags=re.MULTILINE)
-    for i in range(1, len(blocks), 2):
-        try:
-            block_date = datetime.date.fromisoformat(blocks[i])
-            if (now - block_date).days <= DECAY_DAYS and i+1 < len(blocks):
-                # Extract skill file mentions from this block
-                mentions = re.findall(r'\b([\w-]+\.md)\b', blocks[i+1])
-                recent_mentions.update(m.replace('.md','') for m in mentions)
-                # Also check for skill name mentions (without .md)
-                for fname in os.listdir(SKILLS_DIR):
-                    if fname.endswith('.md') and fname not in ('PROVENANCE.md','README.md'):
-                        skill_name = fname.replace('.md','')
-                        if skill_name in blocks[i+1]:
-                            recent_mentions.add(skill_name)
-        except Exception:
-            pass
-except Exception:
-    pass
-
-# Check each skill file age via git log
-stale_skills = []
-try:
-    for fname in sorted(os.listdir(SKILLS_DIR)):
-        if fname in ('PROVENANCE.md', 'README.md') or not fname.endswith('.md'):
-            continue
-        fpath = os.path.join(SKILLS_DIR, fname)
-        skill_name = fname.replace('.md', '')
-        try:
-            r = subprocess.run(
-                ['git', '-C', SKILLS_DIR, 'log', '--format=%ci', '-1', '--', fname],
-                capture_output=True, text=True, timeout=10)
-            if r.stdout.strip():
-                date_str = r.stdout.strip()[:10]
-                file_date = datetime.date.fromisoformat(date_str)
-                age_days = (now - file_date).days
-            else:
-                age_days = 0
-        except Exception:
-            age_days = 0
-
-        if age_days >= DECAY_DAYS and skill_name not in recent_mentions:
-            stale_skills.append((skill_name, age_days))
-except Exception as e:
-    print(f'[SM §4c-decay] Error scanning skills: {e}')
-    exit(0)
-
-if stale_skills:
-    stale_list = ', '.join(f'{n} ({d}d)' for n, d in stale_skills[:5])
-    msg = (f'[SM §4c-decay | {MY_SESSION_ID}] Skill decay check: '
-           f'{len(stale_skills)} skill(s) not reinforced in {DECAY_DAYS}d: {stale_list}. '
-           f'Consider refreshing via the next learn session.')
-    print(f'[SM §4c-decay] {len(stale_skills)} stale skills: {stale_list}')
-    subprocess.run(
-        ['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO, '--body', msg],
-        capture_output=True, timeout=10)
-else:
-    print(f'[SM §4c-decay] All skills reinforced within {DECAY_DAYS} days. No decay detected.')
-DECAY_EOF
+  UNREFERENCED=$(for f in ~/.otherness/agents/skills/*.md; do
+    base=$(basename "$f" .md)
+    grep -rl "$base" ~/.otherness/agents/phases/ ~/.otherness/agents/standalone.md       2>/dev/null | grep -q . || echo "unreferenced: $base"
+  done)
+  [ -n "$UNREFERENCED" ] && echo "[SM §4c-skill] $UNREFERENCED" || echo "[SM §4c-skill] All skills referenced."
 fi
 ```
-
----
-
-## 4d. Simulation calibration (every 10 batches)
-
-Run `scripts/calibrate.py` every 10 batches to keep simulation parameters
-anchored to real observed behavior. Check the arch-convergence signal and
-escalate to human if architectural monoculture is detected.
-
-```bash
-SM_CYCLE=$(python3 -c "
-import json
-try:
-    s = json.load(open('.otherness/state.json'))
-    print(s.get('sm_cycle_count', 0))
-except: print(0)
-" 2>/dev/null || echo "0")
-
-if [ $((SM_CYCLE % 10)) -eq 0 ] && [ "$SM_CYCLE" -gt 0 ]; then
-    echo "[SM §4d] Running simulation calibration (sm_cycle=$SM_CYCLE)..."
-
-    # Phase 2a: per-project calibration — use local metrics if ≥10 batches available
-    METRICS_ROWS=$(grep -c '^\|\s*[0-9][0-9][0-9][0-9]-' docs/aide/metrics.md 2>/dev/null || echo 0)
-    if [ "${METRICS_ROWS:-0}" -ge 10 ]; then
-        echo "[SM §4d] Using project-specific metrics ($METRICS_ROWS batches) for calibration."
-        CALIB_ARGS="--runs 3 --cycles 50 --metrics docs/aide/metrics.md"
-    else
-        echo "[SM §4d] Using otherness default calibration (only ${METRICS_ROWS:-0} batches available)."
-        CALIB_ARGS="--runs 3 --cycles 50"
-    fi
-
-    if python3 scripts/calibrate.py $CALIB_ARGS 2>/dev/null; then
-        echo "[SM §4d] Calibration complete — sim-params.json updated."
-
-        # Persist sim-params.json to _state branch
-        if [ -f "scripts/sim-params.json" ]; then
-            python3 - <<'PARAMS_EOF'
-import subprocess, json, os, tempfile, time, shutil
-
-state_wt = os.path.join(tempfile.gettempdir(), 'otherness-simparams-' + str(os.getpid()))
-sm_cycle = os.environ.get('SM_CYCLE', '0')
-
-try:
-    if os.path.exists(state_wt):
-        subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
-    subprocess.run(['git','worktree','add','--no-checkout',state_wt,'origin/_state'],
-                   capture_output=True, check=True)
-    target = os.path.join(state_wt,'.otherness','sim-params.json')
-    os.makedirs(os.path.dirname(target), exist_ok=True)
-    import shutil as _sh
-    _sh.copy('scripts/sim-params.json', target)
-    subprocess.run(['git','-C',state_wt,'add',target], capture_output=True)
-    r = subprocess.run(['git','-C',state_wt,'commit',
-                        '-m', f'calibration: update sim-params.json (sm_cycle={sm_cycle})'],
-                       capture_output=True)
-    if r.returncode == 0:
-        subprocess.run(['git','-C',state_wt,'push','origin','HEAD:_state'], capture_output=True)
-        print(f"[SM §4d] sim-params.json persisted to _state (sm_cycle={sm_cycle})")
-    else:
-        print("[SM §4d] sim-params.json unchanged — no commit needed")
-except Exception as e:
-    print(f"[SM §4d] sim-params persist error (non-fatal): {e}")
-finally:
-    try:
-        subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
-    except: pass
-subprocess.run(['git','worktree','prune'], capture_output=True)
-PARAMS_EOF
-        fi
-
-        # Fleet defaults: if this is the otherness repo, write sim-defaults.json
-        # to scripts/ and push to main. Managed projects pick it up on next git pull.
-        # O4: skip silently on managed projects.
-        IS_OTHERNESS=$(python3 -c "
-import re, os
-try:
-    for line in open('otherness-config.yaml'):
-        m = re.match(r'^\s+repo:\s*(.+)', line)
-        if m:
-            print('true' if m.group(1).strip().endswith('/otherness') else 'false')
-            exit()
-except: pass
-print('false')
-" 2>/dev/null || echo "false")
-
-        if [ "$IS_OTHERNESS" = "true" ] && [ -f "scripts/sim-params.json" ]; then
-            python3 - <<'FLEETEOF'
-import subprocess, json, os, datetime, shutil
-
-sm_cycle = os.environ.get('SM_CYCLE', '0')
-try:
-    params = json.load(open('scripts/sim-params.json'))
-    defaults = dict(params)
-    defaults['fleet_calibrated_at'] = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-    defaults['source'] = 'otherness'
-    json.dump(defaults, open('scripts/sim-defaults.json', 'w'), indent=2)
-    print(f"[SM §4d] sim-defaults.json written (sm_cycle={sm_cycle})")
-
-    # Commit and push to main — managed projects pick up on next git pull startup
-    subprocess.run(['git','add','scripts/sim-defaults.json'], capture_output=True)
-    r = subprocess.run(['git','commit','-m',f'chore(sm): update sim-defaults.json (sm_cycle={sm_cycle})'],
-                       capture_output=True, text=True)
-    if r.returncode != 0:
-        print("[SM §4d] sim-defaults.json: no changes to commit")
-    else:
-        for attempt in range(3):
-            subprocess.run(['git','pull','--rebase','origin','main','--quiet'],
-                           capture_output=True)
-            push_r = subprocess.run(['git','push','origin','HEAD:main'],
-                                    capture_output=True, text=True)
-            if push_r.returncode == 0:
-                print("[SM §4d] sim-defaults.json pushed to main (fleet update)")
-                break
-            import time; time.sleep(2 * (attempt + 1))
-        else:
-            print("[SM §4d] sim-defaults.json push failed after 3 attempts — non-fatal")
-except Exception as e:
-    print(f"[SM §4d] sim-defaults.json error (non-fatal): {e}")
-FLEETEOF
-        fi
-
-        # Phase 2c: write sim-results.json to _state branch
-        python3 - <<'SIMRES_EOF'
-import subprocess, json, os, tempfile, datetime, shutil
-
-state_wt = os.path.join(tempfile.gettempdir(), 'otherness-simresults-' + str(os.getpid()))
-sm_cycle = os.environ.get('SM_CYCLE', '0')
-metrics_rows = int(os.environ.get('METRICS_ROWS', '0'))
-
-try:
-    sim_params = json.load(open('scripts/sim-params.json'))
-except Exception:
-    sim_params = {}
-
-results = {
-    "calibrated_at": datetime.datetime.utcnow().isoformat() + "Z",
-    "best_rmse": sim_params.get("rmse"),
-    "source": "project-specific" if metrics_rows >= 10 else "otherness-defaults",
-    "params": sim_params
-}
-
-try:
-    if os.path.exists(state_wt):
-        subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
-    subprocess.run(['git','worktree','add','--no-checkout',state_wt,'origin/_state'],
-                   capture_output=True, check=True)
-    target = os.path.join(state_wt,'.otherness','sim-results.json')
-    os.makedirs(os.path.dirname(target), exist_ok=True)
-    json.dump(results, open(target,'w'), indent=2)
-    subprocess.run(['git','-C',state_wt,'add',target], capture_output=True)
-    subprocess.run(['git','-C',state_wt,'commit',
-                    '-m', f'calibration: sim-results.json (sm_cycle={sm_cycle})'],
-                   capture_output=True)
-    subprocess.run(['git','-C',state_wt,'push','origin','HEAD:_state'], capture_output=True)
-    print(f"[SM §4d] sim-results.json written to _state (source={results['source']})")
-except Exception as e:
-    print(f"[SM §4d] sim-results write error (non-fatal): {e}")
-finally:
-    try:
-        subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
-    except: pass
-subprocess.run(['git','worktree','prune'], capture_output=True)
-SIMRES_EOF
-
-        # Write sim-prediction.json to _state branch (design doc 23 §Step 2)
-        # Derives floor/ceiling from simulation run with calibrated parameters.
-        python3 - <<'SIMPRED_EOF'
-import subprocess, json, os, tempfile, datetime, shutil
-
-state_wt = os.path.join(tempfile.gettempdir(), 'otherness-simpred-' + str(os.getpid()))
-sm_cycle = os.environ.get('SM_CYCLE', '0')
-
-try:
-    params = json.load(open('scripts/sim-params.json'))
-except Exception:
-    print("[SM §4d] sim-params.json not found — skipping sim-prediction.json")
-    exit(0)
-
-try:
-    import sys as _sys; _sys.path.insert(0, '.')
-    from scripts.simulate import SimConfig, run_simulation
-    cfg = SimConfig(
-        n_agents=4, n_cycles=50, seed=42,
-        decay_rate=params.get('decay_rate', 0.92),
-        jump_multiplier=params.get('jump_multiplier', 1.6),
-        skill_boldness_coefficient=params.get('skill_boldness_coefficient', 0.015),
-    )
-    metrics, _ = run_simulation(cfg)
-    last_10 = [m.completion_rate for m in metrics[-10:]]
-    sorted_rates = sorted(last_10)
-    prs_floor = max(1, int(sorted_rates[1]))      # 10th percentile
-    prs_ceiling = max(prs_floor + 1, int(sorted_rates[-2]) + 1)  # 90th percentile
-    arch_conv = round(metrics[-1].mean_arch_convergence, 3)
-    skill_growth = round(
-        (metrics[-1].skill_diversity - metrics[-5].skill_diversity) / 5
-        if len(metrics) >= 5 else 0.0, 3)
-except Exception as e:
-    print(f"[SM §4d] sim-prediction simulation error (non-fatal): {e}")
-    exit(0)
-
-prediction = {
-    "prs_next_batch_floor": prs_floor,
-    "prs_next_batch_ceiling": prs_ceiling,
-    "arch_convergence_score": arch_conv,
-    "skill_growth_rate": skill_growth,
-    "calibrated_params": {
-        "decay_rate": params.get("decay_rate"),
-        "jump_multiplier": params.get("jump_multiplier"),
-        "skill_boldness_coefficient": params.get("skill_boldness_coefficient"),
-    },
-    "calibrated_at": datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
-}
-
-try:
-    if os.path.exists(state_wt):
-        subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
-    subprocess.run(['git','worktree','add','--no-checkout',state_wt,'origin/_state'],
-                   capture_output=True, check=True)
-    target = os.path.join(state_wt, '.otherness', 'sim-prediction.json')
-    os.makedirs(os.path.dirname(target), exist_ok=True)
-    json.dump(prediction, open(target, 'w'), indent=2)
-    subprocess.run(['git','-C',state_wt,'add',target], capture_output=True)
-    subprocess.run(['git','-C',state_wt,'commit',
-                    '-m', f'calibration: sim-prediction.json (sm_cycle={sm_cycle})'],
-                   capture_output=True)
-    subprocess.run(['git','-C',state_wt,'push','origin','HEAD:_state'], capture_output=True)
-    print(f"[SM §4d] sim-prediction.json written: floor={prs_floor}, ceiling={prs_ceiling}, "
-          f"arch_conv={arch_conv}, skill_growth={skill_growth}")
-except Exception as e:
-    print(f"[SM §4d] sim-prediction write error (non-fatal): {e}")
-finally:
-    try:
-        subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
-    except: pass
-subprocess.run(['git','worktree','prune'], capture_output=True)
-SIMPRED_EOF
-
-        # Read arch_convergence from latest sim-params.json
-        ARCH_CONV=$(python3 -c "
-import json, os
-try:
-    p = json.load(open('scripts/sim-params.json'))
-    # Run a quick simulation to get current arch_convergence
-    import sys; sys.path.insert(0,'.')
-    from scripts.simulate import SimConfig, run_simulation
-    cfg = SimConfig(
-        n_agents=4, n_cycles=50, seed=42,
-        decay_rate=p.get('decay_rate', 0.92),
-        jump_multiplier=p.get('jump_multiplier', 1.6),
-        skill_boldness_coefficient=p.get('skill_boldness_coefficient', 0.015),
-    )
-    m, s = run_simulation(cfg)
-    print(f'{m[-1].mean_arch_convergence:.3f}')
-except Exception as e:
-    print('0.0')
-" 2>/dev/null || echo "0.0")
-
-        echo "[SM §4d] Current arch_convergence: $ARCH_CONV"
-
-        # Arch-convergence alarm: > 0.7 = architectural monoculture
-        # Open an autonomous learn trigger issue (design doc 23 §arch_convergence signal).
-        # This is NOT a [NEEDS HUMAN] — COORD picks it up and runs /otherness.learn.
-        ALARM=$(python3 -c "print('true' if float('$ARCH_CONV') > 0.7 else 'false')" 2>/dev/null || echo "false")
-        if [ "$ALARM" = "true" ]; then
-            echo "[SM §4d] ⚠ Architectural monoculture detected (arch_convergence=$ARCH_CONV > 0.7)"
-
-            # Deduplication check — only open if no open learn(arch): issue already exists
-            EXISTING=$(gh issue list --repo "$REPO" --state open \
-              --search "learn(arch):" --json number --jq 'length' 2>/dev/null || echo "0")
-
-            if [ "${EXISTING:-0}" -eq 0 ]; then
-                LEARN_TITLE="learn(arch): arch_convergence at ${ARCH_CONV} — run /otherness.learn"
-                gh issue create --repo "$REPO" \
-                  --title "$LEARN_TITLE" \
-                  --label "otherness,area/agent-loop,kind/chore,priority/high" \
-                  --body "## Simulation calibration signal — arch_convergence
-
-SM §4d calibration (sm_cycle=$SM_CYCLE) detected **arch_convergence = $ARCH_CONV** (threshold: 0.7).
-
-This means agents are proposing items of the same structural type repeatedly — a sign
-of architectural frame-lock rather than genuine exploration.
-
-## Recovery action
-
-Run \`/otherness.learn\` to inject novel patterns from an external open-source repo.
-This is an autonomous trigger — COORD will pick this issue up on its next queue cycle.
-
-**Reference**: \`docs/design/23-simulation-as-anchor.md §The arch_convergence signal\`" 2>/dev/null \
-                  && echo "[SM §4d] Learn trigger issue opened (arch_convergence=$ARCH_CONV)." \
-                  || echo "[SM §4d] Could not open learn trigger issue."
-
-                # Also post observation to report issue (audit trail)
-                gh issue comment $REPORT_ISSUE --repo $REPO \
-                  --body "[🔄 SM §4d | $MY_SESSION_ID] arch_convergence=$ARCH_CONV > 0.7 detected. Learn trigger issue opened." 2>/dev/null || true
-            else
-                echo "[SM §4d] Learn trigger already open ($EXISTING issue) — skipping duplicate."
-            fi
-        fi
-    else
-        echo "[SM §4d] Calibration skipped (calibrate.py not available or failed)."
-    fi
-else
-     echo "[SM §4d] Calibration skipped (sm_cycle=$SM_CYCLE, next at $((((SM_CYCLE / 10) + 1) * 10)))."
-fi
-
-# Phase 1c: Automatic /otherness.learn trigger (every 10 cycles, same cadence as calibration)
-if [ $((SM_CYCLE % 10)) -eq 0 ] && [ "${SM_CYCLE:-0}" -gt 0 ]; then
-  echo "[SM §4d-learn] Checking learn trigger..."
-
-  # [AI-STEP]
-  # Step 1: Read last 3 rows from docs/aide/metrics.md.
-  #   Parse 'needs_human' column (col 4, 1-indexed from date). Keep last 3 rows.
-  #
-  # Step 2: Check if needs_human = 0 for all 3 batches.
-  #   If any row has needs_human > 0: log "[SM §4d-learn] Skipping — escalations present." exit.
-  #
-  # Step 3: Compare real Type B rate (proxy: needs_human avg over last 10 batches)
-  #   against simulated floor from scripts/sim-params.json (default 0.1 if missing).
-  #   sim_floor = sim_params.get('expected_type_b_rate', 0.1)
-  #   If real_rate >= sim_floor: log "[SM §4d-learn] Type B rate OK — no learn trigger."; exit.
-  #
-  # Step 4: If real_rate < sim_floor for 3 consecutive batches AND no escalations:
-  #   LEARN_BRANCH="feat/learn-$(date +%Y%m%d)"
-  #   Check if branch exists: git ls-remote --heads origin $LEARN_BRANCH
-  #   If exists: log "[SM §4d-learn] Learn branch already exists — skipping."; exit.
-  #
-  #   Create branch and worktree:
-  #   git push origin "HEAD:refs/heads/$LEARN_BRANCH"
-  #   LEARN_WT="../${REPO_NAME}.learn-$(date +%Y%m%d)"
-  #   git worktree add "$LEARN_WT" "$LEARN_BRANCH"
-  #
-  #   Post notice:
-  #   gh issue comment $REPORT_ISSUE --repo $REPO \
-  #     --body "[🔄 SM §4d-learn | $MY_SESSION_ID] Auto-learn triggered (Type B deficit: real=${real_rate:.2f} < floor=${sim_floor:.2f}). Starting /otherness.learn."
-  #
-  #   Read and follow ~/.otherness/agents/otherness.learn.md from $LEARN_WT.
-  #   After learn PR open and CI green: merge and clean up (same pattern as coord.md learn scheduling).
-
-  echo "[SM §4d-learn] Learn trigger check complete."
-fi
-```
-
----
-
-## 4e. Calibration update + divergence detection
-
-Every N SM cycles (default 5, configurable): re-calibrate simulation parameters against real metrics
-and write `.otherness/sim-prediction.json` to `_state`. Every cycle: divergence check.
-
-**Design ref**: `docs/design/23-simulation-as-anchor.md §Future → §Step 3`.
-
-### 4e-i. Per-5-cycle calibration update
-
-```bash
-# Read calibration frequency (default: 5 cycles)
-CALIB_CYCLES_4E=$(python3 -c "
-import re
-section = None
-try:
-    for line in open('otherness-config.yaml'):
-        s = re.match(r'^(\w[\w_]*):', line)
-        if s: section = s.group(1)
-        if section == 'simulation':
-            m = re.match(r'\s+calibration_cycles:\s*(\d+)', line)
-            if m: print(m.group(1)); exit()
-except: pass
-print('5')
-" 2>/dev/null || echo "5")
-
-if [ $((SM_CYCLE % CALIB_CYCLES_4E)) -eq 0 ] && [ "${SM_CYCLE:-0}" -gt 0 ]; then
-  echo "[SM §4e] Calibration cycle (sm_cycle=$SM_CYCLE, every ${CALIB_CYCLES_4E})..."
-  if [ -f "scripts/calibrate.py" ] && [ -f "docs/aide/metrics.md" ]; then
-    METRICS_ROWS=$(python3 -c "
-import re
-n=0
-for line in open('docs/aide/metrics.md'):
-    if re.match(r'^\|\s*20', line): n+=1
-print(n)
-" 2>/dev/null || echo "0")
-    if [ "${METRICS_ROWS:-0}" -ge 5 ]; then
-      if python3 scripts/calibrate.py --runs 2 2>/dev/null; then
-        echo "[SM §4e] Calibration complete (${METRICS_ROWS} batches)."
-        # Write sim-prediction.json to _state
-        python3 - <<'PREDEOF'
-import json, os, subprocess, tempfile, datetime, sys
-
-sm_cycle = int(os.environ.get('SM_CYCLE', '0'))
-try:
-    import sys as _sys; _sys.path.insert(0, '.')
-    from scripts.simulate import SimConfig, run_simulation
-    params = json.load(open('scripts/sim-params.json'))
-    cfg = SimConfig(
-        n_agents=3, cycles=50,
-        decay_rate=float(params.get('decay_rate', 0.9)),
-        jump_multiplier=float(params.get('jump_multiplier', 1.3)),
-        skill_boldness_coefficient=float(params.get('skill_boldness_coefficient', 0.018)),
-        seed=42
-    )
-    results = run_simulation(cfg)
-    prs_list = [r.get('prs_merged', 0) for r in results if isinstance(r, dict)]
-    prs_floor = max(1, int(sorted(prs_list)[int(len(prs_list)*0.1)] if prs_list else 1))
-    prs_ceiling = int(sorted(prs_list)[int(len(prs_list)*0.9)] + 1) if prs_list else 10
-    arch_conv = float(results[-1].get('arch_convergence', 0.3)) if results else 0.3
-    skill_rate = float(params.get('skills_growth_per_batch', 0.1))
-    prediction = {
-        'prs_next_batch_floor': prs_floor,
-        'prs_next_batch_ceiling': prs_ceiling,
-        'arch_convergence_score': round(arch_conv, 3),
-        'skill_growth_rate': round(skill_rate, 4),
-        'calibrated_params': {
-            'decay_rate': params.get('decay_rate'),
-            'skill_boldness_coefficient': params.get('skill_boldness_coefficient'),
-            'jump_multiplier': params.get('jump_multiplier'),
-        },
-        'calibrated_at': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
-        'source': '4e-calibration',
-        'sm_cycle': sm_cycle,
-        'recovery_action': 'none',  # overwritten by §4e-ii divergence detection each cycle
-    }
-    # Write to _state branch
-     state_wt = os.path.join(tempfile.gettempdir(), 'otherness-pred4e-' + str(os.getpid()))
-     try:
-         if os.path.exists(state_wt):
-             subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
-         subprocess.run(['git','worktree','add','--no-checkout',state_wt,'origin/_state'],
-                        capture_output=True, check=True)
-         target = os.path.join(state_wt, '.otherness', 'sim-prediction.json')
-         prev_target = os.path.join(state_wt, '.otherness', 'sim-prediction-prev.json')
-         os.makedirs(os.path.dirname(target), exist_ok=True)
-         subprocess.run(['git','-C',state_wt,'checkout','_state','--','.otherness/sim-prediction.json'],
-                        capture_output=True)
-
-         # §23 prediction DIFF: read previous prediction before overwriting (O1, O4 — graceful fallback)
-         prev_pred = {}
-         try:
-             if os.path.isfile(target):
-                 prev_pred = json.load(open(target))
-                 # Save copy as sim-prediction-prev.json (O1)
-                 import shutil as _shutil
-                 _shutil.copy2(target, prev_target)
-                 subprocess.run(['git','-C',state_wt,'add',prev_target], capture_output=True)
-         except Exception:
-             prev_pred = {}
-
-         # Compute prediction_diff block (O2)
-         _prev_floor = prev_pred.get('prs_floor', prediction.get('prs_floor', 0))
-         _prev_ceil  = prev_pred.get('prs_ceiling', prediction.get('prs_ceiling', 0))
-         _prev_arch  = prev_pred.get('arch_convergence', prediction.get('arch_convergence', 0)) or 0
-         _prev_act   = prev_pred.get('recovery_action', 'none')
-         _prev_cal   = prev_pred.get('calibrated_at', None)
-         _curr_floor = prediction.get('prs_floor', 0)
-         _curr_ceil  = prediction.get('prs_ceiling', 0)
-         _curr_arch  = prediction.get('arch_convergence', 0) or 0
-         _curr_act   = prediction.get('recovery_action', 'none')
-         prediction['prediction_diff'] = {
-             'floor_delta': _curr_floor - _prev_floor,
-             'ceiling_delta': _curr_ceil - _prev_ceil,
-             'arch_convergence_delta': round(_curr_arch - _prev_arch, 4),
-             'recovery_action_changed': _prev_act != _curr_act,
-             'prev_calibrated_at': _prev_cal,
-         }
-         print(f"[SM §4e] prediction_diff: floor±{prediction['prediction_diff']['floor_delta']} "
-               f"ceiling±{prediction['prediction_diff']['ceiling_delta']} "
-               f"arch±{prediction['prediction_diff']['arch_convergence_delta']}")
-
-         json.dump(prediction, open(target, 'w'), indent=2)
-         subprocess.run(['git','-C',state_wt,'add',target], capture_output=True)
-         subprocess.run(['git','-C',state_wt,'commit',
-                         '-m', f'4e-calibration: sim-prediction.json (sm_cycle={sm_cycle})'],
-                        capture_output=True)
-         r = subprocess.run(['git','-C',state_wt,'push','origin','HEAD:_state'],
-                            capture_output=True)
-         if r.returncode == 0:
-             print(f"[SM §4e] sim-prediction.json written: floor={prs_floor}, ceiling={prs_ceiling}, arch_conv={arch_conv:.3f}")
-         else:
-             print("[SM §4e] sim-prediction.json push failed (non-fatal)")
-     except Exception as e:
-         print(f"[SM §4e] sim-prediction write error (non-fatal): {e}")
-     finally:
-         try:
-             subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
-         except: pass
-     subprocess.run(['git','worktree','prune'], capture_output=True)
-except Exception as e:
-    print(f"[SM §4e] sim-prediction simulation error (non-fatal): {e}")
-PREDEOF
-      else
-        echo "[SM §4e] calibrate.py failed — skipping sim-prediction update (non-fatal)."
-      fi
-    else
-      echo "[SM §4e] Only ${METRICS_ROWS} metric rows — need ≥5 for calibration. Skipping."
-    fi
-  else
-    # Fleet defaults fallback: when calibrate.py is absent (managed project), inherit
-    # sim-defaults.json from the otherness fleet and write it as sim-prediction.json.
-    # This satisfies the managed project adoption design:
-    # "kardinal-promoter and kro-ui SM inherit otherness defaults, re-calibrate after ≥5 batches"
-    # Design ref: docs/design/23-simulation-as-anchor.md §Per-project calibration and fleet defaults
-    FLEET_DEFAULTS="$HOME/.otherness/scripts/sim-defaults.json"
-    if [ -f "$FLEET_DEFAULTS" ]; then
-      echo "[SM §4e] calibrate.py absent — inheriting fleet defaults from sim-defaults.json"
-      python3 - <<'FLEETPREDEOF'
-import json, os, subprocess, tempfile, datetime
-
-sm_cycle = int(os.environ.get('SM_CYCLE', '0'))
-fleet_path = os.path.expanduser('~/.otherness/scripts/sim-defaults.json')
-try:
-    defaults = json.load(open(fleet_path))
-    prediction = {
-        'prs_next_batch_floor': defaults.get('prs_next_batch_floor', 1),
-        'prs_next_batch_ceiling': defaults.get('prs_next_batch_ceiling', 10),
-        'arch_convergence_score': defaults.get('arch_convergence_score', 0.3),
-        'skill_growth_rate': round(float(defaults.get('skills_growth_per_batch',
-                                        defaults.get('skill_growth_rate', 0.1))), 4),
-        'calibrated_params': {
-            'decay_rate': defaults.get('decay_rate'),
-            'skill_boldness_coefficient': defaults.get('skill_boldness_coefficient'),
-            'jump_multiplier': defaults.get('jump_multiplier'),
-        },
-        'calibrated_at': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
-        'source': 'fleet-defaults',
-        'fleet_calibrated_at': defaults.get('fleet_calibrated_at'),
-        'sm_cycle': sm_cycle,
-    }
-    state_wt = os.path.join(tempfile.gettempdir(), 'otherness-pred4e-fleet-' + str(os.getpid()))
-    try:
-        if os.path.exists(state_wt):
-            subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
-        subprocess.run(['git','worktree','add','--no-checkout',state_wt,'origin/_state'],
-                       capture_output=True, check=True)
-        target = os.path.join(state_wt, '.otherness', 'sim-prediction.json')
-        os.makedirs(os.path.dirname(target), exist_ok=True)
-        subprocess.run(['git','-C',state_wt,'checkout','_state','--','.otherness/sim-prediction.json'],
-                       capture_output=True)
-        json.dump(prediction, open(target, 'w'), indent=2)
-        subprocess.run(['git','-C',state_wt,'add',target], capture_output=True)
-        subprocess.run(['git','-C',state_wt,'commit',
-                        '-m', f'4e-fleet-defaults: sim-prediction.json (sm_cycle={sm_cycle})'],
-                       capture_output=True)
-        r = subprocess.run(['git','-C',state_wt,'push','origin','HEAD:_state'],
-                           capture_output=True)
-        if r.returncode == 0:
-            print(f"[SM §4e] fleet sim-prediction.json written (source=fleet-defaults, sm_cycle={sm_cycle})")
-        else:
-            print("[SM §4e] fleet sim-prediction.json push failed (non-fatal)")
-    except Exception as e:
-        print(f"[SM §4e] fleet sim-prediction write error (non-fatal): {e}")
-    finally:
-        try:
-            subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
-        except: pass
-    subprocess.run(['git','worktree','prune'], capture_output=True)
-except Exception as e:
-    print(f"[SM §4e] fleet defaults fallback error (non-fatal): {e}")
-FLEETPREDEOF
-    else
-      echo "[SM §4e] calibrate.py and fleet sim-defaults.json both absent — skipping (non-fatal)."
-    fi
-  fi
-else
-  echo "[SM §4e] Calibration skipped (sm_cycle=${SM_CYCLE:-0}, every ${CALIB_CYCLES_4E} cycles)."
-fi
-```
-
-### 4e-ii. Divergence detection (every SM cycle)
-
-Compare actual `todo_shipped` to the simulated prediction floor.
-Post `[⚠️ Simulation divergence]` after 3 consecutive below-floor batches.
-Divergence is informational — it does not block CI or open `[NEEDS HUMAN]` issues.
-
-**Design ref**: `docs/design/23-simulation-as-anchor.md §Step 3`.
-
-```bash
-python3 - <<'DIVEOF'
-import json, re, os, subprocess, datetime, tempfile, shutil
-
-REPO = os.environ.get('REPO', '')
-REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '')
-MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'SM')
-
-# Step 1: Read predicted floor from scripts/sim-params.json
-pred_floor = 1  # fallback: 1 item per batch is the minimum healthy floor
-try:
-    params = json.load(open('scripts/sim-params.json'))
-    # Use observed_completion_rate × 0.5 as a conservative lower bound
-    obs_rate = float(params.get('observed_completion_rate', 1.0))
-    pred_floor = max(1, int(obs_rate * 0.5))
-except Exception:
-    pass  # Use fallback
-
-# Step 2: Read last row of docs/aide/metrics.md for actual todo_shipped
-actual_shipped = None
-try:
-    content = open('docs/aide/metrics.md').read()
-    rows = []
-    for line in content.splitlines():
-        if '|' not in line: continue
-        cells = [c.strip() for c in line.split('|')]
-        if len(cells) < 8: continue
-        if not cells[1].startswith('20'): continue
-        try:
-            # Schema: Date|Batch|prs_merged|needs_human|ci_red_hours|skills_count|meaningful_prs_week|todo_shipped|...
-            # todo_shipped is at index 7 (was 6 before meaningful_prs_week column was added at index 6)
-            todo_idx = 7 if len(cells) >= 11 else 6  # graceful fallback for old rows (len<11)
-            shipped = int(cells[todo_idx]) if cells[todo_idx].isdigit() else -1
-            if shipped >= 0:
-                rows.append({'date': cells[1], 'batch': cells[2], 'todo_shipped': shipped})
-        except: pass
-    if rows:
-        actual_shipped = rows[-1]['todo_shipped']
-        batch_id = rows[-1]['batch']
-except Exception as e:
-    print(f'[SM §4e] Metrics read error (skipping): {e}')
-    exit(0)
-
-if actual_shipped is None:
-    print('[SM §4e] No metrics rows found — skipping divergence check.')
-    exit(0)
-
-print(f'[SM §4e] Divergence check: actual_shipped={actual_shipped}, pred_floor={pred_floor}')
-
-# Step 3: Read persistent consecutive count from _state
-state_wt = os.path.join(tempfile.gettempdir(), 'otherness-div-' + str(os.getpid()))
-div_path = None
-consecutive_count = 0
-try:
-    if os.path.exists(state_wt):
-        subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
-    subprocess.run(['git','worktree','add','--no-checkout',state_wt,'origin/_state'],
-                   capture_output=True, check=True)
-    div_path = os.path.join(state_wt, '.otherness', 'divergence_count.json')
-    os.makedirs(os.path.dirname(div_path), exist_ok=True)
-    subprocess.run(['git','-C',state_wt,'checkout','_state','--','.otherness/divergence_count.json'],
-                   capture_output=True)
-    if os.path.exists(div_path):
-        d = json.load(open(div_path))
-        consecutive_count = int(d.get('count', 0))
-except Exception as e:
-    print(f'[SM §4e] divergence_count read error (non-fatal): {e}')
-
-# Step 4: Increment or reset counter
-if actual_shipped < pred_floor:
-    consecutive_count += 1
-    print(f'[SM §4e] Below floor ({actual_shipped} < {pred_floor}), consecutive={consecutive_count}')
-else:
-    if consecutive_count > 0:
-        print(f'[SM §4e] At or above floor ({actual_shipped} >= {pred_floor}) — resetting consecutive count')
-    consecutive_count = 0
-
-# Step 5: Persist updated count to _state
-try:
-    if div_path:
-        json.dump({'count': consecutive_count,
-                   'updated_at': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
-                   'last_pred_floor': pred_floor,
-                   'last_actual': actual_shipped},
-                  open(div_path, 'w'), indent=2)
-        subprocess.run(['git','-C',state_wt,'add',div_path], capture_output=True)
-        subprocess.run(['git','-C',state_wt,'commit','-m',f'sm: divergence_count={consecutive_count}'],
-                       capture_output=True)
-        subprocess.run(['git','-C',state_wt,'push','origin','HEAD:_state'], capture_output=True)
-        print(f'[SM §4e] divergence_count={consecutive_count} persisted to _state')
-except Exception as e:
-    print(f'[SM §4e] divergence_count persist error (non-fatal): {e}')
-finally:
-    try:
-        subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
-    except: pass
-subprocess.run(['git','worktree','prune'], capture_output=True)
-
-# Step 5b: sim_floor_delta rolling average — read last 5 values from metrics.md
-# Design ref: docs/design/23-simulation-as-anchor.md §Future → ✅
-# Fail-open: if column absent, < 5 rows, or parse fails, skip and set streak = 0.
-sfd_streak = 0
-sfd_avg = None
-try:
-    sfd_values = []
-    for line in content.splitlines():
-        m = re.match(r'^\|\s*\d{4}-\d{2}-\d{2}\s*\|(.+)', line)
-        if m:
-            cells = [c.strip() for c in line.split('|')[1:-1]]
-            if len(cells) >= 12:
-                raw = cells[11].strip()
-                # sim_floor_delta may be '—' (not calibrated) or a signed number like '-2' or '3'
-                if raw not in ('—', '', '?'):
-                    try:
-                        sfd_values.append(float(raw))
-                    except ValueError:
-                        pass
-    if len(sfd_values) >= 5:
-        last5 = sfd_values[-5:]
-        sfd_avg = sum(last5) / len(last5)
-        # Read existing streak from sim-prediction.json (via _state)
-        try:
-            pred_r = subprocess.run(
-                ['git', 'show', 'origin/_state:.otherness/sim-prediction.json'],
-                capture_output=True, text=True, timeout=10)
-            if pred_r.returncode == 0:
-                _pred = json.loads(pred_r.stdout)
-                sfd_streak = int(_pred.get('sim_floor_delta_negative_streak', 0))
-        except Exception:
-            sfd_streak = 0
-        if sfd_avg <= -1.5:
-            sfd_streak += 1
-        else:
-            sfd_streak = 0
-        print(f'[SM §4e] sim_floor_delta rolling avg: {sfd_avg:.2f} (streak={sfd_streak})')
-    else:
-        print(f'[SM §4e] sim_floor_delta: only {len(sfd_values)} numeric values — need ≥5, skip rolling avg.')
-except Exception as _sfd_e:
-    print(f'[SM §4e] sim_floor_delta rolling avg (non-fatal): {_sfd_e}')
-
-# Step 6: Post divergence signal after 3 consecutive below-floor batches
-if consecutive_count >= 3:
-    signal_body = (
-        f"[⚠️ Simulation divergence | SM §4e | {MY_SESSION_ID}] "
-        f"Actual shipped: {actual_shipped}/batch. Predicted floor: {pred_floor}. "
-        f"{consecutive_count} consecutive below-floor batches.\n\n"
-        f"Possible causes:\n"
-        f"- Queue stall (no unclaimed items)\n"
-        f"- Skill growth halt (arch_convergence approaching 1.0)\n"
-        f"- CI red blocking new work\n"
-        f"- Needs-human backlog consuming capacity\n\n"
-        f"The autonomous loop will self-correct. See "
-        f"`docs/design/23-simulation-as-anchor.md §Step 4`."
-    )
-    r = subprocess.run(
-        ['gh','issue','comment',REPORT_ISSUE,'--repo',REPO,'--body',signal_body],
-        capture_output=True, text=True)
-    if r.returncode == 0:
-        print(f'[SM §4e] Divergence signal posted (consecutive={consecutive_count})')
-    else:
-        print(f'[SM §4e] Could not post divergence signal (non-fatal)')
-
-# Step 7: Compute recovery_action and write to sim-prediction.json on _state
-# Priority order (design doc 23 §Step 4): vision_synthesis > needs_human > ci_fix > learn > none
-# Design ref: docs/design/23-simulation-as-anchor.md §Step 4
-# Additional trigger: sim_floor_delta_negative_streak ≥ 3 → trigger_vision_synthesis
-# (design doc 23 §Future → ✅)
-recovery_action = 'none'
-if consecutive_count >= 3 or actual_shipped < pred_floor or sfd_streak >= 3:
-    # Check queue depth — low queue → trigger vision synthesis
-    try:
-        state_json = subprocess.run(['git','show','origin/_state:.otherness/state.json'],
-                                    capture_output=True, text=True)
-        if state_json.returncode == 0:
-            state = json.loads(state_json.stdout)
-            todo_count = len([d for d in state.get('features',{}).values()
-                              if d.get('state') == 'todo'])
-        else:
-            todo_count = 5  # assume OK if unreadable
-    except Exception:
-        todo_count = 5
-    # Check needs-human open issues
-    try:
-        nh_result = subprocess.run(
-            ['gh','issue','list','--repo',REPO,'--state','open',
-             '--label','needs-human','--json','number','--jq','length'],
-            capture_output=True, text=True, timeout=15)
-        needs_human_count = int(nh_result.stdout.strip() or '0')
-    except Exception:
-        needs_human_count = 0
-    # Check CI status — any failed run in last 24h
-    try:
-        ci_result = subprocess.run(
-            ['gh','run','list','--repo',REPO,'--branch','main','--limit','5',
-             '--json','conclusion,createdAt',
-             '--jq','[.[]|select(.conclusion=="failure")]|length'],
-            capture_output=True, text=True, timeout=15)
-        ci_failures = int(ci_result.stdout.strip() or '0')
-    except Exception:
-        ci_failures = 0
-    # Priority order
-    if todo_count < 5:
-        recovery_action = 'trigger_vision_synthesis'
-    elif needs_human_count > 0:
-        recovery_action = 'escalate_oldest_needs_human'
-    elif ci_failures > 0:
-        recovery_action = 'prioritize_ci_fix'
-    else:
-        recovery_action = 'trigger_learn'
-
-print(f'[SM §4e] recovery_action={recovery_action} (consecutive={consecutive_count})')
-
-# Write recovery_action to sim-prediction.json on _state
-state_wt2 = os.path.join(tempfile.gettempdir(), 'otherness-recov-' + str(os.getpid()))
-try:
-    if os.path.exists(state_wt2):
-        subprocess.run(['git','worktree','remove',state_wt2,'--force'], capture_output=True)
-    subprocess.run(['git','worktree','add','--no-checkout',state_wt2,'origin/_state'],
-                   capture_output=True, check=True)
-    pred_path = os.path.join(state_wt2, '.otherness', 'sim-prediction.json')
-    os.makedirs(os.path.dirname(pred_path), exist_ok=True)
-    subprocess.run(['git','-C',state_wt2,'checkout','_state','--','.otherness/sim-prediction.json'],
-                   capture_output=True)
-    try:
-        prediction = json.load(open(pred_path))
-    except Exception:
-        prediction = {}
-    prediction['recovery_action'] = recovery_action
-    prediction['recovery_action_set_at'] = datetime.datetime.now(
-        datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-    prediction['recovery_action_consecutive'] = consecutive_count
-    prediction['sim_floor_delta_negative_streak'] = sfd_streak
-    if sfd_avg is not None:
-        prediction['sim_floor_delta_rolling_avg'] = round(sfd_avg, 3)
-    json.dump(prediction, open(pred_path, 'w'), indent=2)
-    subprocess.run(['git','-C',state_wt2,'add',pred_path], capture_output=True)
-    subprocess.run(['git','-C',state_wt2,'commit',
-                    '-m',f'sm §4e: recovery_action={recovery_action}'],
-                   capture_output=True)
-    r2 = subprocess.run(['git','-C',state_wt2,'push','origin','HEAD:_state'],
-                        capture_output=True)
-    if r2.returncode == 0:
-        print(f'[SM §4e] sim-prediction.json recovery_action written to _state')
-    else:
-        print(f'[SM §4e] recovery_action write failed (non-fatal)')
-except Exception as e:
-    print(f'[SM §4e] recovery_action write error (non-fatal): {e}')
-finally:
-    try:
-        subprocess.run(['git','worktree','remove',state_wt2,'--force'], capture_output=True)
-    except: pass
-subprocess.run(['git','worktree','prune'], capture_output=True)
-DIVEOF
-```
-
-### 4e-iii. Simulation-behavior coupling gate (design doc 23 §Future → ✅)
-
-Verify that simulation signals are actually driving agent behavior.
-Runs at calibration cadence (every N SM cycles). Informational only — does not block.
-
-```bash
-if [ $((SM_CYCLE % CALIB_CYCLES_4E)) -eq 0 ] && [ "${SM_CYCLE:-0}" -gt 0 ]; then
-python3 - <<'COUPLING_EOF'
-import json, os, subprocess, re, datetime, tempfile
-
-REPO = os.environ.get('REPO', '')
-REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
-MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'SM')
-OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
-
-# AMBER threshold: arch_convergence >= 0.7 means the simulation thinks the project is
-# over-indexed on one approach and needs architectural diversity (a learn session).
-AMBER_THRESHOLD = 0.7
-
-# Step 1: Read current sim-prediction.json from _state
-arch_conv = None
-state_wt = os.path.join(tempfile.gettempdir(), 'otherness-coupling-' + str(os.getpid()))
-pred_history = []
-try:
-    if os.path.exists(state_wt):
-        subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
-    subprocess.run(['git','worktree','add','--no-checkout',state_wt,'origin/_state'],
-                   capture_output=True, check=True)
-
-    pred_file = os.path.join(state_wt, '.otherness', 'sim-prediction.json')
-    subprocess.run(['git','-C',state_wt,'checkout','_state','--','.otherness/sim-prediction.json'],
-                   capture_output=True)
-    if os.path.exists(pred_file):
-        current_pred = json.load(open(pred_file))
-        arch_conv = float(current_pred.get('arch_convergence_score', 0.0))
-
-    # Step 2: Read last 2 sim-prediction entries from git log (for before/after comparison)
-    log_r = subprocess.run(
-        ['git','-C',state_wt,'log','--format=%H','-5','--','/.otherness/sim-prediction.json'],
-        capture_output=True, text=True)
-    for sha in log_r.stdout.strip().splitlines()[:2]:
-        try:
-            blob = subprocess.run(
-                ['git','-C',state_wt,'show',f'{sha}:.otherness/sim-prediction.json'],
-                capture_output=True, text=True)
-            if blob.returncode == 0:
-                pred_history.append(json.loads(blob.stdout))
-        except Exception:
-            pass
-except Exception as e:
-    print(f'[SM §4e-coupling] Could not read sim-prediction.json (non-fatal): {e}')
-finally:
-    try:
-        subprocess.run(['git','worktree','remove',state_wt,'--force'], capture_output=True)
-    except: pass
-subprocess.run(['git','worktree','prune'], capture_output=True)
-
-if arch_conv is None:
-    print('[SM §4e-coupling] No sim-prediction.json found — skipping coupling gate.')
-    exit(0)
-
-print(f'[SM §4e-coupling] arch_convergence={arch_conv:.3f} (AMBER threshold={AMBER_THRESHOLD})')
-
-unclosed_signals = []
-
-# Step 3: If arch_convergence AMBER, check for learn evidence in last 10 batches
-if arch_conv >= AMBER_THRESHOLD:
-    print(f'[SM §4e-coupling] AMBER: arch_convergence={arch_conv:.3f} >= {AMBER_THRESHOLD}')
-    learn_evidence = False
-
-    # Check for recent learn branch (last 7 days)
-    try:
-        ls_r = subprocess.run(['git','ls-remote','--heads','origin'],
-                               capture_output=True, text=True, timeout=10)
-        learn_branches = [l for l in ls_r.stdout.splitlines() if 'feat/learn-' in l]
-        if learn_branches:
-            learn_evidence = True
-            print(f'[SM §4e-coupling] Learn branch found: {len(learn_branches)} branch(es)')
-    except Exception:
-        pass
-
-    # Check for open or recently closed learn issue
-    if not learn_evidence:
-        try:
-            issues_r = subprocess.run(
-                ['gh','issue','list','--repo',REPO,'--state','all',
-                 '--search','learn(arch)','--json','number,title,state,createdAt',
-                 '--jq','.[0:3]'],
-                capture_output=True, text=True, timeout=15)
-            if issues_r.returncode == 0:
-                issues = json.loads(issues_r.stdout or '[]')
-                recent_cutoff = (datetime.date.today() - datetime.timedelta(days=14)).isoformat()
-                for iss in issues:
-                    created = iss.get('createdAt','')[:10]
-                    if created >= recent_cutoff:
-                        learn_evidence = True
-                        print(f'[SM §4e-coupling] Learn issue found: #{iss["number"]} ({created})')
-                        break
-        except Exception:
-            pass
-
-    # Check PROVENANCE.md for recent learn session
-    if not learn_evidence:
-        try:
-            provenance = open(os.path.expanduser('~/.otherness/agents/skills/PROVENANCE.md')).read()
-            dates = re.findall(r'^## (\d{4}-\d{2}-\d{2})', provenance, re.MULTILINE)
-            if dates:
-                last_learn = datetime.date.fromisoformat(sorted(dates)[-1])
-                days_since = (datetime.date.today() - last_learn).days
-                if days_since <= 14:
-                    learn_evidence = True
-                    print(f'[SM §4e-coupling] Recent PROVENANCE.md entry: {last_learn} ({days_since}d ago)')
-        except Exception:
-            pass
-
-    if not learn_evidence:
-        unclosed_signals.append(
-            f'arch_convergence={arch_conv:.3f} (≥{AMBER_THRESHOLD} AMBER) '
-            f'but no learn session in last 14 days'
-        )
-        print('[SM §4e-coupling] AMBER signal without learn response — loop unclosed.')
-
-# Step 4: If learn ran, check whether arch_convergence decreased afterward
-if len(pred_history) >= 2:
-    prev_conv = float(pred_history[1].get('arch_convergence_score', 0.0))
-    curr_conv = float(pred_history[0].get('arch_convergence_score', 0.0))
-    prev_at = pred_history[1].get('calibrated_at', '?')[:10]
-    curr_at = pred_history[0].get('calibrated_at', '?')[:10]
-    print(f'[SM §4e-coupling] arch_convergence history: {prev_conv:.3f} ({prev_at}) → {curr_conv:.3f} ({curr_at})')
-
-    # Only flag if the previous calibration was AMBER and convergence didn't improve
-    if prev_conv >= AMBER_THRESHOLD and curr_conv >= prev_conv - 0.02:
-        # Check if a learn session ran between the two calibrations
-        try:
-            provenance = open(os.path.expanduser('~/.otherness/agents/skills/PROVENANCE.md')).read()
-            dates = re.findall(r'^## (\d{4}-\d{2}-\d{2})', provenance, re.MULTILINE)
-            if dates:
-                last_learn = datetime.date.fromisoformat(sorted(dates)[-1])
-                prev_date = datetime.date.fromisoformat(prev_at) if len(prev_at) == 10 else datetime.date.min
-                learn_between = last_learn >= prev_date
-            else:
-                learn_between = False
-        except Exception:
-            learn_between = False
-
-        if learn_between:
-            unclosed_signals.append(
-                f'learn ran (PROVENANCE.md) but arch_convergence unchanged: '
-                f'{prev_conv:.3f} → {curr_conv:.3f}'
-            )
-            print('[SM §4e-coupling] Learn ran but arch_convergence not decreasing — loop unclosed.')
-else:
-    print('[SM §4e-coupling] Only 1 calibration run found — skipping before/after comparison.')
-
-# Step 5: Post coupling gate signal if any unclosed loops detected
-if unclosed_signals:
-    signal_body = (
-        f'[⚠️ Simulation loop unclosed | SM §4e-coupling | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}]\n\n'
-        + '\n'.join(f'- {s}' for s in unclosed_signals)
-        + '\n\nThe simulation is an instrument, not wallpaper. '
-        f'Signals exist but behavior may be unchanged.\n\n'
-        f'Recommended: verify learn scheduling in coord.md §1e and SM §4c '
-        f'(design doc 23 §Future coupling gate).'
-    )
-    try:
-        r = subprocess.run(
-            ['gh','issue','comment',REPORT_ISSUE,'--repo',REPO,'--body',signal_body],
-            capture_output=True, text=True, timeout=15)
-        if r.returncode == 0:
-            print(f'[SM §4e-coupling] Unclosed loop signal posted ({len(unclosed_signals)} signals).')
-        else:
-            print(f'[SM §4e-coupling] Could not post signal (non-fatal): {r.stderr[:100]}')
-    except Exception as e:
-        print(f'[SM §4e-coupling] Signal post error (non-fatal): {e}')
-else:
-    print('[SM §4e-coupling] Simulation-behavior coupling OK — no unclosed loops detected.')
-
-COUPLING_EOF
-fi
-```
-
----
 
 ## 4g. Codebase hygiene scan (every 3 SM cycles)
 
@@ -2793,39 +787,24 @@ Nothing is deleted autonomously. Cap: `max_issues_per_scan` new issues per run (
 **Design ref**: `docs/design/29-continuous-code-hygiene.md`
 
 ```bash
-HYGIENE_INTERVAL=$(python3 -c "
+HYGIENE_CFG=$(python3 -c "
 import re
-section = None
+section=None; ivl='3'; enb='true'; mx='3'
 for line in open('otherness-config.yaml'):
-    s = re.match(r'^(\w[\w_]*):', line)
-    if s: section = s.group(1)
-    if section == 'hygiene':
-        m = re.match(r'\s+cycle_interval:\s*(\d+)', line)
-        if m: print(m.group(1)); break
-" 2>/dev/null || echo "3")
-
-HYGIENE_ENABLED=$(python3 -c "
-import re
-section = None
-for line in open('otherness-config.yaml'):
-    s = re.match(r'^(\w[\w_]*):', line)
-    if s: section = s.group(1)
-    if section == 'hygiene':
-        m = re.match(r'\s+enabled:\s*(true|false)', line)
-        if m: print(m.group(1)); break
-" 2>/dev/null || echo "true")
-
-HYGIENE_MAX=$(python3 -c "
-import re
-section = None
-for line in open('otherness-config.yaml'):
-    s = re.match(r'^(\w[\w_]*):', line)
-    if s: section = s.group(1)
-    if section == 'hygiene':
-        m = re.match(r'\s+max_issues_per_scan:\s*(\d+)', line)
-        if m: print(m.group(1)); break
-" 2>/dev/null || echo "3")
-
+    s=re.match(r'^(\w[\w_]*):', line)
+    if s: section=s.group(1)
+    if section=='hygiene':
+        m=re.match(r'\s+cycle_interval:\s*(\d+)',line)
+        if m: ivl=m.group(1)
+        m=re.match(r'\s+enabled:\s*(true|false)',line)
+        if m: enb=m.group(1)
+        m=re.match(r'\s+max_issues_per_scan:\s*(\d+)',line)
+        if m: mx=m.group(1)
+print(ivl,enb,mx)
+" 2>/dev/null || echo "3 true 3")
+HYGIENE_INTERVAL=$(echo $HYGIENE_CFG | cut -d' ' -f1)
+HYGIENE_ENABLED=$(echo $HYGIENE_CFG | cut -d' ' -f2)
+HYGIENE_MAX=$(echo $HYGIENE_CFG | cut -d' ' -f3)
 if [ "$HYGIENE_ENABLED" = "true" ] && [ $((${SM_CYCLE:-0} % ${HYGIENE_INTERVAL:-3})) -eq 0 ] && [ "${SM_CYCLE:-0}" -gt 0 ]; then
   echo "[SM §4g] Running codebase hygiene scan (max $HYGIENE_MAX issues)..."
 
@@ -2982,658 +961,31 @@ fi
 
 ---
 
-## 4g-anchor. Feature→anchor gap detection (every 10 SM cycles)
-
-Check how many ✅ Present features have anchor coverage. Post coverage ratio.
-Open anchor-growth issues for uncovered features. Skip gracefully if no §Anchor section.
-
-**Design ref**: `docs/design/24-project-anchor-framework.md §The feature → anchor gap`.
+## 4g-anchor. Anchor gap detection (periodic)
 
 ```bash
-if [ $((SM_CYCLE % 10)) -eq 0 ] && [ "${SM_CYCLE:-0}" -gt 0 ]; then
-  echo "[SM §4g-anchor] Running feature→anchor gap detection..."
-
-  python3 - <<'ANCHOREOF'
-import re, os, subprocess
-
-REPO = os.environ.get('REPO', '')
-REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '')
-MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'SM')
-PR_LABEL = os.environ.get('PR_LABEL', 'otherness')
-
-# Step 1: Check for AGENTS.md §Anchor section
-try:
-    agents_content = open('AGENTS.md').read()
-    anchor_m = re.search(r'^## Anchor\s*\n(.*?)(?=^## |\Z)', agents_content,
-                         re.MULTILINE | re.DOTALL)
-    if not anchor_m:
-        print('[SM §4g-anchor] No ## Anchor section in AGENTS.md — skipping.')
-        exit(0)
-    anchor_section = anchor_m.group(1)
-    print('[SM §4g-anchor] Found ## Anchor section in AGENTS.md')
-except Exception as e:
-    print(f'[SM §4g-anchor] AGENTS.md read error (skipping): {e}')
-    exit(0)
-
-# Step 2: Collect ✅ Present features from docs/design/*.md
-features = []
-design_dir = 'docs/design'
-if os.path.isdir(design_dir):
-    for fname in sorted(os.listdir(design_dir)):
-        if not fname.endswith('.md'): continue
-        try:
-            content = open(f'{design_dir}/{fname}').read()
-            m = re.search(r'^## Present.*?\n(.*?)(?=^## |\Z)', content,
-                          re.MULTILINE | re.DOTALL)
-            if m:
-                items = re.findall(r'^- ✅ (.+)', m.group(1), re.MULTILINE)
-                for item in items:
-                    # Extract short name (before '—' or '(PR')
-                    name = re.sub(r'\s*[—(].+$', '', item).strip()[:60]
-                    features.append({'full': item, 'name': name, 'source': fname})
-        except Exception:
-            pass
-
-total_features = len(features)
-if total_features == 0:
-    print('[SM §4g-anchor] No ✅ Present features found — skipping.')
-    exit(0)
-
-# Step 3: Count anchor-covered features (fuzzy match against §Anchor section)
-covered_names = re.findall(r'^[-*]\s*(?:✅|\[x\])\s*(.+)', anchor_section,
-                           re.MULTILINE | re.IGNORECASE)
-covered_names_lower = [n.lower()[:50] for n in covered_names]
-
-def is_covered(feature_name):
-    fn = feature_name.lower()[:30]
-    return any(fn in cn or cn[:30] in fn for cn in covered_names_lower)
-
-covered = [f for f in features if is_covered(f['name'])]
-uncovered = [f for f in features if not is_covered(f['name'])]
-coverage_pct = int(len(covered) / total_features * 100) if total_features else 100
-
-# Step 4: Post coverage ratio to REPORT_ISSUE
-ratio_body = (
-    f"[ANCHOR | SM §4g-anchor | {MY_SESSION_ID}] "
-    f"Feature→anchor coverage: {len(covered)}/{total_features} ({coverage_pct}%)"
-)
-subprocess.run(['gh','issue','comment',REPORT_ISSUE,'--repo',REPO,'--body',ratio_body],
-               capture_output=True)
-print(f'[SM §4g-anchor] Coverage: {len(covered)}/{total_features} ({coverage_pct}%)')
-
-# Step 5: Open anchor-growth issues for uncovered features (deduplicated)
-issues_opened = 0
-for feat in uncovered[:5]:  # cap at 5 per cycle to avoid flooding
-    title = f"anchor: cover '{feat['name'][:50]}'"
-    # Deduplication check
-    existing = subprocess.run(
-        ['gh','issue','list','--repo',REPO,'--state','open',
-         '--search',feat['name'][:30],'--json','number','--jq','length'],
-        capture_output=True, text=True)
-    if int(existing.stdout.strip() or '0') > 0:
-        continue
-    body = (f"## Anchor coverage gap\n\n"
-            f"Feature: {feat['full'][:200]}\n"
-            f"Source: `docs/design/{feat['source']}`\n\n"
-            f"This ✅ Present feature has no entry in AGENTS.md §Anchor coverage matrix.\n\n"
-            f"**Action**: Add a scenario or validation step to the anchor that exercises\n"
-            f"this feature. See `docs/design/24-project-anchor-framework.md`.")
-    r = subprocess.run(
-        ['gh','issue','create','--repo',REPO,'--title',title,
-         '--label',f'{PR_LABEL},kind/chore,area/tooling,priority/medium','--body',body],
-        capture_output=True, text=True)
-    if r.returncode == 0:
-        issues_opened += 1
-        print(f'[SM §4g-anchor] Opened: {title[:60]}')
-
-print(f'[SM §4g-anchor] Gap detection complete: {issues_opened} issues opened, '
-      f'{len(uncovered)} uncovered features.')
-ANCHOREOF
-
-  echo "[SM §4g-anchor] Feature→anchor gap detection complete."
-fi
-```
-
----
-
-## 4g-anchor-parity. Spec→journey parity check (every 10 SM cycles)
-
-For projects with a journey test suite: read the spec inventory from AGENTS.md
-§Anchor (Merged rows), diff against existing journey file names, open anchor-growth
-issues for specs with no journey. Skip gracefully if not configured.
-
-**Design ref**: `docs/design/26-anchor-kro-ui.md §Feature→journey parity`.
-
-```bash
-JOURNEYS_DIR=$(python3 -c "
-import re
-section = None
-for line in open('otherness-config.yaml'):
-    s = re.match(r'^(\w[\w_]*):', line)
-    if s: section = s.group(1)
-    if section == 'anchor':
-        m = re.match(r'\s+journeys_dir:\s*(\S+)', line)
-        if m: print(m.group(1)); break
-" 2>/dev/null || echo "")
-
-if [ -n "$JOURNEYS_DIR" ] && [ $((SM_CYCLE % 10)) -eq 0 ] && [ "${SM_CYCLE:-0}" -gt 0 ]; then
-  echo "[SM §4g-anchor-parity] Running spec→journey parity check..."
-
-  python3 - <<'PARITYEOF'
-import re, os, subprocess, json
-
-REPO = os.environ.get('REPO', '')
-REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '')
-MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'SM')
-PR_LABEL = os.environ.get('PR_LABEL', 'otherness')
-JOURNEYS_DIR = os.environ.get('JOURNEYS_DIR', '')
-
-# Step 1: Check for AGENTS.md §Anchor section with spec inventory
-try:
-    agents_content = open('AGENTS.md').read()
-    anchor_m = re.search(r'^## Anchor\s*\n(.*?)(?=^## |\Z)', agents_content,
-                         re.MULTILINE | re.DOTALL)
-    if not anchor_m:
-        print('[SM §4g-anchor-parity] No ## Anchor section in AGENTS.md — skipping.')
-        exit(0)
-    anchor_section = anchor_m.group(1)
-except Exception as e:
-    print(f'[SM §4g-anchor-parity] AGENTS.md read error (skipping): {e}')
-    exit(0)
-
-# Step 2: Extract merged spec names from §Anchor section
-# Looks for lines with ✅ or [x] entries in a coverage matrix or spec list
-spec_names = re.findall(r'^[-*|]\s*(?:✅|\[x\])\s*([^\|]+)', anchor_section,
-                        re.MULTILINE | re.IGNORECASE)
-spec_names = [s.strip()[:60] for s in spec_names if len(s.strip()) > 3]
-
-if not spec_names:
-    print('[SM §4g-anchor-parity] No ✅ spec entries in §Anchor — skipping.')
-    exit(0)
-
-# Step 3: Read journey file names from JOURNEYS_DIR
-journey_files = []
-if os.path.isdir(JOURNEYS_DIR):
-    for fname in os.listdir(JOURNEYS_DIR):
-        if fname.endswith(('.ts', '.js', '.spec.ts', '.spec.js', '.py', '.md')):
-            journey_files.append(fname.lower())
-else:
-    print(f'[SM §4g-anchor-parity] Journeys dir {JOURNEYS_DIR} not found — skipping.')
-    exit(0)
-
-# Step 4: Fuzzy match: for each spec, check if a journey file covers it
-def is_journeyed(spec_name):
-    fn = re.sub(r'[^a-z0-9]', '', spec_name.lower())[:20]
-    return any(fn in jf or jf[:20] in fn for jf in journey_files if len(fn) > 3)
-
-covered = [s for s in spec_names if is_journeyed(s)]
-uncovered = [s for s in spec_names if not is_journeyed(s)]
-parity_pct = int(len(covered) / len(spec_names) * 100) if spec_names else 100
-
-# Step 5: Post parity ratio
-ratio_body = (
-    f"[SM §4g-anchor-parity | {MY_SESSION_ID}] "
-    f"Spec→journey parity: {len(covered)}/{len(spec_names)} ({parity_pct}%)"
-)
-subprocess.run(['gh','issue','comment',REPORT_ISSUE,'--repo',REPO,'--body',ratio_body],
-               capture_output=True)
-print(f'[SM §4g-anchor-parity] {ratio_body}')
-
-# Step 6: Open anchor-growth issues for uncovered specs (cap at 3)
-issues_opened = 0
-for spec in uncovered[:3]:
-    title = f"anchor: add journey for '{spec[:50]}'"
-    existing = subprocess.run(
-        ['gh','issue','list','--repo',REPO,'--state','open',
-         '--search',spec[:30],'--json','number','--jq','length'],
-        capture_output=True, text=True)
-    if int(existing.stdout.strip() or '0') > 0:
-        continue
-    body = (f"## Spec→journey parity gap\n\n"
-            f"Spec: {spec}\n\n"
-            f"This merged spec has no corresponding journey file in `{JOURNEYS_DIR}`.\n\n"
-            f"**Action**: Add a journey file that exercises this spec's features end-to-end.\n"
-            f"See `docs/design/26-anchor-kro-ui.md §Feature→journey parity`.")
-    r = subprocess.run(
-        ['gh','issue','create','--repo',REPO,'--title',title,
-         '--label',f'{PR_LABEL},kind/chore,area/tooling,priority/low','--body',body],
-        capture_output=True, text=True)
-    if r.returncode == 0:
-        issues_opened += 1
-        print(f'[SM §4g-anchor-parity] Opened: {title[:60]}')
-
-print(f'[SM §4g-anchor-parity] Parity check done: {issues_opened} issues opened, '
-      f'{len(uncovered)} uncovered specs.')
-PARITYEOF
-
-  echo "[SM §4g-anchor-parity] Spec→journey parity check complete."
-fi
-```
-
----
-
-## 4g-anchor-design-gap. Feature→design-doc scenario gap (every SM cycle)
-
-Read ✅ Present items from all `docs/design/*.md` files. Diff against the `## Present`
-section of anchor design docs (files whose names contain `anchor`). Open `anchor: cover`
-issues for features that appear in no anchor doc. Skip gracefully if no design docs exist.
-
-**Design ref**: `docs/design/25-anchor-kardinal-promoter.md §Future`
-(Feature→scenario gap detection: SM §4g-anchor reads ✅ Present items, diffs against coverage matrix)
-
-```bash
-echo "[SM §4g-anchor-design-gap] Running feature→design-doc scenario gap check..."
-
-python3 - <<'DESIGNGAPEOF'
-import re, os, subprocess, json
-
-REPO = os.environ.get('REPO', '')
-MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'SM')
-PR_LABEL = os.environ.get('PR_LABEL', 'otherness')
-
-design_dir = 'docs/design'
-if not os.path.isdir(design_dir):
-    print('[SM §4g-anchor-design-gap] No docs/design/ — skipping.')
-    exit(0)
-
-# Step 1: Collect ✅ Present feature names from all design docs
-features = []
-for fname in sorted(os.listdir(design_dir)):
-    if not fname.endswith('.md'):
-        continue
-    try:
-        content = open(f'{design_dir}/{fname}').read()
-        present_m = re.search(r'^## Present.*?\n(.*?)(?=^## |\Z)', content,
-                               re.MULTILINE | re.DOTALL)
-        if not present_m:
-            continue
-        items = re.findall(r'^- ✅ (.+)', present_m.group(1), re.MULTILINE)
-        for item in items:
-            # Short name: strip parenthetical provenance, keep first 60 chars
-            name = re.sub(r'\s*[—(].+$', '', item).strip()[:60]
-            if name:
-                features.append({'name': name, 'full': item, 'source': fname})
-    except Exception:
-        pass
-
-if not features:
-    print('[SM §4g-anchor-design-gap] No ✅ Present features found — skipping.')
-    exit(0)
-
-print(f'[SM §4g-anchor-design-gap] Found {len(features)} ✅ Present features across design docs.')
-
-# Step 2: Read coverage matrix from anchor design docs (names containing "anchor")
-anchor_coverage_text = ''
-for fname in sorted(os.listdir(design_dir)):
-    if 'anchor' not in fname.lower() or not fname.endswith('.md'):
-        continue
-    try:
-        content = open(f'{design_dir}/{fname}').read()
-        # Collect Present section + scenario tables
-        present_m = re.search(r'^## Present.*?\n(.*?)(?=^## |\Z)', content,
-                               re.MULTILINE | re.DOTALL)
-        if present_m:
-            anchor_coverage_text += present_m.group(1).lower() + '\n'
-        # Also collect scenario table rows
-        for row in re.findall(r'\|[^\n]+\|', content):
-            anchor_coverage_text += row.lower() + '\n'
-    except Exception:
-        pass
-
-if not anchor_coverage_text:
-    print('[SM §4g-anchor-design-gap] No anchor design docs found — skipping.')
-    exit(0)
-
-# Step 3: Identify uncovered features (not mentioned in anchor coverage text)
-def is_covered(feature_name):
-    fn = feature_name.lower()[:40]
-    # Check if first 40 chars of feature name appear anywhere in anchor coverage
-    return fn in anchor_coverage_text
-
-covered = [f for f in features if is_covered(f['name'])]
-uncovered = [f for f in features if not is_covered(f['name'])]
-coverage_pct = int(len(covered) / len(features) * 100) if features else 100
-
-print(f'[SM §4g-anchor-design-gap] Coverage: {len(covered)}/{len(features)} ({coverage_pct}%)')
-print(f'[SM §4g-anchor-design-gap] {len(uncovered)} uncovered features.')
-
-# Step 4: Open anchor-growth issues for uncovered features (cap 5, deduplicated)
-issues_opened = 0
-for feat in uncovered[:5]:
-    title = f"anchor: cover '{feat['name'][:50]}'"
-    # Deduplication: skip if open issue with same title prefix exists
-    existing = subprocess.run(
-        ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
-         '--search', feat['name'][:30], '--json', 'number', '--jq', 'length'],
-        capture_output=True, text=True, timeout=15)
-    try:
-        if int(existing.stdout.strip() or '0') > 0:
-            continue
-    except Exception:
-        continue
-    body = (
-        f"## Anchor coverage gap\n\n"
-        f"Feature: `{feat['full'][:200]}`\n"
-        f"Source: `docs/design/{feat['source']}`\n\n"
-        f"This ✅ Present feature is not mentioned in any anchor design doc's coverage matrix.\n\n"
-        f"**Action**: Add a PDCA scenario or validation step to the anchor that exercises "
-        f"this feature. See `docs/design/24-project-anchor-framework.md`.\n\n"
-        f"Generated by SM §4g-anchor-design-gap."
-    )
-    r = subprocess.run(
-        ['gh', 'issue', 'create', '--repo', REPO,
-         '--title', title,
-         '--label', f'{PR_LABEL},kind/chore,area/tooling,priority/medium',
-         '--body', body],
-        capture_output=True, text=True, timeout=15)
-    if r.returncode == 0:
-        issues_opened += 1
-        print(f'[SM §4g-anchor-design-gap] Opened: {title[:60]}')
-
-print(f'[SM §4g-anchor-design-gap] Done: {issues_opened} issues opened.')
-DESIGNGAPEOF
-
-echo "[SM §4g-anchor-design-gap] Feature→design-doc scenario gap check complete."
-```
-
----
-
-## 4g-anchor-upstream. Upstream version tracking — open anchor-growth issue on version bump (every SM cycle)
-
-When a managed project's upstream dependency version bumps, SM opens an anchor-growth
-issue to ensure the new API surface gets coverage. Configurable via `otherness-config.yaml`
-`anchor.upstream_version_file` and `anchor.upstream_version_pattern`. Skips gracefully if
-not configured.
-
-**Design ref**: `docs/design/26-anchor-kro-ui.md §Future`
-(kro upstream tracking: when kro version bumps, SM opens anchor-growth issue for new API surface)
-
-```bash
-UPSTREAM_VERSION_FILE=$(python3 -c "
-import re
-section = None
-for line in open('otherness-config.yaml'):
-    s = re.match(r'^(\w[\w_]*):', line)
-    if s: section = s.group(1)
-    if section == 'anchor':
-        m = re.match(r'\s+upstream_version_file:\s*(\S+)', line)
-        if m: print(m.group(1).strip()); break
-" 2>/dev/null || echo "")
-
-UPSTREAM_VERSION_PATTERN=$(python3 -c "
-import re
-section = None
-for line in open('otherness-config.yaml'):
-    s = re.match(r'^(\w[\w_]*):', line)
-    if s: section = s.group(1)
-    if section == 'anchor':
-        m = re.match(r'\s+upstream_version_pattern:\s*[\"\'']?([^\"\'#\n]+)[\"\'']?', line)
-        if m: print(m.group(1).strip()); break
-" 2>/dev/null || echo "")
-
-if [ -n "$UPSTREAM_VERSION_FILE" ] && [ -n "$UPSTREAM_VERSION_PATTERN" ] && [ -f "$UPSTREAM_VERSION_FILE" ]; then
-  echo "[SM §4g-anchor-upstream] Checking upstream version in $UPSTREAM_VERSION_FILE..."
-
-  python3 - <<'UPSTREAMEOF'
-import re, os, subprocess, json, tempfile, time
-
-REPO = os.environ.get('REPO', '')
-PR_LABEL = os.environ.get('PR_LABEL', 'otherness')
-MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'SM')
-version_file = os.environ.get('UPSTREAM_VERSION_FILE', '')
-version_pattern = os.environ.get('UPSTREAM_VERSION_PATTERN', '')
-
-# Step 1: Extract current upstream version from file
-current_version = None
-try:
-    content = open(version_file).read()
-    # Search for pattern: the line containing the pattern, extract the version string
-    # Expected patterns: "github.com/foo/bar v1.2.3", "kro v0.9.1", etc.
-    m = re.search(r'(' + re.escape(version_pattern) + r')\s+v?([\d]+\.[\d]+\.?[\d]*)', content)
-    if not m:
-        # Fallback: search for version in the same line as pattern
-        for line in content.splitlines():
-            if version_pattern in line:
-                vm = re.search(r'v?([\d]+\.[\d]+\.?[\d]*)', line)
-                if vm:
-                    current_version = vm.group(1)
-                    break
-    else:
-        current_version = m.group(2)
-except Exception as e:
-    print(f'[SM §4g-anchor-upstream] Error reading version file (skipping): {e}')
-    exit(0)
-
-if not current_version:
-    print(f'[SM §4g-anchor-upstream] No version found matching "{version_pattern}" in {version_file} — skipping.')
-    exit(0)
-
-print(f'[SM §4g-anchor-upstream] Current upstream version: {current_version}')
-
-# Step 2: Read last-known version from state.json
-try:
-    with open('.otherness/state.json') as f: state = json.load(f)
-except Exception:
-    state = {}
-
-last_version = state.get('anchor_upstream_version', {}).get(version_pattern)
-print(f'[SM §4g-anchor-upstream] Last known version: {last_version or "none"}')
-
-# Step 3: Persist current version to state (always update)
-state.setdefault('anchor_upstream_version', {})[version_pattern] = current_version
-try:
-    with open('.otherness/state.json', 'w') as f: json.dump(state, f, indent=2)
-except Exception as e:
-    print(f'[SM §4g-anchor-upstream] State write error (non-fatal): {e}')
-
-# Step 4: If version unchanged or no previous: skip
-if not last_version or last_version == current_version:
-    if not last_version:
-        print(f'[SM §4g-anchor-upstream] First run — recording version {current_version}.')
-    else:
-        print(f'[SM §4g-anchor-upstream] Version unchanged ({current_version}) — no action.')
-    exit(0)
-
-# Step 5: Version bumped — open anchor-growth issue (deduplicated)
-title = f'anchor-growth: {version_pattern} bumped from {last_version} to {current_version}'
-# Deduplication: skip if open issue with same title prefix exists
-existing = subprocess.run(
-    ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
-     '--search', title[:50], '--json', 'number', '--jq', 'length'],
-    capture_output=True, text=True, timeout=15)
-try:
-    if int(existing.stdout.strip() or '0') > 0:
-        print(f'[SM §4g-anchor-upstream] Anchor-growth issue already open — skipping duplicate.')
-        exit(0)
-except Exception:
-    pass
-
-body = (
-    f"## Upstream version bump detected\n\n"
-    f"SM §4g-anchor-upstream detected a version bump:\n\n"
-    f"- **Dependency**: `{version_pattern}`\n"
-    f"- **Previous version**: `{last_version}`\n"
-    f"- **New version**: `{current_version}`\n\n"
-    f"## Action required\n\n"
-    f"Review the changelog for `{version_pattern}` between `{last_version}` and `{current_version}` "
-    f"and identify new API surface that should be covered by this project's anchor suite.\n\n"
-    f"For each new API feature:\n"
-    f"1. Add a spec entry in the appropriate design doc\n"
-    f"2. Create or update an E2E journey to exercise the new surface\n\n"
-    f"**Reference**: `docs/design/` — anchor design doc for this project"
-)
-
-r = subprocess.run(
-    ['gh', 'issue', 'create', '--repo', REPO,
-     '--title', title,
-     '--label', f'{PR_LABEL},kind/chore,area/tooling,priority/medium',
-     '--body', body],
-    capture_output=True, text=True, timeout=15)
-
-if r.returncode == 0:
-    print(f'[SM §4g-anchor-upstream] Opened anchor-growth issue: {r.stdout.strip()}')
-else:
-    print(f'[SM §4g-anchor-upstream] Failed to open issue (non-fatal): {r.stderr.strip()[:100]}')
-UPSTREAMEOF
-
-  echo "[SM §4g-anchor-upstream] Upstream version check complete."
-else
-  echo "[SM §4g-anchor-upstream] anchor.upstream_version_file/pattern not configured — skipping."
-fi
-```
-
----
-
-## 4g-anchor-score. Anchor workflow score reading (every SM cycle)
-
-Read the latest `[ANCHOR | * | *]` comment from the project's report issue.
-Track coverage trend for stagnation detection. Skip gracefully if no anchor configured.
-
-**Design ref**: `docs/design/25-anchor-kardinal-promoter.md §The anchor score comment format`.
-
-```bash
+# Anchor checks (feature→anchor gap, parity, upstream version, score) fire when
+# anchor.workflow_file is set in otherness-config.yaml AND the workflow exists.
 ANCHOR_WORKFLOW=$(python3 -c "
 import re
-section = None
+section=None
 for line in open('otherness-config.yaml'):
-    s = re.match(r'^(\w[\w_]*):', line)
-    if s: section = s.group(1)
-    if section == 'anchor':
-        m = re.match(r'\s+workflow:\s*(\S+)', line)
+    s=re.match(r'^(\w[\w_]*):', line)
+    if s: section=s.group(1)
+    if section=='anchor':
+        m=re.match(r'\s+workflow_file:\s*(\S+)', line)
         if m: print(m.group(1)); break
 " 2>/dev/null || echo "")
 
-if [ -n "$ANCHOR_WORKFLOW" ]; then
-  echo "[SM §4g-anchor-score] Reading anchor scores from report issue..."
-
-  python3 - <<'SCOREEOF'
-import re, os, subprocess, json, datetime
-
-REPO = os.environ.get('REPO', '')
-REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '')
-MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'SM')
-
-# Read score_pattern and stagnation_sessions from otherness-config.yaml
-score_pattern = None
-stagnation_sessions = 3
-try:
-    section = None
-    for line in open('otherness-config.yaml'):
-        s = re.match(r'^(\w[\w_]*):', line)
-        if s: section = s.group(1)
-        if section == 'anchor':
-            m = re.match(r'\s+score_pattern:\s*["\']?([^"\'#\n]+)["\']?', line)
-            if m: score_pattern = m.group(1).strip()
-            m2 = re.match(r'\s+stagnation_sessions:\s*(\d+)', line)
-            if m2: stagnation_sessions = int(m2.group(1))
-except Exception:
-    pass
-
-# Fetch last 20 comments from report issue to find ANCHOR score comments
-try:
-    r = subprocess.run(
-        ['gh', 'issue', 'view', REPORT_ISSUE, '--repo', REPO,
-         '--json', 'comments', '--jq', '[.comments[-20:][].body]'],
-        capture_output=True, text=True, timeout=30)
-    comments = json.loads(r.stdout) if r.returncode == 0 else []
-except Exception:
-    comments = []
-
-# Parse anchor score comments: [ANCHOR | <project> | DATE] coverage: N/M (X%) | ...
-anchor_comments = []
-for body in comments:
-    m = re.search(
-        r'\[ANCHOR\s*\|[^\|]+\|\s*(\d{4}-\d{2}-\d{2})\]\s*coverage:\s*(\d+)/(\d+)\s*\((\d+)%\)',
-        body)
-    if m:
-        entry = {
-            'date': m.group(1),
-            'pass_count': int(m.group(2)),
-            'total': int(m.group(3)),
-            'coverage_pct': int(m.group(4)),
-            'pass': None,
-            'fail': None,
-        }
-        # Also extract PASS=A FAIL=B if score_pattern is set
-        if score_pattern:
-            try:
-                sm = re.search(score_pattern, body)
-                if sm and len(sm.groups()) >= 2:
-                    entry['pass'] = int(sm.group(1))
-                    entry['fail'] = int(sm.group(2))
-            except Exception:
-                pass
-        anchor_comments.append(entry)
-
-if not anchor_comments:
-    print('[SM §4g-anchor-score] No anchor score comments found in report issue — skipping.')
-    exit(0)
-
-latest = anchor_comments[-1]
-
-# Load state for stagnation tracking
-try:
-    with open('.otherness/state.json') as f: state = json.load(f)
-except Exception:
-    state = {}
-
-anchor_scores = state.setdefault('anchor_scores', {}).setdefault(REPO, [])
-
-# Append latest score (deduplicate by date)
-if not anchor_scores or anchor_scores[-1].get('date') != latest['date']:
-    anchor_scores.append(latest)
-    # Keep only last 5 scores
-    state['anchor_scores'][REPO] = anchor_scores[-5:]
-    with open('.otherness/state.json', 'w') as f: json.dump(state, f, indent=2)
-
-# Stagnation check: last N scores all have same or lower coverage_pct
-scores_window = state['anchor_scores'][REPO]
-stagnating = False
-if len(scores_window) >= stagnation_sessions:
-    window = scores_window[-stagnation_sessions:]
-    if all(w.get('coverage_pct', 0) <= window[0].get('coverage_pct', 0)
-           for w in window[1:]):
-        stagnating = True
-
-stagnation_count = 0
-if len(scores_window) >= 2:
-    for sc in reversed(scores_window):
-        if sc.get('coverage_pct', 0) <= scores_window[-1].get('coverage_pct', 0):
-            stagnation_count += 1
-        else:
-            break
-
-# Build summary comment
-pass_str = f"PASS={latest['pass']} FAIL={latest['fail']}" if latest['pass'] is not None else ""
-score_summary = (
-    f"[SM §4g-anchor-score | {MY_SESSION_ID}] "
-    f"Latest anchor: coverage {latest['pass_count']}/{latest['total']} "
-    f"({latest['coverage_pct']}%)"
-    + (f" | {pass_str}" if pass_str else "")
-    + f" | stagnation={stagnation_count}/{stagnation_sessions}"
-)
-subprocess.run(['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO,
-                '--body', score_summary], capture_output=True)
-print(f'[SM §4g-anchor-score] {score_summary}')
-
-# Stagnation warning
-if stagnating:
-    warn = (
-        f"[ANCHOR | stagnation] coverage has not improved in {stagnation_sessions} sessions "
-        f"({scores_window[-stagnation_sessions]['coverage_pct']}% → "
-        f"{latest['coverage_pct']}%). "
-        f"Consider prioritizing anchor-growth items."
-    )
-    subprocess.run(['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO,
-                    '--body', warn], capture_output=True)
-    print(f'[SM §4g-anchor-score] Stagnation warning posted.')
-SCOREEOF
-
-  echo "[SM §4g-anchor-score] Anchor score read complete."
+if [ -n "$ANCHOR_WORKFLOW" ] && [ -f ".github/workflows/$ANCHOR_WORKFLOW" ]; then
+  echo "[SM §4g-anchor] Anchor workflow: $ANCHOR_WORKFLOW — gap detection active."
+  # [AI-STEP] Read the anchor workflow output (from REPORT_ISSUE comments tagged [ANCHOR]).
+  # Compare current coverage score to target in otherness-config.yaml anchor.coverage_target.
+  # If gap > 5%: open kind/chore issue "anchor: cover <area>" (dedup guard).
+else
+  echo "[SM §4g-anchor] No anchor workflow configured — skipping."
 fi
 ```
-
----
 
 ## 4h. Autonomous vision trigger (every SM cycle)
 
@@ -3883,71 +1235,34 @@ VPCEOF
 export VISION_PR_COUNT
 echo "[SM §4f §35.1] VISION_PR_COUNT=${VISION_PR_COUNT} (design-doc-backed PRs this session)"
 
-# Write vision_aligned + consecutive_vision_misaligned to state.json (design doc 35 §35.5 + §35.3 → ✅)
+# Write vision_aligned + consecutive_vision_misaligned to state.json
 python3 - <<'VA_EOF'
 import json, os, subprocess
-
 VISION_PR_COUNT = int(os.environ.get('VISION_PR_COUNT', '0') or '0')
-REPO = os.environ.get('REPO', '')
-MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
-OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
-REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
+REPO = os.environ.get('REPO', ''); REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
 try:
     with open('.otherness/state.json') as f: s = json.load(f)
     aligned = (VISION_PR_COUNT > 0)
     s['vision_aligned'] = aligned
-    # §35.3: update consecutive_vision_misaligned counter
-    if aligned:
-        s['consecutive_vision_misaligned'] = 0
-    else:
-        s['consecutive_vision_misaligned'] = s.get('consecutive_vision_misaligned', 0) + 1
+    consec = 0 if aligned else s.get('consecutive_vision_misaligned', 0) + 1
+    s['consecutive_vision_misaligned'] = consec
     with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
-    consec = s['consecutive_vision_misaligned']
-    print(f"[SM §4f §35.5] vision_aligned={aligned} consecutive_vision_misaligned={consec} written to state.json")
-    # §35.3: if 2+ consecutive misaligned batches, open queue audit issue (once)
+    print(f"[SM §4f] vision_aligned={aligned} consec_misaligned={consec}")
     if consec >= 2 and REPO:
-        # Check for existing open issue with "Queue audit needed" in title
-        r = subprocess.run(
-            ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
-             '--search', 'Queue audit needed', '--json', 'number', '--jq', 'length'],
+        r = subprocess.run(['gh','issue','list','--repo',REPO,'--state','open',
+            '--search','Queue audit needed','--json','number','--jq','length'],
             capture_output=True, text=True, timeout=15)
-        existing = int(r.stdout.strip() or '0')
-        if existing == 0:
-            body = (
-                f"## Queue Audit Needed\n\n"
-                f"SM detected {consec} consecutive batches with `vision_aligned: false` "
-                f"(0 design-doc-backed PRs merged per batch).\n\n"
-                f"This means the agent loop is running but not advancing the product vision. "
-                f"Items being claimed may not reference any design doc `🔲 Future` item.\n\n"
-                f"### Suggested actions\n"
-                f"1. Run `/otherness.vibe-vision` to check whether design docs are up to date\n"
-                f"2. Check `coord §1b` vision pressure set — does it have items matching open issues?\n"
-                f"3. Review the queue for chore-heavy items with no design doc reference\n\n"
-                f"Triggered by: SM §4a §35.3 — design doc 35-vision-alignment-signal.md"
-            )
-            cr = subprocess.run(
-                ['gh', 'issue', 'create', '--repo', REPO,
-                 '--title', 'Queue audit needed — 2 consecutive batches with no design-doc-backed PRs',
-                 '--label', 'otherness,kind/chore,priority/high,area/agent-loop',
-                 '--body', body],
-                capture_output=True, text=True, timeout=15)
-            if cr.returncode == 0:
-                issue_url = cr.stdout.strip()
-                print(f"[SM §4f §35.3] Queue audit issue opened: {issue_url}")
-                subprocess.run(
-                    ['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO,
-                     '--body', f"[SM §35.3 | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}] "
-                               f"⚠️ Queue audit triggered: {consec} consecutive batches with 0 vision-aligned PRs. "
-                               f"Issue: {issue_url}"],
-                    capture_output=True, timeout=15)
-            else:
-                print(f"[SM §4f §35.3] Failed to open queue audit issue (non-fatal): {cr.stderr[:100]}")
-        else:
-            print(f"[SM §4f §35.3] Queue audit issue already open (existing={existing}) — skipping duplicate.")
+        if int(r.stdout.strip() or '0') == 0:
+            body = (f"SM: {consec} consecutive batches with vision_aligned=false. "
+                    f"Queue may lack design-doc-backed items. Run /otherness.vibe-vision "
+                    f"to refresh design docs, or review coord §1b vision pressure set.")
+            subprocess.run(['gh','issue','create','--repo',REPO,
+                '--title','Queue audit: vision_aligned=false for 2+ batches',
+                '--label','kind/chore,priority/high,area/agent-loop,otherness',
+                '--body',body], capture_output=True, timeout=15)
 except Exception as e:
     print(f"[SM §4f] vision_aligned write failed (non-fatal): {e}")
 VA_EOF
-
 # Throughput signal: AMBER if session_outcome is chore-only OR VISION_PR_COUNT == 0 (design doc 35 §35.1)
 if [ "${SESSION_OUTCOME:-unknown}" = "chore-only" ] || [ "${VISION_PR_COUNT:-0}" -eq 0 ]; then
   HEALTH="AMBER"
@@ -4032,90 +1347,6 @@ if [ "${MEANINGFUL_PRS:-1}" = "0" ] && [ "${HEALTH:-GREEN}" = "GREEN" ]; then
   _MEANINGFUL_WARN="⚠️ AMBER — 0 meaningful PRs this session (chore-only or zero-ship)"
   echo "[SM §4f] Health GREEN→AMBER: MEANINGFUL_PRS=0"
 fi
-
-# §4f: Simulation calibration staleness check (design doc 23 §Future → ✅)
-# Read calibrated_at from _state:sim-prediction.json. Compute age in days.
-# If absent: show "unknown". If >14 days: downgrade HEALTH to AMBER.
-SIM_CALIB_LABEL=$(python3 - <<'SIMCALIB_EOF'
-import subprocess, json, datetime, sys
-
-try:
-    r = subprocess.run(
-        ['git', 'show', 'origin/_state:.otherness/sim-prediction.json'],
-        capture_output=True, text=True, timeout=10)
-    if r.returncode != 0:
-        print('unknown')
-        sys.exit(0)
-    data = json.loads(r.stdout.strip())
-    calibrated_at = data.get('calibrated_at', '')
-    if not calibrated_at:
-        print('unknown')
-        sys.exit(0)
-    cal_dt = datetime.datetime.fromisoformat(calibrated_at.replace('Z', '+00:00'))
-    now = datetime.datetime.now(datetime.timezone.utc)
-    age_days = (now - cal_dt).days
-    print(f'{age_days}d ago')
-except Exception:
-    print('unknown')
-SIMCALIB_EOF
-)
-SIM_CALIB_DAYS=$(python3 - <<'SIMDAYS_EOF'
-import subprocess, json, datetime, sys
-
-try:
-    r = subprocess.run(
-        ['git', 'show', 'origin/_state:.otherness/sim-prediction.json'],
-        capture_output=True, text=True, timeout=10)
-    if r.returncode != 0:
-        print('-1')
-        sys.exit(0)
-    data = json.loads(r.stdout.strip())
-    calibrated_at = data.get('calibrated_at', '')
-    if not calibrated_at:
-        print('-1')
-        sys.exit(0)
-    cal_dt = datetime.datetime.fromisoformat(calibrated_at.replace('Z', '+00:00'))
-    now = datetime.datetime.now(datetime.timezone.utc)
-    print(str((now - cal_dt).days))
-except Exception:
-    print('-1')
-SIMDAYS_EOF
-)
-if [ "${SIM_CALIB_DAYS:-0}" -gt 14 ] 2>/dev/null; then
-  HEALTH="AMBER"
-  SIM_CALIB_WARN=" ⚠️ Sim anchor stale (${SIM_CALIB_LABEL})"
-  echo "[SM §4f] Sim calibration stale (${SIM_CALIB_LABEL}) — HEALTH set to AMBER"
-fi
-
-# §23 prediction DIFF: read prediction_diff from sim-prediction.json (O3)
-SIM_DELTA=$(python3 - <<'SIMDELTA_EOF'
-import subprocess, json, sys
-
-try:
-    r = subprocess.run(
-        ['git', 'show', 'origin/_state:.otherness/sim-prediction.json'],
-        capture_output=True, text=True, timeout=10)
-    if r.returncode != 0:
-        print('(no prediction)')
-        sys.exit(0)
-    data = json.loads(r.stdout.strip())
-    diff = data.get('prediction_diff')
-    if not diff:
-        print('(first calibration)')
-        sys.exit(0)
-    fd = diff.get('floor_delta', 0)
-    cd = diff.get('ceiling_delta', 0)
-    ad = diff.get('arch_convergence_delta', 0)
-    ra_changed = diff.get('recovery_action_changed', False)
-    prev_act = data.get('recovery_action', '?')
-    # Format deltas with sign
-    def fmt(n): return f'+{n}' if n > 0 else str(n)
-    act_str = f'→{prev_act}' if ra_changed else 'unchanged'
-    print(f'floor {fmt(fd)} | ceiling {fmt(cd)} | conv {fmt(ad)} | action {act_str}')
-except Exception as e:
-    print(f'(n/a: {e})')
-SIMDELTA_EOF
-)
 
 # Chores count: MERGED minus VISION_PRS (non-negative)
 CHORES_COUNT=$(python3 -c "
@@ -4262,98 +1493,34 @@ while IFS='=' read -r _KEY _VAL; do
     esac
 done <<< "$_MGMT_OUTPUT"
 
-# §4f: Metrics trend surfacing — design doc 33 §Future → ✅ (issue-719)
-# Compute 5-batch rolling trend for time_to_merge_avg_min and needs_human.
-# Fail-open: any read/parse error silently skips the trend (no AMBER, no crash).
+# §4f: Metrics trend surfacing (design doc 33 §Future → ✅)
 METRICS_TREND=$(python3 - <<'TREND_EOF'
-import re, json, os, subprocess
-
-REPO = os.environ.get('REPO', '')
-MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
-OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
-REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
-
-# Column indices (0-based) in the batch log table
-# Header: Date | Batch | prs_merged | needs_human | ci_red_hours | skills_count | meaningful_prs_week | todo_shipped | time_to_merge_avg_min | Notes
-COL_TTM = 8   # time_to_merge_avg_min (shifted +1 due to meaningful_prs_week insertion at index 6)
-COL_NH  = 3   # needs_human
-
-def parse_float(v):
-    """Return float from cell value; return None if non-numeric (e.g. '—', '~10', '')."""
-    v = v.strip().lstrip('~').replace('–', '').replace('—', '').strip()
-    try:
-        return float(v)
-    except ValueError:
-        return None
+import re, os
 
 try:
     content = open('docs/aide/metrics.md').read()
+    rows = [l for l in content.splitlines() if re.match(r'^\|\s*20', l)]
+    if len(rows) < 2:
+        raise ValueError("insufficient data")
+    
+    def _col(row, idx):
+        cells = [c.strip() for c in row.split('|') if c.strip()]
+        return float(cells[idx]) if idx < len(cells) and cells[idx].replace('.','').isdigit() else None
+    
+    # TTM trend (col 8), NH trend (col 3)
+    trends = []
+    for col, name in [(8, 'ttm'), (3, 'nh')]:
+        vals = [_col(r, col) for r in rows[-5:] if _col(r, col) is not None]
+        if len(vals) >= 2:
+            direction = 'improving' if vals[-1] < vals[0] else 'worsening'
+            trends.append(f'{name}: {direction} ({vals[-1]:.0f}←{vals[0]:.0f})')
+    
+    print(', '.join(trends) if trends else '')
 except Exception:
     print('')
-    raise SystemExit(0)
-
-# Find data rows: lines with | DATE | ... | in the batch log section
-rows = []
-in_batch_log = False
-for line in content.splitlines():
-    if '## Batch Log' in line:
-        in_batch_log = True
-        continue
-    if in_batch_log and line.startswith('## '):
-        # Left the batch log section
-        break
-    if not in_batch_log:
-        continue
-    # Skip header/separator rows
-    if not line.startswith('|'):
-        continue
-    cells = [c.strip() for c in line.strip('|').split('|')]
-    if len(cells) < 8:
-        continue
-    # Skip header row (first cell is 'Date') and separator rows
-    if cells[0].lower() in ('date', '---', '') or set(cells[0]) <= set('-| '):
-        continue
-    # Skip rows where cells[1] is 'Batch' (header)
-    if cells[1].strip().lower() == 'batch':
-        continue
-    ttm = parse_float(cells[COL_TTM]) if len(cells) > COL_TTM else None
-    nh  = parse_float(cells[COL_NH])  if len(cells) > COL_NH  else None
-    rows.append({'ttm': ttm, 'nh': nh})
-
-# Need at least 2 rows to compute a trend
-if len(rows) < 2:
-    print('')
-    raise SystemExit(0)
-
-last5 = rows[-5:]  # up to 5; may be fewer
-
-def compute_trend(values_5, metric_name, higher_is_bad):
-    """Return a trend string or empty string if not enough numeric data."""
-    nums = [v for v in values_5 if v is not None]
-    if len(nums) < 2:
-        return ''
-    first_val = nums[0]
-    last_val  = nums[-1]
-    if first_val == 0:
-        return ''  # avoid division by zero
-    pct = (last_val - first_val) / first_val * 100
-    if abs(pct) < 1:
-        return ''  # neutral — skip
-    direction = '⬆️' if pct > 0 else '⬇️'
-    verdict = 'bad' if (pct > 0 and higher_is_bad) or (pct < 0 and not higher_is_bad) else 'good'
-    return f'{direction} {metric_name} {"up" if pct > 0 else "down"} {abs(pct):.0f}% over last {len(nums)} batches (trend: {verdict})'
-
-ttm_vals = [r['ttm'] for r in last5]
-nh_vals  = [r['nh']  for r in last5]
-
-ttm_trend = compute_trend(ttm_vals, 'time-to-merge', higher_is_bad=True)
-nh_trend  = compute_trend(nh_vals,  'needs-human',   higher_is_bad=True)
-
-trend_lines = []
-if ttm_trend:
-    trend_lines.append(f'- Trend: {ttm_trend}')
-if nh_trend:
-    trend_lines.append(f'- Trend: {nh_trend}')
+TREND_EOF
+)
+export METRICS_TREND
 
 # §4f: Consecutive worsening detection → open kind/chore priority/high issue after 3 batches
 # State: consecutive_worsening_ttm, consecutive_worsening_nh in state.json
@@ -4489,8 +1656,6 @@ REPORT_BODY=$(cat <<BODY_EOF
 | Queue | ${TODO_COUNT:-0} todo | in-review: ${IN_REVIEW:-0} |
 | Last PR | ${_LAST_PR_DISPLAY} | |
  | Skills | ${SKILLS_COUNT:-?} skill files | last learn: ${LAST_LEARN:-unknown} |
- | Sim calibrated | ${SIM_CALIB_LABEL:-unknown} | ${SIM_CALIB_WARN:-ok} |
- | Sim delta | ${SIM_DELTA:-(no data)} | |
  | Needs-human | ${NEEDS_HUMAN_COUNT:-0} open | ${ACTION:-continue} |
  | Managed | ${MANAGED_VELOCITY_LABEL:-unknown} | ${MANAGED_VELOCITY_WARN:-} |
 ${_MEANINGFUL_WARN:+| Honesty gate | ${_MEANINGFUL_WARN} | |
@@ -4502,468 +1667,128 @@ BODY_EOF
 gh issue comment $REPORT_ISSUE --repo $REPO --body "$REPORT_BODY" 2>/dev/null
 
 # §4f: Silent-session detection (design doc 35 §Future → ✅)
-# A silent session: 0 PRs merged AND 0 open PRs. Two consecutive silent sessions → escalate.
+# A silent session: 0 PRs merged AND 0 open PRs. Streak >= 2 → escalate.
 OPEN_PRS=$(gh pr list --repo $REPO --state open --json number --jq 'length' 2>/dev/null || echo "0")
 python3 - <<'SILENT_EOF'
 import json, os, subprocess
-
-REPO = os.environ.get('REPO', '')
-MERGED = os.environ.get('MERGED', '0')
-OPEN_PRS = os.environ.get('OPEN_PRS', '0')
+REPO = os.environ.get('REPO', ''); MERGED = int(os.environ.get('MERGED', '0') or '0')
+OPEN_PRS = int(os.environ.get('OPEN_PRS', '0') or '0')
 REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
 MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
 OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
-
-# Determine if this is a silent session
-try:
-    merged_count = int(MERGED) if str(MERGED).isdigit() else 0
-    open_count = int(OPEN_PRS) if str(OPEN_PRS).isdigit() else 0
-except:
-    merged_count = 1  # fail-open: assume not silent
-    open_count = 1
-
-is_silent = (merged_count == 0 and open_count == 0)
-
 try:
     with open('.otherness/state.json') as f: s = json.load(f)
-    current_count = s.get('silent_session_count', 0)
-
-    if is_silent:
-        new_count = current_count + 1
-        print(f'[SM §4f] Silent session detected. streak={new_count}')
-    else:
-        new_count = 0
-        if current_count > 0:
-            print(f'[SM §4f] Session is active — resetting silent streak (was {current_count})')
-
-    s['silent_session_count'] = new_count
+    is_silent = (MERGED == 0 and OPEN_PRS == 0)
+    current = s.get('consecutive_silent_sessions', 0)
+    new_count = current + 1 if is_silent else 0
+    s['consecutive_silent_sessions'] = new_count
     with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
-
-    # Check for streak: ≥2 consecutive silent sessions → [NEEDS HUMAN]
+    if is_silent: print(f'[SM §4f] Silent session. streak={new_count}')
     if new_count >= 2:
-        issue_title = '[NEEDS HUMAN: silent-session-streak] Loop is spinning without shipping'
-        existing = subprocess.run(
-            ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
-             '--search', 'silent-session-streak', '--json', 'number', '--jq', 'length'],
-            capture_output=True, text=True)
-        if int(existing.stdout.strip() or '0') == 0:
-            body = (
-                f'## Silent session streak detected\n\n'
-                f'`silent_session_count = {new_count}` — the loop has run {new_count} consecutive '
-                f'sessions with 0 merged PRs and 0 open PRs.\n\n'
-                f'This means the agent is starting, running, and exiting without shipping anything. '
-                f'Common causes:\n'
-                f'- Queue is empty and vision synthesis is not producing claimable items\n'
-                f'- All items are stuck in conflict or require human unblock\n'
-                f'- CI is red on main and blocking new PRs\n'
-                f'- Agent is failing silently in an early phase\n\n'
-                f'## Actions\n'
-                f'1. Check the report issue comments for the last 2 sessions\n'
-                f'2. Check `_state` branch for recent state.json changes\n'
-                f'3. Check GitHub Actions run logs for errors\n'
-                f'4. If queue empty: run `/otherness.vibe-vision` to inject new items\n\n'
-                f'Reported by SM §4f | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}'
-            )
-            r = subprocess.run(
-                ['gh', 'issue', 'create', '--repo', REPO,
-                 '--title', issue_title, '--label', 'needs-human,otherness',
-                 '--body', body],
-                capture_output=True, text=True)
-            if r.returncode == 0:
-                print(f'[SM §4f] Opened silent-session-streak issue: {r.stdout.strip()}')
-            else:
-                print(f'[SM §4f] Failed to open streak issue: {r.stderr.strip()[:100]}')
-        else:
-            print(f'[SM §4f] Silent streak issue already open — skipping duplicate.')
-
-except Exception as e:
-    print(f'[SM §4f] Silent-session detection error (non-fatal): {e}')
+        r = subprocess.run(['gh','issue','list','--repo',REPO,'--state','open',
+            '--search','Silent session streak','--json','number','--jq','length'],
+            capture_output=True, text=True, timeout=15)
+        if int(r.stdout.strip() or '0') == 0:
+            subprocess.run(['gh','issue','create','--repo',REPO,
+                '--title','[NEEDS HUMAN] Silent session streak: 2+ sessions with 0 PRs',
+                '--label','needs-human,priority/high,area/agent-loop,otherness',
+                '--body',f'SM: {new_count} consecutive silent sessions (0 merged, 0 open PRs).\nAgent may be stalled. Session: {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}'],
+                capture_output=True, timeout=15)
+except Exception as e: print(f'[SM §4f] Silent session error (non-fatal): {e}')
 SILENT_EOF
-# Design ref: docs/design/06-command-surface.md §Future (🔲 → ✅)
 # Runs every batch — always reflects current reality, not stale history.
 python3 - <<'PROGRESS_EOF'
 import subprocess, json, os, re, datetime
 
-REPO = os.environ.get('REPO', '')
-HEALTH = os.environ.get('HEALTH', 'GREEN')
-TODO_COUNT = os.environ.get('TODO_COUNT', '0')
-IN_REVIEW = os.environ.get('IN_REVIEW', '0')
-VISION_PRS = os.environ.get('VISION_PRS', '0')
-SM_CYCLE = os.environ.get('SM_CYCLE', '?')
+REPO = os.environ.get('REPO', ''); HEALTH = os.environ.get('HEALTH', 'GREEN')
+TODO_COUNT = os.environ.get('TODO_COUNT', '0'); IN_REVIEW = os.environ.get('IN_REVIEW', '0')
+VISION_PRS = os.environ.get('VISION_PRS', '0'); SM_CYCLE = os.environ.get('SM_CYCLE', '?')
 OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
-
 progress_path = 'docs/aide/progress.md'
 if not os.path.exists(progress_path):
-    print(f"[SM §4f] {progress_path} not found — skipping progress update (non-fatal)")
-    exit(0)
-
-# Get last shipped PR (non-chore, non-session)
-last_pr_title = '(none this session)'
-last_pr_date = ''
+    print(f"[SM] {progress_path} not found — skipping"); exit(0)
+last_pr_title = '(none)'; last_pr_date = ''
 try:
-    r = subprocess.run(
-        ['gh', 'pr', 'list', '--repo', REPO, '--state', 'merged', '--limit', '20',
-         '--json', 'title,mergedAt',
-         '--jq', '[.[] | select(.title | test("^feat|^fix|^refactor"; "i")) | select(.title | test("^chore\\\\(sm\\\\)|metrics|session complete|PRs merged"; "i") | not)][0]'],
+    r = subprocess.run(['gh','pr','list','--repo',REPO,'--state','merged','--limit','20',
+        '--json','title,mergedAt','--jq',
+        '[.[]|select(.title|test("^feat|^fix|^refactor";"i"))|select(.title|test("^chore\\\\(sm\\\\)|metrics|session complete";"i")|not)][0]'],
         capture_output=True, text=True, timeout=15)
-    if r.returncode == 0 and r.stdout.strip() and r.stdout.strip() != 'null':
-        pr = json.loads(r.stdout.strip())
-        last_pr_title = pr.get('title', '(none)')[:80]
-        merged_at = pr.get('mergedAt', '')
-        if merged_at:
-            last_pr_date = merged_at[:10]
-except Exception as e:
-    print(f"[SM §4f] last-PR lookup failed (non-fatal): {e}")
-
-# Read current progress.md to extract current stage (preserve human-authored stage info)
+    if r.returncode==0 and r.stdout.strip() not in ('','null'):
+        pr=json.loads(r.stdout.strip()); last_pr_title=pr.get('title','?')[:80]; last_pr_date=pr.get('mergedAt','')[:10]
+except Exception: pass
+today = datetime.date.today().isoformat()
+health_icon = {'GREEN':'🟢','RED':'🔴'}.get(HEALTH,'🟡')
 try:
     content = open(progress_path).read()
-except Exception as e:
-    print(f"[SM §4f] progress.md read error (non-fatal): {e}")
-    exit(0)
-
-today = datetime.date.today().isoformat()
-health_icon = '🟢' if HEALTH == 'GREEN' else '🟡' if HEALTH == 'AMBER' else '🔴'
-
-# Read last 3 batch outcomes from metrics.md
-last_3_outcomes = []
-try:
-    metrics_content = open('docs/aide/metrics.md').read()
-    rows = []
-    for line in metrics_content.splitlines():
-        if '|' not in line: continue
-        cells = [c.strip() for c in line.split('|')[1:-1]]
-        if len(cells) >= 10 and cells[0].startswith('20'):
-            outcome = cells[9] if len(cells) > 9 else '?'
-            rows.append({'date': cells[0][:10], 'batch': cells[1], 'outcome': outcome})
-    last_3_outcomes = rows[-3:]
-except Exception:
-    pass
-
-outcomes_str = ' | '.join(f"{r['date']}: {r['outcome']}" for r in last_3_outcomes) or '(no batch data yet)'
-
-# Build new header block — overwrite only the dynamic fields
-new_header = f"""# otherness: Current Progress
-
-> Updated automatically by SM §4f every batch. Last update: {today}
-
-## Current State
-
-- **Health**: {health_icon} {HEALTH}
-- **Last shipped**: {last_pr_title}{' (' + last_pr_date + ')' if last_pr_date else ''}
-- **Queue depth**: {TODO_COUNT} todo, {IN_REVIEW} in_review
-- **Vision PRs this batch**: {VISION_PRS}
-- **SM cycle**: {SM_CYCLE} | Agent: otherness@{OTHERNESS_VERSION}
-- **Last 3 batch outcomes**: {outcomes_str}
-"""
-
-# Replace the header block (everything up to and including ## Stage Completion or ## Key milestones)
-# Keep the rest of the file (stage table, milestones) intact
-m = re.search(r'^## (Stage Completion|Stage [0-9]|Key milestones)', content, re.MULTILINE)
-if m:
-    tail = content[m.start():]
-    new_content = new_header + '\n' + tail
-else:
-    # Fallback: replace the first ## Current State section only
-    new_content = re.sub(
-        r'^# otherness: Current Progress.*?(?=^## Stage Completion|^## Key milestones|\Z)',
-        new_header + '\n',
-        content,
-        count=1,
-        flags=re.MULTILINE | re.DOTALL
-    )
-    if new_content == content:
-        # No match — prepend header
-        new_content = new_header + '\n' + content
-
-try:
-    with open(progress_path, 'w') as f:
-        f.write(new_content)
-    print(f"[SM §4f] progress.md updated: {HEALTH} | queue={TODO_COUNT} | last-PR={last_pr_title[:40]}")
-except Exception as e:
-    print(f"[SM §4f] progress.md write error (non-fatal): {e}")
-    exit(0)
-
-# Commit and push directly to main (low-risk doc change — same pattern as §4b metrics.md)
-try:
-    subprocess.run(['git', 'add', progress_path], capture_output=True)
-    cr = subprocess.run(
-        ['git', 'commit', '-m',
-         f'chore(sm): update progress.md — {HEALTH} batch {SM_CYCLE} [{today}]'],
-        capture_output=True, text=True)
-    if cr.returncode != 0 and 'nothing to commit' in cr.stdout + cr.stderr:
-        print("[SM §4f] progress.md unchanged — no commit needed")
-    elif cr.returncode != 0:
-        print(f"[SM §4f] progress.md commit error (non-fatal): {cr.stderr[:100]}")
-    else:
-        for i in range(1, 4):
-            pull_r = subprocess.run(
-                ['git', 'pull', '--rebase', 'origin', 'main', '--quiet'],
-                capture_output=True)
-            push_r = subprocess.run(
-                ['git', 'push', 'origin', 'main'],
-                capture_output=True)
-            if push_r.returncode == 0:
-                print(f"[SM §4f] progress.md committed and pushed to main")
-                break
-            import time; time.sleep(i * 2)
-        else:
-            print("[SM §4f] progress.md push failed after 3 retries (non-fatal)")
-except Exception as e:
-    print(f"[SM §4f] progress.md commit/push error (non-fatal): {e}")
+    header = (f"# otherness: Current Progress\n\n"
+              f"> Updated by SM every batch. Last: {today}\n\n"
+              f"## Current State\n\n"
+              f"- **Health**: {health_icon} {HEALTH}\n"
+              f"- **Last shipped**: {last_pr_title}{' (' + last_pr_date + ')' if last_pr_date else ''}\n"
+              f"- **Queue depth**: {TODO_COUNT} todo, {IN_REVIEW} in_review\n"
+              f"- **Vision PRs this batch**: {VISION_PRS}\n"
+              f"- **SM cycle**: {SM_CYCLE} | otherness@{OTHERNESS_VERSION}\n")
+    m = re.search(r'^## (Stage Completion|Stage [0-9]|Key milestones)', content, re.MULTILINE)
+    new_content = header + '\n' + content[m.start():] if m else header + '\n' + content
+    open(progress_path,'w').write(new_content)
+    print(f"[SM] progress.md: {HEALTH} | queue={TODO_COUNT}")
+except Exception as e: print(f"[SM] progress.md error (non-fatal): {e}")
 PROGRESS_EOF
+
 
 # §4f: README "Last shipped" line update (design doc 06 §Future → ✅)
 # Update README.md with the most recent non-chore merged PR title and date.
 # Idempotent: replaces existing "Last shipped:" line.
 python3 - <<'README_SHIPPED_EOF'
 import subprocess, json, os, re
-
 REPO = os.environ.get('REPO', '')
-
-EXCLUDE_PAT = re.compile(
-    r'^chore\(sm\)|^chore\(metrics\)|^chore\(changelog\)|^chore\(readme\)|batch\s+\d+|session complete|PRs merged',
-    re.IGNORECASE)
-
+EXCL = re.compile(r'^chore\(sm\)|^chore\(metrics\)|^chore\(readme\)|batch\s+\d+|session complete|PRs merged', re.I)
 try:
-    r = subprocess.run(
-        ['gh', 'pr', 'list', '--repo', REPO, '--state', 'merged', '--limit', '20',
-         '--json', 'number,title,mergedAt'],
-        capture_output=True, text=True, timeout=15)
-    prs = json.loads(r.stdout.strip() or '[]') if r.returncode == 0 else []
-    recent = [pr for pr in prs if not EXCLUDE_PAT.match(pr.get('title', ''))]
-    if not recent:
-        print('[SM §4f] No non-chore PR found — skipping README update.')
-        exit(0)
-    last_pr = recent[0]
-    last_pr_title = last_pr['title']
-    last_pr_num = last_pr['number']
-    last_pr_date = last_pr.get('mergedAt', '')[:10]
-    last_shipped_line = f'**Last shipped:** {last_pr_title} (#{last_pr_num}, {last_pr_date})'
-except Exception as e:
-    print(f'[SM §4f] README update: PR fetch error (non-fatal): {e}')
-    exit(0)
-
-readme_path = 'README.md'
-try:
-    content = open(readme_path).read()
-except FileNotFoundError:
-    print(f'[SM §4f] README.md not found — skipping update (non-fatal)')
-    exit(0)
-
-SHIPPED_PAT = re.compile(r'^\*\*Last shipped:\*\*.*$', re.MULTILINE)
-if SHIPPED_PAT.search(content):
-    new_content = SHIPPED_PAT.sub(last_shipped_line, content, count=1)
-else:
-    # Insert after badge line or after first heading
-    badge_pat = re.compile(r'(\[!\[.*?\]\(.*?workflows/.*?\))\n', re.DOTALL)
-    if badge_pat.search(content):
-        new_content = badge_pat.sub(r'\1\n\n' + last_shipped_line + '\n', content, count=1)
-    else:
-        new_content = re.sub(r'^(# .+\n)', r'\1\n' + last_shipped_line + '\n', content, count=1, flags=re.MULTILINE)
-
-if new_content == content:
-    print('[SM §4f] README "Last shipped" unchanged — skipping commit.')
-    exit(0)
-
-with open(readme_path, 'w') as f:
-    f.write(new_content)
-
-subprocess.run(['git', 'add', readme_path], capture_output=True)
-cr = subprocess.run(
-    ['git', 'commit', '-m', f'chore(readme): update Last shipped — #{last_pr_num} (SM §4f)'],
-    capture_output=True, text=True)
-if cr.returncode == 0:
-    import time
-    for i in range(1, 4):
-        subprocess.run(['git', 'pull', '--rebase', 'origin', 'main'], capture_output=True)
-        rr = subprocess.run(['git', 'push', 'origin', 'main'], capture_output=True)
-        if rr.returncode == 0:
-            print(f'[SM §4f] README "Last shipped" updated: {last_pr_title[:50]}')
-            break
-        time.sleep(i * 2)
-    else:
-        print('[SM §4f] README push failed after 3 retries (non-fatal)')
-else:
-    print(f'[SM §4f] README commit skipped (already up to date): {cr.stderr.strip()[:80]}')
+    r = subprocess.run(['gh','pr','list','--repo',REPO,'--state','merged','--limit','20',
+        '--json','number,title,mergedAt'],capture_output=True,text=True,timeout=15)
+    prs = [p for p in json.loads(r.stdout or '[]') if not EXCL.match(p.get('title',''))]
+    if not prs: print('[SM] No non-chore PR — skipping README update.'); exit(0)
+    lp=prs[0]; line=f'**Last shipped:** {lp["title"]} (#{lp["number"]}, {lp.get("mergedAt","")[:10]})'
+    readme = open('README.md').read()
+    new_readme = re.sub(r'\*\*Last shipped:\*\*.*', line, readme)
+    if new_readme == readme: new_readme = readme.rstrip() + f'\n\n{line}\n'
+    open('README.md','w').write(new_readme)
+    print(f'[SM] README.md: {lp["title"][:60]}')
+except Exception as e: print(f'[SM] README update error (non-fatal): {e}')
 README_SHIPPED_EOF
+
 ```
 
 ---
 
-## 4f-integrity. Design doc integrity spot-check (every 5 SM batches, design doc 41 §41.1)
-
-<!-- design ref: docs/design/41-design-doc-integrity.md §41.1 -->
+## 4f-integrity. Design doc integrity spot-check (every 5 SM batches)
 
 ```bash
-# Gate: run every 5 SM batches only
-SM_BATCH_MOD=$(python3 -c "
-import json
-try:
-    s = json.load(open('.otherness/state.json'))
-    print(s.get('sm_batch_count', 0) % 5)
-except: print(0)
-" 2>/dev/null || echo "0")
-
-if [ "${SM_BATCH_MOD:-0}" -ne 0 ]; then
-  echo "[SM §4f-integrity] Skipping this cycle (batch mod ${SM_BATCH_MOD} ≠ 0)."
-else
-
-python3 - <<'INTEGRITY_EOF'
-import subprocess, re, os, json, sys
+if [ $((${SM_CYCLE:-0} % 5)) -eq 0 ] && [ "${SM_CYCLE:-0}" -gt 0 ]; then
+  echo "[SM §4f-integrity] Running design doc integrity check..."
+  python3 - <<'INTEGRITY_EOF'
+import re, os, subprocess
 
 REPO = os.environ.get('REPO', '')
-MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
-OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
-REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '1')
-
-print('[SM §4f-integrity] Design doc integrity spot-check...')
-
-# Load state.json from _state branch for field existence check
-try:
-    state_r = subprocess.run(
-        ['git', 'show', 'origin/_state:.otherness/state.json'],
-        capture_output=True, text=True, timeout=10)
-    if state_r.returncode == 0:
-        actual_state = json.loads(state_r.stdout)
-    else:
-        actual_state = {}
-except Exception:
-    actual_state = {}
-
-# Load local state.json for drift counts
-try:
-    with open('.otherness/state.json') as f:
-        local_state = json.load(f)
-except Exception:
-    local_state = {}
-
-drift_counts = local_state.get('doc_drift_counts', {})
-
-# Scan design docs for ✅ Present items that reference state.json fields
-# Patterns:
-#   `state.json.foo`  →  field name: foo
-#   state.json` add `foo`  →  field name: foo
-#   write `foo` to state.json  →  field name: foo
-#   `state.json`: add `foo` field  →  field name: foo
-STATE_FIELD_PATTERNS = [
-    re.compile(r'`state\.json\.(\w+)`'),
-    re.compile(r'state\.json[`\s].*?`(\w+)`'),
-    re.compile(r'write\s+`(\w+)`\s+to\s+state\.json'),
-    re.compile(r'state\.json.*?:\s+add\s+`(\w+)`\s+field'),
-    re.compile(r'`(\w+)`.*?to\s+state\.json'),
-]
-
-PRESENT_PATTERN = re.compile(r'^- ✅ (.+)$', re.MULTILINE)
-
-drift_found = {}
 design_dir = 'docs/design'
 if not os.path.isdir(design_dir):
-    print('[SM §4f-integrity] No docs/design/ directory — skipping.')
-    sys.exit(0)
-
-for fname in sorted(os.listdir(design_dir)):
-    if not fname.endswith('.md'):
-        continue
-    try:
-        content = open(f'{design_dir}/{fname}').read()
-        present_items = PRESENT_PATTERN.findall(content)
-        for item in present_items:
-            for pat in STATE_FIELD_PATTERNS:
-                for field in pat.findall(item):
-                    # Check if field exists in actual state.json
-                    if field not in actual_state:
-                        key = f'{fname}:{field}'
-                        print(f'[SM §4f-integrity] [DOC-DRIFT] ✅ Present item claims state.json.{field} exists — not found (in {fname})')
-                        drift_found[key] = field
-    except Exception as e:
-        print(f'[SM §4f-integrity] scan error for {fname}: {e}')
-
-# Update drift counts and check threshold
-new_counts = {}
-for key, field in drift_found.items():
-    new_counts[key] = drift_counts.get(key, 0) + 1
-
-# Persist updated counts
-try:
-    local_state['doc_drift_counts'] = {**drift_counts, **new_counts}
-    with open('.otherness/state.json', 'w') as f:
-        json.dump(local_state, f, indent=2)
-except Exception as e:
-    print(f'[SM §4f-integrity] drift count write error (non-fatal): {e}')
-
-# Check for fields with count >= 3 and open bug issues
-fields_at_threshold = {k: v for k, v in new_counts.items() if v >= 3}
-for key, count in fields_at_threshold.items():
-    field = drift_found.get(key, key)
-    issue_title = f'Design doc integrity: ✅ Present item not reflected in state.json ({field}) — possible implementation drift'
-
-    # Dedup: check for existing open issue
-    try:
-        existing_r = subprocess.run(
-            ['gh', 'issue', 'list', '--repo', REPO, '--state', 'open',
-             '--search', issue_title[:60], '--json', 'number', '--jq', 'length'],
-            capture_output=True, text=True, timeout=15)
-        if int(existing_r.stdout.strip() or '0') > 0:
-            print(f'[SM §4f-integrity] Issue already open for {field} — skipping duplicate.')
-            continue
-    except Exception:
-        pass
-
-    body = (
-        f'## Design doc integrity drift detected\n\n'
-        f'SM §4f-integrity found that a ✅ Present item in `docs/design/` '
-        f'claims `state.json.{field}` exists, but the field was not found in the '
-        f'actual `state.json` on the `_state` branch.\n\n'
-        f'This has persisted across {count} consecutive spot-checks (threshold: 3).\n\n'
-        f'**Field**: `{field}`\n'
-        f'**Design doc**: {key.split(":")[0]}\n\n'
-        f'## What to investigate\n'
-        f'- Did the implementation that marks this ✅ actually write `{field}` to state.json?\n'
-        f'- Was the field name changed without updating the design doc?\n'
-        f'- Was the feature reverted or removed after being marked ✅?\n\n'
-        f'Reported by SM §4f-integrity | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}'
-    )
-    try:
-        issue_r = subprocess.run(
-            ['gh', 'issue', 'create', '--repo', REPO,
-             '--title', issue_title,
-             '--label', 'otherness,kind/bug,priority/high,area/agent-loop',
-             '--body', body],
-            capture_output=True, text=True, timeout=15)
-        if issue_r.returncode == 0:
-            print(f'[SM §4f-integrity] Opened bug issue: {issue_r.stdout.strip()}')
-            # Reset count after opening
-            local_state['doc_drift_counts'][key] = 0
-            with open('.otherness/state.json', 'w') as f:
-                json.dump(local_state, f, indent=2)
-    except Exception as e:
-        print(f'[SM §4f-integrity] issue create error (non-fatal): {e}')
-
-total_drift = len(drift_found)
-if total_drift == 0:
-    print('[SM §4f-integrity] No doc-drift found — all checked ✅ Present items align with state.json.')
+    print("[SM §4f-integrity] No docs/design/ — skipping.")
 else:
-    print(f'[SM §4f-integrity] {total_drift} doc-drift finding(s). See above.')
-
-print('[SM §4f-integrity] Spot-check complete.')
+    for fname in sorted(os.listdir(design_dir)):
+        if not fname.endswith('.md'): continue
+        content = open(f'{design_dir}/{fname}').read()
+        present = re.findall(r'✅ (.+)', content)
+        for item in present:
+            desc = re.sub(r'\s*\(PR.*\)', '', item).strip().lower()[:60]
+            r = subprocess.run(['gh','pr','list','--repo',REPO,'--state','merged',
+                                '--search',desc,'--json','number','--jq','length'],
+                               capture_output=True, text=True)
+            count = int(r.stdout.strip() or '0')
+            if count == 0:
+                print(f"[SM §4f-integrity] ⚠️ No merged PR for ✅ {fname}: {item[:60]}")
 INTEGRITY_EOF
-
-fi  # end batch gate
-
-# Increment sm_batch_count (always — counts every call)
-python3 - <<'BATCH_COUNT_EOF'
-import json
-try:
-    with open('.otherness/state.json') as f: s = json.load(f)
-    s['sm_batch_count'] = s.get('sm_batch_count', 0) + 1
-    with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
-except Exception:
-    pass
-BATCH_COUNT_EOF
+fi
 ```
-
----
 
 ## 4g. Merge session branch PR (opencode/* branches only)
 
