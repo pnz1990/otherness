@@ -1,0 +1,469 @@
+{
+  "report_issue": 741,
+  "batch_count": 9,
+  "features": {
+    "issue-957": {
+      "state": "done",
+      "title": "45.5: simplification cycle \u2014 open chore/high issue every 30 batches",
+      "labels": [
+        "area/agent-loop",
+        "size/xs",
+        "priority/high",
+        "kind/enhancement"
+      ],
+      "priority": "high",
+      "issue": 957,
+      "assigned_to": "sess-6515b10d",
+      "assigned_at": "2026-04-23T06:01:39Z",
+      "branch": "feat/issue-957",
+      "worktree": "../otherness.issue-957",
+      "file_spaces": [
+        "agents/",
+        "scripts/"
+      ],
+      "pr_number": 968,
+      "pr_merged": true,
+      "done_at": "2026-04-23T06:06:22Z"
+    },
+    "issue-956": {
+      "state": "todo",
+      "title": "45.3: COORD issue-creation must always set board Status:Todo and active milestone",
+      "labels": [
+        "area/agent-loop",
+        "size/s",
+        "priority/high",
+        "kind/enhancement"
+      ],
+      "priority": "high",
+      "issue": 956
+    },
+    "issue-953": {
+      "state": "todo",
+      "title": "feat: Audit and reduce sm.md: identify the top 5 sections by line count that have never demonstr",
+      "labels": [
+        "area/agent-loop",
+        "size/s",
+        "priority/high",
+        "kind/enhancement"
+      ],
+      "priority": "high",
+      "issue": 953
+    },
+    "issue-952": {
+      "state": "todo",
+      "title": "feat: `otherness-scheduled.yml` Step 3: read OTLP config; if enabled + secrets present: inject `",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "issue": 952
+    },
+    "issue-951": {
+      "state": "todo",
+      "title": "feat: ENG \u00a72f: when opening the PR, set board `Status: In Review`. One GraphQL mutation.",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "issue": 951
+    },
+    "issue-950": {
+      "state": "todo",
+      "title": "feat: `vibe-vision-auto.md` SCAN 5 (pressure context rewrite) must trigger on time-based stalene",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "issue": 950
+    },
+    "issue-949": {
+      "state": "todo",
+      "title": "feat: `eng.md \u00a72d`: migrate `decisions.md` writes to use `specify memory set \"<key>\" \"<value>\"` ",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "issue": 949
+    },
+    "issue-948": {
+      "state": "todo",
+      "title": "feat: QA \u00a73b: docs gate for user-visible features \u2014 when a PR marks a `\ud83d\udd32 Future` item `\u2705 Present",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "issue": 948
+    },
+    "issue-947": {
+      "state": "todo",
+      "title": "feat: Periodic full-sweep audit of all \u2705 Present items: every 30 batches, PM \u00a75 must run a full ",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "issue": 947
+    },
+    "issue-946": {
+      "state": "todo",
+      "title": "feat: PM \u00a75l: release notes template \u2014 curated summary above `--generate-notes` output. Group fe",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "issue": 946
+    },
+    "issue-944": {
+      "state": "todo",
+      "title": "feat: SM \u00a74f: report vision pressure utilisation \u2014 in the health comment, include: \"Vision-backe",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "issue": 944
+    },
+    "issue-928": {
+      "state": "todo",
+      "title": "feat: Vision evolution cadence must have a defined \"pressure addressed\" criterion that makes the",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "issue": 928
+    },
+    "issue-917": {
+      "state": "todo",
+      "title": "feat: PM \u00a75k label creation fallback \u2014 create missing labels before PR open",
+      "labels": [
+        "area/agent-loop",
+        "size/xs",
+        "priority/low",
+        "kind/enhancement"
+      ],
+      "priority": "low",
+      "issue": 917
+    },
+    "issue-909": {
+      "state": "todo",
+      "title": "feat(pm): minor release trigger PM \u00a75l (40.2) \u2014 auto-cut vX.Y.0 when \u22653 feat PRs since last tag",
+      "labels": [
+        "size/s",
+        "area/tooling",
+        "priority/high",
+        "kind/enhancement"
+      ],
+      "priority": "high",
+      "issue": 909
+    },
+    "issue-894": {
+      "state": "todo",
+      "title": "feat: 40.3",
+      "labels": [
+        "area/agent-loop",
+        "size/s",
+        "priority/low",
+        "kind/enhancement"
+      ],
+      "priority": "low",
+      "issue": 894
+    },
+    "issue-893": {
+      "state": "todo",
+      "title": "feat: 39.3",
+      "labels": [
+        "area/agent-loop",
+        "size/s",
+        "priority/low",
+        "kind/enhancement"
+      ],
+      "priority": "low",
+      "issue": 893
+    },
+    "issue-884": {
+      "state": "todo",
+      "title": "feat: `/otherness.learn` must have a time-bounded skill-extraction contract",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "issue": 884
+    },
+    "issue-866": {
+      "state": "todo",
+      "title": "feat: 43.2",
+      "labels": [
+        "area/agent-loop",
+        "size/s",
+        "priority/low",
+        "kind/enhancement"
+      ],
+      "priority": "low",
+      "issue": 866
+    },
+    "issue-865": {
+      "state": "todo",
+      "title": "feat: 42.2",
+      "labels": [
+        "area/agent-loop",
+        "size/s",
+        "priority/low",
+        "kind/enhancement"
+      ],
+      "priority": "low",
+      "issue": 865
+    },
+    "issue-864": {
+      "state": "todo",
+      "title": "feat: 42.2",
+      "labels": [
+        "area/agent-loop",
+        "size/s",
+        "priority/low",
+        "kind/enhancement"
+      ],
+      "priority": "low",
+      "issue": 864
+    },
+    "issue-863": {
+      "state": "todo",
+      "title": "feat: 41.2",
+      "labels": [
+        "area/agent-loop",
+        "size/s",
+        "priority/low",
+        "kind/enhancement"
+      ],
+      "priority": "low",
+      "issue": 863
+    },
+    "issue-862": {
+      "state": "todo",
+      "title": "feat: 41.2",
+      "labels": [
+        "area/agent-loop",
+        "size/s",
+        "priority/low",
+        "kind/enhancement"
+      ],
+      "priority": "low",
+      "issue": 862
+    },
+    "issue-861": {
+      "state": "todo",
+      "title": "feat: 40.2",
+      "labels": [
+        "area/agent-loop",
+        "size/s",
+        "priority/low",
+        "kind/enhancement"
+      ],
+      "priority": "low",
+      "issue": 861
+    },
+    "issue-860": {
+      "state": "todo",
+      "title": "feat: 39.2",
+      "labels": [
+        "area/agent-loop",
+        "size/s",
+        "priority/low",
+        "kind/enhancement"
+      ],
+      "priority": "low",
+      "issue": 860
+    },
+    "issue-859": {
+      "state": "todo",
+      "title": "feat: 38.5",
+      "labels": [
+        "area/agent-loop",
+        "size/s",
+        "priority/low",
+        "kind/enhancement"
+      ],
+      "priority": "low",
+      "issue": 859
+    },
+    "issue-858": {
+      "state": "todo",
+      "title": "feat: 37.12",
+      "labels": [
+        "area/agent-loop",
+        "size/s",
+        "priority/low",
+        "kind/enhancement"
+      ],
+      "priority": "low",
+      "issue": 858
+    },
+    "issue-857": {
+      "state": "todo",
+      "title": "feat: 36.3",
+      "labels": [
+        "area/agent-loop",
+        "size/s",
+        "priority/low",
+        "kind/enhancement"
+      ],
+      "priority": "low",
+      "issue": 857
+    },
+    "issue-856": {
+      "state": "todo",
+      "title": "feat: 35.5",
+      "labels": [
+        "area/agent-loop",
+        "size/s",
+        "priority/low",
+        "kind/enhancement"
+      ],
+      "priority": "low",
+      "issue": 856
+    },
+    "issue-855": {
+      "state": "todo",
+      "title": "feat: Features-per-week velocity must be tracked as the primary speed signal",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "issue": 855
+    },
+    "issue-854": {
+      "state": "todo",
+      "title": "feat: `/otherness.learn` must have a time-bounded skill-extraction contract",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "issue": 854
+    },
+    "issue-852": {
+      "state": "todo",
+      "title": "feat: COORD \u00a71e must refuse to claim a `kind/chore` item when no `kind/enhancement` or `kind/bug",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "issue": 852
+    },
+    "issue-851": {
+      "state": "todo",
+      "title": "feat: Workflow-level silent failure detection: the agent relies on the scheduled GitHub Actions ",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "issue": 851
+    },
+    "issue-817": {
+      "state": "todo",
+      "title": "feat(observability): deploy AWS observability backend (account 569190534191) and wire all projects",
+      "labels": [
+        "size/l",
+        "area/tooling",
+        "priority/high",
+        "kind/enhancement"
+      ],
+      "priority": "high",
+      "issue": 817
+    },
+    "issue-815": {
+      "state": "todo",
+      "title": "feat(scheduled): apply workflow timeout + cleanup step once GH_TOKEN has workflows scope",
+      "labels": [
+        "priority/medium",
+        "size/xs",
+        "area/tooling",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "issue": 815
+    },
+    "issue-808": {
+      "state": "todo",
+      "title": "feat: Queue composition audit must run every 10 batches and post a plain-language summary: COORD",
+      "labels": [
+        "area/agent-loop",
+        "size/s",
+        "blocked",
+        "priority/low",
+        "kind/enhancement"
+      ],
+      "priority": "low",
+      "issue": 808
+    },
+    "issue-745": {
+      "state": "todo",
+      "title": "feat: validate.sh check [8/8]: \u2705 Present items referencing state.json fields must be verifiable",
+      "labels": [
+        "priority/medium",
+        "size/s",
+        "area/tooling",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "issue": 745
+    },
+    "issue-718": {
+      "state": "todo",
+      "title": "feat: `onboarding-existing-project.md` first-run smoke test section: the onboarding guides for e",
+      "labels": [
+        "priority/medium",
+        "area/agent-loop",
+        "size/s",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "issue": 718
+    }
+  },
+  "session_heartbeats": {
+    "sess-6515b10d": {
+      "last_seen": "2026-04-23T06:00:49Z",
+      "item": "coord",
+      "cycle": 1
+    }
+  }
+}
