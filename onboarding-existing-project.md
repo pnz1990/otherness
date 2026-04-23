@@ -461,6 +461,97 @@ gh pr list --repo "$REPO" --state open --json number,title,createdAt \
 
 Run these three checks any time you want to confirm the autonomous loop is healthy (not just after first run — use this days or weeks later too). All three should take under 5 minutes combined.
 
+### One-shot health check (< 2 minutes)
+
+Copy-paste this entire block. It runs all three checks and prints a GREEN / AMBER / RED summary:
+
+```bash
+REPO=$(git remote get-url origin 2>/dev/null | sed 's|.*github.com[:/]||;s|\.git$||')
+
+python3 - <<'EOF'
+import subprocess, json, datetime, sys
+
+REPO = subprocess.check_output(
+    ['git','remote','get-url','origin'], text=True
+).strip().split('github.com')[-1].lstrip(':/').rstrip('.git')
+
+results = {}
+
+# Check 1: _state updated in last 24h
+try:
+    r = subprocess.run(['gh','api',f'repos/{REPO}/branches/_state',
+                        '--jq','.commit.commit.committer.date'],
+                       capture_output=True, text=True, timeout=10)
+    if r.returncode == 0 and r.stdout.strip():
+        d = datetime.datetime.fromisoformat(r.stdout.strip().replace('Z','+00:00'))
+        age_h = (datetime.datetime.now(datetime.timezone.utc) - d).total_seconds() / 3600
+        results['_state age'] = ('PASS', f'{age_h:.0f}h ago') if age_h < 24 else ('FAIL', f'{age_h:.0f}h ago — stalled')
+    else:
+        results['_state age'] = ('FAIL', 'branch not found — loop never ran')
+except Exception as e:
+    results['_state age'] = ('WARN', f'could not check: {e}')
+
+# Check 2: at least 1 PR in last 7 days
+try:
+    r = subprocess.run(['gh','pr','list','--repo',REPO,'--state','all','--limit','30',
+                        '--json','title,createdAt,mergedAt'],
+                       capture_output=True, text=True, timeout=10)
+    if r.returncode == 0:
+        prs = json.loads(r.stdout)
+        cutoff = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=7)).isoformat()
+        recent = [p for p in prs if (p.get('createdAt','') >= cutoff or
+                                     (p.get('mergedAt') and p['mergedAt'] >= cutoff))]
+        results['PRs last 7d'] = ('PASS', f'{len(recent)} PR(s)') if recent else ('FAIL', '0 PRs — loop alive but not shipping')
+    else:
+        results['PRs last 7d'] = ('WARN', 'could not list PRs')
+except Exception as e:
+    results['PRs last 7d'] = ('WARN', f'could not check: {e}')
+
+# Check 3: no [NEEDS HUMAN] older than 48h
+try:
+    r = subprocess.run(['gh','issue','list','--repo',REPO,'--state','open',
+                        '--label','needs-human','--json','number,title,createdAt'],
+                       capture_output=True, text=True, timeout=10)
+    if r.returncode == 0:
+        issues = json.loads(r.stdout)
+        cutoff = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=48)).isoformat()
+        stale = [i for i in issues if i.get('createdAt','') < cutoff]
+        if stale:
+            details = ', '.join(f'#{i["number"]}' for i in stale[:3])
+            results['[NEEDS HUMAN]'] = ('FAIL', f'{len(stale)} stale escalation(s): {details}')
+        else:
+            results['[NEEDS HUMAN]'] = ('PASS', f'{len(issues)} open, none stale')
+    else:
+        results['[NEEDS HUMAN]'] = ('WARN', 'could not list issues')
+except Exception as e:
+    results['[NEEDS HUMAN]'] = ('WARN', f'could not check: {e}')
+
+# Print results
+any_fail = any(v[0] == 'FAIL' for v in results.values())
+any_warn = any(v[0] == 'WARN' for v in results.values())
+overall = 'RED' if any_fail else ('AMBER' if any_warn else 'GREEN')
+
+print(f'\n{"="*50}')
+print(f'  otherness health: {overall}')
+print(f'{"="*50}')
+for check, (status, detail) in results.items():
+    icon = '✅' if status == 'PASS' else ('⚠️ ' if status == 'WARN' else '❌')
+    print(f'  {icon} {check}: {detail}')
+print()
+
+if overall == 'GREEN':
+    print('  Loop is healthy. No action needed.')
+elif overall == 'AMBER':
+    print('  Loop is probably fine — one check could not run. Inspect manually.')
+else:
+    print('  Action required — see failing check(s) above.')
+EOF
+```
+
+---
+
+### Individual checks (if you prefer step-by-step)
+
 ```bash
 REPO=$(git remote get-url origin | sed 's|.*github.com[:/]||;s|\.git$||')
 ```
