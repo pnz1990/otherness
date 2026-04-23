@@ -79,7 +79,7 @@
       "file_spaces": []
     },
     "issue-949": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: `eng.md \u00a72d`: migrate `decisions.md` writes to use `specify memory set \"<key>\" \"<value>\"` ",
       "labels": [
         "priority/medium",
@@ -89,7 +89,8 @@
       ],
       "priority": "medium",
       "issue": 949,
-      "file_spaces": []
+      "file_spaces": [],
+      "note": "already implemented"
     },
     "issue-948": {
       "state": "done",
@@ -107,7 +108,7 @@
       "done_at": "2026-04-23T10:19:52Z"
     },
     "issue-947": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Periodic full-sweep audit of all \u2705 Present items: every 30 batches, PM \u00a75 must run a full ",
       "labels": [
         "priority/medium",
@@ -117,7 +118,9 @@
       ],
       "priority": "medium",
       "issue": 947,
-      "file_spaces": []
+      "file_spaces": [],
+      "pr_merged": true,
+      "done_at": "2026-04-23T10:26:26Z"
     },
     "issue-946": {
       "state": "todo",
@@ -147,7 +150,7 @@
       "pr": "978"
     },
     "issue-928": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Vision evolution cadence must have a defined \"pressure addressed\" criterion that makes the",
       "labels": [
         "priority/medium",
@@ -157,7 +160,8 @@
       ],
       "priority": "medium",
       "issue": 928,
-      "file_spaces": []
+      "file_spaces": [],
+      "note": "already implemented"
     },
     "issue-917": {
       "state": "todo",
