@@ -1645,6 +1645,23 @@ SKILLS_EOF
 SKILLS_COUNT=$(echo "$_SKILLS_LEARN" | grep '^SKILLS_COUNT=' | cut -d= -f2-)
 LAST_LEARN=$(echo "$_SKILLS_LEARN" | grep '^LAST_LEARN=' | cut -d= -f2-)
 
+# §36.5 Vision pressure utilisation — design doc 36 §36.5 → ✅
+# Display vision-backed claims ratio in health comment.
+# VISION_BACKED_CLAIMS_THIS_SESSION and TOTAL_CLAIMS_THIS_SESSION set by COORD §36.5.
+# Fail-open: if either unset, display "?/? (untracked)".
+_VPS_UTIL=$(python3 -c "
+import os
+backed = os.environ.get('VISION_BACKED_CLAIMS_THIS_SESSION', '')
+total = os.environ.get('TOTAL_CLAIMS_THIS_SESSION', '')
+if backed == '' or total == '':
+    print('?/? (untracked)')
+else:
+    b = int(backed or '0')
+    t = int(total or '0')
+    pct = f' ({b*100//t}%)' if t > 0 else ''
+    print(f'{b}/{t}{pct}')
+" 2>/dev/null || echo "?/? (untracked)")
+
 REPORT_BODY=$(cat <<BODY_EOF
 ## otherness health — batch ${SM_CYCLE:-?}
 
@@ -1658,6 +1675,7 @@ REPORT_BODY=$(cat <<BODY_EOF
  | Skills | ${SKILLS_COUNT:-?} skill files | last learn: ${LAST_LEARN:-unknown} |
  | Needs-human | ${NEEDS_HUMAN_COUNT:-0} open | ${ACTION:-continue} |
  | Managed | ${MANAGED_VELOCITY_LABEL:-unknown} | ${MANAGED_VELOCITY_WARN:-} |
+ | Vision pressure | ${_VPS_UTIL} vision-backed claims | session |
 ${_MEANINGFUL_WARN:+| Honesty gate | ${_MEANINGFUL_WARN} | |
 }${METRICS_TREND:+
 > ${METRICS_TREND}}
