@@ -379,7 +379,7 @@
       "file_spaces": []
     },
     "issue-852": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: COORD \u00a71e must refuse to claim a `kind/chore` item when no `kind/enhancement` or `kind/bug",
       "labels": [
         "priority/medium",
@@ -389,7 +389,10 @@
       ],
       "priority": "medium",
       "issue": 852,
-      "file_spaces": []
+      "file_spaces": [],
+      "pr_merged": false,
+      "done_at": "2026-04-23T00:00:00Z",
+      "note": "already implemented as \u00a71e-chore-gate"
     },
     "issue-851": {
       "state": "todo",
@@ -432,7 +435,7 @@
       "file_spaces": []
     },
     "issue-909": {
-      "state": "todo",
+      "state": "done",
       "title": "feat(pm): minor release trigger PM \u00a75l (40.2) \u2014 auto-cut vX.Y.0 when \u22653 feat PRs since last tag",
       "labels": [
         "size/s",
@@ -442,7 +445,9 @@
       ],
       "priority": "high",
       "issue": 909,
-      "file_spaces": []
+      "file_spaces": [],
+      "pr_merged": true,
+      "done_at": "2026-04-23T10:09:34Z"
     },
     "issue-817": {
       "state": "todo",
