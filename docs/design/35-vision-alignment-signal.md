@@ -27,14 +27,13 @@ Two consecutive AMBER batches on this criterion trigger an automatic queue audit
 - ✅ 35.2 — SM §4f: vision-misaligned AMBER note — `THROUGHPUT_WARN` updated to include actionable guidance: "⚠️ N vision-aligned PRs. Queue may have drifted from design docs. Run /otherness.vibe-vision or check coord §1b." — shown in health comment only when `VISION_PR_COUNT == 0`; absent when vision-aligned PRs exist (PR #721, 2026-04-21)
 - ✅ 35.3 — SM §4f: two-consecutive-AMBER trigger — when `consecutive_vision_misaligned >= 2` in `state.json`, SM §4f opens a `kind/chore priority/high` issue "Queue audit needed — 2 consecutive batches with no design-doc-backed PRs" (once only; skips if open issue already exists). Counter increments on each misaligned batch, resets to 0 on vision-aligned batch. (PR #762, 2026-04-21)
 - ✅ 35.4 — COORD §1e: vision-alignment filter — `_item_sort_key` adds `+5` boost to items whose title+body contains no design doc reference (`docs/design/`, `🔲 →`, `design doc`). Fallback heuristic when body absent from state.json: `feat:` title + `kind/enhancement` label = design-doc-backed. Hygiene items exempt. Non-design-doc items sort after all design-doc-backed items at the same priority tier. No label changes. (PR #XXX, 2026-04-22)
+- ✅ 35.5 — `state.json` `vision_aligned` + `consecutive_vision_misaligned` fields: SM §4f writes both fields to `state.json` each batch, which is then persisted to the `_state` branch via the field-level merge write. `vision_aligned` resets `consecutive_vision_misaligned` to 0; misaligned increments it. Enables the two-consecutive check in §35.3 to read historical values across sessions. (SM §4f line ~3886, part of PR #762 implementation)
 
 ---
 
 ## Future (🔲)
 
-- 🔲 35.2 — SM §4f: post AMBER note when vision-misaligned — include in health comment: "⚠️ 0 vision-aligned PRs this session. Queue may have drifted from design docs. Run vibe-vision or check coord §1b."
-- 🔲 35.3 — SM §4a: two-consecutive-AMBER trigger — if `_state` shows `vision_aligned: false` for 2 consecutive batches, automatically open a `kind/chore priority/high` issue: "Queue audit needed — 2 batches with no design-doc-backed PRs."
-- 🔲 35.5 — `state.json`: add `vision_aligned` field (boolean, per-batch) — persisted to `_state` branch so the two-consecutive check in §4a can read historical values across sessions.
+<!-- All items shipped. No pending Future items for this design doc. -->
 
 ---
 
