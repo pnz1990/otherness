@@ -66,8 +66,8 @@
       "done_at": "2026-04-23T09:53:31Z"
     },
     "issue-950": {
-      "state": "todo",
-      "title": "feat: `vibe-vision-auto.md` SCAN 5 (pressure context rewrite) must trigger on time-based stalene",
+      "state": "done",
+      "title": "feat(scan5): time-based pressure staleness trigger in SCAN 5 (42.4)",
       "labels": [
         "priority/medium",
         "area/agent-loop",
@@ -76,7 +76,13 @@
       ],
       "priority": "medium",
       "issue": 950,
-      "file_spaces": []
+      "file_spaces": [],
+      "assigned_to": "sess-a6b9cc4b",
+      "assigned_at": "2026-04-23T11:09:04Z",
+      "branch": "feat/issue-950",
+      "worktree": "../otherness.issue-950",
+      "merged_at": "2026-04-23T11:14:54Z",
+      "pr_number": 987
     },
     "issue-949": {
       "state": "done",
