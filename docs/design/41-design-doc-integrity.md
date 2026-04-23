@@ -61,7 +61,7 @@ the largest gap: items that were never implemented but are marked as done.
 - 🔲 41.2 — SM §4f: metrics schema conformance check every batch
 - ✅ 41.3 — validate.sh check [8/8]: see ✅ Present section above. (PR #745, 2026-04-21)
 - ✅ 41.4 — ENG §2f verification gate + QA §3b check: see ✅ Present section above. (PR #895, 2026-04-22)
-- 🔲 41.5 — Periodic full-sweep audit of all ✅ Present items: every 30 batches, PM §5 must run a full audit of all `✅ Present` items across all design docs and categorize each as: (A) verified by test/validate.sh, (B) verified by observable state evidence, (C) verified by PR reference only (weakest), or (D) unverifiable (no PR, no state evidence, no test). Category D items must be individually reviewed and either re-verified, downgraded to `🔲 Future`, or explicitly marked `✅ Present [unverifiable — no observable evidence]`. A design doc corpus where 30%+ of ✅ Present items are category C or D is an audit finding that must be reported on the report issue. ⚠️ Inferred from honesty lens: the simulation exists but predictions are not visibly changing agent behavior; the root cause is that "implemented" features may not actually be running, and there is no periodic audit to surface this.
+- ✅ 41.5 — PM §5r: Periodic full-sweep audit of all ✅ Present items: every 30 PM cycles, PM §5r categorizes each Present item as A (validate.sh/test/lint), B (state.json evidence), C (PR reference only), or D (unverifiable). When C+D > 30% of total: posts findings on REPORT_ISSUE with category breakdown and up to 5 category-D samples. Fail-open. (PR #issue-947, 2026-04-23)
 
 ---
 

@@ -2846,3 +2846,120 @@ except Exception:
     pass
 MINOR_CYCLE_EOF
 ```
+
+---
+
+## 5r. Periodic ✅ Present audit (runs every 30 PM cycles, design doc 41 §41.5)
+
+Categorize all ✅ Present items across design docs. Report when category C+D exceeds 30%.
+
+<!-- design ref: docs/design/41-design-doc-integrity.md §41.5 -->
+
+```bash
+# Gate: run every 30 PM cycles only
+PM_AUDIT_CYCLE_MOD=$(python3 -c "
+import json
+try:
+    s = json.load(open('.otherness/state.json'))
+    print(s.get('pm_audit_cycle', 0) % 30)
+except: print(0)
+" 2>/dev/null || echo "0")
+
+if [ "${PM_AUDIT_CYCLE_MOD:-0}" -ne 0 ]; then
+  echo "[PM §5r] Skipping this cycle (mod ${PM_AUDIT_CYCLE_MOD} ≠ 0)."
+else
+
+python3 - <<'AUDIT_EOF'
+import re, os, subprocess, json
+
+REPO = os.environ.get('REPO', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'PM')
+OTHERNESS_VERSION = os.environ.get('OTHERNESS_VERSION', 'unknown')
+REPORT_ISSUE = os.environ.get('REPORT_ISSUE', '')
+
+print('[PM §5r] Periodic ✅ Present audit starting...')
+
+# Categorization heuristics
+CAT_A_PAT = re.compile(r'validate\.sh|scripts/|test\.sh|lint\.sh|check \[', re.IGNORECASE)
+CAT_B_PAT = re.compile(r'state\.json|_state|metrics\.md|metrics\.json', re.IGNORECASE)
+CAT_C_PAT = re.compile(r'PR #?\d+|pull/\d+|\(PR', re.IGNORECASE)
+
+def categorize(item_text):
+    if CAT_A_PAT.search(item_text): return 'A'
+    if CAT_B_PAT.search(item_text): return 'B'
+    if CAT_C_PAT.search(item_text): return 'C'
+    return 'D'
+
+design_dir = 'docs/design'
+categories = {'A': 0, 'B': 0, 'C': 0, 'D': 0}
+total = 0
+category_d_samples = []
+
+if os.path.isdir(design_dir):
+    for fname in sorted(os.listdir(design_dir)):
+        if not fname.endswith('.md'):
+            continue
+        try:
+            content = open(os.path.join(design_dir, fname)).read()
+            present_m = re.search(r'^## Present.*?\n(.*?)(?=^## |\Z)', content,
+                                   re.MULTILINE | re.DOTALL)
+            if not present_m:
+                continue
+            items = re.findall(r'^- ✅ (.+)', present_m.group(1), re.MULTILINE)
+            for item in items:
+                cat = categorize(item)
+                categories[cat] += 1
+                total += 1
+                if cat == 'D' and len(category_d_samples) < 5:
+                    category_d_samples.append(f'{fname}: {item[:80]}')
+        except Exception:
+            pass
+
+if total == 0:
+    print('[PM §5r] No ✅ Present items found — skipping report.')
+    exit(0)
+
+cd_count = categories['C'] + categories['D']
+cd_ratio = cd_count / total
+print(f'[PM §5r] Audit: total={total} A={categories["A"]} B={categories["B"]} '
+      f'C={categories["C"]} D={categories["D"]} CD_ratio={cd_ratio:.1%}')
+
+if cd_ratio > 0.30 and REPORT_ISSUE:
+    d_samples_text = '\n'.join(f'  - {s}' for s in category_d_samples[:5])
+    body = (
+        f'[PM §5r | {MY_SESSION_ID} | otherness@{OTHERNESS_VERSION}] '
+        f'**✅ Present audit finding**: {cd_ratio:.0%} of items are category C (PR ref only) '
+        f'or D (unverifiable) — exceeds 30% threshold.\n\n'
+        f'| Category | Count | Meaning |\n'
+        f'|---------|-------|--------|\n'
+        f'| A | {categories["A"]} | Verified by validate.sh/test/lint |\n'
+        f'| B | {categories["B"]} | Verified by state evidence |\n'
+        f'| C | {categories["C"]} | PR reference only (weakest) |\n'
+        f'| D | {categories["D"]} | Unverifiable |\n\n'
+        f'**Category D samples** (up to 5):\n{d_samples_text}\n\n'
+        f'Consider: re-verify, downgrade to 🔲 Future, or annotate as '
+        f'`✅ Present [unverifiable — no observable evidence]`.'
+    )
+    subprocess.run(
+        ['gh', 'issue', 'comment', REPORT_ISSUE, '--repo', REPO, '--body', body],
+        capture_output=True, timeout=15)
+    print(f'[PM §5r] Audit finding posted: {cd_ratio:.0%} C+D (threshold 30%)')
+else:
+    print(f'[PM §5r] Audit OK: {cd_ratio:.0%} C+D ≤ 30%')
+
+print('[PM §5r] Periodic ✅ Present audit complete.')
+AUDIT_EOF
+
+fi  # end cycle gate
+
+# Increment pm_audit_cycle counter
+python3 - <<'AUDIT_CYCLE_EOF'
+import json
+try:
+    with open('.otherness/state.json') as f: s = json.load(f)
+    s['pm_audit_cycle'] = s.get('pm_audit_cycle', 0) + 1
+    with open('.otherness/state.json', 'w') as f: json.dump(s, f, indent=2)
+except Exception:
+    pass
+AUDIT_CYCLE_EOF
+```
