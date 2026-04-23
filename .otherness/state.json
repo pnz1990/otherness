@@ -432,8 +432,8 @@
       "file_spaces": []
     },
     "issue-718": {
-      "state": "todo",
-      "title": "feat: `onboarding-existing-project.md` first-run smoke test section: the onboarding guides for e",
+      "state": "done",
+      "title": "feat(onboarding): one-shot health check in onboarding-existing-project.md",
       "labels": [
         "priority/medium",
         "area/agent-loop",
@@ -442,7 +442,13 @@
       ],
       "priority": "medium",
       "issue": 718,
-      "file_spaces": []
+      "file_spaces": [],
+      "assigned_to": "sess-a6b9cc4b",
+      "assigned_at": "2026-04-23T11:02:37Z",
+      "branch": "feat/issue-718",
+      "worktree": "../otherness.issue-718",
+      "merged_at": "2026-04-23T11:06:48Z",
+      "pr_number": 986
     },
     "issue-909": {
       "state": "done",
