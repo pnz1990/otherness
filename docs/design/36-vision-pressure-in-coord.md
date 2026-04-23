@@ -30,6 +30,8 @@ no design-doc-backed items remain.
 
 ## Future (🔲)
 
+
+- 🔲 Rewrite vision pressure context in scheduled workflow: 5/5 pressure bullets addressed (≥2 matches each in merged PRs + design doc Present items) — the bar needs to be raised. Update the "Context for this vision scan:" block to push on the remaining open gaps. ⚠️ Inferred from pressure staleness scan: 100% addressed.
 - ✅ 36.1 — COORD §1b-vision: `VISION_PRESSURE_SET` actually built at session start: §1b-vision block added to coord.md — reads all `🔲 Future` items from `docs/design/*.md`, keys = first 40 chars lowercased, exported as newline-separated env var before §1c queue-gen. Previously in ✅ Present but implementation was absent from coord.md. (issue-938, 2026-04-22)
 - 🔲 36.3 — COORD §1b: log vision-pressure claim decisions — when claiming an item, append to the batch report: "Claimed #N [vision-backed: yes/no] — <reason>". This makes the claim logic auditable without adding overhead.
 - ✅ 36.4 — COORD §1f: queue-depth learn trigger counts vision-backed items — `VISION_BACKED_TODO_NOW` computed via `VISION_PRESSURE_SET` key match; trigger fires when vision-backed count < 3 (not raw count < 5); log: "[COORD §1e-36.4] Vision-backed todo items: N / M total."; fail-open when VPS unset (falls back to total count). (issue-891, 2026-04-22)
