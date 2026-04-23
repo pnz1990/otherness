@@ -195,270 +195,36 @@ PYEOF
 
 ```bash
 git config pull.rebase false 2>/dev/null || true
-git fetch --prune --quiet 2>/dev/null || true
-git pull origin main --quiet
+git pull origin main --quiet 2>/dev/null || true
 
+# Read config from AGENTS.md — single source of truth, no complex parsing
 REPO=$(git remote get-url origin 2>/dev/null | sed 's|.*github.com[:/]||;s|\.git$||')
-REPO_NAME=$(basename $(git rev-parse --show-toplevel))
+REPO_NAME=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)")
+REPORT_ISSUE=$(grep "^REPORT_ISSUE:" AGENTS.md 2>/dev/null | awk '{print $2}' | head -1)
+PR_LABEL=$(grep "^PR_LABEL:" AGENTS.md 2>/dev/null | awk '{print $2}' | head -1)
+BUILD_COMMAND=$(grep "^BUILD_COMMAND:" AGENTS.md 2>/dev/null | sed 's/^BUILD_COMMAND:[[:space:]]*//' | head -1)
+TEST_COMMAND=$(grep "^TEST_COMMAND:" AGENTS.md 2>/dev/null | sed 's/^TEST_COMMAND:[[:space:]]*//' | head -1)
+LINT_COMMAND=$(grep "^LINT_COMMAND:" AGENTS.md 2>/dev/null | sed 's/^LINT_COMMAND:[[:space:]]*//' | head -1)
+AUTONOMOUS_MODE=true
+CI_PROVIDER=github-actions
+JOB_FAMILY=SDE
+MY_SESSION_ID="sess-$(python3 -c 'import os; print(os.urandom(4).hex())' 2>/dev/null || date +%s | tail -c 9)"
+OTHERNESS_VERSION=$(git -C ~/.otherness describe --tags --always 2>/dev/null || echo "unknown")
 
-# Read all config from AGENTS.md (authoritative) + otherness-config.yaml (fallback)
-REPORT_ISSUE=$(python3 -c "
-import re
-for line in open('AGENTS.md'):
-    m = re.match(r'^REPORT_ISSUE:\s*(\S+)', line.strip())
-    if m: print(m.group(1)); break
-" 2>/dev/null || python3 -c "
-import re
-for line in open('otherness-config.yaml'):
-    m = re.match(r'^\s+report_issue:\s*(\S+)', line)
-    if m: print(m.group(1)); break
-" 2>/dev/null || echo "1")
+export REPO REPO_NAME REPORT_ISSUE PR_LABEL BUILD_COMMAND TEST_COMMAND LINT_COMMAND
+export AUTONOMOUS_MODE CI_PROVIDER JOB_FAMILY MY_SESSION_ID OTHERNESS_VERSION
 
-PR_LABEL=$(python3 -c "
-import re
-for line in open('AGENTS.md'):
-    m = re.match(r'^PR_LABEL:\s*(\S+)', line.strip())
-    if m: print(m.group(1)); break
-" 2>/dev/null || echo "")
-
-BUILD_COMMAND=$(python3 -c "
-import re
-for line in open('AGENTS.md'):
-    m = re.match(r'^BUILD_COMMAND:\s*(.+)', line.strip())
-    if m: print(m.group(1).strip()); break
-" 2>/dev/null || echo "true")
-
-TEST_COMMAND=$(python3 -c "
-import re
-for line in open('AGENTS.md'):
-    m = re.match(r'^TEST_COMMAND:\s*(.+)', line.strip())
-    if m: print(m.group(1).strip()); break
-" 2>/dev/null || echo "true")
-
-LINT_COMMAND=$(python3 -c "
-import re
-for line in open('AGENTS.md'):
-    m = re.match(r'^LINT_COMMAND:\s*(.+)', line.strip())
-    if m: print(m.group(1).strip()); break
-" 2>/dev/null || echo "true")
-
-JOB_FAMILY=$(python3 -c "
-import re
-section = None
-for line in open('otherness-config.yaml'):
-    s = re.match(r'^(\w[\w_]*):', line)
-    if s: section = s.group(1)
-    if section == 'project':
-        m = re.match(r'^\s+job_family:\s*(\S+)', line)
-        if m: print(m.group(1)); break
-" 2>/dev/null || echo "SDE")
-
-# Capability profile: read from otherness-config.yaml agents[] section.
-# Allows specialized agents to declare which item areas they can work on.
-# AGENT_ID env var selects a specific profile; otherwise the first profile is used.
-# If no profile found or areas empty: ALLOWED_AREAS stays unset (claim any item).
-eval "$(python3 - <<'CAP_EOF'
-import re, os, yaml as _yaml_unused
-# Parse agents section with regex (no PyYAML dependency)
-try:
-    content = open("otherness-config.yaml").read()
-    # Find agents: block
-    agents_block = re.search(r'^agents:\s*\n((?:  .+\n?)*)', content, re.MULTILINE)
-    if not agents_block:
-        raise ValueError("no agents section")
-
-    lines = agents_block.group(1).splitlines()
-    profiles = []
-    current = {}
-    for line in lines:
-        id_m = re.match(r"\s+-\s+id:\s*(.+)", line)
-        area_m = re.match(r"\s+areas:\s*\[(.+)\]", line)
-        area_m2 = re.match(r"\s+-\s+(.+)", line)
-        jf_m = re.match(r"\s+job_family:\s*(\S+)", line)
-        if id_m:
-            if current: profiles.append(current)
-            current = {"id": id_m.group(1).strip()}
-        elif area_m and current:
-            current["areas"] = [a.strip().strip("\"'") for a in area_m.group(1).split(",")]
-        elif jf_m and current:
-            current["job_family"] = jf_m.group(1).strip()
-    if current: profiles.append(current)
-
-    if not profiles:
-        raise ValueError("empty agents list")
-
-    # Select profile: by AGENT_ID env var or first
-    target_id = os.environ.get("AGENT_ID", "")
-    profile = next((p for p in profiles if p.get("id") == target_id), profiles[0])
-
-    areas = profile.get("areas", [])
-    if areas:
-        print(f"export ALLOWED_AREAS=\"{','.join(areas)}\"")
-        print(f"echo \"[STANDALONE] Capability profile: id={profile.get('id','')} areas={','.join(areas)}\"")
-    jf = profile.get("job_family", "")
-    if jf:
-        print(f"JOB_FAMILY=\"{jf}\"")
-        print(f"echo \"[STANDALONE] Job family override from profile: {jf}\"")
-except Exception:
-    pass  # No profile — no-op, agent claims any item
-CAP_EOF
-)"
-
-AUTONOMOUS_MODE=$(python3 -c "
-import re
-section = None
-for line in open('otherness-config.yaml'):
-    s = re.match(r'^(\w[\w_]*):', line)
-    if s: section = s.group(1)
-    if section == 'maqa':
-        m = re.match(r'^\s+autonomous_mode:\s*(true|false)', line)
-        if m: print(m.group(1)); break
-" 2>/dev/null || echo "true")
-
-CI_PROVIDER=$(python3 -c "
-import re
-section = None
-for line in open('otherness-config.yaml'):
-    s = re.match(r'^(\w[\w_]*):', line)
-    if s: section = s.group(1)
-    if section == 'ci':
-        m = re.match(r'^\s+provider:\s*(\S+)', line)
-        if m: print(m.group(1)); break
-" 2>/dev/null || echo "github-actions")
-
-# Session identity — unique per session, stable for its lifetime
-MY_SESSION_ID="sess-$(python3 -c 'import os; print(os.urandom(4).hex())' 2>/dev/null || echo "$(date +%s | tail -c 9)")"
-
-# Otherness version — for correlating behaviour to agent release
-OTHERNESS_VERSION=$(git -C ~/.otherness describe --tags --always 2>/dev/null \
-  || git -C ~/.otherness rev-parse --short HEAD 2>/dev/null \
-  || echo "unknown")
-
-# Daily report rotation: check if REPORT_ISSUE was created on a previous UTC day;
-# if so, open a fresh one. Uses GitHub search to detect today's issue before creating.
-# Persists the new issue number via _state branch push (not local filesystem).
-REPORT_ISSUE=$(python3 - <<'ROTATE_EOF'
-import subprocess, json, datetime, re, os, sys
-
-REPO = os.environ.get('REPO', '')
-PR_LABEL = os.environ.get('PR_LABEL', 'otherness')
-today = datetime.datetime.now(datetime.timezone.utc).date()
-today_str = today.strftime('%Y-%m-%d')
-
-# Step 1: Check if today's report issue already exists (dedup guard)
-search_title = f'Autonomous Team Reports — {today_str}'
-try:
-    r = subprocess.run(['gh','issue','list','--repo',REPO,'--state','open',
-                        '--search', search_title,
-                        '--json','number,title','--jq','.[0].number'],
-                       capture_output=True, text=True, timeout=15)
-    if r.returncode == 0 and r.stdout.strip() and r.stdout.strip() != 'null':
-        existing_num = r.stdout.strip()
-        print(existing_num)
-        sys.exit(0)
-except: pass
-
-# Step 2: Read base report_issue from state.json (_state branch) > AGENTS.md > config
-report_issue = None
-try:
-    r = subprocess.run(['git','show','origin/_state:.otherness/state.json'],
-                       capture_output=True, text=True)
-    if r.returncode == 0:
-        s = json.loads(r.stdout)
-        report_issue = str(s.get('report_issue', '')).strip() or None
-except: pass
-
-if not report_issue:
-    try:
-        for line in open('AGENTS.md'):
-            m = re.match(r'^REPORT_ISSUE:\s*(\S+)', line.strip())
-            if m: report_issue = m.group(1); break
-    except: pass
-
-if not report_issue:
-    try:
-        for line in open('otherness-config.yaml'):
-            m = re.match(r'^\s+report_issue:\s*(\S+)', line)
-            if m: report_issue = m.group(1); break
-    except: pass
-
-if not report_issue:
-    report_issue = '1'
-
-# Step 3: Check if current report issue is from a previous day
-try:
-    r = subprocess.run(['gh','issue','view',report_issue,'--repo',REPO,
-                        '--json','createdAt,state','--jq','{created:.createdAt,state:.state}'],
-                       capture_output=True, text=True, timeout=10)
-    if r.returncode == 0:
-        d = json.loads(r.stdout)
-        created = d.get('created','').strip('"')
-        issue_state = d.get('state','open')
-        created_date = datetime.datetime.fromisoformat(created.replace('Z','+00:00')).date()
-        if created_date < today or issue_state == 'closed':
-            # Create today's issue
-            new_title = f'📊 Autonomous Team Reports — {today_str}'
-            cr = subprocess.run(['gh','issue','create','--repo',REPO,
-                                 '--title',new_title,
-                                 '--body',f'Daily autonomous team report. Continued from #{report_issue}.'],
-                                capture_output=True, text=True, timeout=15)
-            if cr.returncode == 0:
-                new_url = cr.stdout.strip()
-                new_num = new_url.split('/')[-1]
-                # Comment on old issue (don't close — close is noisy and hides history)
-                subprocess.run(['gh','issue','comment',report_issue,'--repo',REPO,
-                                '--body',f'[ROTATE] Continuing today in #{new_num}: {new_url}'],
-                               capture_output=True, timeout=10)
-                # Persist new issue number to _state branch via git worktree
-                try:
-                    wt = '/tmp/_state_persist'
-                    subprocess.run(['git','worktree','add','--orphan','-b','_state_persist_tmp',wt],
-                                   capture_output=True)
-                    subprocess.run(['git','fetch','origin','_state:_state'],capture_output=True)
-                    subprocess.run(['git','-C',wt,'checkout','origin/_state','--','.otherness/state.json'],
-                                   capture_output=True)
-                    sj_path = f'{wt}/.otherness/state.json'
-                    if os.path.exists(sj_path):
-                        with open(sj_path) as f: s = json.load(f)
-                        s['report_issue'] = int(new_num)
-                        with open(sj_path,'w') as f: json.dump(s,f,indent=2)
-                        subprocess.run(['git','-C',wt,'add','.otherness/state.json'],capture_output=True)
-                        subprocess.run(['git','-C',wt,'commit','-m',f'rotate report_issue to #{new_num}'],
-                                       capture_output=True)
-                        subprocess.run(['git','-C',wt,'push','origin',f'HEAD:_state'],capture_output=True)
-                    subprocess.run(['git','worktree','remove',wt,'--force'],capture_output=True)
-                    subprocess.run(['git','branch','-D','_state_persist_tmp'],capture_output=True)
-                except Exception as e:
-                    pass  # state persist failed — next session will re-rotate but dedup guard prevents duplicates
-                print(new_num)
-                sys.exit(0)
-except: pass
-
-print(report_issue)
-ROTATE_EOF
-)
-
-export REPO REPO_NAME REPORT_ISSUE PR_LABEL BUILD_COMMAND TEST_COMMAND LINT_COMMAND JOB_FAMILY AUTONOMOUS_MODE MY_SESSION_ID OTHERNESS_VERSION CI_PROVIDER
-
-echo "[STANDALONE | $MY_SESSION_ID | otherness@$OTHERNESS_VERSION] Project: $REPO | Role: $JOB_FAMILY | Autonomous: $AUTONOMOUS_MODE | Report: #$REPORT_ISSUE"
+echo "[STANDALONE | $MY_SESSION_ID | otherness@$OTHERNESS_VERSION] $REPO | Report: #$REPORT_ISSUE"
+gh issue comment "$REPORT_ISSUE" --repo "$REPO"   --body "[STANDALONE | $MY_SESSION_ID | otherness@$OTHERNESS_VERSION] Session started." 2>/dev/null || true
 ```
 
-Post startup comment:
+Read session handoff if present:
 ```bash
-gh issue comment $REPORT_ISSUE --repo $REPO \
-  --body "[STANDALONE | $MY_SESSION_ID | otherness@$OTHERNESS_VERSION] Session started. Repo: \`$REPO\`. Role: $JOB_FAMILY." 2>/dev/null
-```
-
-Read session handoff if present (from _state branch — works on any machine):
-```bash
+git fetch origin _state --quiet 2>/dev/null || true
+git show origin/_state:.otherness/state.json > .otherness/state.json 2>/dev/null || true
 HANDOFF=$(git show origin/_state:.otherness/handoff.md 2>/dev/null)
-if [ -n "$HANDOFF" ]; then
-  echo "[STANDALONE] Reading session handoff from _state branch:"
-  echo "$HANDOFF"
-  echo "[STANDALONE] Handoff read — proceeding from last state."
-fi
+[ -n "$HANDOFF" ] && echo "[STANDALONE] Handoff: $HANDOFF" || echo "[STANDALONE] No handoff — fresh session."
 ```
-
 ---
 
 ## D4 INSTRUCTION INTERPRETATION
