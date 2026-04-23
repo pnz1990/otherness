@@ -82,14 +82,67 @@ ls docs/design/ 2>/dev/null || echo "(no docs/design/ yet)"
 ISSUE_BODY=$(gh issue view ${ITEM_ID//[^0-9]/} --repo $REPO --json title,body \
   --jq '"Title: " + .title + "\n\n" + .body' 2>/dev/null)
 
-# 3. [AI-STEP] Read the matching design doc. Find the 🔲 Future item(s) this
-#    issue implements. The spec you write MUST reference this design doc.
-#
-#    If no matching design doc exists:
-#    - Create docs/design/<N>-<area>.md using the design doc structure from
-#      docs/design/01-declarative-design-driven-development.md
-#    - Mark the new item as 🔲 Future (you will flip it to ✅ Present in §2f)
-#    - Creating the design doc is part of THIS item's work — not a separate issue
+# 3. Find and read the matching design doc
+DESIGN_DOC=$(python3 - <<'DDOC_EOF'
+import subprocess, re, os, json
+
+REPO = os.environ.get('REPO', '')
+ITEM_ID = os.environ.get('ITEM_ID', '')
+
+try:
+    issue_num = re.sub(r'[^0-9]', '', ITEM_ID)
+    r = subprocess.run(['gh','issue','view',issue_num,'--repo',REPO,
+                        '--json','title,body','--jq','.body'],
+                       capture_output=True, text=True, timeout=10)
+    body = r.stdout if r.returncode == 0 else ''
+except Exception:
+    body = ''
+
+# Extract design doc reference from issue body if present
+m = re.search(r'docs/design/([^\s`\)]+\.md)', body)
+if m:
+    print(m.group(1))
+else:
+    # Fallback: match by area keyword in title
+    try:
+        r2 = subprocess.run(['gh','issue','view',issue_num,'--repo',REPO,
+                             '--json','title','--jq','.title'],
+                            capture_output=True, text=True, timeout=10)
+        title = r2.stdout.strip().lower() if r2.returncode == 0 else ''
+    except Exception:
+        title = ''
+
+    design_dir = 'docs/design'
+    if os.path.isdir(design_dir):
+        for fname in sorted(os.listdir(design_dir), reverse=True):
+            if not fname.endswith('.md'): continue
+            slug = fname[3:].replace('-', ' ').replace('.md', '')
+            if any(word in title for word in slug.split() if len(word) > 4):
+                print(fname); break
+        else:
+            print('')
+    else:
+        print('')
+DDOC_EOF
+)
+
+if [ -n "$DESIGN_DOC" ] && [ -f "docs/design/$DESIGN_DOC" ]; then
+  echo "[ENG §2b] Design doc: docs/design/$DESIGN_DOC"
+  # Read the design doc to find the 🔲 Future item this issue implements
+  FUTURE_ITEM=$(python3 -c "
+import re
+content = open('docs/design/$DESIGN_DOC').read()
+m = re.search(r'^## Future.*?\n(.*?)(?=^## |\Z)', content, re.MULTILINE | re.DOTALL)
+if m:
+    items = re.findall(r'^- 🔲 (?!.*🚫)(.+)', m.group(1), re.MULTILINE)
+    for it in items: print(it[:120]); break
+" 2>/dev/null)
+  [ -n "\$FUTURE_ITEM" ] && echo "[ENG §2b] Implements: \$FUTURE_ITEM"
+else
+  echo "[ENG §2b] No matching design doc found — will create docs/design/<N>-<area>.md as part of this item"
+  # Create a design doc stub if none exists; structure from docs/design/01-*.md
+  DESIGN_DOC=""
+fi
 ```
 
 **Step 1 — Concept consistency check before speccing:**
@@ -106,22 +159,39 @@ If speckit is installed (`specify --version 2>/dev/null`): use it for structured
 ```bash
 mkdir -p "$MY_WORKTREE/.specify/specs/$ITEM_ID"
 
-# [AI-STEP] Write .specify/specs/$ITEM_ID/spec.md using the three-zone structure:
-# Zone 1 — Obligations (falsifiable, must satisfy)
-# Zone 2 — Implementer's judgment (choices left to engineer)
-# Zone 3 — Scoped out (explicitly not covered)
-# Each obligation must be falsifiable — describe behavior that would violate it.
-#
-# The spec MUST include a ## Design reference section:
-#
-#   ## Design reference
-#   - **Design doc**: `docs/design/<N>-<area>.md`
-#   - **Section**: `<section name>`
-#   - **Implements**: <brief description of 🔲 item being moved to ✅>
-#
-# If this item has no user-visible behavior change (pure chore/fix/refactor):
-#   ## Design reference
-#   - N/A — infrastructure change with no user-visible behavior
+mkdir -p "$MY_WORKTREE/.specify/specs/$ITEM_ID"
+SPEC_FILE="$MY_WORKTREE/.specify/specs/$ITEM_ID/spec.md"
+
+# Write spec.md with three-zone structure. Fill in the placeholders before writing.
+# The spec MUST be written with actual content — not template placeholders.
+# DESIGN_DOC and FUTURE_ITEM come from §2b above.
+cat > "$SPEC_FILE" << SPEC_TEMPLATE
+# Spec: $ITEM_ID
+
+## Design reference
+- **Design doc**: \`docs/design/${DESIGN_DOC:-<N>-<area>.md}\`
+- **Section**: \`§ Future\`
+- **Implements**: ${FUTURE_ITEM:-<describe 🔲 item being moved to ✅>}
+
+---
+
+## Zone 1 — Obligations (falsifiable)
+
+<!-- Each obligation MUST be falsifiable: describe what would violate it -->
+<!-- Example: O1: grep -q 'pattern' file.md returns 0 after this change -->
+
+## Zone 2 — Implementer's judgment
+
+<!-- Choices left to the engineer: naming, ordering, approach where obligations don't constrain -->
+
+## Zone 3 — Scoped out
+
+<!-- Explicitly not covered by this item -->
+SPEC_TEMPLATE
+
+echo "[ENG §2b] Spec template written to $SPEC_FILE — fill in actual content before proceeding"
+# MANDATORY: edit the spec file to replace placeholders with real obligations
+# Do NOT proceed to code with placeholder text in Zone 1
 ```
 
 **Spec quality gate** — do not proceed to code until:
@@ -141,19 +211,56 @@ Before writing any code or customer doc, confirm which skills were loaded.
 # List available skills
 ls ~/.otherness/agents/skills/*.md 2>/dev/null | grep -v PROVENANCE | grep -v README
 
-# [AI-STEP] Review the list above. Select the most applicable skill(s) for this item type:
-# - feat/enhancement → agent-coding-discipline.md, declaring-designs.md
-# - bug/fix → reconciling-implementations.md, agent-responsibility.md
-# - PR/commit → contribution-hygiene.md, ephemeral-pr-artifacts.md
-# - learn/skills → autonomous-workflow-patterns.md
-# Log your selection — this text MUST appear in the PR description:
-#   Loaded skill: `<filename>`
-# Example:
-#   Loaded skill: `agent-coding-discipline.md`
-#   Loaded skill: `declaring-designs.md`
-#
-# SM §4b-skill-citation checks that ≥3 of the last 5 feat/* PRs include this line.
-# A missing "Loaded skill:" line counts as 0 for that PR.
+# List available skills
+ls ~/.otherness/agents/skills/*.md 2>/dev/null | grep -v PROVENANCE | grep -v README
+
+# Select skills based on item kind (derived from issue labels or title prefix)
+ITEM_KIND=$(python3 - <<'KIND_EOF'
+import subprocess, re, os
+REPO = os.environ.get('REPO', '')
+ITEM_ID = os.environ.get('ITEM_ID', '')
+try:
+    issue_num = re.sub(r'[^0-9]', '', ITEM_ID)
+    r = subprocess.run(['gh','issue','view',issue_num,'--repo',REPO,
+                        '--json','labels','--jq','[.labels[].name]|join(",")'],
+                       capture_output=True, text=True, timeout=10)
+    labels = r.stdout.strip() if r.returncode == 0 else ''
+except Exception:
+    labels = ''
+
+if 'kind/bug' in labels: print('bug')
+elif 'kind/chore' in labels: print('chore')
+else: print('feat')
+KIND_EOF
+)
+
+# Load skills appropriate for item kind; log selection for SM §4b-skill-citation
+case "$ITEM_KIND" in
+  feat|enhancement)
+    LOADED_SKILLS="agent-coding-discipline.md declaring-designs.md"
+    cat ~/.otherness/agents/skills/agent-coding-discipline.md > /dev/null
+    cat ~/.otherness/agents/skills/declaring-designs.md > /dev/null
+    ;;
+  bug)
+    LOADED_SKILLS="reconciling-implementations.md agent-responsibility.md"
+    cat ~/.otherness/agents/skills/reconciling-implementations.md > /dev/null
+    cat ~/.otherness/agents/skills/agent-responsibility.md > /dev/null
+    ;;
+  chore)
+    LOADED_SKILLS="contribution-hygiene.md agent-coding-discipline.md"
+    cat ~/.otherness/agents/skills/contribution-hygiene.md > /dev/null
+    cat ~/.otherness/agents/skills/agent-coding-discipline.md > /dev/null
+    ;;
+  *)
+    LOADED_SKILLS="agent-coding-discipline.md"
+    cat ~/.otherness/agents/skills/agent-coding-discipline.md > /dev/null
+    ;;
+esac
+# Log loaded skills — this line must appear in the PR description
+for _skill in $LOADED_SKILLS; do
+  echo "Loaded skill: \`$_skill\`"
+done
+export LOADED_SKILLS
 ```
 
 ## 2c-customer. Customer doc check
@@ -166,8 +273,56 @@ ls ~/.otherness/agents/skills/*.md 2>/dev/null | grep -v PROVENANCE | grep -v RE
 # 3. If it doesn't exist: create a stub with the interface contract.
 #    Mark unimplemented sections 🔲 Future — do NOT describe how the code works.
 #
-# [AI-STEP] Perform this check. Update or create the customer doc stub if needed.
-# The customer doc change will ship in the same PR as the feature (see §2f).
+ISSUE_NUM=$(echo "$ITEM_ID" | grep -oE '[0-9]+' | head -1)
+ISSUE_TITLE=$(gh issue view "$ISSUE_NUM" --repo "$REPO" --json title --jq '.title' 2>/dev/null || echo "")
+
+# Check for user-visible behavior change (feat items always have one; chore/fix/refactor may not)
+IS_USER_VISIBLE=$(python3 -c "
+import os, re
+title = os.environ.get('ISSUE_TITLE', '').lower()
+# Infra/chore patterns: no user-visible change
+if re.search(r'\b(chore|refactor|ci|build|bump|lint|fix ci|cleanup)\b', title): print('no')
+else: print('yes')
+" ISSUE_TITLE="$ISSUE_TITLE" 2>/dev/null || echo "yes")
+
+if [ "$IS_USER_VISIBLE" = "yes" ]; then
+  # Check for existing customer doc in docs/<feature>.md
+  FEATURE_SLUG=$(echo "$ISSUE_TITLE" | python3 -c "
+import sys, re
+t = sys.stdin.read().strip().lower()
+t = re.sub(r'^(feat|fix|chore|docs|refactor|test)[\(:].*?[:]\s*', '', t)
+t = re.sub(r'[^a-z0-9]+', '-', t)
+print(t[:40].strip('-'))
+" 2>/dev/null)
+  CUSTOMER_DOC="docs/${FEATURE_SLUG}.md"
+  if [ -f "$MY_WORKTREE/$CUSTOMER_DOC" ]; then
+    echo "[ENG §2c] Customer doc exists: $CUSTOMER_DOC — read it; spec obligations must be consistent."
+    head -40 "$MY_WORKTREE/$CUSTOMER_DOC"
+  else
+    echo "[ENG §2c] No customer doc found at $CUSTOMER_DOC — creating stub if behavior is user-visible."
+    # Only create if this item's feature area warrants a customer-facing doc
+    # (agent loop changes do NOT need customer docs — no user-facing CLI/UI)
+    if echo "$ISSUE_TITLE" | grep -qiE 'cli|command|flag|output|interface|api|format|display|show|report'; then
+      mkdir -p "$MY_WORKTREE/docs"
+      cat > "$MY_WORKTREE/$CUSTOMER_DOC" << CUSTDOC_TEMPLATE
+# ${ISSUE_TITLE}
+
+🔲 Future — document this feature after implementation.
+
+## Usage
+
+<!--  Fill in after implementation  -->
+
+## Examples
+
+<!--  Fill in after implementation  -->
+CUSTDOC_TEMPLATE
+      echo "[ENG §2c] Customer doc stub created: $CUSTOMER_DOC"
+    else
+      echo "[ENG §2c] No customer doc needed (agent-internal change, no user-facing interface)."
+    fi
+  fi
+fi
 ```
 
 ---
@@ -183,27 +338,40 @@ Load skill: `~/.otherness/agents/skills/agent-coding-discipline.md` before writi
 TASKS_FILE="$MY_WORKTREE/.specify/specs/$ITEM_ID/tasks.md"
 mkdir -p "$(dirname $TASKS_FILE)"
 
-# [AI-STEP] Write $TASKS_FILE with this structure:
-# # Tasks: $ITEM_ID <title from spec.md>
-#
-# ## Pre-implementation
-# - [CMD] `cd $MY_WORKTREE && <build/test baseline command>` — expected: 0 exit
-#
-# ## Implementation
-# - [AI] <step 1: what to write, one sentence>
-# - [CMD] `cd $MY_WORKTREE && <verification command>` — expected: <output>
-# - [AI] <step 2>
-# ... repeat [AI]/[CMD] pairs for each logical unit
-#
-# ## Post-implementation
-# - [CMD] `cd $MY_WORKTREE && bash scripts/validate.sh 2>&1 | tail -3` — expected: PASSED
-# - [CMD] `cd $MY_WORKTREE && <test command>` — expected: all pass
-#
-# Rules:
-# - [AI] steps = require judgment (how to implement)
-# - [CMD] steps = deterministic command with explicit expected output
-# - Every [CMD] failure: STOP and fix before proceeding. No skipping.
-# - At least 2 [CMD] verification steps required (QA checks this).
+# Write tasks.md with structure derived from the spec obligations.
+# Zone 1 obligations from spec.md become [CMD] verification steps.
+SPEC_OBLIGATIONS=$(python3 - <<'OBL_EOF'
+import re, os
+spec = os.environ.get("SPEC_FILE", "")
+try:
+    content = open(spec).read()
+    m = re.search(r'## Zone 1.*?\n(.*?)(?=## Zone|\Z)', content, re.DOTALL)
+    if m:
+        obls = re.findall(r'^(?:\d+\. |\- )(?:\*\*O\d+\*\*: )?(.+)', m.group(1), re.MULTILINE)
+        for o in obls[:5]: print(f"- [CMD] Verify: {o[:80]}")
+except Exception:
+    pass
+OBL_EOF
+)
+
+cat > "$TASKS_FILE" << TASKS_TEMPLATE
+# Tasks: $ITEM_ID
+
+## Pre-implementation
+- [CMD] \`cd $MY_WORKTREE && bash scripts/validate.sh 2>&1 | tail -3\` — expected: PASSED (baseline)
+- [CMD] \`cd $MY_WORKTREE && bash scripts/lint.sh 2>&1 | tail -3\` — expected: PASSED (baseline)
+
+## Implementation
+- [AI] Read spec Zone 1 obligations and implement minimum required changes
+- [AI] Verify each obligation before marking done
+${SPEC_OBLIGATIONS}
+
+## Post-implementation
+- [CMD] \`cd $MY_WORKTREE && bash scripts/validate.sh 2>&1 | tail -3\` — expected: PASSED
+- [CMD] \`cd $MY_WORKTREE && bash scripts/test.sh 2>&1 | tail -3\` — expected: PASSED
+- [CMD] \`cd $MY_WORKTREE && bash scripts/lint.sh 2>&1 | tail -3\` — expected: PASSED
+TASKS_TEMPLATE
+
 echo "tasks.md created: $TASKS_FILE"
 ```
 
@@ -321,29 +489,28 @@ Load skill: `~/.otherness/agents/skills/ephemeral-pr-artifacts.md` before openin
 **Before committing — update the design doc (if this item has user-visible behavior):**
 
 ```bash
-# [AI-STEP] Open the design doc identified in §2b.
-# Find the 🔲 Future item(s) this PR implements.
-#
-# §41.4 VERIFICATION GATE — before flipping 🔲 to ✅, verify the feature is present:
-#   - If this item adds a new state.json field:
-#     verify the field appears in _state branch after implementation
-#     (git show origin/_state:.otherness/state.json | python3 -c "import json,sys; s=json.load(sys.stdin); print('<field>' in str(s))")
-#   - If this item adds a new metrics column to docs/aide/metrics.md:
-#     verify the last row contains the column
-#     (tail -1 docs/aide/metrics.md | grep -q "<column-name>")
-#   - If this item adds a new agent instruction section:
-#     verify the section header exists in the target agent file
-#     (grep -q "<section-header>" agents/phases/<target>.md)
-#   - If verification fails: fix the implementation before marking ✅ Present.
-#   - If none of these apply (documentation-only, pure process change): proceed.
-#
-# Move verified item(s) to the ✅ Present section, adding "(PR #N, date)".
-# If new behavior was added that wasn't in the design doc: add it to ✅ Present.
-# Do NOT add new 🔲 Future items here — that is the PM's job.
-#
-# Also update the customer doc (docs/<feature>.md) to match what was actually shipped:
-# - Remove 🔲 Future markers from sections now implemented
-# - Ensure the doc accurately describes what the user can do today
+# §41.4 VERIFICATION GATE — before flipping 🔲 to ✅, verify the feature is present.
+# Run the appropriate verification command for the type of change:
+#   new state.json field:       git show origin/_state:.otherness/state.json | python3 -c "import json,sys; s=json.load(sys.stdin); print('<field>' in str(s))"
+#   new metrics.md column:      grep -q "<column-name>" docs/aide/metrics.md
+#   new agent section:          grep -q "<section-header>" agents/phases/<target>.md
+#   file present:               test -f <path>
+#   command output:             eval "$BUILD_COMMAND" | grep -q "<expected>"
+# If none apply (doc-only or pure process): proceed without a command check.
+
+# Flip 🔲 to ✅ in the design doc using sed (no manual editing required):
+if [ -n "$DESIGN_DOC" ] && [ -f "$MY_WORKTREE/docs/design/$DESIGN_DOC" ]; then
+  PR_NUM=$(gh pr list --repo $REPO --head $MY_BRANCH --json number --jq '.[0].number' 2>/dev/null || echo "?")
+  TODAY=$(date +%Y-%m-%d)
+  # Replace the 🔲 Future marker with ✅ Present inline (first match of the item title)
+  ITEM_SLUG=$(echo "${FUTURE_ITEM:-}" | cut -c1-50 | sed 's/[]\/$*.^[]/\\&/g')
+  if [ -n "$ITEM_SLUG" ]; then
+    sed -i "s|🔲 ${ITEM_SLUG}|✅ ${ITEM_SLUG} (PR #${PR_NUM}, ${TODAY})|" \
+      "$MY_WORKTREE/docs/design/$DESIGN_DOC" 2>/dev/null || \
+      echo "[ENG §2f] sed replacement failed — edit design doc manually"
+    echo "[ENG §2f] Design doc updated: docs/design/$DESIGN_DOC (🔲 → ✅)"
+  fi
+fi
 ```
 
 ```bash

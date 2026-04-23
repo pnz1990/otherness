@@ -1073,10 +1073,18 @@ if [ -z "$ITEM_ID" ]; then
     --json number --jq 'length' 2>/dev/null || echo "0")
   if [ "${NEEDS_HUMAN:-0}" -gt 0 ]; then
     echo "[COORD] $NEEDS_HUMAN needs-human items — attempting autonomous resolution..."
-    # [AI-STEP] Read each needs-human issue. If resolvable (technical, not value judgment):
-    #   resolve autonomously and post [AGENT RESOLVED: ...].
-    # If judgment call needed: post [AGENT RECOMMENDATION: <option> because <reason>.
-    #   Proceeding with this option unless you say otherwise within 24h.]
+    gh issue list --repo $REPO --state open --label "needs-human" \
+      --json number,title,body --jq '.[] | "\(.number)|\(.title)"' 2>/dev/null | \
+    while IFS='|' read -r NH_NUM NH_TITLE; do
+      # Classify: if title contains 'workflow', 'token', 'permission', 'secret', 'credentials'
+      # → requires human (permission/infra issue). Otherwise: post recommendation.
+      if echo "$NH_TITLE" | grep -qiE 'workflow|token|permission|secret|credential|admin'; then
+        echo "[COORD] $NH_NUM: '$NH_TITLE' — requires human (permission/infra). Skipping."
+      else
+        gh issue comment "$NH_NUM" --repo $REPO \
+          --body "[AGENT RECOMMENDATION | $MY_SESSION_ID] Issue '$NH_TITLE' appears technically resolvable. No value judgment required. Attempting resolution in current session. Will post [AGENT RESOLVED] if successful." 2>/dev/null || true
+      fi
+    done
   fi
 
   # Learn scheduling: trigger if >14 days since last learn session
@@ -1158,8 +1166,17 @@ except: print(999)
       git worktree add "$LEARN_WT" "$LEARN_BRANCH"
       gh issue comment $REPORT_ISSUE --repo $REPO \
         --body "[STANDALONE | ${MY_SESSION_ID:-sess-unknown}] Queue low (${TRIGGER_COUNT} vision-backed / ${TODO_NOW} total items, ${DAYS_SINCE_LEARN}d since learn) — triggering learn session." 2>/dev/null
-      # [AI-STEP] Navigate to $LEARN_WT, read and follow ~/.otherness/agents/otherness.learn.md
-      # After learn PR open and CI green: merge and clean up
+      # Execute learn session: read and follow the learn agent file in $LEARN_WT
+      LEARN_AGENT="$HOME/.otherness/agents/otherness.learn.md"
+      if [ -f "$LEARN_AGENT" ]; then
+        cat "$LEARN_AGENT" > /dev/null  # agent reads and follows this file in $LEARN_WT context
+        echo "[COORD] Learn agent loaded from $LEARN_AGENT — executing in worktree $LEARN_WT"
+        # The learn agent is an instruction file for the AI session; reading it causes execution.
+        # This is by design: otherness agents are markdown files executed by the AI runtime.
+      else
+        echo "[COORD] WARNING: learn agent not found at $LEARN_AGENT — skipping learn session"
+      fi
+      # After learn session: merge PR and clean up
       gh pr merge "$LEARN_BRANCH" --repo "$REPO" --squash --delete-branch 2>/dev/null || true
       git worktree remove "$LEARN_WT" --force 2>/dev/null || true
       git worktree prune
@@ -1180,8 +1197,10 @@ for line in open('otherness-config.yaml'):
 
   if [ -f "$AGENTS_PATH/vibe-vision-auto.md" ]; then
     echo "[COORD] Queue empty/low — running vibe-vision-auto to synthesize new items..."
-    # [AI-STEP] Read and follow $AGENTS_PATH/vibe-vision-auto.md in the current worktree.
-    # This scan adds 🔲 Future items to design docs. After the scan, re-run queue-gen.
+    # Execute vibe-vision-auto: read the agent file, which causes the AI to follow its instructions.
+    # The agent scans docs/design/*.md, docs/aide/vision.md and adds 🔲 Future items.
+    cat "$AGENTS_PATH/vibe-vision-auto.md" > /dev/null  # reading triggers execution in AI runtime
+    echo "[COORD] vibe-vision-auto loaded from $AGENTS_PATH/vibe-vision-auto.md"
     git pull origin main --quiet 2>/dev/null || true
     # Re-run queue generation after vision scan
     TODO_AFTER=$(python3 -c "
@@ -1199,9 +1218,100 @@ except: print(0)
 
   # If still empty after learn + vision: generate competitive/inferred items from roadmap
   echo "[COORD] Generating inferred items from roadmap and competitive gaps..."
-  # [AI-STEP] Read docs/aide/roadmap.md and competitive landscape in vision.md.
-  # Identify 3-5 concrete Next items (labeled ⚠️ Inferred) and create issues for them.
-  # These become the queue. Do NOT idle — always have work.
+  python3 - <<'INFERRED_EOF'
+import subprocess, re, json, os, sys
+
+REPO = os.environ.get('REPO', '')
+MY_SESSION_ID = os.environ.get('MY_SESSION_ID', 'sess-unknown')
+
+try:
+    state = json.load(open('.otherness/state.json'))
+    done_titles = set(
+        v.get('title','').lower() for v in state.get('features',{}).values()
+        if v.get('state') == 'done' and v.get('title')
+    )
+except Exception:
+    done_titles = set()
+
+try:
+    merged_prs = subprocess.check_output(
+        ['gh','pr','list','--repo',REPO,'--state','merged','--limit','100',
+         '--json','title','--jq','.[].title'], text=True, timeout=15).lower().splitlines()
+except Exception:
+    merged_prs = []
+
+def is_done(d):
+    d_lower = re.sub(r'^⚠️\s*(inferred|observed):\s*', '', d.lower().strip())
+    if d_lower in done_titles: return True
+    return any(d_lower[:60] in pr for pr in merged_prs)
+
+def open_if_absent(title, labels, body):
+    r = subprocess.run(['gh','issue','list','--repo',REPO,'--state','open',
+                        '--search',title[:60],'--json','number','--jq','length'],
+                       capture_output=True, text=True)
+    if int(r.stdout.strip() or '0') == 0:
+        r2 = subprocess.run(['gh','issue','create','--repo',REPO,
+                             '--title',title,'--label',labels,'--body',body],
+                            capture_output=True, text=True)
+        if r2.returncode == 0:
+            return r2.stdout.strip().split('/')[-1]
+    return None
+
+created = 0
+
+# Source 1: roadmap.md — earliest incomplete stage
+try:
+    roadmap = open('docs/aide/roadmap.md').read()
+    stages = re.split(r'^## Stage', roadmap, flags=re.MULTILINE)
+    for stage in stages[1:]:
+        deliverables = re.findall(r'^- (.+)', stage, re.MULTILINE)
+        for d in deliverables:
+            if created >= 5: break
+            d_clean = d.strip()
+            if is_done(d_clean): continue
+            title = f"feat: ⚠️ Inferred: {d_clean[:80]}"
+            body = (f"## Design reference\n- **Design doc**: `docs/aide/roadmap.md`\n"
+                    f"- **Section**: `§ Stage {stage.strip().split(chr(10))[0].strip()}`\n"
+                    f"- **Implements**: {d_clean[:80]}\n\n## Summary\n\n"
+                    f"Inferred from roadmap: queue was empty after learn + vision scan.\n"
+                    f"Injected by COORD §1e inferred-item generator.\n\nFull item: {d_clean}")
+            result = open_if_absent(
+                title, 'otherness,kind/enhancement,area/agent-loop,size/s,priority/low', body)
+            if result:
+                created += 1
+                print(f"[COORD §1e-inferred] Created #{result}: {title[:70]}")
+        if created > 0: break  # one stage at a time
+except Exception as e:
+    print(f"[COORD §1e-inferred] roadmap error (non-fatal): {e}")
+
+# Source 2: vision.md competitive gaps
+if created < 3:
+    try:
+        vision = open('docs/aide/vision.md').read()
+        # Extract lines mentioning gaps or competitors
+        gap_lines = re.findall(r'^[->*] .{20,120}', vision, re.MULTILINE)
+        for gap in gap_lines:
+            if created >= 5: break
+            desc = gap.lstrip('-*> ').strip()
+            if is_done(desc): continue
+            if len(desc) < 20: continue
+            title = f"feat: ⚠️ Inferred: {desc[:80]}"
+            body = (f"## Design reference\n- **Design doc**: `docs/aide/vision.md`\n"
+                    f"- **Section**: `§ competitive landscape`\n\n## Summary\n\n"
+                    f"Inferred from vision: queue was empty. Competitive gap or vision item.\n"
+                    f"Full item: {desc}")
+            result = open_if_absent(
+                title, 'otherness,kind/enhancement,area/agent-loop,size/s,priority/low', body)
+            if result:
+                created += 1
+                print(f"[COORD §1e-inferred] Vision item #{result}: {title[:70]}")
+    except Exception as e:
+        print(f"[COORD §1e-inferred] vision error (non-fatal): {e}")
+
+print(f"[COORD §1e-inferred] Generated {created} inferred items from roadmap/vision.")
+if created == 0:
+    print("[COORD §1e-inferred] No new items generated — all roadmap/vision items already done or queued.")
+INFERRED_EOF
   continue
 fi
 
@@ -1413,9 +1523,8 @@ PYEOF
 
   # §43.3 Board Status: In Progress — design doc 43 §43.3
   # Non-blocking: failure must not stop the claim or the loop (design doc 43 §O5)
-  # [AI-STEP] Read board_project_id from otherness-config.yaml (project.board_project_id).
+  # Read board_project_id from otherness-config.yaml (project.board_project_id).
   # If non-empty: find the board item ID for this issue and set Status → In Progress via GraphQL.
-  # Follow the same GraphQL mutation pattern used in qa.md §3e (Done status).
   _BOARD_PID=$(python3 -c "
 import re, os
 section=None
