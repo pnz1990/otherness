@@ -145,7 +145,7 @@ and executed like any other item in the queue.
 - ✅ 45.3 — Board status and milestone: fix the gap (27 open issues with no milestone today). The COORD issue-creation block must include `gh issue edit --milestone` and `gh project item-add` as non-optional, always-running commands. (PR #925)
 - 🔲 45.4 — Minimum viable batch report: replace the 882-line metrics section with a 50-line block that answers exactly three questions: did meaningful work ship (Y/N + what), what is in the queue (N items), is anything blocking (Y/N + what). The current section generates elaborate output no human reads.
 - 🔲 45.5 — Simplification cycle scheduled: add to SM §4a triage — every 30 batches, open a `kind/chore priority/high` issue: "Simplification cycle: distil sm.md, coord.md, eng.md, qa.md." This item goes to the top of the queue.
-- 🔲 45.6 — [AI-STEP] elimination in qa.md: replace every [AI-STEP] in qa.md with either executable code or deletion. coord.md and eng.md completed in 45.2 (PR #955). qa.md tracked in issue-958.
+- ✅ 45.6 — [AI-STEP] elimination in qa.md: replace every [AI-STEP] in qa.md with either executable code or deletion. coord.md and eng.md completed in 45.2 (PR #955). qa.md completed in issue-958 (PR #TBD).
 
 - 🔲 45.7 — Step A per-step timeout (deferred — add after 45.1-45.6 complete)
 - 🔲 45.8 — Phase file line count cap (deferred — add after 45.1 ships)
