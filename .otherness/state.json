@@ -129,7 +129,7 @@
       "file_spaces": []
     },
     "issue-944": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: SM \u00a74f: report vision pressure utilisation \u2014 in the health comment, include: \"Vision-backe",
       "labels": [
         "priority/medium",
@@ -139,7 +139,8 @@
       ],
       "priority": "medium",
       "issue": 944,
-      "file_spaces": []
+      "file_spaces": [],
+      "pr": "978"
     },
     "issue-928": {
       "state": "todo",
@@ -486,8 +487,14 @@
       "last_seen": "2026-04-23T06:54:32Z",
       "item": "issue-953",
       "cycle": 2
+    },
+    "sess-6889e610": {
+      "last_seen": "2026-04-23T09:02:42Z",
+      "item": "sm-complete",
+      "cycle": 1
     }
   },
   "sm_cycle_count": 2,
-  "batch_count": 2
+  "batch_count": 3,
+  "last_batch_at": "2026-04-23T09:02:42Z"
 }
