@@ -145,7 +145,7 @@ releases:
 ## Future (🔲)
 
 - ✅ 40.2 — PM §5q: minor release trigger — 7-day age + ≥3 feat PRs + ≥1 design doc change since tag + CI green + no open needs-human + no in_review PRs. Auto-cut minor with curated feat PR summary grouped by area label. Opt-out via `releases.enabled: false`. (PR #issue-909, 2026-04-23)
-- 🔲 40.4 — PM §5l: release notes template — curated summary above `--generate-notes` output. Group feat PRs by design doc area. Include "Upgrading" section from AGENTS.md breaking changes.
+- ✅ 40.4 — PM §5q: release notes template — curated feat PR summary grouped by area label already present in §5q. Added Upgrading section: §5q now scans AGENTS.md for breaking change signals (Anti-Patterns table, Future Risk section) and appends an `## Upgrading` section if any are found. Fail-open if AGENTS.md absent. (PR #issue-946, 2026-04-23)
 - 🔲 40.5 — `otherness-config.yaml`: add `releases:` section with `enabled`, `min_days_between`, `major_human_only` fields. `major_human_only` is read-only — any PR that sets it to `false` is rejected by QA.
 - 🔲 40.6 — validate.sh: check that `releases.major_human_only` is not set to `false` in any `otherness-config.yaml` in the repo. Hard fail if found.
 

@@ -2822,6 +2822,23 @@ for area, items in grouped.items():
 if ungrouped:
     curated_notes += '### Other\n' + '\n'.join(ungrouped) + '\n\n'
 
+# §40.4: Upgrading section — scan AGENTS.md for breaking change signals
+# Design ref: docs/design/40-autonomous-releases.md §40.4
+try:
+    agents_content = open('AGENTS.md').read()
+    import re as _re
+    # Extract Anti-Patterns table rows and Future Risk section for breaking signals
+    breaking_lines = _re.findall(
+        r'^[|*-]\s*.{10,120}(?:break|remov|deprecat|incompatible|migrat).{0,100}',
+        agents_content, _re.MULTILINE | _re.IGNORECASE)
+    if breaking_lines:
+        curated_notes += '## Upgrading\n\n'
+        for line in breaking_lines[:5]:
+            curated_notes += f'- {line.lstrip("|*- ").strip()}\n'
+        curated_notes += '\n'
+except Exception:
+    pass  # No AGENTS.md or no breaking changes — omit Upgrading section
+
 release_r = subprocess.run(
     ['gh', 'release', 'create', next_tag,
      '--repo', REPO,
