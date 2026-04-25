@@ -1,32 +1,7 @@
 {
-  "report_issue": 741,
-  "batch_count": 8,
   "features": {
-    "issue-957": {
-      "state": "done",
-      "title": "45.5: simplification cycle \u2014 open chore/high issue every 30 batches",
-      "labels": [
-        "area/agent-loop",
-        "size/xs",
-        "priority/high",
-        "kind/enhancement"
-      ],
-      "priority": "high",
-      "issue": 957,
-      "assigned_to": "sess-6515b10d",
-      "assigned_at": "2026-04-23T06:01:39Z",
-      "branch": "feat/issue-957",
-      "worktree": "../otherness.issue-957",
-      "file_spaces": [
-        "agents/",
-        "scripts/"
-      ],
-      "pr_number": 968,
-      "pr_merged": true,
-      "done_at": "2026-04-23T06:06:22Z"
-    },
     "issue-956": {
-      "state": "todo",
+      "state": "done",
       "title": "45.3: COORD issue-creation must always set board Status:Todo and active milestone",
       "labels": [
         "area/agent-loop",
@@ -35,11 +10,14 @@
         "kind/enhancement"
       ],
       "priority": "high",
-      "issue": 956
+      "issue": 956,
+      "file_spaces": [],
+      "pr_merged": true,
+      "done_at": "2026-04-23T08:11:37Z"
     },
     "issue-953": {
-      "state": "todo",
-      "title": "feat: Audit and reduce sm.md: identify the top 5 sections by line count that have never demonstr",
+      "state": "done",
+      "title": "feat(sm): reduce sm.md from 5,070 to 1,895 lines (45.1)",
       "labels": [
         "area/agent-loop",
         "size/s",
@@ -47,7 +25,17 @@
         "kind/enhancement"
       ],
       "priority": "high",
-      "issue": 953
+      "issue": 953,
+      "file_spaces": [
+        "agents/"
+      ],
+      "assigned_to": "sess-af26c017",
+      "assigned_at": "2026-04-23T06:54:32Z",
+      "branch": "feat/issue-953",
+      "worktree": "../otherness.issue-953",
+      "pr_number": 971,
+      "pr_merged": true,
+      "done_at": "2026-04-23T07:19:22Z"
     },
     "issue-952": {
       "state": "todo",
@@ -59,7 +47,8 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": 952
+      "issue": 952,
+      "file_spaces": []
     },
     "issue-951": {
       "state": "todo",
@@ -71,7 +60,8 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": 951
+      "issue": 951,
+      "file_spaces": []
     },
     "issue-950": {
       "state": "todo",
@@ -83,7 +73,8 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": 950
+      "issue": 950,
+      "file_spaces": []
     },
     "issue-949": {
       "state": "todo",
@@ -95,7 +86,8 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": 949
+      "issue": 949,
+      "file_spaces": []
     },
     "issue-948": {
       "state": "todo",
@@ -107,7 +99,8 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": 948
+      "issue": 948,
+      "file_spaces": []
     },
     "issue-947": {
       "state": "todo",
@@ -119,7 +112,8 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": 947
+      "issue": 947,
+      "file_spaces": []
     },
     "issue-946": {
       "state": "todo",
@@ -131,7 +125,8 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": 946
+      "issue": 946,
+      "file_spaces": []
     },
     "issue-944": {
       "state": "todo",
@@ -143,7 +138,8 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": 944
+      "issue": 944,
+      "file_spaces": []
     },
     "issue-928": {
       "state": "todo",
@@ -155,7 +151,8 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": 928
+      "issue": 928,
+      "file_spaces": []
     },
     "issue-917": {
       "state": "todo",
@@ -167,19 +164,8 @@
         "kind/enhancement"
       ],
       "priority": "low",
-      "issue": 917
-    },
-    "issue-909": {
-      "state": "todo",
-      "title": "feat(pm): minor release trigger PM \u00a75l (40.2) \u2014 auto-cut vX.Y.0 when \u22653 feat PRs since last tag",
-      "labels": [
-        "size/s",
-        "area/tooling",
-        "priority/high",
-        "kind/enhancement"
-      ],
-      "priority": "high",
-      "issue": 909
+      "issue": 917,
+      "file_spaces": []
     },
     "issue-894": {
       "state": "todo",
@@ -191,7 +177,8 @@
         "kind/enhancement"
       ],
       "priority": "low",
-      "issue": 894
+      "issue": 894,
+      "file_spaces": []
     },
     "issue-893": {
       "state": "todo",
@@ -203,7 +190,8 @@
         "kind/enhancement"
       ],
       "priority": "low",
-      "issue": 893
+      "issue": 893,
+      "file_spaces": []
     },
     "issue-884": {
       "state": "todo",
@@ -215,7 +203,8 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": 884
+      "issue": 884,
+      "file_spaces": []
     },
     "issue-866": {
       "state": "todo",
@@ -227,7 +216,8 @@
         "kind/enhancement"
       ],
       "priority": "low",
-      "issue": 866
+      "issue": 866,
+      "file_spaces": []
     },
     "issue-865": {
       "state": "todo",
@@ -239,7 +229,8 @@
         "kind/enhancement"
       ],
       "priority": "low",
-      "issue": 865
+      "issue": 865,
+      "file_spaces": []
     },
     "issue-864": {
       "state": "todo",
@@ -251,7 +242,8 @@
         "kind/enhancement"
       ],
       "priority": "low",
-      "issue": 864
+      "issue": 864,
+      "file_spaces": []
     },
     "issue-863": {
       "state": "todo",
@@ -263,7 +255,8 @@
         "kind/enhancement"
       ],
       "priority": "low",
-      "issue": 863
+      "issue": 863,
+      "file_spaces": []
     },
     "issue-862": {
       "state": "todo",
@@ -275,7 +268,8 @@
         "kind/enhancement"
       ],
       "priority": "low",
-      "issue": 862
+      "issue": 862,
+      "file_spaces": []
     },
     "issue-861": {
       "state": "todo",
@@ -287,7 +281,8 @@
         "kind/enhancement"
       ],
       "priority": "low",
-      "issue": 861
+      "issue": 861,
+      "file_spaces": []
     },
     "issue-860": {
       "state": "todo",
@@ -299,7 +294,8 @@
         "kind/enhancement"
       ],
       "priority": "low",
-      "issue": 860
+      "issue": 860,
+      "file_spaces": []
     },
     "issue-859": {
       "state": "todo",
@@ -311,7 +307,8 @@
         "kind/enhancement"
       ],
       "priority": "low",
-      "issue": 859
+      "issue": 859,
+      "file_spaces": []
     },
     "issue-858": {
       "state": "todo",
@@ -323,7 +320,8 @@
         "kind/enhancement"
       ],
       "priority": "low",
-      "issue": 858
+      "issue": 858,
+      "file_spaces": []
     },
     "issue-857": {
       "state": "todo",
@@ -335,7 +333,8 @@
         "kind/enhancement"
       ],
       "priority": "low",
-      "issue": 857
+      "issue": 857,
+      "file_spaces": []
     },
     "issue-856": {
       "state": "todo",
@@ -347,7 +346,8 @@
         "kind/enhancement"
       ],
       "priority": "low",
-      "issue": 856
+      "issue": 856,
+      "file_spaces": []
     },
     "issue-855": {
       "state": "todo",
@@ -359,7 +359,8 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": 855
+      "issue": 855,
+      "file_spaces": []
     },
     "issue-854": {
       "state": "todo",
@@ -371,7 +372,8 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": 854
+      "issue": 854,
+      "file_spaces": []
     },
     "issue-852": {
       "state": "todo",
@@ -383,7 +385,8 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": 852
+      "issue": 852,
+      "file_spaces": []
     },
     "issue-851": {
       "state": "todo",
@@ -395,31 +398,8 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": 851
-    },
-    "issue-817": {
-      "state": "todo",
-      "title": "feat(observability): deploy AWS observability backend (account 569190534191) and wire all projects",
-      "labels": [
-        "size/l",
-        "area/tooling",
-        "priority/high",
-        "kind/enhancement"
-      ],
-      "priority": "high",
-      "issue": 817
-    },
-    "issue-815": {
-      "state": "todo",
-      "title": "feat(scheduled): apply workflow timeout + cleanup step once GH_TOKEN has workflows scope",
-      "labels": [
-        "priority/medium",
-        "size/xs",
-        "area/tooling",
-        "kind/enhancement"
-      ],
-      "priority": "medium",
-      "issue": 815
+      "issue": 851,
+      "file_spaces": []
     },
     "issue-808": {
       "state": "todo",
@@ -432,19 +412,8 @@
         "kind/enhancement"
       ],
       "priority": "low",
-      "issue": 808
-    },
-    "issue-745": {
-      "state": "todo",
-      "title": "feat: validate.sh check [8/8]: \u2705 Present items referencing state.json fields must be verifiable",
-      "labels": [
-        "priority/medium",
-        "size/s",
-        "area/tooling",
-        "kind/enhancement"
-      ],
-      "priority": "medium",
-      "issue": 745
+      "issue": 808,
+      "file_spaces": []
     },
     "issue-718": {
       "state": "todo",
@@ -456,15 +425,69 @@
         "kind/enhancement"
       ],
       "priority": "medium",
-      "issue": 718
+      "issue": 718,
+      "file_spaces": []
+    },
+    "issue-909": {
+      "state": "todo",
+      "title": "feat(pm): minor release trigger PM \u00a75l (40.2) \u2014 auto-cut vX.Y.0 when \u22653 feat PRs since last tag",
+      "labels": [
+        "size/s",
+        "area/tooling",
+        "priority/high",
+        "kind/enhancement"
+      ],
+      "priority": "high",
+      "issue": 909,
+      "file_spaces": []
+    },
+    "issue-817": {
+      "state": "todo",
+      "title": "feat(observability): deploy AWS observability backend (account 569190534191) and wire all projects",
+      "labels": [
+        "size/l",
+        "area/tooling",
+        "priority/high",
+        "kind/enhancement"
+      ],
+      "priority": "high",
+      "issue": 817,
+      "file_spaces": []
+    },
+    "issue-815": {
+      "state": "todo",
+      "title": "feat(scheduled): apply workflow timeout + cleanup step once GH_TOKEN has workflows scope",
+      "labels": [
+        "priority/medium",
+        "size/xs",
+        "area/tooling",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "issue": 815,
+      "file_spaces": []
+    },
+    "issue-745": {
+      "state": "todo",
+      "title": "feat: validate.sh check [8/8]: \u2705 Present items referencing state.json fields must be verifiable",
+      "labels": [
+        "priority/medium",
+        "size/s",
+        "area/tooling",
+        "kind/enhancement"
+      ],
+      "priority": "medium",
+      "issue": 745,
+      "file_spaces": []
     }
   },
   "session_heartbeats": {
-    "sess-6515b10d": {
-      "last_seen": "2026-04-23T06:00:49Z",
-      "item": "coord",
-      "cycle": 1
+    "sess-af26c017": {
+      "last_seen": "2026-04-23T06:54:32Z",
+      "item": "issue-953",
+      "cycle": 2
     }
   },
-  "bounded_sessions": {}
+  "sm_cycle_count": 2,
+  "batch_count": 2
 }
