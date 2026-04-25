@@ -38,7 +38,7 @@
       "issue": 956
     },
     "issue-953": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: Audit and reduce sm.md: identify the top 5 sections by line count that have never demonstr",
       "labels": [
         "area/agent-loop",
@@ -47,7 +47,10 @@
         "kind/enhancement"
       ],
       "priority": "high",
-      "issue": 953
+      "issue": 953,
+      "pr_merged": false,
+      "done_at": "2026-04-23T14:16:04Z",
+      "notes": "already implemented"
     },
     "issue-952": {
       "state": "todo",
@@ -170,7 +173,7 @@
       "issue": 917
     },
     "issue-909": {
-      "state": "todo",
+      "state": "done",
       "title": "feat(pm): minor release trigger PM \u00a75l (40.2) \u2014 auto-cut vX.Y.0 when \u22653 feat PRs since last tag",
       "labels": [
         "size/s",
@@ -179,7 +182,10 @@
         "kind/enhancement"
       ],
       "priority": "high",
-      "issue": 909
+      "issue": 909,
+      "pr_merged": false,
+      "done_at": "2026-04-23T14:16:04Z",
+      "notes": "already implemented"
     },
     "issue-894": {
       "state": "todo",
@@ -326,7 +332,7 @@
       "issue": 858
     },
     "issue-857": {
-      "state": "todo",
+      "state": "done",
       "title": "feat: 36.3",
       "labels": [
         "area/agent-loop",
@@ -335,7 +341,10 @@
         "kind/enhancement"
       ],
       "priority": "low",
-      "issue": 857
+      "issue": 857,
+      "pr_merged": true,
+      "done_at": "2026-04-23T14:16:04Z",
+      "pr_number": 1000
     },
     "issue-856": {
       "state": "todo",
@@ -466,5 +475,7 @@
       "cycle": 1
     }
   },
-  "bounded_sessions": {}
+  "bounded_sessions": {},
+  "pm_cycle_count": 1,
+  "sm_cycle_count": 1
 }
